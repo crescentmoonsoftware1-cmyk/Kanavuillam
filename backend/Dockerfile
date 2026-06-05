@@ -1,8 +1,8 @@
 FROM node:20-slim
 
-# Install Python and dependencies required by opencv
+# Install Python and dependencies
 RUN apt-get update && \
-    apt-get install -y python3 python3-pip python3-venv libglib2.0-0 libsm6 libxext6 libxrender-dev && \
+    apt-get install -y python3 python3-pip python3-venv && \
     rm -rf /var/lib/apt/lists/*
 
 # Set up working directory
