@@ -1,18 +1,16 @@
-FROM node:20-slim
+FROM python:3.10-slim
 
-# Install Python and dependencies
-RUN apt-get update && \
-    apt-get install -y python3 python3-pip python3-venv && \
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install curl and Node.js
+RUN apt-get update && apt-get install -y curl && \
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs && \
     rm -rf /var/lib/apt/lists/*
 
-# Set up working directory
 WORKDIR /app
 
-# Create a virtual environment for Python
-RUN python3 -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-
-# Copy Python requirements and install
+# Install Python dependencies directly
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
