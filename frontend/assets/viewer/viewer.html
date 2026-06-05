@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nirai</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #050a14
+    }
+
+    #v {
+      width: 100%;
+      height: 100%;
+      position: absolute
+    }
+
+    .tb {
+      position: absolute;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 5px;
+      z-index: 100;
+      background: rgba(5, 10, 20, .92);
+      padding: 7px 14px;
+      border-radius: 40px;
+      border: 1px solid rgba(0, 200, 150, .3)
+    }
+
+    .tb button {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      padding: 7px 13px;
+      border-radius: 18px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 10px;
+      letter-spacing: .5px;
+      transition: all .2s
+    }
+
+    .tb button.active {
+      background: #00C896;
+      color: #000
+    }
+
+    #ld {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #050a14;
+      color: #00C896;
+      font-size: 13px;
+      font-weight: 700;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px
+    }
+
+    .sp {
+      width: 32px;
+      height: 32px;
+      border: 3px solid rgba(0, 200, 150, .1);
+      border-top-color: #00C896;
+      border-radius: 50%;
+      animation: spin .7s linear infinite
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg)
+      }
+    }
+
+    #st {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      background: rgba(5, 10, 20, .7);
+      color: #475569;
+      padding: 4px 9px;
+      border-radius: 7px;
+      font-size: 9px;
+      font-weight: 600;
+      z-index: 100
+    }
+
+    #cb {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      z-index: 150;
+      pointer-events: none;
+      text-align: center
+    }
+
+    #cp {
+      width: 55px;
+      height: 55px;
+      background: rgba(5, 10, 20, .65);
+      border: 1.5px solid rgba(0, 200, 150, .3);
+      border-radius: 50%;
+      position: relative;
+      margin-bottom: 5px
+    }
+
+    .d {
+      position: absolute;
+      font-size: 8px;
+      font-weight: 900;
+      color: #cbd5e1;
+      width: 100%;
+      text-align: center
+    }
+
+    .d.n {
+      top: 2px;
+      color: #00C896
+    }
+
+    .d.s {
+      bottom: 2px
+    }
+
+    .d.e {
+      right: 2px;
+      top: 22px;
+      transform: rotate(90deg);
+      width: auto
+    }
+
+    .d.w {
+      left: 2px;
+      top: 22px;
+      transform: rotate(-90deg);
+      width: auto
+    }
+
+    #nd {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 2px;
+      height: 20px;
+      background: #00C896;
+      transform: translate(-50%, -100%);
+      border-radius: 1px
+    }
+
+    #fd {
+      background: rgba(0, 200, 150, .1);
+      color: #00C896;
+      padding: 3px 7px;
+      border-radius: 10px;
+      font-size: 8px;
+      font-weight: 800;
+      border: 1px solid rgba(0, 200, 150, .2)
+    }
+  </style>
+</head>
+
+<body>
+  <div id="ld">
+    <div class="sp"></div><span>BUILDING 3D MODEL...</span>
+  </div>
+  <div id="v"></div>
+  <div class="tb">
+    <button id="bg" class="active" onclick="setView('ground')">GROUND</button>
+    <button id="bf" onclick="setView('first')" style="display:none">FIRST</button>
+    <button id="bs" onclick="setView('side')" style="display:none">SIDE-BY-SIDE</button>
+    <button id="bk" onclick="setView('stacked')" style="display:none">STACKED</button>
+  </div>
+  <div id="st">Rotate · Pan · Zoom</div>
+  <div id="cb">
+    <div id="cp">
+      <div class="d n">N</div>
+      <div class="d e">E</div>
+      <div class="d s">S</div>
+      <div class="d w">W</div>
+      <div id="nd"></div>
+    </div>
+    <div id="fd">N</div>
+  </div>
+
+  <script
+    type="importmap">{"imports":{"three":"https://unpkg.com/three@0.158.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.158.0/examples/jsm/"}}</script>
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    let scene, camera, renderer, controls, gGrp, fGrp, curData;
+
+    // ─── Materials ────────────────────────────────────────────────────────────────
+    const M = {
+      extWall: new THREE.MeshStandardMaterial({ color: 0xfafaf9, roughness: 0.4, metalness: 0.1 }),
+      intWall: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5, metalness: 0.0 }),
+      base: new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.3, metalness: 0.4 }),
+      glass: new THREE.MeshStandardMaterial({ color: 0xbae6fd, transparent: true, opacity: .4, roughness: 0, metalness: 0.9 }),
+      column: new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.2, metalness: 0.5 }),
+      voidLine: new THREE.LineBasicMaterial({ color: 0x00C896, transparent: true, opacity: 0.5 }),
+      floor(name) {
+        const n = (name || '').toLowerCase();
+        let c = 0xe2e8f0;
+        if (n.includes('kitchen')) c = 0xfefce8;
+        if (n.includes('bath') || n.includes('toilet')) c = 0xf0f9ff;
+        if (n.includes('bedroom')) c = 0xfffbeb;
+        if (n.includes('hall') || n.includes('living')) c = 0xf0fdf4;
+        if (n.includes('dining')) c = 0xfdf2f8;
+        if (n.includes('shelf')) c = 0xcbd5e1; // Concrete/Shelf color
+        if (n.includes('portico') || n.includes('parking')) c = 0x475569; // Lighter slate for better visibility
+        return new THREE.MeshStandardMaterial({ color: c, roughness: 0.7, metalness: 0.0 });
+
+      }
+    };
+
+    function mkBox(w, h, d, mat, x, y, z) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+      m.position.set(x, y, z);
+      m.castShadow = true; m.receiveShadow = true;
+      return m;
+    }
+
+    // ─── WALL GENERATOR FROM ROOM BOUNDARIES ─────────────────────────────────────
+    // Generates clean, non-overlapping walls directly from room geometry.
+    // Each room edge is a candidate wall. Shared edges between adjacent rooms
+    // become internal walls. Outer edges become exterior walls.
+    function generateWallsFromRooms(rooms) {
+      const EPS = 0.3; // Tolerance for snapping
+      const walls = []; // {x, z, len, isHoriz, isExt, thickness}
+
+      if (!rooms || rooms.length === 0) return walls;
+
+      // Collect all unique X and Z boundary lines from rooms
+      const xLines = new Map(); // key="z:z1:z2" -> {z, x, z1, z2, rooms:[]}
+      const zLines = new Map(); // key="x:x1:x2" -> {x, z, x1, x2, rooms:[]}
+
+      function snapVal(v, arr) {
+        for (const a of arr) if (Math.abs(v - a) < EPS) return a;
+        return v;
+      }
+
+      // Build snapped coordinate lists
+      const allX = [], allZ = [];
+      rooms.forEach(r => {
+        allX.push(+r.x, +r.x + +r.width);
+        allZ.push(+r.y, +r.y + +r.height);
+      });
+      allX.sort((a, b) => a - b);
+      allZ.sort((a, b) => a - b);
+
+      function snapX(v) { return snapVal(v, allX); }
+      function snapZ(v) { return snapVal(v, allZ); }
+
+      // For each room, collect its 4 edges
+      const edgeCount = new Map();
+      rooms.forEach(r => {
+        const x1 = snapX(+r.x), x2 = snapX(+r.x + +r.width);
+        const z1 = snapZ(+r.y), z2 = snapZ(+r.y + +r.height);
+
+        // Horizontal edges (constant Z, varying X)
+        [[z1, x1, x2], [z2, x1, x2]].forEach(([z, xa, xb]) => {
+          const key = `H:${z.toFixed(2)}:${xa.toFixed(2)}:${xb.toFixed(2)}`;
+          edgeCount.set(key, (edgeCount.get(key) || 0) + 1);
+        });
+        // Vertical edges (constant X, varying Z)
+        [[x1, z1, z2], [x2, z1, z2]].forEach(([x, za, zb]) => {
+          const key = `V:${x.toFixed(2)}:${za.toFixed(2)}:${zb.toFixed(2)}`;
+          edgeCount.set(key, (edgeCount.get(key) || 0) + 1);
+        });
+      });
+
+      edgeCount.forEach((count, key) => {
+        const parts = key.split(':');
+        const isHoriz = parts[0] === 'H';
+        const isExt = count === 1; // Only one room touches this edge → exterior
+        const thickness = isExt ? 0.75 : 0.37;
+
+        if (isHoriz) {
+          const z = parseFloat(parts[1]);
+          const x1 = parseFloat(parts[2]);
+          const x2 = parseFloat(parts[3]);
+          walls.push({ x1, x2, z1: z, z2: z, isHoriz: true, thickness, isExt });
+        } else {
+          const x = parseFloat(parts[1]);
+          const z1 = parseFloat(parts[2]);
+          const z2 = parseFloat(parts[3]);
+          walls.push({ x1: x, x2: x, z1, z2, isHoriz: false, thickness, isExt });
+        }
+      });
+
+      return walls;
+    }
+
+    function buildWallMeshes(rooms, wallH, parent) {
+      const walls = generateWallsFromRooms(rooms);
+      walls.forEach(w => {
+        const dx = w.x2 - w.x1, dz = w.z2 - w.z1;
+        const len = Math.sqrt(dx * dx + dz * dz);
+        if (len < 0.1) return;
+        const mat = w.isExt ? M.extWall : M.intWall;
+        const cx = (w.x1 + w.x2) / 2;
+        const cz = (w.z1 + w.z2) / 2;
+        const ang = -Math.atan2(dz, dx);
+        const mesh = mkBox(len, wallH, w.thickness, mat, cx, wallH / 2, cz);
+        mesh.rotation.y = ang;
+        parent.add(mesh);
+      });
+    }
+
+    // ─── Room Floor & Label ───────────────────────────────────────────────────────
+    function buildRoomFloor(r, parent) {
+      const n = (r.name || '').toLowerCase();
+      const isVoid = n.includes('void') || n.includes('open below') || n.includes('double height') || n.includes('open bel');
+
+      const rx = +r.x, rz = +r.y, rw = +r.width, rh = +r.height;
+      const cx = rx + rw / 2, cz = rz + rh / 2;
+
+      if (isVoid) {
+        const pts = [
+          new THREE.Vector3(rx, 0.1, rz), new THREE.Vector3(rx + rw, 0.1, rz),
+          new THREE.Vector3(rx + rw, 0.1, rz + rh), new THREE.Vector3(rx, 0.1, rz + rh),
+          new THREE.Vector3(rx, 0.1, rz)
+        ];
+        const geo = new THREE.BufferGeometry().setFromPoints(pts);
+        const line = new THREE.Line(geo, M.voidLine);
+        parent.add(line);
+      } else {
+        parent.add(mkBox(rw, 0.3, rh, M.floor(r.name), cx, 0.15, cz));
+      }
+
+      // Label
+      const cv = document.createElement('canvas');
+      cv.width = 512; cv.height = 128;
+      const ctx = cv.getContext('2d');
+      ctx.fillStyle = 'rgba(15,23,42,0.85)';
+      ctx.beginPath(); ctx.roundRect(10, 10, 492, 108, 24); ctx.fill();
+      ctx.strokeStyle = 'rgba(0,200,150,0.4)'; ctx.lineWidth = 4; ctx.stroke();
+      ctx.font = '900 42px Inter, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#00C896';
+      ctx.fillText((r.name || 'ROOM').toUpperCase(), 256, 75);
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false }));
+      sp.scale.set(Math.max(5, rw * 0.6), 1.4, 1);
+      sp.position.set(cx, isVoid ? 0.5 : 1.2, cz);
+      parent.add(sp);
+    }
+
+    // ─── Staircase ────────────────────────────────────────────────────────────────
+    function buildStairs(s, parent) {
+      const steps = 12, sw = +s.width, sd = +s.height, sh = 10.5 / steps;
+      const cx = +s.x + sw / 2, cz = +s.y + sd / 2;
+      const stepDepth = sd / steps;
+      for (let i = 0; i < steps; i++) {
+        const y = sh * (i + 1);
+        parent.add(mkBox(sw, y, stepDepth, M.base, cx, y / 2, +s.y + i * stepDepth + stepDepth / 2));
+      }
+    }
+
+    // ─── Column ───────────────────────────────────────────────────────────────────
+    function buildColumn(c, parent) {
+      const sz = +c.size || 1.2, h = 10.5;
+      parent.add(mkBox(sz, h, sz, M.column, +c.x, h / 2, +c.y));
+    }
+
+    // ─── Door ─────────────────────────────────────────────────────────────────────
+    function buildDoor(d, parent) {
+      const w = +(d.width || 3.5), h = 8.5;
+      const mat = new THREE.MeshStandardMaterial({ color: d.is_main ? 0x451a03 : 0x78350f, roughness: 0.6 });
+      const g = new THREE.Group();
+      g.position.set(+d.x, 0, +d.y);
+      g.rotation.y = +(d.angle || 0);
+      const pg = new THREE.Group();
+      pg.add(mkBox(w, h, 0.25, mat, w / 2, h / 2, 0));
+      pg.rotation.y = -Math.PI / 3;
+      g.add(pg);
+      g.add(mkBox(0.2, h + 0.3, 0.5, M.base, 0, h / 2, 0));
+      g.add(mkBox(0.2, h + 0.3, 0.5, M.base, w, h / 2, 0));
+      g.add(mkBox(w + 0.4, 0.2, 0.5, M.base, w / 2, h + 0.15, 0));
+      parent.add(g);
+    }
+
+    // ─── Window ───────────────────────────────────────────────────────────────────
+    function buildWindow(w, parent) {
+      const ww = +(w.width || 4), wh = 4.5;
+      const g = new THREE.Group();
+      g.position.set(+w.x, 5.5, +w.y);
+      if (w.dir === 'x' || w.dir === 'vertical') g.rotation.y = Math.PI / 2;
+      g.add(mkBox(ww, wh, 0.15, M.glass, 0, 0, 0));
+      const fm = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.8, roughness: 0.2 });
+      g.add(mkBox(ww + .2, .2, .2, fm, 0, wh / 2, 0));
+      g.add(mkBox(ww + .2, .2, .2, fm, 0, -wh / 2, 0));
+      g.add(mkBox(.2, wh, .2, fm, ww / 2, 0, 0));
+      g.add(mkBox(.2, wh, .2, fm, -ww / 2, 0, 0));
+      parent.add(g);
+    }
+
+    // ─── Furniture ────────────────────────────────────────────────────────────────
+    function buildFurniture(f, parent) {
+      const t = (f.type || '').toLowerCase(), fw = +(f.width || 4.5), fh = +(f.height || 4.5);
+      const g = new THREE.Group();
+      const wm = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.8 });
+      const wt = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.5 });
+      const sf = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.9 });
+
+      if (t.includes('bed')) {
+        g.add(mkBox(fw, 1.2, fh, wm, 0, .6, 0));
+        g.add(mkBox(fw - .4, .4, fh - .4, wt, 0, 1.4, 0));
+        g.add(mkBox(1.5, .4, 1, wt, -fw / 4, 1.6, -fh / 2 + .8));
+        g.add(mkBox(1.5, .4, 1, wt, fw / 4, 1.6, -fh / 2 + .8));
+      } else if (t.includes('sofa') || t.includes('couch')) {
+        g.add(mkBox(fw, 1.6, fh, sf, 0, .8, 0));
+        g.add(mkBox(fw, 2.2, .5, sf, 0, 1.1, -fh / 2 + .25));
+      } else if (t.includes('staircase')) {
+        const steps = 10; const sh = 10.5 / steps;
+        for (let i = 0; i < steps; i++) {
+          g.add(mkBox(fw, sh * (i + 1), fh / steps, sf, 0, (sh * (i + 1)) / 2, -fh / 2 + (i * fh / steps) + (fh / steps / 2)));
+        }
+      } else if (t.includes('dining') || t.includes('table')) {
+
+        g.add(mkBox(fw, .2, fh, M.glass, 0, 2.8, 0));
+        [[fw / 2 - .2, fh / 2 - .2], [fw / 2 - .2, -fh / 2 + .2], [-fw / 2 + .2, fh / 2 - .2], [-fw / 2 + .2, -fh / 2 + .2]].forEach(([lx, lz]) => {
+          g.add(mkBox(.2, 2.8, .2, wm, lx, 1.4, lz));
+        });
+      } else if (t.includes('toilet') || t === 'wc') {
+        g.add(mkBox(1.4, 1.6, 2, wt, 0, .8, 0));
+        g.add(mkBox(1.4, 1.2, .5, wt, 0, 2.2, -.75));
+      } else if (t.includes('wardrobe') || t.includes('almirah')) {
+        g.add(mkBox(fw, 7.5, fh, wm, 0, 3.75, 0));
+      } else {
+        g.add(mkBox(fw, 1.2, fh, new THREE.MeshStandardMaterial({ color: 0x64748b }), 0, .6, 0));
+      }
+      g.position.set(+f.x, 0, +f.y);
+      g.rotation.y = (+(f.rotation || 0)) * Math.PI / 180;
+      parent.add(g);
+    }
+
+    // ─── Build Full Floor ─────────────────────────────────────────────────────────
+    function buildFloor(data, group) {
+      if (!data) return;
+      const wallH = 10.5;
+      const rooms = data.rooms || [];
+      // 1. Draw room floor tiles
+      rooms.forEach(r => buildRoomFloor(r, group));
+      // 2. Generate walls mathematically from room boundaries (ignores AI walls)
+      buildWallMeshes(rooms, wallH, group);
+      // 3. Place doors, windows, furniture
+      (data.doors || []).forEach(d => buildDoor(d, group));
+      (data.windows || []).forEach(w => buildWindow(w, group));
+      (data.stairs || []).forEach(s => buildStairs(s, group));
+      (data.columns || []).forEach(c => buildColumn(c, group));
+      (data.furnitures || []).forEach(f => buildFurniture(f, group));
+    }
+
+    // ─── Init ─────────────────────────────────────────────────────────────────────
+    function init() {
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x050a14);
+      scene.fog = new THREE.FogExp2(0x050a14, .006);
+
+      camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, .1, 2000);
+      camera.position.set(55, 50, 55);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(innerWidth, innerHeight);
+      renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.BasicShadowMap;
+      document.getElementById('v').appendChild(renderer.domElement);
+
+      controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.maxPolarAngle = Math.PI / 2.05;
+      controls.minDistance = 5; controls.maxDistance = 250;
+
+      scene.add(new THREE.AmbientLight(0xffffff, .85));
+      const sun = new THREE.DirectionalLight(0xfff8e8, 1.1);
+      sun.position.set(60, 120, 60); sun.castShadow = true;
+      sun.shadow.mapSize.set(1024, 1024);
+      sun.shadow.camera.left = -150; sun.shadow.camera.right = 150;
+      sun.shadow.camera.top = 150; sun.shadow.camera.bottom = -150;
+      scene.add(sun);
+      scene.add(new THREE.HemisphereLight(0x87ceeb, 0x1e293b, .45));
+
+      // Ground
+      const gnd = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000), new THREE.MeshStandardMaterial({ color: 0x0a0f1e, roughness: 0.8 }));
+      gnd.rotation.x = -Math.PI / 2;
+      gnd.receiveShadow = true;
+      scene.add(gnd);
+
+      const grid = new THREE.GridHelper(1000, 100, 0x1e293b, 0x111827);
+      grid.position.y = 0.01;
+      scene.add(grid);
+      scene.add(new THREE.GridHelper(500, 100, 0x1e293b, 0x1e293b));
+
+      window.addEventListener('resize', () => {
+        camera.aspect = innerWidth / innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(innerWidth, innerHeight);
+      });
+
+      (function loop() {
+        requestAnimationFrame(loop);
+        controls.update();
+        const az = controls.getAzimuthalAngle();
+        document.getElementById('cp').style.transform = `rotate(${az * 180 / Math.PI}deg)`;
+        const deg = ((az * 180 / Math.PI) + 360) % 360;
+        document.getElementById('fd').textContent = deg > 315 || deg <= 45 ? 'N' : deg > 45 && deg <= 135 ? 'W' : deg > 135 && deg <= 225 ? 'S' : 'E';
+        renderer.render(scene, camera);
+      })();
+    }
+
+    // ─── Render Project ───────────────────────────────────────────────────────────
+    window.renderProject = function (data) {
+      curData = data;
+      if (gGrp) scene.remove(gGrp);
+      if (fGrp) scene.remove(fGrp);
+      if (window.sGrp) scene.remove(window.sGrp);
+      gGrp = new THREE.Group(); fGrp = new THREE.Group(); window.sGrp = new THREE.Group();
+
+      const gData = data.floors?.ground || (data.rooms ? data : null);
+      const fData = data.floors?.first || null;
+      const sData = data.floors?.second || null;
+      buildFloor(gData, gGrp); buildFloor(fData, fGrp); buildFloor(sData, window.sGrp);
+      scene.add(gGrp); if (fData) scene.add(fGrp); if (sData) scene.add(window.sGrp);
+
+      const hasSecond = !!sData;
+      const hasFirst = !!fData || hasSecond;
+
+      // Show/hide buttons based on floors
+      ['bf', 'bs', 'bk'].forEach(id => document.getElementById(id).style.display = hasFirst ? '' : 'none');
+      // Add a button for second floor if it exists
+      let secBtn = document.getElementById('bsec');
+      if (!secBtn) {
+        secBtn = document.createElement('button');
+        secBtn.id = 'bsec';
+        secBtn.innerText = 'SECOND';
+        secBtn.onclick = () => setView('second');
+        document.querySelector('.tb').insertBefore(secBtn, document.getElementById('bs'));
+      }
+      secBtn.style.display = hasSecond ? '' : 'none';
+
+      document.getElementById('ld').style.display = 'none';
+
+      const bb = new THREE.Box3().setFromObject(gGrp);
+      const ctr = bb.getCenter(new THREE.Vector3());
+      const sz = bb.getSize(new THREE.Vector3());
+      const d = Math.max(sz.x, sz.z);
+      controls.target.copy(ctr);
+      camera.position.set(ctr.x + d, d * .9, ctr.z + d);
+      controls.update();
+      setView('ground');
+    };
+
+    window.setView = function (v) {
+      if (!gGrp) return;
+      [['ground', 'bg'], ['first', 'bf'], ['second', 'bsec'], ['side', 'bs'], ['stacked', 'bk']].forEach(([n, id]) => {
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle('active', n === v);
+      });
+
+      gGrp.visible = true; gGrp.position.set(0, 0, 0);
+      if (fGrp) { fGrp.visible = true; fGrp.position.set(0, 0, 0); }
+      if (window.sGrp) { window.sGrp.visible = true; window.sGrp.position.set(0, 0, 0); }
+
+      const pw = curData?.project?.width || 30;
+
+      if (v === 'ground') {
+        if (fGrp) fGrp.visible = false;
+        if (window.sGrp) window.sGrp.visible = false;
+      }
+      else if (v === 'first') {
+        gGrp.visible = false;
+        if (window.sGrp) window.sGrp.visible = false;
+      }
+      else if (v === 'second') {
+        gGrp.visible = false;
+        if (fGrp) fGrp.visible = false;
+      }
+      else if (v === 'side') {
+        gGrp.position.x = 0;
+        const boxG = new THREE.Box3().setFromObject(gGrp);
+        let maxX = isFinite(boxG.max.x) ? boxG.max.x : pw;
+
+        if (fGrp) {
+          fGrp.position.x = 0;
+          const boxF = new THREE.Box3().setFromObject(fGrp);
+          const minX = isFinite(boxF.min.x) ? boxF.min.x : 0;
+          fGrp.position.x = maxX - minX + 15;
+          const newBoxF = new THREE.Box3().setFromObject(fGrp);
+          maxX = isFinite(newBoxF.max.x) ? newBoxF.max.x : (fGrp.position.x + pw);
+        }
+        if (window.sGrp) {
+          window.sGrp.position.x = 0;
+          const boxS = new THREE.Box3().setFromObject(window.sGrp);
+          const minX = isFinite(boxS.min.x) ? boxS.min.x : 0;
+          window.sGrp.position.x = maxX - minX + 15;
+        }
+      }
+      else if (v === 'stacked') {
+        if (fGrp) fGrp.position.y = 10.5;
+        if (window.sGrp) window.sGrp.position.y = 21.0;
+      }
+
+      let tgt = gGrp;
+      if (v === 'first' && fGrp) tgt = fGrp;
+      if (v === 'second' && window.sGrp) tgt = window.sGrp;
+
+      const c = new THREE.Box3().setFromObject(tgt).getCenter(new THREE.Vector3());
+      controls.target.lerp(c, .5);
+    };
+
+    window.addEventListener('message', e => {
+      let d = e.data;
+      if (typeof d === 'string' && d.startsWith('{')) try { d = JSON.parse(d); } catch (x) { return; }
+      if (d?.type === 'render' && d.data) renderProject(d.data);
+    });
+
+    init();
+    window.parent.postMessage('viewer_ready', '*');
+  </script>
+</body>
+
+</html>

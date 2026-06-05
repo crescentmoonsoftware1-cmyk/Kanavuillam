@@ -1,0 +1,6 @@
+opencv-python-headless
+numpy
+google-genai
+pillow
+python-dotenv
+requests
