@@ -28,14 +28,14 @@ const _navItems = [
   _NavItem(Icons.download_outlined, 'Download Report'),
 ];
 
-// ─── Color Palette (Dark Premium Theme) ──────────────────────────────────────────
-const _bgDark = Color(0xFF0A0E1A);
-const _sidebar = Color(0xFF161B2E);
-const _accent = Color(0xFF00E5FF);
-const _accentDim = Color(0x3000E5FF);
-const _textPri = Color(0xFFF8FAFC);
-const _textSec = Color.fromARGB(255, 195, 201, 208);
-const _divider = Color(0x15FFFFFF);
+// ─── Color Palette (Professional Light Theme) ──────────────────────────────────
+const _bgDark = Color.fromARGB(255, 245, 247, 250); // Clean light background
+const _sidebar = Color.fromARGB(255, 255, 255, 255); // Pure white sidebar
+const _accent = Color(0xFF2979FF); // Professional blue
+const _accentDim = Color(0x152979FF);
+const _textPri = Color(0xFF1E293B); // Dark slate for primary text
+const _textSec = Color(0xFF64748B); // Slate gray for secondary text
+const _divider = Color(0x15000000); // Subtle dark divider
 
 class ShellScreen extends StatefulWidget {
   final Map<String, dynamic>? userData;
@@ -306,40 +306,15 @@ class _Sidebar extends StatelessWidget {
         children: [
           Row(
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [_accent, Color(0xFF00B4D8)],
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: _accent.withValues(alpha: 0.3),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.home_work_rounded,
-                  color: Colors.white,
-                  size: 22,
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Text(
-                'Nirai',
-                style: TextStyle(
-                  color: _textPri,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 22,
-                  letterSpacing: 0.5,
-                ),
-              ),
+              Image.asset(
+                'assets/images/logo.png',
+                height: 80,
+                fit: BoxFit.contain,
+              )
+                  .animate(onPlay: (c) => c.repeat(reverse: true))
+                  .shimmer(duration: 3.seconds, color: _accentDim),
             ],
-          ).animate().fadeIn(duration: 350.ms),
+          ).animate().fadeIn(duration: 350.ms).slideX(begin: -0.2),
           const SizedBox(height: 40),
           Expanded(
             child: ListView.separated(
@@ -367,7 +342,7 @@ class _Sidebar extends StatelessWidget {
                 radius: 14,
                 backgroundColor: _accent,
                 child: Text(
-                  'AI',
+                  'Ki',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 10,
@@ -377,7 +352,7 @@ class _Sidebar extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               const Text(
-                'Nirai v1.0',
+                'Kanav illam v1.0',
                 style: TextStyle(
                   color: _textSec,
                   fontSize: 12,
@@ -434,13 +409,17 @@ class _SidebarItem extends StatelessWidget {
           children: [
             Icon(icon, size: 22, color: isActive ? _accent : _textSec),
             const SizedBox(width: 14),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
-                color: isActive ? _accent : _textSec,
-                letterSpacing: 0.1,
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
+                  color: isActive ? _accent : _textSec,
+                  letterSpacing: 0.1,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
@@ -456,7 +435,7 @@ class _SidebarItem extends StatelessWidget {
 class _MobileAppBar extends StatelessWidget implements PreferredSizeWidget {
   final int selectedIndex;
   final Map<String, dynamic>? userData;
-  
+
   const _MobileAppBar({
     required this.selectedIndex,
     this.userData,
@@ -472,33 +451,35 @@ class _MobileAppBar extends StatelessWidget implements PreferredSizeWidget {
       elevation: 0,
       centerTitle: false,
       leading: IconButton(
-        icon: const Icon(Icons.menu_rounded, color: _textPri),
+        icon: const Icon(Icons.menu_rounded, color: _textPri)
+            .animate(onPlay: (c) => c.repeat(reverse: true))
+            .shimmer(duration: 2.seconds, color: _accentDim),
         onPressed: () => Scaffold.of(context).openDrawer(),
       ),
       title: Row(
         children: [
-          const Text(
-            'Nirai',
-            style: TextStyle(
-              color: _textPri,
-              fontWeight: FontWeight.w900,
-              fontSize: 20,
-            ),
+          Image.asset(
+            'assets/images/logo.png',
+            height: 40,
+            fit: BoxFit.contain,
           ),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: _accent.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              _navItems[selectedIndex].label.toUpperCase(),
-              style: const TextStyle(
-                color: _accent,
-                fontSize: 10,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 1,
+          const SizedBox(width: 4),
+          Flexible(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: _accent.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                _navItems[selectedIndex].label.toUpperCase(),
+                style: const TextStyle(
+                  color: _accent,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ),
@@ -509,15 +490,18 @@ class _MobileAppBar extends StatelessWidget implements PreferredSizeWidget {
           icon: Container(
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.1),
+              color: _accent.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.person, color: Colors.white, size: 24),
-          ),
+            child: const Icon(Icons.person, color: _accent, size: 24),
+          )
+              .animate(onPlay: (c) => c.repeat(reverse: true))
+              .scaleXY(end: 1.05, duration: 2.seconds),
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => ProfileScreen(userData: userData)),
+              MaterialPageRoute(
+                  builder: (_) => ProfileScreen(userData: userData)),
             );
           },
         ),

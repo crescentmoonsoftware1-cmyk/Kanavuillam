@@ -141,6 +141,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
                 trailingOrSubtitle,
@@ -313,6 +315,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                               Icons.person_outline,
                               'Name',
                               Text(name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
                                       color: Colors.black87,
                                       fontSize: 13,
@@ -326,6 +330,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                               Icons.phone_outlined,
                               'Phone Number',
                               Text(phone,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
                                       color: Colors.black87,
                                       fontSize: 13,
@@ -339,6 +345,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                               Icons.email_outlined,
                               'Email Address',
                               Text(email,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
                                       color: Colors.black87,
                                       fontSize: 13,

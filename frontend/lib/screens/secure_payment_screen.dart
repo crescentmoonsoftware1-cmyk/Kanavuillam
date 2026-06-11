@@ -67,12 +67,12 @@ class _SecurePaymentScreenState extends State<SecurePaymentScreen> {
       var options = {
         'key': 'rzp_test_placeholder', // REPLACE WITH YOUR REAL KEY ID
         'amount': order['amount'],
-        'name': 'ArchiGen AI',
+        'name': 'Kanav illam',
         'order_id': order['id'],
         'description': 'Architectural Reports Payment',
         'prefill': {
           'contact': '9876543210',
-          'email': 'user@archigen.ai'
+          'email': 'user@kanavillam.com'
         },
         'external': {
           'wallets': ['paytm']

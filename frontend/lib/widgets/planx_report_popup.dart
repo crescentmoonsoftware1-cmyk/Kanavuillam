@@ -175,7 +175,7 @@ class _PlanXReportPopupState extends State<PlanXReportPopup> {
         crossAxisCount: 2,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
-        childAspectRatio: 0.82,
+        childAspectRatio: 0.72,
       ),
       itemBuilder: (context, index) {
         final opt = _options[index];
@@ -327,35 +327,43 @@ class _PlanXReportPopupState extends State<PlanXReportPopup> {
                         ),
                         child: const Icon(Icons.shopping_bag_outlined, color: Color(0xFF2979FF), size: 18),
                       ),
-                      const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${_selectedIds.length} Services Selected',
-                            style: const TextStyle(
-                              color: Color(0xFF64748B),
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${_selectedIds.length} Services Selected',
+                              style: const TextStyle(
+                                color: Color(0xFF64748B),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                          Row(
-                            children: [
-                              const Text(
-                                'Total: ',
-                                style: TextStyle(color: Color(0xFF1E293B), fontSize: 14, fontWeight: FontWeight.bold),
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Row(
+                                children: [
+                                  const Text(
+                                    'Total: ',
+                                    style: TextStyle(color: Color(0xFF1E293B), fontSize: 14, fontWeight: FontWeight.bold),
+                                  ),
+                                  Text(
+                                    '₹$_totalPrice',
+                                    style: const TextStyle(
+                                      color: Color(0xFF2979FF),
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              Text(
-                                '₹$_totalPrice',
-                                style: const TextStyle(
-                                  color: Color(0xFF2979FF),
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -380,25 +388,31 @@ class _PlanXReportPopupState extends State<PlanXReportPopup> {
                       ),
                       child: const Icon(Icons.security, color: Colors.green, size: 16),
                     ),
-                    const SizedBox(width: 8),
-                    const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Secure Payment',
-                          style: TextStyle(
-                            color: Color(0xFF64748B),
-                            fontSize: 10,
+                    const SizedBox(width: 6),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Secure Payment',
+                            style: TextStyle(
+                              color: Color(0xFF64748B),
+                              fontSize: 10,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                        Text(
-                          '100% Protected',
-                          style: TextStyle(
-                            color: Color(0xFF64748B),
-                            fontSize: 10,
+                          Text(
+                            '100% Protected',
+                            style: TextStyle(
+                              color: Color(0xFF64748B),
+                              fontSize: 10,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ],
                 ),

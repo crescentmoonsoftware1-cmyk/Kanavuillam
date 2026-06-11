@@ -123,18 +123,19 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
           ),
         ),
         child: SafeArea(
-          child: Center(
+          child: Align(
+            alignment: Alignment.topCenter,
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Icon(Icons.person_pin_rounded,
-                          size: 80, color: Color(0xFF2979FF))
-                      .animate()
-                      .fadeIn()
-                      .scale(),
+                  Image.asset(
+                    'assets/images/logo.png',
+                    height: 210,
+                    fit: BoxFit.contain,
+                  ).animate().fadeIn().scale(),
                   const SizedBox(height: 24),
                   const Text(
                     'Complete Your Details',
@@ -148,11 +149,11 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                   ).animate().fadeIn(delay: 200.ms).slideY(begin: -0.2),
                   const SizedBox(height: 8),
                   const Text(
-                    'We need a few more details to personalize your DreamHome experience and generate accurate reports.',
+                    'We need a few more details to personalize your Kanav illam experience and generate accurate reports.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 15,
-                      color: Color(0xFF64748B),
+                      color: Color.fromARGB(255, 34, 38, 43),
                       height: 1.5,
                     ),
                   ).animate().fadeIn(delay: 300.ms),
@@ -170,11 +171,9 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                   ).animate().fadeIn(delay: 500.ms).slideX(begin: 0.1),
                   _buildTextField(
                     controller: _addressController,
-                    hint: 'Full Address',
+                    hint: 'Site location',
                     icon: Icons.location_on_outlined,
-                    maxLines: 3,
                   ).animate().fadeIn(delay: 600.ms).slideX(begin: 0.1),
-                  const SizedBox(height: 32),
                   SizedBox(
                     height: 54,
                     child: ElevatedButton(
@@ -194,7 +193,8 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                               width: 24,
                               height: 24,
                               child: CircularProgressIndicator(
-                                  color: Colors.white, strokeWidth: 2),
+                                  color: Color.fromARGB(255, 251, 249, 249),
+                                  strokeWidth: 2),
                             )
                           : const Text(
                               'Continue to App',

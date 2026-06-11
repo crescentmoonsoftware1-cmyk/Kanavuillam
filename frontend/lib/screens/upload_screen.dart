@@ -104,7 +104,9 @@ class _UploadScreenState extends State<UploadScreen>
       return _groundFile != null && _firstFloorFile != null;
     }
     if (_selectedFloors == 2) {
-      return _groundFile != null && _firstFloorFile != null && _secondFloorFile != null;
+      return _groundFile != null &&
+          _firstFloorFile != null &&
+          _secondFloorFile != null;
     }
     return false;
   }
@@ -155,8 +157,6 @@ class _UploadScreenState extends State<UploadScreen>
     }
 
     final h = MediaQuery.of(context).size.height;
-    
-
 
     return Scaffold(
       backgroundColor: _bg,
@@ -256,7 +256,8 @@ class _UploadScreenState extends State<UploadScreen>
                               color: Colors.blueAccent.withValues(alpha: 0.3),
                               boxShadow: [
                                 BoxShadow(
-                                    color: Colors.blueAccent.withValues(alpha: 0.5),
+                                    color: Colors.blueAccent
+                                        .withValues(alpha: 0.5),
                                     blurRadius: 5)
                               ],
                             ),
@@ -468,7 +469,8 @@ class _UploadScreenState extends State<UploadScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFF64748B).withValues(alpha: 0.3)),
+        border:
+            Border.all(color: const Color(0xFF64748B).withValues(alpha: 0.3)),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(text,
@@ -662,8 +664,10 @@ class _UploadScreenState extends State<UploadScreen>
   }
 
   Widget _buildGlowingPill() {
-    return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+    return Align(
+      alignment: Alignment.center,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
             color: const Color(0xFF0F172A).withValues(alpha: 0.8), // Dark glass
             borderRadius: BorderRadius.circular(30),
@@ -700,8 +704,10 @@ class _UploadScreenState extends State<UploadScreen>
                   SizedBox(width: 4),
                   Icon(Icons.check_circle, color: Colors.greenAccent, size: 12),
                 ])
-              ])
-        ]));
+              ]),
+        ]),
+      ),
+    );
   }
 
   Widget _buildUploadCard({
@@ -739,130 +745,135 @@ class _UploadScreenState extends State<UploadScreen>
                   child: Padding(
                     padding: const EdgeInsets.all(12),
                     child: Row(
-                children: [
-                  Container(
-                    width: 70,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey.shade200),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: has
-                          ? (kIsWeb
-                              ? Image.network(file.path, fit: BoxFit.cover)
-                              : Image.file(File(file.path), fit: BoxFit.cover))
-                          : Image.asset(
-                              'assets/images/image.png',
-                              fit: BoxFit.cover,
-                            ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: has
-                          ? Colors.green.withValues(alpha: 0.1)
-                          : const Color(0xFFEFF6FF),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      has ? Icons.check_circle : Icons.cloud_upload_outlined,
-                      color: has ? Colors.green : const Color(0xFF0F62FE),
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          title,
-                          style: const TextStyle(
-                            color: _textDark,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
+                        Container(
+                          width: 70,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey.shade200),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: has
+                                ? (kIsWeb
+                                    ? Image.network(file.path,
+                                        fit: BoxFit.cover)
+                                    : Image.file(File(file.path),
+                                        fit: BoxFit.cover))
+                                : Image.asset(
+                                    'assets/images/image.png',
+                                    fit: BoxFit.cover,
+                                  ),
                           ),
                         ),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            if (isRequired && !has) ...[
-                              const Text(
-                                'Required',
-                                style: TextStyle(
-                                  color: _red,
-                                  fontSize: 11,
+                        const SizedBox(width: 12),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: has
+                                ? Colors.green.withValues(alpha: 0.1)
+                                : const Color(0xFFEFF6FF),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            has
+                                ? Icons.check_circle
+                                : Icons.cloud_upload_outlined,
+                            color: has ? Colors.green : const Color(0xFF0F62FE),
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                title,
+                                style: const TextStyle(
+                                  color: _textDark,
+                                  fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              const Text(
-                                ' · ',
-                                style: TextStyle(color: _textLight),
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  if (isRequired && !has) ...[
+                                    const Text(
+                                      'Required',
+                                      style: TextStyle(
+                                        color: _red,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const Text(
+                                      ' · ',
+                                      style: TextStyle(color: _textLight),
+                                    ),
+                                  ],
+                                  Expanded(
+                                    child: Text(
+                                      has ? file.name : 'Upload 2D floor plan',
+                                      style: TextStyle(
+                                        color: has ? Colors.green : _textLight,
+                                        fontSize: 11,
+                                        fontWeight: has
+                                            ? FontWeight.w500
+                                            : FontWeight.normal,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
                               ),
+                              const SizedBox(height: 8),
+                              Wrap(
+                                spacing: 6,
+                                runSpacing: 4,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                children: [
+                                  _buildTag('JPG'),
+                                  _buildTag('PNG'),
+                                  _buildTag('PDF'),
+                                  const Text(
+                                    'upto 10MB',
+                                    style: TextStyle(
+                                      color: _textLight,
+                                      fontSize: 10,
+                                    ),
+                                  )
+                                ],
+                              )
                             ],
-                            Expanded(
-                              child: Text(
-                                has ? file.name : 'Upload 2D floor plan',
-                                style: TextStyle(
-                                  color: has ? Colors.green : _textLight,
-                                  fontSize: 11,
-                                  fontWeight:
-                                      has ? FontWeight.w500 : FontWeight.normal,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 6,
-                          runSpacing: 4,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            _buildTag('JPG'),
-                            _buildTag('PNG'),
-                            _buildTag('PDF'),
-                            const Text(
-                              'upto 10MB',
-                              style: TextStyle(
-                                color: _textLight,
-                                fontSize: 10,
-                              ),
-                            )
-                          ],
-                        )
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: onTap,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0F62FE),
+                            foregroundColor: Colors.white,
+                            shape: const CircleBorder(),
+                            padding: const EdgeInsets.all(12),
+                            elevation: 0,
+                          ),
+                          child: Icon(
+                            has ? Icons.edit : Icons.arrow_forward,
+                            size: 20,
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed: onTap,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0F62FE),
-                      foregroundColor: Colors.white,
-                      shape: const CircleBorder(),
-                      padding: const EdgeInsets.all(12),
-                      elevation: 0,
-                    ),
-                    child: Icon(
-                      has ? Icons.edit : Icons.arrow_forward,
-                      size: 20,
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
-        ),
-      ),
-    ),
           // Connecting dot at the top edge of the card
           Positioned(
               top: -6,

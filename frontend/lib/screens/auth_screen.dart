@@ -307,6 +307,16 @@ class _AuthScreenState extends State<AuthScreen> {
           borderRadius: BorderRadius.circular(25),
           onTap: () {
             if (text == 'Google') {
+              if (!_agreedToLegal) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please agree to the Terms & Conditions and Privacy Policy to continue.'),
+                    backgroundColor: Colors.orange,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+                return;
+              }
               _signInWithGoogle();
             }
           },
@@ -327,7 +337,7 @@ class _AuthScreenState extends State<AuthScreen> {
           // Background Image
           Positioned.fill(
             child: Image.asset(
-              'assets/viewer/3d-house-model-with-modern-architecture.jpg',
+              'assets/viewer/Screenshot 2026-06-02 101208.png',
               fit: BoxFit.cover,
             ),
           ),
@@ -369,48 +379,17 @@ class _AuthScreenState extends State<AuthScreen> {
                   const SizedBox(height: 20),
 
                   // Logo
-                  Icon(
-                    Icons.home_work_outlined,
-                    color: Colors.white,
-                    size: 60,
+                  Image.asset(
+                    'assets/images/logo.png',
+                    height: 230,
+                    fit: BoxFit.contain,
                   ).animate().fadeIn(duration: 600.ms).slideY(begin: -0.2),
-
-                  const SizedBox(height: 12),
-
-                  // Title
-                  RichText(
-                    text: const TextSpan(
-                      children: [
-                        TextSpan(
-                          text: 'AI ',
-                          style: TextStyle(
-                            color: Color(0xFF2979FF),
-                            fontSize: 32,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 1,
-                          ),
-                        ),
-                        TextSpan(
-                          text: 'HOUSE',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 32,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 1,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                      .animate()
-                      .fadeIn(duration: 600.ms, delay: 100.ms)
-                      .slideY(begin: -0.2),
 
                   const SizedBox(height: 8),
 
                   // Subtitle 2
                   Text(
-                    'Your dream home starts here',
+                    '',
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.8),
                       fontSize: 13,
@@ -424,277 +403,292 @@ class _AuthScreenState extends State<AuthScreen> {
           ),
 
           // Bottom Sheet
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Container(
-              width: double.infinity,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(36)),
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.85,
               ),
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: EdgeInsets.only(
-                  left: 24,
-                  right: 24,
-                  top: 1,
-                  bottom: MediaQuery.of(context).viewInsets.bottom + 12,
+              child: Container(
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(36)),
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Drag handle
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 2,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[300],
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Title
-                    const Text(
-                      'Sign In',
-                      style: const TextStyle(
-                        color: Color(0xFF1E293B),
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.5,
-                      ),
-                    ).animate().fadeIn(delay: 200.ms).slideX(begin: -0.1),
-
-                    const SizedBox(height: 4),
-
-                    const Text(
-                      'Welcome back! Ready to build?',
-                      style: TextStyle(
-                        color: Colors.grey,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ).animate().fadeIn(delay: 300.ms).slideX(begin: -0.1),
-
-                    const SizedBox(height: 24),
-
-                    _buildTextField(
-                      controller: _emailController,
-                      hint: 'Email Address',
-                      icon: Icons.alternate_email,
-                      keyboardType: TextInputType.emailAddress,
-                    ).animate().fadeIn(delay: 350.ms).slideY(begin: 0.1),
-
-                    _buildTextField(
-                      controller: _passwordController,
-                      hint: 'Password',
-                      icon: Icons.lock_outline,
-                      isPassword: true,
-                    ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1),
-
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: () {},
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        child: const Text(
-                          'Forgot Password?',
-                          style: TextStyle(
-                            color: Color(0xFF2979FF),
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: EdgeInsets.only(
+                    left: 24,
+                    right: 24,
+                    top: 0,
+                    bottom: MediaQuery.of(context).viewInsets.bottom + 12,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Drag handle
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 2,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(2),
                           ),
                         ),
                       ),
-                    ).animate().fadeIn(delay: 450.ms),
 
-                    const SizedBox(height: 12),
+                      const SizedBox(height: 16),
 
-                    // Legal Checkbox
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: Checkbox(
-                            value: _agreedToLegal,
-                            onChanged: (val) {
-                              setState(() {
-                                _agreedToLegal = val ?? false;
-                              });
-                            },
-                            activeColor: const Color(0xFF2979FF),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(4)),
-                            side: const BorderSide(
-                                color: Colors.black38, width: 1.5),
-                          ),
+                      // Title
+                      const Text(
+                        'Sign In',
+                        style: const TextStyle(
+                          color: Color(0xFF1E293B),
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Wrap(
-                            children: [
-                              const Text('I agree to the ',
-                                  style: TextStyle(
-                                      color: Colors.black54, fontSize: 13)),
-                              GestureDetector(
-                                onTap: () => _showLegalBottomSheet(
-                                    'Terms & Conditions',
-                                    LegalTexts.termsAndConditions),
-                                child: const Text('Terms & Conditions',
-                                    style: TextStyle(
-                                        color: Color(0xFF2979FF),
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600)),
-                              ),
-                              const Text(' and ',
-                                  style: TextStyle(
-                                      color: Colors.black54, fontSize: 13)),
-                              GestureDetector(
-                                onTap: () => _showLegalBottomSheet(
-                                    'Privacy Policy', LegalTexts.privacyPolicy),
-                                child: const Text('Privacy Policy',
-                                    style: TextStyle(
-                                        color: Color(0xFF2979FF),
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600)),
-                              ),
-                            ],
-                          ),
+                      ).animate().fadeIn(delay: 200.ms).slideX(begin: -0.1),
+
+                      const SizedBox(height: 4),
+
+                      const Text(
+                        'Welcome back! Ready to build?',
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
                         ),
-                      ],
-                    ).animate().fadeIn(delay: 480.ms),
+                      ).animate().fadeIn(delay: 300.ms).slideX(begin: -0.1),
 
-                    const SizedBox(height: 16),
+                      const SizedBox(height: 24),
 
-                    // Primary Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed:
-                            (_isLoading || !_agreedToLegal) ? null : _submit,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _agreedToLegal
-                              ? const Color(0xFF2979FF)
-                              : const Color(0xFF2979FF).withValues(alpha: 0.5),
-                          disabledBackgroundColor:
-                              const Color(0xFF2979FF).withValues(alpha: 0.5),
-                          foregroundColor: Colors.white,
-                          disabledForegroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                      _buildTextField(
+                        controller: _emailController,
+                        hint: 'Email Address',
+                        icon: Icons.alternate_email,
+                        keyboardType: TextInputType.emailAddress,
+                      ).animate().fadeIn(delay: 350.ms).slideY(begin: 0.1),
+
+                      _buildTextField(
+                        controller: _passwordController,
+                        hint: 'Password',
+                        icon: Icons.lock_outline,
+                        isPassword: true,
+                      ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1),
+
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: () {},
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
-                        ),
-                        child: _isLoading
-                            ? Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: const [
-                                  Text(
-                                    'Signing In...',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
-                                  SizedBox(width: 12),
-                                  SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(
-                                        color: Colors.white, strokeWidth: 2),
-                                  ),
-                                ],
-                              )
-                            : Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    'Sign In',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  const Icon(Icons.arrow_forward, size: 20),
-                                ],
-                              ),
-                      ),
-                    )
-                        .animate()
-                        .fadeIn(delay: 500.ms)
-                        .slideY(begin: 0.1)
-                        .shimmer(
-                            delay: 1.seconds,
-                            duration: 1200.ms,
-                            color: Colors.white24),
-
-                    const SizedBox(height: 24),
-
-                    // OR divider
-                    Row(
-                      children: [
-                        Expanded(
-                            child: Divider(
-                                color: Colors.grey[200], thickness: 1.5)),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Text(
-                            'or continue with',
+                          child: const Text(
+                            'Forgot Password?',
                             style: TextStyle(
-                                color: Colors.grey[500],
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500),
+                              color: Color(0xFF2979FF),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
-                        Expanded(
-                            child: Divider(
-                                color: Colors.grey[200], thickness: 1.5)),
-                      ],
-                    ).animate().fadeIn(delay: 550.ms),
+                      ).animate().fadeIn(delay: 450.ms),
 
-                    const SizedBox(height: 20),
+                      const SizedBox(height: 12),
 
-                    // Social Logins
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _buildSocialBtn(
-                          'Google',
-                          Icons.g_mobiledata,
-                          Colors.red,
-                          Image.network(
-                            'https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/512px-Google_%22G%22_Logo.svg.png',
-                            height: 22,
-                            width: 22,
-                            errorBuilder: (_, __, ___) => const Icon(
-                                Icons.g_mobiledata,
-                                color: Colors.blue,
-                                size: 30),
+                      // Legal Checkbox
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: Checkbox(
+                              value: _agreedToLegal,
+                              onChanged: (val) {
+                                setState(() {
+                                  _agreedToLegal = val ?? false;
+                                });
+                              },
+                              activeColor: const Color(0xFF2979FF),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(4)),
+                              side: const BorderSide(
+                                  color: Colors.black38, width: 1.5),
+                            ),
                           ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Wrap(
+                              children: [
+                                const Text('I agree to the ',
+                                    style: TextStyle(
+                                        color: Colors.black54, fontSize: 13)),
+                                GestureDetector(
+                                  onTap: () => _showLegalBottomSheet(
+                                      'Terms & Conditions',
+                                      LegalTexts.termsAndConditions),
+                                  child: const Text('Terms & Conditions',
+                                      style: TextStyle(
+                                          color: Color(0xFF2979FF),
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600)),
+                                ),
+                                const Text(' and ',
+                                    style: TextStyle(
+                                        color: Colors.black54, fontSize: 13)),
+                                GestureDetector(
+                                  onTap: () => _showLegalBottomSheet(
+                                      'Privacy Policy',
+                                      LegalTexts.privacyPolicy),
+                                  child: const Text('Privacy Policy',
+                                      style: TextStyle(
+                                          color: Color(0xFF2979FF),
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600)),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ).animate().fadeIn(delay: 480.ms),
+
+                      const SizedBox(height: 16),
+
+                      // Primary Button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed:
+                              (_isLoading || !_agreedToLegal) ? null : _submit,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _agreedToLegal
+                                ? const Color(0xFF2979FF)
+                                : const Color(0xFF2979FF)
+                                    .withValues(alpha: 0.5),
+                            disabledBackgroundColor:
+                                const Color(0xFF2979FF).withValues(alpha: 0.5),
+                            foregroundColor: Colors.white,
+                            disabledForegroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          child: _isLoading
+                              ? Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: const [
+                                    Text(
+                                      'Signing In...',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                    SizedBox(width: 12),
+                                    SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                          color: Colors.white, strokeWidth: 2),
+                                    ),
+                                  ],
+                                )
+                              : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      'Sign In',
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Icon(Icons.arrow_forward, size: 20),
+                                  ],
+                                ),
                         ),
-                        const SizedBox(width: 24),
-                      ],
-                    ).animate().fadeIn(delay: 600.ms),
+                      )
+                          .animate()
+                          .fadeIn(delay: 500.ms)
+                          .slideY(begin: 0.1)
+                          .shimmer(
+                              delay: 1.seconds,
+                              duration: 1200.ms,
+                              color: Colors.white24),
 
-                    const SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
-                    const SizedBox(height: 8),
-                  ],
+                      // OR divider
+                      Row(
+                        children: [
+                          Expanded(
+                              child: Divider(
+                                  color: Colors.grey[200], thickness: 1.5)),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Text(
+                              'or continue with',
+                              style: TextStyle(
+                                  color: Colors.grey[500],
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500),
+                            ),
+                          ),
+                          Expanded(
+                              child: Divider(
+                                  color: Colors.grey[200], thickness: 1.5)),
+                        ],
+                      ).animate().fadeIn(delay: 550.ms),
+
+                      const SizedBox(height: 20),
+
+                      // Social Logins
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _buildSocialBtn(
+                            'Google',
+                            Icons.g_mobiledata,
+                            Colors.red,
+                            Image.asset(
+                              'assets/images/search.png',
+                              height: 24,
+                              width: 24,
+                            )
+                                .animate(
+                                    onPlay: (controller) =>
+                                        controller.repeat(reverse: true))
+                                .scaleXY(
+                                    end: 1.1,
+                                    duration: 1.seconds,
+                                    curve: Curves.easeInOut)
+                                .shimmer(
+                                    duration: 2.seconds,
+                                    color: Colors.blue.withValues(alpha: 0.3)),
+                          ),
+                          const SizedBox(width: 24),
+                        ],
+                      ).animate().fadeIn(delay: 600.ms),
+
+                      const SizedBox(height: 24),
+
+                      const SizedBox(height: 8),
+                    ],
+                  ),
                 ),
               ),
             ),

@@ -306,14 +306,6 @@ class _VastuScreenState extends State<VastuScreen> {
                   ),
                 ).animate().fadeIn(delay: 120.ms).slideY(begin: 0.08, end: 0),
 
-                if (score < 100)
-                  _WhyPointsReduced(
-                    lang: _selectedLang,
-                    score: score,
-                    violations: List<String>.from(v['violations'] ?? []),
-                    delay: 130,
-                  ),
-
                 const SizedBox(height: 24),
                 // ── Placement Analysis ──────────────────────────────────────────
                 _PlacementAnalysis(
@@ -350,6 +342,15 @@ class _VastuScreenState extends State<VastuScreen> {
                   icon: Icons.lightbulb_outline_rounded,
                   delay: 240,
                 ),
+                
+                if (score < 100) ...[
+                  _WhyPointsReduced(
+                    lang: _selectedLang,
+                    score: score,
+                    violations: List<String>.from(v['violations'] ?? []),
+                    delay: 260,
+                  ),
+                ],
               ],
             ),
           );

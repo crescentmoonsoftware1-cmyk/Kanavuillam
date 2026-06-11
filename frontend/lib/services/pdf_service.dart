@@ -149,6 +149,12 @@ class PdfService {
       }
     }
 
+    Uint8List? logoImageBytes;
+    try {
+      final ByteData logoData = await rootBundle.load('assets/images/logo.png');
+      logoImageBytes = logoData.buffer.asUint8List();
+    } catch (_) {}
+
     final pdf = pw.Document();
 
     final name = data['name'] ?? 'My Project';
@@ -167,9 +173,9 @@ class PdfService {
 
     final primaryColor = PdfColor.fromHex('#6D28D9');
     final accentBlue = PdfColor.fromHex('#2563EB');
-    
+
     final accentOrange = PdfColor.fromHex('#EA580C');
-    
+
     final accentTeal = PdfColor.fromHex('#0D9488');
     final bgTeal = PdfColor.fromHex('#F0FDFA');
     final accentGreen = PdfColor.fromHex('#16A34A');
@@ -186,27 +192,32 @@ class PdfService {
               child: pw.Column(
                   mainAxisAlignment: pw.MainAxisAlignment.center,
                   children: [
-                pw.Container(
-                  width: 120,
-                  height: 120,
-                  decoration: pw.BoxDecoration(
-                    color: primaryColor,
-                    shape: pw.BoxShape.circle,
+                if (logoImageBytes != null) ...[
+                  pw.Image(pw.MemoryImage(logoImageBytes), height: 160),
+                  pw.SizedBox(height: 20),
+                ] else ...[
+                  pw.Container(
+                    width: 140,
+                    height: 150,
+                    decoration: pw.BoxDecoration(
+                      color: primaryColor,
+                      shape: pw.BoxShape.circle,
+                    ),
+                    child: pw.Center(
+                      child: pw.Text('HVA',
+                          style: pw.TextStyle(
+                              color: PdfColors.white,
+                              fontSize: 40,
+                              fontWeight: pw.FontWeight.bold)),
+                    ),
                   ),
-                  child: pw.Center(
-                    child: pw.Text('HVA',
-                        style: pw.TextStyle(
-                            color: PdfColors.white,
-                            fontSize: 40,
-                            fontWeight: pw.FontWeight.bold)),
-                  ),
-                ),
-                pw.SizedBox(height: 20),
-                pw.Text('HOUSE VISION AI',
-                    style: pw.TextStyle(
-                        fontSize: 32,
-                        fontWeight: pw.FontWeight.bold,
-                        color: textDark)),
+                  pw.SizedBox(height: 20),
+                  pw.Text('HOUSE VISION AI',
+                      style: pw.TextStyle(
+                          fontSize: 32,
+                          fontWeight: pw.FontWeight.bold,
+                          color: textDark)),
+                ],
                 pw.SizedBox(height: 40),
                 pw.Text('Complete House Analysis Report',
                     style: pw.TextStyle(fontSize: 24, color: primaryColor)),
@@ -873,17 +884,6 @@ class PdfService {
                                 fontWeight: pw.FontWeight.bold,
                                 color: accentOrange)),
                       ]),
-                      pw.Column(children: [
-                        pw.Text('Structural',
-                            style:
-                                pw.TextStyle(fontSize: 14, color: textMuted)),
-                        pw.SizedBox(height: 5),
-                        pw.Text('94/100',
-                            style: pw.TextStyle(
-                                fontSize: 18,
-                                fontWeight: pw.FontWeight.bold,
-                                color: accentBlue)),
-                      ]),
                     ])),
             pw.SizedBox(height: 30),
             pw.Text('House Details',
@@ -912,12 +912,12 @@ class PdfService {
                   children: [
                 pw.Text('THANK YOU',
                     style: pw.TextStyle(
-                        fontSize: 32,
+                        fontSize: 38,
                         fontWeight: pw.FontWeight.bold,
                         color: primaryColor)),
                 pw.SizedBox(height: 10),
-                pw.Text('for using HOUSE VISION AI',
-                    style: pw.TextStyle(fontSize: 18, color: textMuted)),
+                pw.Text('for using Kanav illam',
+                    style: pw.TextStyle(fontSize: 22, color: textMuted)),
               ]));
         },
       ),
@@ -929,7 +929,7 @@ class PdfService {
   static pw.Widget _buildBeamLayout(
       Map floorData, Map structData, double projW, double projH) {
     final walls = floorData['walls'] as List? ?? [];
-    
+
     final rooms = floorData['rooms'] as List? ?? [];
 
     return pw.Container(
