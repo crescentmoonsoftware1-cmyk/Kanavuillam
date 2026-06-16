@@ -39,6 +39,7 @@ class _UploadScreenState extends State<UploadScreen>
 
   AnimationController? _timelineController;
   Animation<double>? _timelineAnimation;
+  final ScrollController _scrollController = ScrollController();
 
   // ─── Light Theme Colors ───────────────────────────────────────────────────
   static const _bg = Color(0xFFF8FAFC);
@@ -73,6 +74,7 @@ class _UploadScreenState extends State<UploadScreen>
 
   @override
   void dispose() {
+    _scrollController.dispose();
     _buildController?.dispose();
     _timelineController?.dispose();
     super.dispose();
@@ -162,70 +164,23 @@ class _UploadScreenState extends State<UploadScreen>
       backgroundColor: _bg,
       body: Stack(
         children: [
-          // ─── PANNING CONSTRUCTION ANIMATION ─────────────────────
+          // ─── CINEMATIC ORBIT EFFECT ─────────────────────
           Positioned(
             top: 0,
             left: 0,
             right: 0,
             height: h * 0.45,
-            child: AnimatedBuilder(
-              animation: _buildAnimation!,
-              builder: (context, child) {
-                final alignmentX = -1.0 + (_buildAnimation!.value * 2.0);
-                return Container(
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                      image: const AssetImage(
-                          'assets/viewer/3d-house-model-with-modern-architecture.jpg'),
-                      fit: BoxFit.cover,
-                      alignment: Alignment(alignmentX, 0.0),
-                    ),
-                  ),
-                );
-              },
-            ),
+            child: CinematicOrbitEffect(height: h * 0.45),
           ),
 
           // ─── MAIN CONTENT ─────────────────────────────
           Positioned(
-            top: h * 0.23, // Lifted up to show all content clearly
+            top: h * 0.35, // Lifted up to show all content clearly
             left: 0,
             right: 0,
             bottom: 0,
             child: Column(
               children: [
-                // Glowing Pill
-                _buildGlowingPill(),
-
-                // Connecting vertical line with moving effect
-                Container(
-                  width: 2,
-                  height: 35,
-                  decoration: BoxDecoration(
-                    color: Colors.blueAccent.withValues(alpha: 0.3),
-                  ),
-                  child: Align(
-                    alignment: Alignment.topCenter,
-                    child: Container(
-                      width: 4,
-                      height: 15,
-                      decoration: const BoxDecoration(
-                        color: Colors.blueAccent,
-                        boxShadow: [
-                          BoxShadow(
-                              color: Colors.blueAccent,
-                              blurRadius: 10,
-                              spreadRadius: 2)
-                        ],
-                      ),
-                    ).animate(onPlay: (c) => c.repeat()).moveY(
-                          begin: -15,
-                          end: 35,
-                          duration: 1.5.seconds,
-                        ),
-                  ),
-                ),
-
                 // White Glass Container
                 Expanded(
                   child: Container(
@@ -265,6 +220,7 @@ class _UploadScreenState extends State<UploadScreen>
                         ),
 
                         SingleChildScrollView(
+                          controller: _scrollController,
                           physics: const BouncingScrollPhysics(),
                           padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
                           child: Column(
@@ -1102,6 +1058,399 @@ class LightningBorderPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant LightningBorderPainter oldDelegate) {
+    return oldDelegate.animationValue != animationValue;
+  }
+}
+
+class CinematicOrbitEffect extends StatefulWidget {
+  final double height;
+  const CinematicOrbitEffect({super.key, required this.height});
+
+  @override
+  State<CinematicOrbitEffect> createState() => _CinematicOrbitEffectState();
+}
+
+class _CinematicOrbitEffectState extends State<CinematicOrbitEffect>
+    with TickerProviderStateMixin {
+  late AnimationController _orbitController;
+  late AnimationController _pulseController;
+  late AnimationController _imageSwapController;
+
+  final List<String> centerImages = [
+    'assets/viewer/elevation_traditional.png',
+    'assets/viewer/image.png',
+    'assets/viewer/professional_house.png',
+    'assets/viewer/modern_box_elevation_design_1777547723799.png',
+  ];
+  int _currentImageIndex = 0;
+
+  final List<Map<String, dynamic>> features = [
+    {
+      'title': '3D View',
+      'icon': Icons.view_in_ar_rounded,
+      'color': const Color(0xFF0F62FE),
+      'gradient': [const Color(0xFF0F62FE), const Color(0xFF4FA8FF)]
+    },
+    {
+      'title': 'Vastu',
+      'icon': Icons.explore_outlined,
+      'color': Colors.greenAccent,
+      'gradient': [Colors.green, Colors.greenAccent]
+    },
+    {
+      'title': 'Estimation',
+      'icon': Icons.price_check_rounded,
+      'color': Colors.amberAccent,
+      'gradient': [Colors.orange, Colors.amberAccent]
+    },
+    {
+      'title': 'Structural',
+      'icon': Icons.architecture_rounded,
+      'color': Colors.purpleAccent,
+      'gradient': [Colors.purple, Colors.purpleAccent]
+    },
+    {
+      'title': 'Elevation',
+      'icon': Icons.apartment_rounded,
+      'color': Colors.redAccent,
+      'gradient': [Colors.red, Colors.redAccent]
+    },
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _orbitController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 25),
+    )..repeat();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    )..repeat(reverse: true);
+
+    _imageSwapController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 5),
+    )..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          setState(() {
+            _currentImageIndex = (_currentImageIndex + 1) % centerImages.length;
+          });
+          _imageSwapController.forward(from: 0);
+        }
+      });
+    _imageSwapController.forward();
+  }
+
+  @override
+  void dispose() {
+    _orbitController.dispose();
+    _pulseController.dispose();
+    _imageSwapController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: widget.height,
+      decoration: const BoxDecoration(
+        gradient: RadialGradient(
+          center: Alignment.center,
+          radius: 1.2,
+          colors: [
+            Color(0xFF1E293B), // Inner lighter slate
+            Color(0xFF0F172A),
+            Color(0xFF020617), // Outer dark slate
+          ],
+        ),
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Background Animated Grid/Rings
+          AnimatedBuilder(
+            animation: _orbitController,
+            builder: (context, child) {
+              return CustomPaint(
+                size: Size(MediaQuery.of(context).size.width, widget.height),
+                painter: BackgroundOrbitPainter(_orbitController.value),
+              );
+            },
+          ),
+
+          // Orbiting Widgets
+          AnimatedBuilder(
+            animation: _orbitController,
+            builder: (context, child) {
+              // Center point adjusted slightly upwards for visual balance
+              final center = Offset(MediaQuery.of(context).size.width / 2,
+                  widget.height / 2 - 10);
+              final radius = MediaQuery.of(context).size.width * 0.38;
+
+              return Stack(
+                children: List.generate(features.length, (i) {
+                  final angle = (i * (2 * math.pi / features.length)) +
+                      (_orbitController.value * 2 * math.pi);
+                  final dx = center.dx + radius * math.cos(angle);
+                  final dy = center.dy + radius * math.sin(angle);
+
+                  return Positioned(
+                    left: dx - 40,
+                    top: dy - 40,
+                    child: _buildOrbitCard(features[i], angle),
+                  );
+                }),
+              );
+            },
+          ),
+
+          // Center Animated Image
+          AnimatedBuilder(
+            animation: _pulseController,
+            builder: (context, child) {
+              final floatValue = math.sin(_pulseController.value * math.pi) * 8;
+              final scaleValue = 1.0 + (_pulseController.value * 0.05);
+
+              return Transform.translate(
+                offset: Offset(0, floatValue),
+                child: Transform.scale(
+                  scale: scaleValue,
+                  child: child,
+                ),
+              );
+            },
+            child: _buildCenterImage(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOrbitCard(Map<String, dynamic> feature, double angle) {
+    return Container(
+      width: 80,
+      height: 80,
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F172A).withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: (feature['color'] as Color).withValues(alpha: 0.5),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: (feature['color'] as Color).withValues(alpha: 0.3),
+            blurRadius: 15,
+            spreadRadius: 2,
+          ),
+          BoxShadow(
+            color: (feature['color'] as Color).withValues(alpha: 0.1),
+            blurRadius: 30,
+            spreadRadius: 10,
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: feature['gradient'] as List<Color>,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (feature['color'] as Color).withValues(alpha: 0.5),
+                      blurRadius: 10,
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  feature['icon'] as IconData,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                feature['title'] as String,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCenterImage() {
+    return Container(
+      width: 150,
+      height: 150,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.blueAccent.withValues(alpha: 0.4),
+            blurRadius: 40,
+            spreadRadius: 5,
+          ),
+          BoxShadow(
+            color: Colors.purpleAccent.withValues(alpha: 0.2),
+            blurRadius: 80,
+            spreadRadius: 20,
+          ),
+        ],
+      ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Rotating border ring
+          AnimatedBuilder(
+            animation: _orbitController,
+            builder: (context, child) {
+              return Transform.rotate(
+                angle: -_orbitController.value * 2 * math.pi * 2,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: SweepGradient(
+                      colors: [
+                        Colors.blueAccent,
+                        Colors.transparent,
+                        Colors.purpleAccent,
+                        Colors.transparent,
+                        Colors.blueAccent,
+                      ],
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(4.0),
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+
+          // Center Images with crossfade and scale
+          Padding(
+            padding: const EdgeInsets.all(6.0),
+            child: ClipOval(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 1500),
+                transitionBuilder: (Widget child, Animation<double> animation) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: ScaleTransition(
+                      scale: Tween<double>(begin: 1.1, end: 1.0)
+                          .animate(animation),
+                      child: child,
+                    ),
+                  );
+                },
+                child: Image.asset(
+                  centerImages[_currentImageIndex],
+                  key: ValueKey<int>(_currentImageIndex),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+          ),
+
+          // Glass dome effect
+          Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                center: const Alignment(-0.3, -0.5),
+                radius: 0.8,
+                colors: [
+                  Colors.white.withValues(alpha: 0.3),
+                  Colors.white.withValues(alpha: 0.0),
+                  Colors.blueAccent.withValues(alpha: 0.2),
+                ],
+                stops: const [0.0, 0.5, 1.0],
+              ),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.4),
+                width: 1.5,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class BackgroundOrbitPainter extends CustomPainter {
+  final double animationValue;
+
+  BackgroundOrbitPainter(this.animationValue);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // We adjust the center upwards by 10 pixels to match the nodes and image position
+    final center = Offset(size.width / 2, size.height / 2 - 10);
+    final radius = size.width * 0.38;
+
+    // Glowing rings
+    final paintRing1 = Paint()
+      ..color = Colors.blueAccent.withValues(alpha: 0.15)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+
+    final paintRing2 = Paint()
+      ..color = Colors.purpleAccent.withValues(alpha: 0.08)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 30;
+
+    canvas.drawCircle(center, radius, paintRing1);
+    canvas.drawCircle(center, radius - 25,
+        paintRing1..color = Colors.blueAccent.withValues(alpha: 0.05));
+    canvas.drawCircle(center, radius + 25,
+        paintRing1..color = Colors.blueAccent.withValues(alpha: 0.05));
+    canvas.drawCircle(center, radius, paintRing2);
+
+    // Orbiting particles
+    final paintParticle = Paint()
+      ..color = Colors.blueAccent.withValues(alpha: 0.6)
+      ..style = PaintingStyle.fill
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+
+    for (int i = 0; i < 12; i++) {
+      final angle = (i * math.pi / 6) - (animationValue * math.pi * 2);
+      final r = radius + (i % 2 == 0 ? 35 : -35);
+      final dx = center.dx + r * math.cos(angle);
+      final dy = center.dy + r * math.sin(angle);
+      canvas.drawCircle(Offset(dx, dy), i % 3 == 0 ? 3 : 1.5, paintParticle);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant BackgroundOrbitPainter oldDelegate) {
     return oldDelegate.animationValue != animationValue;
   }
 }

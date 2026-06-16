@@ -733,55 +733,63 @@ app.post('/api/upload', (req, res, next) => {
       const ph = groundResult.project.height || 40;
       const floors = elevation.floors || 1;
       
-      // -- SMART PROMPT LOGIC INJECTED --
+      // -- PREMIUM SMART PROMPT LOGIC INJECTED --
       const rooms = groundResult.rooms || [];
-
       
-      let rightSide = 'modern windows';
-      let centerSide = 'main entrance door';
-      let leftSide = 'modern architectural elements';
-      
-      // Assume the "front" of the house is where y is maximum (bottom of the plan)
+      // 1. Identify the front of the house (Assuming Front is the max Y coordinate / bottom of plan)
       let maxY = 0;
-      rooms.forEach(r => { if ((r.y || 0) + (r.height || 0) > maxY) maxY = (r.y || 0) + (r.height || 0); });
-      
-      // Get rooms that are at the front (within 12ft of the maxY edge)
-      const frontRooms = rooms.filter(r => ((r.y || 0) + (r.height || 0)) >= maxY - 12);
-      
-      frontRooms.forEach(r => {
-        const name = (r.name || '').toLowerCase();
-        const centerX = (r.x || 0) + (r.width || 0) / 2;
-        
-        let side = 'center';
-        if (centerX < pw / 3) side = 'left';
-        else if (centerX > (pw * 2) / 3) side = 'right';
-        
-        if (name.includes('portico') || name.includes('parking') || name.includes('car')) {
-          if (side === 'left') leftSide = 'open Car Parking Portico with a parked car';
-          else if (side === 'right') rightSide = 'open Car Parking Portico with a parked car';
-          else centerSide = 'wide Car Parking Portico';
-        } else if (name.includes('stair') || name.includes('step')) {
-          if (side === 'left') leftSide = 'prominent enclosed staircase tower structure';
-          else if (side === 'right') rightSide = 'prominent enclosed staircase tower structure';
-        } else if (name.includes('kitchen')) {
-          if (side === 'left') leftSide = 'kitchen window';
-          else if (side === 'right') rightSide = 'kitchen window';
-        } else if (name.includes('toilet') || name.includes('bath') || name.includes('wc')) {
-          if (side === 'left') leftSide = 'small ventilator window';
-          else if (side === 'right') rightSide = 'small ventilator window';
-        } else if (name.includes('bedroom')) {
-          if (side === 'left') leftSide = 'large bedroom window';
-          else if (side === 'right') rightSide = 'large bedroom window';
-        }
+      rooms.forEach(r => {
+        const roomBottomEdge = (r.y || 0) + (r.height || 0);
+        if (roomBottomEdge > maxY) maxY = roomBottomEdge;
       });
 
-      let dynamicPrompt = `A photorealistic front elevation of a ${pw}x${ph} modern Indian ${floors}-story house. `;
-      dynamicPrompt += `The front facade features a ${rightSide} on the right side. `;
-      dynamicPrompt += `In the center, there is a ${centerSide}. `;
-      dynamicPrompt += `On the left side, there is a ${leftSide}. `;
-      dynamicPrompt += `Modern contemporary style, flat roof, elegant lighting, clear sky, photorealistic 8k.`;
+      // 2. Extract ONLY the rooms/structures that touch the front facade (within 10ft of max Y)
+      // and sort them strictly from Left to Right (based on X coordinate)
+      let frontFacadeElements = rooms
+        .filter(r => ((r.y || 0) + (r.height || 0)) >= (maxY - 10))
+        .sort((a, b) => (a.x || 0) - (b.x || 0));
+
+      // 3. Build the structural description left-to-right dynamically
+      let facadeDescription = [];
+
+      frontFacadeElements.forEach((room) => {
+        const name = (room.name || '').toLowerCase();
+        // Calculate what percentage of the front width this room takes
+        const widthPercentage = Math.round(((room.width || 10) / pw) * 100);
+        
+        let elementDesc = "";
+        
+        if (name.includes('portico') || name.includes('parking') || name.includes('car')) {
+          elementDesc = `occupying ${widthPercentage}% of the width is a wide, open car parking portico supported by modern pillars, with a parked modern car`;
+        } else if (name.includes('stair') || name.includes('step')) {
+          elementDesc = `occupying ${widthPercentage}% of the width is a prominent, semi-enclosed staircase tower structure`;
+        } else if (name.includes('bedroom') || name.includes('living') || name.includes('hall')) {
+          elementDesc = `occupying ${widthPercentage}% of the width is a solid wall featuring a large modern front window`;
+        } else if (name.includes('kitchen')) {
+          elementDesc = `occupying ${widthPercentage}% of the width is a solid wall with a kitchen window`;
+        } else if (name.includes('toilet') || name.includes('bath') || name.includes('wc')) {
+          elementDesc = `occupying ${widthPercentage}% of the width is a solid wall with a small ventilation window`;
+        }
+
+        if (elementDesc) facadeDescription.push(elementDesc);
+      });
+
+      // 4. Check for Main Door (If a Hall/Living is set back, mention a door inside the shade)
+      const hasHall = rooms.some(r => r.name.toLowerCase().includes('hall') || r.name.toLowerCase().includes('living'));
+      const doorAddition = hasHall ? "Deep inside the shaded area or portico, an elegant main entrance wooden door is visible. " : "";
+
+      // 5. Combine everything into the final Prompt with EXACT STYLE MATCH
+      const structuralSplitStr = facadeDescription.length > 0 
+        ? `The front facade is structurally split from left to right: First, ${facadeDescription.join('. Next to it, ')}.`
+        : "The front facade has a balanced modern layout with windows and an entrance.";
+
+      const styleKeywords = "Highly accurate architectural photorealistic front elevation. Modern Indian house style, single-story with a flat roof and stylish parapet wall. Warm exterior lighting, premium exterior finishes combining stone, wood, and concrete. Bright clear day, professional architectural visualization, ultra-realistic, 8k resolution, volumetric lighting, Unreal Engine 5 render style.";
+
+      let dynamicPrompt = `${styleKeywords} ${structuralSplitStr} ${doorAddition} Exact structural match.`;
+      // Clean up whitespace
+      dynamicPrompt = dynamicPrompt.replace(/\s+/g, ' ').trim();
       
-      let traditionalPrompt = dynamicPrompt.replace('Modern contemporary style, flat roof', 'Traditional Indian style, sloping roof, wooden pillars, warm lighting');
+      let traditionalPrompt = dynamicPrompt.replace(/flat roof and stylish parapet wall/i, 'sloping traditional Kerala roof with Mangalore tiles').replace(/modern Indian house style/i, 'Traditional Indian house style with wooden pillars');
 
       visualDesign = {
         status: "success",

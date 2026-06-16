@@ -213,6 +213,79 @@ class _ShellScreenState extends State<ShellScreen> {
     }
   }
 
+  Widget _buildNavigationHeader() {
+    if (_selectedIndex == 0 || _projectData == null)
+      return const SizedBox.shrink();
+
+    final visible = _visibleIndices;
+    final currentIndexInVisible = visible.indexOf(_selectedIndex);
+
+    if (currentIndexInVisible == -1) return const SizedBox.shrink();
+
+    final hasPrevious = currentIndexInVisible >
+        1; // Index 0 is Home Map, index 1 is usually 3D View. We allow back navigation if > 1.
+    final hasNext = currentIndexInVisible < visible.length - 1;
+
+    if (!hasPrevious && !hasNext) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      decoration: const BoxDecoration(
+        color: Colors.transparent, // Blends with background
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          hasPrevious
+              ? ElevatedButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _selectedIndex = visible[currentIndexInVisible - 1];
+                    });
+                  },
+                  icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                  label: Text(
+                      'Back: ${_navItems[visible[currentIndexInVisible - 1]].label}'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _accent,
+                    foregroundColor: Colors.white,
+                    elevation: 2,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.1, end: 0)
+              : const SizedBox.shrink(),
+          hasNext
+              ? ElevatedButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _selectedIndex = visible[currentIndexInVisible + 1];
+                    });
+                  },
+                  icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                  label: Text(
+                      'Next Step: ${_navItems[visible[currentIndexInVisible + 1]].label}'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _accent,
+                    foregroundColor: Colors.white,
+                    elevation: 4,
+                    shadowColor: _accent.withValues(alpha: 0.3),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ).animate().fadeIn(duration: 400.ms).slideX(begin: 0.1, end: 0)
+              : const SizedBox.shrink(),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -245,12 +318,19 @@ class _ShellScreenState extends State<ShellScreen> {
                       ),
                     ],
                   ),
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 400),
-                    child: KeyedSubtree(
-                      key: ValueKey(_selectedIndex),
-                      child: _buildBody(_selectedIndex),
-                    ),
+                  child: Column(
+                    children: [
+                      _buildNavigationHeader(),
+                      Expanded(
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 400),
+                          child: KeyedSubtree(
+                            key: ValueKey(_selectedIndex),
+                            child: _buildBody(_selectedIndex),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -279,7 +359,20 @@ class _ShellScreenState extends State<ShellScreen> {
         selectedIndex: _selectedIndex,
         userData: widget.userData,
       ),
-      body: _buildBody(_selectedIndex),
+      body: Column(
+        children: [
+          _buildNavigationHeader(),
+          Expanded(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: KeyedSubtree(
+                key: ValueKey(_selectedIndex),
+                child: _buildBody(_selectedIndex),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
