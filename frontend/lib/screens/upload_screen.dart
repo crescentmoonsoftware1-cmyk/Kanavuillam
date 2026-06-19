@@ -1088,32 +1088,32 @@ class _CinematicOrbitEffectState extends State<CinematicOrbitEffect>
     {
       'title': '3D View',
       'icon': Icons.view_in_ar_rounded,
-      'color': const Color(0xFF0F62FE),
-      'gradient': [const Color(0xFF0F62FE), const Color(0xFF4FA8FF)]
+      'color': const Color(0xFF2979FF),
+      'gradient': [const Color(0xFF1565C0), const Color(0xFF42A5F5)]
     },
     {
       'title': 'Vastu',
       'icon': Icons.explore_outlined,
-      'color': Colors.greenAccent,
-      'gradient': [Colors.green, Colors.greenAccent]
+      'color': const Color(0xFF00B0FF),
+      'gradient': [const Color(0xFF0091EA), const Color(0xFF40C4FF)]
     },
     {
       'title': 'Estimation',
       'icon': Icons.price_check_rounded,
-      'color': Colors.amberAccent,
-      'gradient': [Colors.orange, Colors.amberAccent]
+      'color': const Color(0xFF00E676),
+      'gradient': [const Color(0xFF00C853), const Color(0xFF69F0AE)]
     },
     {
       'title': 'Structural',
       'icon': Icons.architecture_rounded,
-      'color': Colors.purpleAccent,
-      'gradient': [Colors.purple, Colors.purpleAccent]
+      'color': const Color(0xFFFF9100),
+      'gradient': [const Color(0xFFFF6D00), const Color(0xFFFFAB40)]
     },
     {
       'title': 'Elevation',
       'icon': Icons.apartment_rounded,
-      'color': Colors.redAccent,
-      'gradient': [Colors.red, Colors.redAccent]
+      'color': const Color(0xFF651FFF),
+      'gradient': [const Color(0xFF6200EA), const Color(0xFF7C4DFF)]
     },
   ];
 
@@ -1160,9 +1160,9 @@ class _CinematicOrbitEffectState extends State<CinematicOrbitEffect>
           center: Alignment.center,
           radius: 1.2,
           colors: [
-            Color(0xFF1E293B), // Inner lighter slate
-            Color(0xFF0F172A),
-            Color(0xFF020617), // Outer dark slate
+            Color(0xFFFFFFFF), // Pure white center
+            Color(0xFFF8FAFC), // Slate 50
+            Color(0xFFF1F5F9), // Slate 100 outer
           ],
         ),
       ),
@@ -1233,29 +1233,31 @@ class _CinematicOrbitEffectState extends State<CinematicOrbitEffect>
       width: 80,
       height: 80,
       decoration: BoxDecoration(
-        color: const Color(0xFF0F172A).withValues(alpha: 0.7),
-        borderRadius: BorderRadius.circular(20),
+        color: Colors.white.withValues(alpha: 0.8),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: (feature['color'] as Color).withValues(alpha: 0.5),
-          width: 1.5,
+          color: Colors.white,
+          width: 2,
         ),
         boxShadow: [
           BoxShadow(
-            color: (feature['color'] as Color).withValues(alpha: 0.3),
-            blurRadius: 15,
+            color: (feature['color'] as Color).withValues(alpha: 0.15),
+            blurRadius: 20,
             spreadRadius: 2,
+            offset: const Offset(0, 8),
           ),
           BoxShadow(
-            color: (feature['color'] as Color).withValues(alpha: 0.1),
-            blurRadius: 30,
-            spreadRadius: 10,
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            spreadRadius: -2,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -1270,8 +1272,9 @@ class _CinematicOrbitEffectState extends State<CinematicOrbitEffect>
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: (feature['color'] as Color).withValues(alpha: 0.5),
-                      blurRadius: 10,
+                      color: (feature['color'] as Color).withValues(alpha: 0.4),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
@@ -1285,9 +1288,9 @@ class _CinematicOrbitEffectState extends State<CinematicOrbitEffect>
               Text(
                 feature['title'] as String,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: Color(0xFF334155),
                   fontSize: 10,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w800,
                   letterSpacing: 0.5,
                 ),
               ),
@@ -1300,20 +1303,21 @@ class _CinematicOrbitEffectState extends State<CinematicOrbitEffect>
 
   Widget _buildCenterImage() {
     return Container(
-      width: 150,
-      height: 150,
+      width: 160,
+      height: 160,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: Colors.blueAccent.withValues(alpha: 0.4),
-            blurRadius: 40,
-            spreadRadius: 5,
+            color: const Color(0xFF2979FF).withValues(alpha: 0.15),
+            blurRadius: 50,
+            spreadRadius: 10,
           ),
           BoxShadow(
-            color: Colors.purpleAccent.withValues(alpha: 0.2),
-            blurRadius: 80,
-            spreadRadius: 20,
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 30,
+            spreadRadius: -5,
+            offset: const Offset(0, 15),
           ),
         ],
       ),
@@ -1331,20 +1335,20 @@ class _CinematicOrbitEffectState extends State<CinematicOrbitEffect>
                     shape: BoxShape.circle,
                     gradient: SweepGradient(
                       colors: [
-                        Colors.blueAccent,
+                        Color(0xFF2979FF),
                         Colors.transparent,
-                        Colors.purpleAccent,
+                        Color(0xFF4FA8FF),
                         Colors.transparent,
-                        Colors.blueAccent,
+                        Color(0xFF2979FF),
                       ],
                     ),
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.all(4.0),
+                    padding: const EdgeInsets.all(3.0),
                     child: Container(
                       decoration: const BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Color(0xFF0F172A),
+                        color: Colors.white,
                       ),
                     ),
                   ),
@@ -1355,7 +1359,7 @@ class _CinematicOrbitEffectState extends State<CinematicOrbitEffect>
 
           // Center Images with crossfade and scale
           Padding(
-            padding: const EdgeInsets.all(6.0),
+            padding: const EdgeInsets.all(5.0),
             child: ClipOval(
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 1500),
@@ -1363,8 +1367,12 @@ class _CinematicOrbitEffectState extends State<CinematicOrbitEffect>
                   return FadeTransition(
                     opacity: animation,
                     child: ScaleTransition(
-                      scale: Tween<double>(begin: 1.1, end: 1.0)
-                          .animate(animation),
+                      scale: Tween<double>(begin: 1.05, end: 1.0).animate(
+                        CurvedAnimation(
+                          parent: animation,
+                          curve: Curves.easeOutCubic,
+                        ),
+                      ),
                       child: child,
                     ),
                   );
@@ -1384,17 +1392,18 @@ class _CinematicOrbitEffectState extends State<CinematicOrbitEffect>
               shape: BoxShape.circle,
               gradient: RadialGradient(
                 center: const Alignment(-0.3, -0.5),
-                radius: 0.8,
+                radius: 0.9,
                 colors: [
-                  Colors.white.withValues(alpha: 0.3),
-                  Colors.white.withValues(alpha: 0.0),
-                  Colors.blueAccent.withValues(alpha: 0.2),
+                  Colors.white.withValues(alpha: 0.5),
+                  Colors.white.withValues(alpha: 0.1),
+                  Colors.transparent,
+                  Colors.black.withValues(alpha: 0.05),
                 ],
-                stops: const [0.0, 0.5, 1.0],
+                stops: const [0.0, 0.4, 0.8, 1.0],
               ),
               border: Border.all(
-                color: Colors.white.withValues(alpha: 0.4),
-                width: 1.5,
+                color: Colors.white.withValues(alpha: 0.8),
+                width: 1,
               ),
             ),
           ),
@@ -1417,35 +1426,35 @@ class BackgroundOrbitPainter extends CustomPainter {
 
     // Glowing rings
     final paintRing1 = Paint()
-      ..color = Colors.blueAccent.withValues(alpha: 0.15)
+      ..color = const Color(0xFF2979FF).withValues(alpha: 0.08)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5
+      ..strokeWidth = 2
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
 
     final paintRing2 = Paint()
-      ..color = Colors.purpleAccent.withValues(alpha: 0.08)
+      ..color = const Color(0xFF94A3B8).withValues(alpha: 0.04)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 30;
+      ..strokeWidth = 40;
 
     canvas.drawCircle(center, radius, paintRing1);
-    canvas.drawCircle(center, radius - 25,
-        paintRing1..color = Colors.blueAccent.withValues(alpha: 0.05));
-    canvas.drawCircle(center, radius + 25,
-        paintRing1..color = Colors.blueAccent.withValues(alpha: 0.05));
+    canvas.drawCircle(center, radius - 30,
+        paintRing1..color = const Color(0xFF2979FF).withValues(alpha: 0.04)..strokeWidth = 1);
+    canvas.drawCircle(center, radius + 30,
+        paintRing1..color = const Color(0xFF2979FF).withValues(alpha: 0.04)..strokeWidth = 1);
     canvas.drawCircle(center, radius, paintRing2);
 
     // Orbiting particles
     final paintParticle = Paint()
-      ..color = Colors.blueAccent.withValues(alpha: 0.6)
+      ..color = const Color(0xFF2979FF).withValues(alpha: 0.4)
       ..style = PaintingStyle.fill
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.5);
 
     for (int i = 0; i < 12; i++) {
       final angle = (i * math.pi / 6) - (animationValue * math.pi * 2);
-      final r = radius + (i % 2 == 0 ? 35 : -35);
+      final r = radius + (i % 2 == 0 ? 30 : -30);
       final dx = center.dx + r * math.cos(angle);
       final dy = center.dy + r * math.sin(angle);
-      canvas.drawCircle(Offset(dx, dy), i % 3 == 0 ? 3 : 1.5, paintParticle);
+      canvas.drawCircle(Offset(dx, dy), i % 3 == 0 ? 3.5 : 2.0, paintParticle);
     }
   }
 

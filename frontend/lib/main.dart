@@ -42,17 +42,18 @@ class PlanXApp extends StatelessWidget {
                 child: ResponsiveScaledBox(
                   width: ResponsiveValue<double>(
                     context,
-                    defaultValue: 430, // Default to a standard mobile width (iPhone 14 Pro Max size)
+                    defaultValue:
+                        430, // Default to a standard mobile width (iPhone 14 Pro Max size)
                     conditionalValues: [
-                    Condition.equals(name: MOBILE, value: 430),
-                    Condition.between(start: 451, end: 800, value: 600),
-                    Condition.between(start: 801, end: 1200, value: 800),
-                    Condition.largerThan(name: DESKTOP, value: 1000),
-                  ],
-                ).value,
-                child: BouncingScrollWrapper.builder(context, child!),
+                      Condition.equals(name: MOBILE, value: 430),
+                      Condition.between(start: 451, end: 800, value: 600),
+                      Condition.between(start: 801, end: 1200, value: 800),
+                      Condition.largerThan(name: DESKTOP, value: 1000),
+                    ],
+                  ).value,
+                  child: BouncingScrollWrapper.builder(context, child!),
+                ),
               ),
-             ),
             );
           },
         ),

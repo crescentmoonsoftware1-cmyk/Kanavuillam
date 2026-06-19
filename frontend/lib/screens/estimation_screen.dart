@@ -145,24 +145,28 @@ class _EstimationScreenState extends State<EstimationScreen> {
   Widget _buildHeader(bool isMultiFloor, Map rootCost, dynamic totalArea) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Cost Estimation',
-              style: TextStyle(color: _textPri, fontSize: 32, fontWeight: FontWeight.w900, letterSpacing: -1.0),
-            ).animate().fadeIn(),
-            const SizedBox(height: 8),
-            Text(
-              'Total area: $totalArea sq ft  ·  2026 Live Rates',
-              style: const TextStyle(color: _textSec, fontSize: 14, fontWeight: FontWeight.w600),
-            ).animate().fadeIn(delay: 80.ms),
-          ]
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Cost Estimation',
+                style: TextStyle(color: _textPri, fontSize: 32, fontWeight: FontWeight.w900, letterSpacing: -1.0),
+              ).animate().fadeIn(),
+              const SizedBox(height: 8),
+              Text(
+                'Total area: $totalArea sq ft  ·  2026 Live Rates',
+                style: const TextStyle(color: _textSec, fontSize: 14, fontWeight: FontWeight.w600),
+              ).animate().fadeIn(delay: 80.ms),
+            ]
+          ),
         ),
+        if (isMultiFloor) const SizedBox(width: 16),
         if (isMultiFloor)
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(24),
@@ -218,6 +222,19 @@ class _EstimationScreenState extends State<EstimationScreen> {
 
   Widget _buildMaterialList(Map<String, dynamic> updatedMaterials) {
     if (updatedMaterials.isEmpty) return const SizedBox.shrink();
+
+    String _formatIndianCurrency(int value) {
+      String str = value.toString();
+      if (str.length <= 3) return str;
+      String lastThree = str.substring(str.length - 3);
+      String otherNumbers = str.substring(0, str.length - 3);
+      if (otherNumbers.isNotEmpty) {
+        otherNumbers = otherNumbers.replaceAllMapped(RegExp(r".{1,2}(?=(.{2})+(?!.))"), (Match m) => "${m[0]},");
+        return "$otherNumbers,$lastThree";
+      }
+      return lastThree;
+    }
+
     return Column(
       children: updatedMaterials.entries.map((e) {
         final m = e.value;
@@ -236,6 +253,15 @@ class _EstimationScreenState extends State<EstimationScreen> {
           if (e.key == 'sand') icon = Icons.landscape;
           if (e.key == 'paint') icon = Icons.format_paint;
           if (e.key == 'tiles') icon = Icons.grid_on;
+          if (e.key == 'bricks') icon = Icons.view_comfy;
+        }
+
+        String displayName = isNewCustom 
+            ? '$customBrandName' 
+            : (isCustom ? '${m['name']} ($customBrandName)' : m['name']);
+            
+        if (displayName.isNotEmpty) {
+          displayName = displayName[0].toUpperCase() + displayName.substring(1);
         }
 
         return Container(
@@ -260,12 +286,12 @@ class _EstimationScreenState extends State<EstimationScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isNewCustom ? '$customBrandName' : (isCustom ? '${m['name']} ($customBrandName)' : m['name']),
+                      'Total $displayName Cost',
                       style: TextStyle(color: isCustom ? _accent : _textPri, fontSize: 15, fontWeight: FontWeight.w800),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${m['quantity']} ${m['unit']} @ ₹${m['price']}/${m['unit']}',
+                      'For your 2D Plan: ${m['quantity']} ${m['unit']} @ ₹${m['price']}/${m['unit']}',
                       style: const TextStyle(color: _textSec, fontSize: 13, fontWeight: FontWeight.w500),
                     ),
                   ],
@@ -275,7 +301,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(color: _bg, borderRadius: BorderRadius.circular(12)),
                 child: Text(
-                  '₹${(t / 100000).toStringAsFixed(2)}L',
+                  '₹${_formatIndianCurrency(t)}',
                   style: const TextStyle(color: _textPri, fontSize: 16, fontWeight: FontWeight.w900),
                 ),
               ),
@@ -444,7 +470,10 @@ class _TierCard extends StatelessWidget {
           children: [
             Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.2)),
             const SizedBox(height: 12),
-            Text(formatted, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -1)),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(formatted, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -1)),
+            ),
           ],
         ),
       ),

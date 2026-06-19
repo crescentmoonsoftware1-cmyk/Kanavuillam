@@ -214,8 +214,9 @@ class _ShellScreenState extends State<ShellScreen> {
   }
 
   Widget _buildNavigationHeader() {
-    if (_selectedIndex == 0 || _projectData == null)
+    if (_selectedIndex == 0 || _projectData == null) {
       return const SizedBox.shrink();
+    }
 
     final visible = _visibleIndices;
     final currentIndexInVisible = visible.indexOf(_selectedIndex);
@@ -229,58 +230,107 @@ class _ShellScreenState extends State<ShellScreen> {
     if (!hasPrevious && !hasNext) return const SizedBox.shrink();
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
       decoration: const BoxDecoration(
         color: Colors.transparent, // Blends with background
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          hasPrevious
-              ? ElevatedButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      _selectedIndex = visible[currentIndexInVisible - 1];
-                    });
-                  },
-                  icon: const Icon(Icons.arrow_back_rounded, size: 18),
-                  label: Text(
-                      'Back: ${_navItems[visible[currentIndexInVisible - 1]].label}'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _accent,
-                    foregroundColor: Colors.white,
-                    elevation: 2,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
+          if (hasPrevious)
+            Expanded(
+              child: ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    _selectedIndex = visible[currentIndexInVisible - 1];
+                  });
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: _textPri,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    side: const BorderSide(color: _divider, width: 1.5),
                   ),
-                ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.1, end: 0)
-              : const SizedBox.shrink(),
-          hasNext
-              ? ElevatedButton.icon(
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.arrow_back_rounded, size: 18),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        _navItems[visible[currentIndexInVisible - 1]].label,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.1, end: 0),
+            ),
+          if (hasPrevious && hasNext) const SizedBox(width: 16),
+          if (hasNext)
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF2979FF), Color(0xFF1565C0)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF2979FF).withValues(alpha: 0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: ElevatedButton(
                   onPressed: () {
                     setState(() {
                       _selectedIndex = visible[currentIndexInVisible + 1];
                     });
                   },
-                  icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                  label: Text(
-                      'Next Step: ${_navItems[visible[currentIndexInVisible + 1]].label}'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _accent,
+                    backgroundColor: Colors.transparent,
                     foregroundColor: Colors.white,
-                    elevation: 4,
-                    shadowColor: _accent.withValues(alpha: 0.3),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 14),
+                    shadowColor: Colors.transparent,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(20),
                     ),
                   ),
-                ).animate().fadeIn(duration: 400.ms).slideX(begin: 0.1, end: 0)
-              : const SizedBox.shrink(),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          _navItems[visible[currentIndexInVisible + 1]].label,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.5,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.arrow_forward_rounded, size: 18),
+                    ],
+                  ),
+                ),
+              ).animate().fadeIn(duration: 400.ms).slideX(begin: 0.1, end: 0),
+            ),
         ],
       ),
     );
