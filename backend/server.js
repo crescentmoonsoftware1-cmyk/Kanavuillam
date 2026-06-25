@@ -785,7 +785,26 @@ app.post('/api/upload', (req, res, next) => {
 
       const styleKeywords = "STRICTLY SINGLE-STORY (1 floor ONLY) realistic Indian house front elevation. DO NOT GENERATE A MANSION. DO NOT GENERATE TWO FLOORS. Small, elegant, budget-friendly modern design with a flat roof. EXACTLY ONE parked car. Photorealistic, daytime, 8k resolution, architectural render.";
 
-      let dynamicPrompt = `${styleKeywords} ${structuralSplitStr} ${doorAddition} Follow the structural split exactly. No extra floors.`;
+      let mathPrompt = `${styleKeywords} ${structuralSplitStr} ${doorAddition} Follow the structural split exactly. No extra floors.`;
+      
+      let dynamicPrompt = mathPrompt;
+      try {
+        console.log('[Step 8] Asking Gemini 3.1 Pro Vision to analyze the 2D plan for Elevation...');
+        const visionModel = genAI.getGenerativeModel({ model: 'gemini-3.1-pro' });
+        const imgData = require('fs').readFileSync(groundPath).toString("base64");
+        const visionResult = await visionModel.generateContent([
+          "You are an expert architect. Analyze this 2D floor plan image and identify the front elevation structure exactly. Write a highly detailed, strict text prompt to generate an exterior 3D elevation image of this house. If the plan shows a single floor, you MUST start the prompt with: 'STRICTLY SINGLE-STORY (1 floor ONLY) realistic Indian house front elevation. DO NOT GENERATE A MANSION.' Exactly list what is on the left, center, and right of the front view based ONLY on the drawing (e.g., stairs on left, car parking on right). Return ONLY the generated text prompt.",
+          { inlineData: { data: imgData, mimeType: "image/png" } }
+        ]);
+        const aiResponse = visionResult.response.text().trim();
+        if (aiResponse && aiResponse.length > 20) {
+           dynamicPrompt = aiResponse + " Photorealistic, daytime, 8k resolution, Unreal Engine 5 render.";
+           console.log('[Step 8] ✓ AI Vision Generated Prompt:', dynamicPrompt);
+        }
+      } catch (e) {
+        console.log('[Step 8] AI Vision prompt generation failed, using math logic:', e.message);
+      }
+
       // Clean up whitespace
       dynamicPrompt = dynamicPrompt.replace(/\s+/g, ' ').trim();
       
