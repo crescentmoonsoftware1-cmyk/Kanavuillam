@@ -256,7 +256,7 @@ async function runVastuAnalysis(modelData, lang = 'English', imagePath = null, f
   try {
     console.log('[Step 5] Using Gemini API for Vastu Analysis...');
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.1-pro',
       generationConfig: { responseMimeType: "application/json" }
     });
 
@@ -425,7 +425,7 @@ app.post('/api/material/search', async (req, res) => {
     if (!data) {
       console.log(`[Material Search] Using Gemini directly for: ${query}`);
       const model = genAI.getGenerativeModel({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.1-pro',
         generationConfig: { responseMimeType: "application/json" }
       });
       const result = await model.generateContent(prompt);
@@ -780,27 +780,51 @@ app.post('/api/upload', (req, res, next) => {
 
       // 5. Combine everything into the final Prompt with EXACT STYLE MATCH
       const structuralSplitStr = facadeDescription.length > 0 
-        ? `The front facade is structurally split from left to right: First, ${facadeDescription.join('. Next to it, ')}.`
-        : "The front facade has a balanced modern layout with windows and an entrance.";
+        ? `The front facade structure from left to right is EXACTLY: First, ${facadeDescription.join('. Next to it, ')}.`
+        : "The front facade has a simple modern layout.";
 
-      const styleKeywords = "Highly accurate architectural photorealistic front elevation. Modern Indian house style, single-story with a flat roof and stylish parapet wall. Warm exterior lighting, premium exterior finishes combining stone, wood, and concrete. Bright clear day, professional architectural visualization, ultra-realistic, 8k resolution, volumetric lighting, Unreal Engine 5 render style.";
+      const styleKeywords = "STRICTLY SINGLE-STORY (1 floor ONLY) realistic Indian house front elevation. DO NOT GENERATE A MANSION. DO NOT GENERATE TWO FLOORS. Small, elegant, budget-friendly modern design with a flat roof. EXACTLY ONE parked car. Photorealistic, daytime, 8k resolution, architectural render.";
 
-      let dynamicPrompt = `${styleKeywords} ${structuralSplitStr} ${doorAddition} Exact structural match.`;
+      let dynamicPrompt = `${styleKeywords} ${structuralSplitStr} ${doorAddition} Follow the structural split exactly. No extra floors.`;
       // Clean up whitespace
       dynamicPrompt = dynamicPrompt.replace(/\s+/g, ' ').trim();
       
       let traditionalPrompt = dynamicPrompt.replace(/flat roof and stylish parapet wall/i, 'sloping traditional Kerala roof with Mangalore tiles').replace(/modern Indian house style/i, 'Traditional Indian house style with wooden pillars');
+
+      let modernImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(dynamicPrompt)}?seed=${timestamp}&width=1024&height=1024&model=flux`;
+      let traditionalImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(traditionalPrompt)}?seed=${timestamp + 1}&width=1024&height=1024&model=flux`;
+
+      try {
+        console.log('[Step 8] Attempting Google Imagen 3 API with new key...');
+        const imagenRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict?key=${process.env.GEMINI_API_KEY}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            instances: [{ prompt: dynamicPrompt }],
+            parameters: { sampleCount: 1, aspectRatio: "1:1" }
+          })
+        });
+        const imagenData = await imagenRes.json();
+        if (imagenData.predictions && imagenData.predictions[0] && imagenData.predictions[0].bytesBase64Encoded) {
+           console.log('[Step 8] ✓ Imagen 3 Generation Successful!');
+           modernImageUrl = `data:image/jpeg;base64,${imagenData.predictions[0].bytesBase64Encoded}`;
+        } else if (imagenData.error) {
+           console.log('[Step 8] Imagen 3 API Error (Falling back to Flux):', imagenData.error.message);
+        }
+      } catch (err) {
+        console.log('[Step 8] Imagen 3 Request Failed (Falling back to Flux):', err.message);
+      }
 
       visualDesign = {
         status: "success",
         variations: [
           {
             style: "Modern Indian",
-            image_url: `https://image.pollinations.ai/prompt/${encodeURIComponent(dynamicPrompt)}?seed=${timestamp}&width=1024&height=1024&model=flux`
+            image_url: modernImageUrl
           },
           {
             style: "Traditional Indian",
-            image_url: `https://image.pollinations.ai/prompt/${encodeURIComponent(traditionalPrompt)}?seed=${timestamp + 1}&width=1024&height=1024&model=flux`
+            image_url: traditionalImageUrl
           }
         ],
         structural: {

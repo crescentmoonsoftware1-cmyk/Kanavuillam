@@ -301,6 +301,7 @@ def get_gemini_analysis(image_path):
         
         # Priority: use latest available models in this project
         MODELS = [
+            'gemini-3.1-pro',          # Requested high-end model
             'gemini-3-flash-preview',  # State of the art
             'gemini-2.5-flash',        # Very stable and fast
             'gemini-2.0-flash',        # Fast multimodal
