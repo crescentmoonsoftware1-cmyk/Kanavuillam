@@ -809,26 +809,50 @@ app.post('/api/upload', (req, res, next) => {
       dynamicPrompt = dynamicPrompt.replace(/\s+/g, ' ').trim();
       
       let traditionalPrompt = dynamicPrompt.replace(/flat roof and stylish parapet wall/i, 'sloping traditional Kerala roof with Mangalore tiles').replace(/modern Indian house style/i, 'Traditional Indian house style with wooden pillars');
+      
+      const roomNames = (groundResult.rooms || []).map(r => r.name).join(', ');
+      let isometricPrompt = `Highly detailed photorealistic 3D isometric cutaway floor plan of a modern Indian house. Top-down angled view showing interior walls and realistic modern furniture. Rooms included: ${roomNames}. Cinematic lighting, ray tracing, 8k resolution, architectural visualization, Unreal Engine 5 render style.`;
 
       let modernImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(dynamicPrompt)}?seed=${timestamp}&width=1024&height=1024&model=flux`;
       let traditionalImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(traditionalPrompt)}?seed=${timestamp + 1}&width=1024&height=1024&model=flux`;
+      let isometricImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(isometricPrompt)}?seed=${timestamp + 2}&width=1024&height=1024&model=flux`;
 
       try {
-        console.log('[Step 8] Attempting Google Imagen 3 API with new key...');
-        const imagenRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict?key=${process.env.GEMINI_API_KEY}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            instances: [{ prompt: dynamicPrompt }],
-            parameters: { sampleCount: 1, aspectRatio: "1:1" }
-          })
-        });
-        const imagenData = await imagenRes.json();
-        if (imagenData.predictions && imagenData.predictions[0] && imagenData.predictions[0].bytesBase64Encoded) {
-           console.log('[Step 8] ✓ Imagen 3 Generation Successful!');
-           modernImageUrl = `data:image/jpeg;base64,${imagenData.predictions[0].bytesBase64Encoded}`;
-        } else if (imagenData.error) {
-           console.log('[Step 8] Imagen 3 API Error (Falling back to Flux):', imagenData.error.message);
+        console.log('[Step 8] Attempting Google Imagen 3 API for Front & Isometric Views...');
+        
+        const fetchImagen = async (prompt) => {
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict?key=${process.env.GEMINI_API_KEY}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              instances: [{ prompt: prompt }],
+              parameters: { sampleCount: 1, aspectRatio: "1:1" }
+            })
+          });
+          const data = await res.json();
+          if (data.predictions && data.predictions[0] && data.predictions[0].bytesBase64Encoded) {
+            return `data:image/jpeg;base64,${data.predictions[0].bytesBase64Encoded}`;
+          }
+          throw new Error(data.error ? data.error.message : 'Unknown error');
+        };
+
+        const [elevationImg, isometricImg] = await Promise.allSettled([
+          fetchImagen(dynamicPrompt),
+          fetchImagen(isometricPrompt)
+        ]);
+
+        if (elevationImg.status === 'fulfilled') {
+          console.log('[Step 8] ✓ Imagen 3 Elevation Successful!');
+          modernImageUrl = elevationImg.value;
+        } else {
+          console.log('[Step 8] Imagen 3 Elevation Error:', elevationImg.reason);
+        }
+        
+        if (isometricImg.status === 'fulfilled') {
+          console.log('[Step 8] ✓ Imagen 3 Isometric Successful!');
+          isometricImageUrl = isometricImg.value;
+        } else {
+          console.log('[Step 8] Imagen 3 Isometric Error:', isometricImg.reason);
         }
       } catch (err) {
         console.log('[Step 8] Imagen 3 Request Failed (Falling back to Flux):', err.message);
@@ -840,6 +864,10 @@ app.post('/api/upload', (req, res, next) => {
           {
             style: "Modern Indian",
             image_url: modernImageUrl
+          },
+          {
+            style: "3D Isometric Floor Plan",
+            image_url: isometricImageUrl
           },
           {
             style: "Traditional Indian",
