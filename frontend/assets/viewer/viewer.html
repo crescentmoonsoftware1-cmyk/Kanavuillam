@@ -477,7 +477,7 @@
       camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, .1, 2000);
       camera.position.set(55, 50, 55);
 
-      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
       renderer.setSize(innerWidth, innerHeight);
       renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
       renderer.shadowMap.enabled = true;
@@ -630,7 +630,28 @@
       let d = e.data;
       if (typeof d === 'string' && d.startsWith('{')) try { d = JSON.parse(d); } catch (x) { return; }
       if (d?.type === 'render' && d.data) renderProject(d.data);
+      if (d?.type === 'set_view' && d.view && window.setView) window.setView(d.view);
+      if (d?.type === 'capture_screenshot') {
+        // Force render one frame then capture
+        renderer.render(scene, camera);
+        try {
+          const dataUrl = renderer.domElement.toDataURL('image/png');
+          window.parent.postMessage(JSON.stringify({ type: 'screenshot_result', data: dataUrl }), '*');
+        } catch (err) {
+          window.parent.postMessage(JSON.stringify({ type: 'screenshot_result', data: null, error: err.message }), '*');
+        }
+      }
     });
+
+    // For mobile WebView - expose capture function
+    window.captureScreenshot = function() {
+      renderer.render(scene, camera);
+      try {
+        return renderer.domElement.toDataURL('image/png');
+      } catch(e) {
+        return null;
+      }
+    };
 
     init();
     window.parent.postMessage('viewer_ready', '*');

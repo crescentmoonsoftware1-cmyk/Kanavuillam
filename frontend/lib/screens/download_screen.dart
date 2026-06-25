@@ -11,6 +11,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:file_picker/file_picker.dart';
+import 'package:printing/printing.dart';
 import 'js_stub.dart' if (dart.library.html) 'dart:js_interop';
 
 // Conditional imports to prevent mobile build crashes
@@ -29,6 +30,7 @@ class DownloadScreen extends StatelessWidget {
   final Set<String> selectedReportIds;
   final VoidCallback? onNavigateTo3D;
   final Map<String, dynamic>? userData;
+  final Future<Map<String, Uint8List>> Function()? capture3DScreenshots;
 
   const DownloadScreen({
     super.key,
@@ -36,6 +38,7 @@ class DownloadScreen extends StatelessWidget {
     required this.selectedReportIds,
     this.onNavigateTo3D,
     this.userData,
+    this.capture3DScreenshots,
   });
 
   String _formatDate(String? raw) {
@@ -991,12 +994,26 @@ class DownloadScreen extends StatelessWidget {
       completeData['phone'] =
           prefs.getString('user_phone') ?? userData?['phone'];
       completeData['address'] = prefs.getString('user_address');
+
+      // Capture live 3D screenshots if viewer is mounted
+      Map<String, Uint8List> screenshots3D = {};
+      if (selectedReportIds.isEmpty || selectedReportIds.contains('3d')) {
+        try {
+          screenshots3D = await capture3DScreenshots?.call() ?? {};
+          debugPrint(
+              '[PDF] 3D screenshots captured: ${screenshots3D.keys.length}');
+        } catch (e) {
+          debugPrint('[PDF] 3D screenshots failed: $e');
+        }
+      }
+
       final bytes = await PdfService.createProfessionalPdf(
-          completeData, selectedReportIds);
+          completeData, selectedReportIds,
+          screenshots3D: screenshots3D);
 
       if (kIsWeb) {
-        _triggerWebDownloadPdf(filename, bytes);
-        _showSnack(ctx, 'Download complete!', isSuccess: true);
+        await Printing.sharePdf(bytes: bytes, filename: filename);
+        _showSnack(ctx, 'Download initiated!', isSuccess: true);
       } else {
         await _downloadFileMobilePdf(ctx, filename, bytes);
       }
@@ -1046,8 +1063,8 @@ class DownloadScreen extends StatelessWidget {
       final bytes = await _createPdf(docTitle, content);
 
       if (kIsWeb) {
-        _triggerWebDownloadPdf(filename, bytes);
-        _showSnack(ctx, 'Download complete!', isSuccess: true);
+        await Printing.sharePdf(bytes: bytes, filename: filename);
+        _showSnack(ctx, 'Download initiated!', isSuccess: true);
       } else {
         await _downloadFileMobilePdf(ctx, filename, bytes);
       }

@@ -160,7 +160,7 @@ async function askOpenRouter(prompt, imagePath = null, model = 'google/gemini-2.
       headers: {
         "Authorization": `Bearer ${apiKey}`,
         "HTTP-Referer": "http://localhost:3000",
-        "X-Title": "ArchiGen AI",
+        "X-Title": "Kanavu illam",
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
@@ -1229,4 +1229,4 @@ app.post('/api/auth/google/token', async (req, res) => {
   }
 });
 
-app.listen(port, '0.0.0.0', () => console.log(`\nArchiGen Backend running at http://0.0.0.0:${port}`));
+app.listen(port, '0.0.0.0', () => console.log(`\nKanavu illam Backend running at http://0.0.0.0:${port}`));

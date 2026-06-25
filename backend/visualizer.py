@@ -175,7 +175,7 @@ The generated elevation must represent the actual house that would be constructe
                         headers={
                             "Authorization": f"Bearer {os.getenv('OPENROUTER_API_KEY')}",
                             "HTTP-Referer": "http://localhost:3000",
-                            "X-Title": "ArchiGen AI",
+                            "X-Title": "Kanavu illam",
                         },
                         data=json.dumps({
                             "model": model,

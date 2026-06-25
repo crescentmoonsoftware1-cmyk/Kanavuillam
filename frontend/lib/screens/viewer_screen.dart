@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -13,18 +15,20 @@ class ViewerScreen extends StatefulWidget {
   final Map<String, dynamic> projectData;
   final bool isElevation;
   final VoidCallback? onNavigateToVastu;
+  final void Function(Uint8List bytes)? onScreenshotReady;
   const ViewerScreen({
     super.key,
     required this.projectData,
     this.isElevation = false,
     this.onNavigateToVastu,
+    this.onScreenshotReady,
   });
 
   @override
-  State<ViewerScreen> createState() => _ViewerScreenState();
+  State<ViewerScreen> createState() => ViewerScreenState();
 }
 
-class _ViewerScreenState extends State<ViewerScreen> {
+class ViewerScreenState extends State<ViewerScreen> {
   // Mobile Controller
   late final WebViewController _mobileController;
 
@@ -34,6 +38,9 @@ class _ViewerScreenState extends State<ViewerScreen> {
   web.HTMLIFrameElement? _webIFrame;
 
   bool _isWebViewReady = false;
+
+  // Completer to receive screenshot from web iframe
+  Completer<String?>? _screenshotCompleter;
 
   @override
   void initState() {
@@ -64,8 +71,17 @@ class _ViewerScreenState extends State<ViewerScreen> {
         'message',
         (web.Event event) {
           final message = event as web.MessageEvent;
-          if (message.data.toString() == 'viewer_ready') {
+          final raw = message.data.toString();
+          if (raw == 'viewer_ready') {
             _sendDataToWeb();
+          } else if (raw.startsWith('{')) {
+            try {
+              final parsed = json.decode(raw) as Map<String, dynamic>;
+              if (parsed['type'] == 'screenshot_result') {
+                _screenshotCompleter?.complete(parsed['data'] as String?);
+                _screenshotCompleter = null;
+              }
+            } catch (_) {}
           }
         }.toJS,
       );
@@ -83,6 +99,11 @@ class _ViewerScreenState extends State<ViewerScreen> {
     final modelData = widget.projectData['model_data'];
     final data = json.encode({'type': 'render', 'data': modelData});
     _webIFrame!.contentWindow?.postMessage(data.toJS, '*'.toJS);
+
+    // Auto-capture after Three.js has had time to render (3 seconds)
+    if (widget.onScreenshotReady != null) {
+      Future.delayed(const Duration(seconds: 3), _autoCapture);
+    }
   }
 
   void _setupMobileView() {
@@ -118,6 +139,97 @@ class _ViewerScreenState extends State<ViewerScreen> {
           "if(window.setView) setView('elevation');",
         );
       });
+    }
+
+    // Auto-capture after Three.js has had time to render (3 seconds)
+    if (widget.onScreenshotReady != null) {
+      Future.delayed(const Duration(seconds: 3), _autoCapture);
+    }
+  }
+
+  /// Called automatically after render to capture and store the 3D view
+  Future<void> _autoCapture() async {
+    if (!mounted) return;
+    final bytes = await captureScreenshot();
+    if (bytes != null && mounted) {
+      debugPrint('[ViewerScreen] Auto-captured 3D screenshot: ${bytes.length} bytes');
+      widget.onScreenshotReady?.call(bytes);
+    }
+  }
+
+  /// Automatically switches to each floor view, waits, and captures the screenshot.
+  Future<Map<String, Uint8List>> captureAllFloorScreenshots() async {
+    if (!_isWebViewReady) return {};
+    
+    Map<String, Uint8List> result = {};
+    final modelData = widget.projectData['model_data'];
+    final floors = modelData?['floors'] as Map<String, dynamic>?;
+    
+    if (floors != null && floors.keys.length > 1) {
+      for (var floor in floors.keys) {
+        try {
+          if (kIsWeb) {
+            final msg = json.encode({'type': 'set_view', 'view': floor});
+            _webIFrame?.contentWindow?.postMessage(msg.toJS, '*'.toJS);
+          } else {
+            await _mobileController.runJavaScript("if(window.setView) setView('$floor');");
+          }
+        } catch (_) {}
+        
+        await Future.delayed(const Duration(milliseconds: 1200));
+        final bytes = await captureScreenshot();
+        if (bytes != null) result[floor] = bytes;
+      }
+      
+      // Reset view to stacked after capturing
+      try {
+        if (kIsWeb) {
+          final msg = json.encode({'type': 'set_view', 'view': 'stacked'});
+          _webIFrame?.contentWindow?.postMessage(msg.toJS, '*'.toJS);
+        } else {
+          await _mobileController.runJavaScript("if(window.setView) setView('stacked');");
+        }
+      } catch (_) {}
+      
+    } else {
+      // Single floor
+      final bytes = await captureScreenshot();
+      if (bytes != null) result['default'] = bytes;
+    }
+    
+    return result;
+  }
+
+  /// Captures the current 3D view as PNG bytes.
+  /// Call this from shell_screen to get the 3D screenshot for PDF.
+  Future<Uint8List?> captureScreenshot() async {
+    if (!_isWebViewReady) return null;
+    try {
+      if (kIsWeb) {
+        // Send capture request to iframe, await response via Completer
+        _screenshotCompleter = Completer<String?>();
+        final msg = json.encode({'type': 'capture_screenshot'});
+        _webIFrame?.contentWindow?.postMessage(msg.toJS, '*'.toJS);
+        final dataUrl = await _screenshotCompleter!.future
+            .timeout(const Duration(seconds: 5), onTimeout: () => null);
+        if (dataUrl == null || !dataUrl.startsWith('data:image')) return null;
+        final base64Str = dataUrl.split(',').last;
+        return base64Decode(base64Str);
+      } else {
+        // Mobile: call JS captureScreenshot() and decode result
+        final result = await _mobileController.runJavaScriptReturningResult(
+            'window.captureScreenshot()') as String?;
+        if (result == null || result == 'null') return null;
+        // result may be quoted JSON string like "data:image/png;base64,..."
+        String dataUrl = result;
+        if (dataUrl.startsWith('"')) dataUrl = json.decode(dataUrl) as String;
+        if (!dataUrl.startsWith('data:image')) return null;
+        final base64Str = dataUrl.split(',').last;
+        return base64Decode(base64Str);
+      }
+    } catch (e) {
+      debugPrint('[ViewerScreen] captureScreenshot error: $e');
+      return null;
     }
   }
 

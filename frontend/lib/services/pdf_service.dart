@@ -7,13 +7,18 @@ import '../services/api_service.dart';
 
 class PdfService {
   static Future<Uint8List> createProfessionalPdf(
-      Map<String, dynamic> data, Set<String> selectedReportIds) async {
+      Map<String, dynamic> data, Set<String> selectedReportIds,
+      {Map<String, Uint8List>? screenshots3D}) async {
     Future<Uint8List?> fetchImage(String prompt,
         {String? imagePath, String? directUrl}) async {
       try {
         if (directUrl != null && directUrl.isNotEmpty) {
-          final res = await http.get(Uri.parse(directUrl));
+          final res = await http.get(Uri.parse(directUrl), headers: {
+            'User-Agent':
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+          });
           if (res.statusCode == 200) return res.bodyBytes;
+          debugPrint('Failed to fetch directUrl. Status: ${res.statusCode}');
         } else {
           final backendBase =
               ApiService.baseUrl.replaceAll(RegExp(r'/api$'), '');
@@ -23,8 +28,13 @@ class PdfService {
             urlString += '&image_path=${Uri.encodeComponent(imagePath)}';
           }
           final url = Uri.parse(urlString);
-          final res = await http.get(url);
+          final res = await http.get(url, headers: {
+            'User-Agent':
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+          });
           if (res.statusCode == 200) return res.bodyBytes;
+          debugPrint(
+              'Failed to fetch from fallback API. Status: ${res.statusCode}');
         }
       } catch (e) {
         debugPrint('Error fetching image for PDF: $e');
@@ -32,7 +42,7 @@ class PdfService {
       return null;
     }
 
-    Uint8List? image3d;
+    Map<String, Uint8List>? images3d;
     Uint8List? imageStructural;
     Uint8List? imageElevation;
 
@@ -46,95 +56,81 @@ class PdfService {
     final projWidth = (project['width'] as num?)?.toDouble() ?? 30.0;
     final projHeight = (project['height'] as num?)?.toDouble() ?? 40.0;
 
+    // Backend returns: visual_data = { variations: [...], structural: { blueprint_url, preview_url } }
     final visualData = data['visual_data'] as Map<String, dynamic>? ??
-        data['_visual'] as Map<String, dynamic>? ??
+        modelData['_visual'] as Map<String, dynamic>? ??
         {};
-    final structUrls = visualData['structural'] as Map<String, dynamic>? ?? {};
+
+    // Structural blueprint URL is inside visual_data.structural (set by server.js line 807-808)
+    // Also fallback to structural_data[floor].blueprint_url
+    final visualStructural =
+        visualData['structural'] as Map<String, dynamic>? ?? {};
+    final structuralData = data['structural_data'] as Map<String, dynamic>? ??
+        modelData['_structural'] as Map<String, dynamic>? ??
+        {};
+    final groundStructural =
+        (structuralData['ground'] as Map<String, dynamic>?) ?? structuralData;
 
     if (selectedReportIds.isEmpty || selectedReportIds.contains('3d')) {
-      final direct3d = structUrls['preview_url']?.toString();
-      image3d = await fetchImage(
-          'high quality architectural 3d isometric rendering of a modern indian house exterior, realistic blueprint style',
-          directUrl: direct3d);
-      if (image3d == null) {
-        try {
-          final ByteData fileData = await rootBundle.load(
-              'assets/viewer/3d-house-model-with-modern-architecture.jpg');
-          image3d = fileData.buffer.asUint8List();
-        } catch (_) {}
+      // Use live 3D screenshots if captured from viewer, otherwise null (will use CustomPaint fallback)
+      if (screenshots3D != null && screenshots3D.isNotEmpty) {
+        images3d = screenshots3D;
+        debugPrint('[PDF] Using live 3D screenshots');
       }
+      // No asset fallback - will use _buildApp3DModel vector drawing instead
     }
+
     if (selectedReportIds.isEmpty || selectedReportIds.contains('structural')) {
-      final directStruct = structUrls['blueprint_url']?.toString();
+      // Priority: visual_data.structural.blueprint_url → structural_data.ground.blueprint_url
+      final directStruct = visualStructural['blueprint_url']?.toString() ??
+          groundStructural['blueprint_url']?.toString();
       imageStructural = await fetchImage(
           'architectural engineering structural steel beam and column reinforcement blueprint diagram, construction plan',
           directUrl: directStruct);
     }
+
     if (selectedReportIds.isEmpty || selectedReportIds.contains('elevation')) {
-      // variables moved up
       int floorCount = floorsData is int ? floorsData : 1;
       if (floorsMap.containsKey('first')) floorCount = 2;
       if (floorsMap.containsKey('second')) floorCount = 3;
 
+      // Backend server saves elevations as 'variations' (not 'elevations')
+      // visual_data.variations[0].image_url is the AI-generated elevation
       final variations =
-          (visualData['elevations'] ?? visualData['variations']) as List? ?? [];
+          (visualData['variations'] ?? visualData['elevations']) as List? ?? [];
 
       String prompt = '';
       String? directUrl;
-      if (variations.isNotEmpty && variations[0]['prompt'] != null) {
-        prompt = variations[0]['prompt'].toString();
+      if (variations.isNotEmpty) {
+        // Use first variation - image_url is direct Pollinations URL
         directUrl = variations[0]['image_url']?.toString();
-      } else {
-        // Fallback if visualizer data isn't available
+        prompt = variations[0]['prompt']?.toString() ?? '';
+      }
+
+      if (directUrl == null || directUrl.isEmpty) {
+        // Build prompt from floor plan data as fallback
         final rooms = ground['rooms'] as List? ?? [];
         String spatialFeatures = '';
-        bool hasPorticoRight = false,
-            hasPorticoLeft = false,
-            hasStairsLeft = false,
-            hasStairsRight = false;
         final midX = projWidth / 2;
 
         for (var r in rooms) {
           final name = (r['name']?.toString() ?? '').toLowerCase();
           final rx = (r['x'] as num?)?.toDouble() ?? 0.0;
-
+          final side = rx >= midX ? 'right' : 'left';
           if (name.contains('portico') ||
               name.contains('parking') ||
-              name.contains('garage')) {
-            if (rx >= midX) {
-              hasPorticoRight = true;
-            } else {
-              hasPorticoLeft = true;
-            }
+              name.contains('car')) {
+            spatialFeatures +=
+                'On the $side side, a large open car portico with pillars. ';
+          } else if (name.contains('stair') || name.contains('step')) {
+            spatialFeatures += 'On the $side side, an external staircase. ';
           }
-          if (name.contains('stair') || name.contains('steps')) {
-            if (rx <= midX) {
-              hasStairsLeft = true;
-            } else {
-              hasStairsRight = true;
-            }
-          }
-        }
-
-        if (hasPorticoRight) {
-          spatialFeatures +=
-              'On the right side of the facade, a large open car portico with a car parked underneath, supported by elegant modern pillars. ';
-        }
-        if (hasPorticoLeft) {
-          spatialFeatures +=
-              'On the left side of the facade, a large open car portico with a car parked underneath, supported by elegant modern pillars. ';
-        }
-        if (hasStairsLeft) {
-          spatialFeatures +=
-              'On the left side of the facade, an external staircase structure. ';
-        }
-        if (hasStairsRight) {
-          spatialFeatures +=
-              'On the right side of the facade, an external staircase structure. ';
         }
 
         prompt =
-            'Professional front elevation of a Modern Indian ${projWidth.toInt()}x${projHeight.toInt()}ft ${floorCount == 2 ? "two-story" : (floorCount == 3 ? "three-story" : "single-story")} house. STRICT RULES: EXACTLY MATCH the front layout. $spatialFeatures Modern Contemporary Architecture, Flat Roof with Parapet Wall, Premium Entrance Canopy, steps, compound wall. Photorealistic, 8k, architectural photography, daylight';
+            'Professional front elevation of a Modern Indian ${projWidth.toInt()}x${projHeight.toInt()}ft '
+            '${floorCount == 2 ? "two-story" : (floorCount == 3 ? "three-story" : "single-story")} house. '
+            '$spatialFeatures Modern Contemporary, Flat Roof, Premium Entrance. Photorealistic, 8k, daylight';
       }
 
       final imagePathStr = data['image_url']?.toString() ?? '';
@@ -171,22 +167,44 @@ class PdfService {
         ? costRoot.keys.where((k) => k != 'total').toList()
         : ['default'];
 
-    final primaryColor = PdfColor.fromHex('#6D28D9');
-    final accentBlue = PdfColor.fromHex('#2563EB');
+    final primaryColor = PdfColor.fromHex('#1B365D');
+    final accentBlue = PdfColor.fromHex('#EFF6FF');
+    final accentOrange = PdfColor.fromHex('#F59E0B');
+    final bgTeal = PdfColor.fromHex('#F5F7FA');
+    final accentGreen = PdfColor.fromHex('#10B981');
+    final accentRed = PdfColor.fromHex('#EF4444');
+    final textDark = PdfColor.fromHex('#374151');
+    final textMuted = PdfColor.fromHex('#6B7280');
 
-    final accentOrange = PdfColor.fromHex('#EA580C');
+    pw.Widget buildPageFooter(pw.Context context) {
+      return pw.Column(children: [
+        pw.SizedBox(height: 20),
+        pw.Container(height: 2, color: accentOrange),
+        pw.Container(
+          padding: const pw.EdgeInsets.symmetric(vertical: 10),
+          child: pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text('Project $name | Generated: $date | Confidential',
+                    style: pw.TextStyle(color: textMuted, fontSize: 10)),
+                pw.Text('Page ${context.pageNumber} of ${context.pagesCount}',
+                    style: pw.TextStyle(color: textMuted, fontSize: 10)),
+              ]),
+        ),
+      ]);
+    }
 
-    final accentTeal = PdfColor.fromHex('#0D9488');
-    final bgTeal = PdfColor.fromHex('#F0FDFA');
-    final accentGreen = PdfColor.fromHex('#16A34A');
-    final accentRed = PdfColor.fromHex('#DC2626');
-    final textDark = PdfColor.fromHex('#0F172A');
-    final textMuted = PdfColor.fromHex('#64748B');
+    final pageTheme = pw.PageTheme(
+      pageFormat: PdfPageFormat.a4,
+      margin:
+          const pw.EdgeInsets.only(left: 40, right: 40, top: 30, bottom: 30),
+    );
 
     // Page 1 - Cover Page
     pdf.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(40),
         build: (pw.Context context) {
           return pw.Center(
               child: pw.Column(
@@ -204,7 +222,7 @@ class PdfService {
                       shape: pw.BoxShape.circle,
                     ),
                     child: pw.Center(
-                      child: pw.Text('HVA',
+                      child: pw.Text('KI',
                           style: pw.TextStyle(
                               color: PdfColors.white,
                               fontSize: 40,
@@ -212,7 +230,7 @@ class PdfService {
                     ),
                   ),
                   pw.SizedBox(height: 20),
-                  pw.Text('HOUSE VISION AI',
+                  pw.Text('Kanavu illam',
                       style: pw.TextStyle(
                           fontSize: 32,
                           fontWeight: pw.FontWeight.bold,
@@ -245,17 +263,21 @@ class PdfService {
       // Page 2 - 3D House Visualization
       pdf.addPage(
         pw.MultiPage(
-          pageFormat: PdfPageFormat.a4,
-          margin: const pw.EdgeInsets.all(40),
+          pageTheme: pageTheme,
+          footer: buildPageFooter,
           build: (pw.Context context) {
             return [
-              pw.Header(
-                  level: 0,
-                  text: '3D House Visualization',
-                  textStyle: pw.TextStyle(
-                      fontSize: 22,
-                      fontWeight: pw.FontWeight.bold,
-                      color: primaryColor)),
+              pw.Container(
+                width: double.infinity,
+                padding: const pw.EdgeInsets.symmetric(vertical: 10),
+                child: pw.Text('01 · 3D HOUSE VISUALIZATION',
+                    style: pw.TextStyle(
+                        fontSize: 18,
+                        fontWeight: pw.FontWeight.bold,
+                        color: primaryColor)),
+              ),
+              pw.Container(
+                  height: 2, width: double.infinity, color: accentOrange),
               pw.SizedBox(height: 20),
               ...floors.map((floor) {
                 final floorData = isMultiFloor(floorsMap)
@@ -273,20 +295,17 @@ class PdfService {
                               fontWeight: pw.FontWeight.bold,
                               color: textDark)),
                       pw.SizedBox(height: 10),
-                      _buildApp3DModel(floorData, projWidth, projHeight),
+                      if (images3d != null && (images3d![floor] != null || images3d!['default'] != null))
+                        pw.ClipRRect(
+                            horizontalRadius: 8,
+                            verticalRadius: 8,
+                            child: pw.Image(pw.MemoryImage(images3d![floor] ?? images3d!['default']!),
+                                fit: pw.BoxFit.contain, height: 250))
+                      else
+                        _buildApp3DModel(floorData, projWidth, projHeight),
                       pw.SizedBox(height: 25),
                     ]);
               }).toList(),
-              pw.Text('Design Summary',
-                  style: pw.TextStyle(
-                      fontSize: 16,
-                      fontWeight: pw.FontWeight.bold,
-                      color: textDark)),
-              pw.SizedBox(height: 10),
-              pw.Text(
-                  'The provided visualizations include the internal architectural layout model matching your project data.',
-                  style: pw.TextStyle(
-                      fontSize: 12, color: textMuted, lineSpacing: 1.5)),
             ];
           },
         ),
@@ -295,29 +314,36 @@ class PdfService {
 
     if (selectedReportIds.isEmpty || selectedReportIds.contains('vastu')) {
       // Page 3 - Vastu Report
-      pdf.addPage(
-        pw.MultiPage(
-          pageFormat: PdfPageFormat.a4,
-          margin: const pw.EdgeInsets.all(40),
-          build: (pw.Context context) {
-            return [
-              pw.Header(
-                  level: 0,
-                  text: 'Vastu Report',
-                  textStyle: pw.TextStyle(
-                      fontSize: 22,
-                      fontWeight: pw.FontWeight.bold,
-                      color: accentOrange)),
-              pw.SizedBox(height: 20),
-              ...floors.map((floor) {
-                final vastu = isMultiFloor(vastuRoot)
-                    ? (vastuRoot[floor] ?? vastuRoot)
-                    : vastuRoot;
-                String title = floor == 'default'
-                    ? 'Overall Vastu Analysis'
-                    : '${floor.toString().toUpperCase()} Floor Vastu Analysis';
+      for (var floor in floors) {
+        pdf.addPage(
+          pw.MultiPage(
+            pageTheme: pageTheme,
+            footer: buildPageFooter,
+            build: (pw.Context context) {
+              final vastu = isMultiFloor(vastuRoot)
+                  ? (vastuRoot[floor] ?? vastuRoot)
+                  : vastuRoot;
+              String title = floor == 'default'
+                  ? 'Overall Vastu Analysis'
+                  : '${floor.toString().toUpperCase()} Floor Vastu Analysis';
+              String headerTitle = floor == 'default'
+                  ? '02 · VASTU REPORT'
+                  : '02 · VASTU REPORT - ${floor.toString().toUpperCase()} FLOOR';
 
-                return pw.Column(
+              return [
+                pw.Container(
+                  width: double.infinity,
+                  padding: const pw.EdgeInsets.symmetric(vertical: 10),
+                  child: pw.Text(headerTitle,
+                      style: pw.TextStyle(
+                          fontSize: 18,
+                          fontWeight: pw.FontWeight.bold,
+                          color: primaryColor)),
+                ),
+                pw.Container(
+                    height: 2, width: double.infinity, color: accentOrange),
+                pw.SizedBox(height: 20),
+                pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
                       pw.Text(title,
@@ -339,6 +365,36 @@ class PdfService {
                                 fontWeight: pw.FontWeight.bold,
                                 color: accentGreen)),
                       ]),
+                      pw.SizedBox(height: 15),
+
+                      // PLACEMENT ANALYSIS
+                      pw.Text('Placement Analysis',
+                          style: pw.TextStyle(
+                              fontSize: 14,
+                              fontWeight: pw.FontWeight.bold,
+                              color: textDark)),
+                      pw.SizedBox(height: 5),
+                      if (vastu['mainEntrance'] != null)
+                        pw.Text('- Entrance: ${vastu['mainEntrance']}',
+                            style: pw.TextStyle(fontSize: 12, color: textDark)),
+                      if (vastu['kitchen'] != null)
+                        pw.Text('- Kitchen: ${vastu['kitchen']}',
+                            style: pw.TextStyle(fontSize: 12, color: textDark)),
+                      if (vastu['masterBedroom'] != null)
+                        pw.Text('- Master Bedroom: ${vastu['masterBedroom']}',
+                            style: pw.TextStyle(fontSize: 12, color: textDark)),
+                      if (vastu['bathroom'] != null)
+                        pw.Text('- Bathroom: ${vastu['bathroom']}',
+                            style: pw.TextStyle(fontSize: 12, color: textDark)),
+                      if (vastu['staircase'] != null)
+                        pw.Text('- Staircase: ${vastu['staircase']}',
+                            style: pw.TextStyle(fontSize: 12, color: textDark)),
+                      if (vastu['poojaRoom'] != null)
+                        pw.Text('- Pooja Room: ${vastu['poojaRoom']}',
+                            style: pw.TextStyle(fontSize: 12, color: textDark)),
+                      if (vastu['livingRoom'] != null)
+                        pw.Text('- Living Room: ${vastu['livingRoom']}',
+                            style: pw.TextStyle(fontSize: 12, color: textDark)),
                       pw.SizedBox(height: 15),
                       if ((vastu['strengths'] as List?)?.isNotEmpty ??
                           false) ...[
@@ -382,43 +438,48 @@ class PdfService {
                                 pw.TextStyle(fontSize: 12, color: textDark))),
                         pw.SizedBox(height: 20),
                       ],
-                      pw.Divider(),
-                      pw.SizedBox(height: 20),
-                    ]);
-              }).toList(),
-            ];
-          },
-        ),
-      );
+                    ]),
+              ];
+            },
+          ),
+        );
+      }
     }
 
     if (selectedReportIds.isEmpty || selectedReportIds.contains('cost')) {
       // Page 4 - Estimation
-      pdf.addPage(
-        pw.MultiPage(
-          pageFormat: PdfPageFormat.a4,
-          margin: const pw.EdgeInsets.all(40),
-          build: (pw.Context context) {
-            return [
-              pw.Header(
-                  level: 0,
-                  text: 'Estimation',
-                  textStyle: pw.TextStyle(
-                      fontSize: 22,
-                      fontWeight: pw.FontWeight.bold,
-                      color: accentTeal)),
-              pw.SizedBox(height: 20),
-              ...floors.map((floor) {
-                final cost =
-                    isMultiFloor(costRoot) ? costRoot[floor] : costRoot;
-                if (cost == null || cost.isEmpty || cost is! Map) {
-                  return pw.SizedBox();
-                }
-                final est = cost['estimates'] ?? {};
-                String title = floor == 'default'
-                    ? 'Overall Estimation'
-                    : '${floor.toString().toUpperCase()} Floor Estimation';
-                return pw.Column(
+      for (var floor in floors) {
+        pdf.addPage(
+          pw.MultiPage(
+            pageTheme: pageTheme,
+            footer: buildPageFooter,
+            build: (pw.Context context) {
+              final cost = isMultiFloor(costRoot) ? costRoot[floor] : costRoot;
+              if (cost == null || cost.isEmpty || cost is! Map) {
+                return [];
+              }
+              final est = cost['estimates'] ?? {};
+              String title = floor == 'default'
+                  ? 'Overall Estimation'
+                  : '${floor.toString().toUpperCase()} Floor Estimation';
+              String headerTitle = floor == 'default'
+                  ? '03 · ESTIMATION'
+                  : '03 · ESTIMATION - ${floor.toString().toUpperCase()} FLOOR';
+
+              return [
+                pw.Container(
+                  width: double.infinity,
+                  padding: const pw.EdgeInsets.symmetric(vertical: 10),
+                  child: pw.Text(headerTitle,
+                      style: pw.TextStyle(
+                          fontSize: 18,
+                          fontWeight: pw.FontWeight.bold,
+                          color: primaryColor)),
+                ),
+                pw.Container(
+                    height: 2, width: double.infinity, color: accentOrange),
+                pw.SizedBox(height: 20),
+                pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
                       pw.Text(title,
@@ -555,79 +616,91 @@ class PdfService {
                             ]),
                         pw.SizedBox(height: 20),
                       ],
-                    ]);
-              }).toList(),
-              pw.Divider(),
-              pw.SizedBox(height: 10),
-              pw.Text('Grand Total',
-                  style: pw.TextStyle(
-                      fontSize: 18,
-                      fontWeight: pw.FontWeight.bold,
-                      color: primaryColor)),
-              pw.SizedBox(height: 5),
-              pw.Text(
-                  'Total costs depend on the selected finishing package and fluctuating market material rates.',
-                  style: pw.TextStyle(fontSize: 12, color: textMuted)),
-            ];
-          },
-        ),
-      );
+                    ]),
+                if (floor == floors.last) ...[
+                  pw.Divider(),
+                  pw.SizedBox(height: 10),
+                  pw.Text('Grand Total',
+                      style: pw.TextStyle(
+                          fontSize: 18,
+                          fontWeight: pw.FontWeight.bold,
+                          color: primaryColor)),
+                  pw.SizedBox(height: 5),
+                  pw.Text(
+                      'Total costs depend on the selected finishing package and fluctuating market material rates.',
+                      style: pw.TextStyle(fontSize: 12, color: textMuted)),
+                ]
+              ];
+            },
+          ),
+        );
+      }
     }
 
     if (selectedReportIds.isEmpty || selectedReportIds.contains('structural')) {
-      final structuralRoot = data['structural_data'] ??
-          data['_structural'] ??
-          model['_structural'] ??
+      // structural_data is top-level key in projectData (set by server.js line 867)
+      // It has shape: { ground: {...}, first: {...} } (multi-floor)
+      final structuralRoot = data['structural_data'] as Map<String, dynamic>? ??
+          modelData['_structural'] as Map<String, dynamic>? ??
           {};
 
       // Page 5 - Structural Analysis
-      pdf.addPage(
-        pw.MultiPage(
-          pageFormat: PdfPageFormat.a4,
-          margin: const pw.EdgeInsets.all(40),
-          build: (pw.Context context) {
-            return [
-              pw.Header(
-                  level: 0,
-                  text: 'Structural Analysis',
-                  textStyle: pw.TextStyle(
-                      fontSize: 22,
-                      fontWeight: pw.FontWeight.bold,
-                      color: primaryColor)),
-              pw.SizedBox(height: 20),
-              if (imageStructural != null) ...[
-                pw.ClipRRect(
-                    horizontalRadius: 8,
-                    verticalRadius: 8,
-                    child: pw.Image(pw.MemoryImage(imageStructural),
-                        fit: pw.BoxFit.cover, height: 200)),
-                pw.SizedBox(height: 20),
-              ],
-              pw.Text('Structural Estimation',
-                  style: pw.TextStyle(
-                      fontSize: 16,
-                      fontWeight: pw.FontWeight.bold,
-                      color: textDark)),
-              pw.SizedBox(height: 10),
-              pw.Text(
-                  'Based on AI engineering algorithms, the load-bearing distribution, column placement, and foundation specifications are evaluated.',
-                  style: pw.TextStyle(
-                      fontSize: 12, color: textMuted, lineSpacing: 1.5)),
-              pw.SizedBox(height: 15),
-              ...floors.map((floor) {
-                final struct = isMultiFloor(structuralRoot)
-                    ? structuralRoot[floor]
-                    : structuralRoot;
-                if (struct == null || struct.isEmpty || struct is! Map) {
-                  return pw.SizedBox();
-                }
-                final summary = struct['summary'] ?? {};
-                final rcmd = struct['recommendations'] ?? {};
-                String title = floor == 'default'
-                    ? 'Overall Structure'
-                    : '${floor.toString().toUpperCase()} Floor Structure';
+      for (var floor in floors) {
+        pdf.addPage(
+          pw.MultiPage(
+            pageTheme: pageTheme,
+            footer: buildPageFooter,
+            build: (pw.Context context) {
+              final struct = isMultiFloor(structuralRoot)
+                  ? structuralRoot[floor]
+                  : structuralRoot;
+              if (struct == null || struct.isEmpty || struct is! Map) {
+                return [];
+              }
+              final summary = struct['summary'] ?? {};
+              final rcmd = struct['recommendations'] ?? {};
+              String title = floor == 'default'
+                  ? 'Overall Structure'
+                  : '${floor.toString().toUpperCase()} Floor Structure';
+              String headerTitle = floor == 'default'
+                  ? '04 · STRUCTURAL ANALYSIS'
+                  : '04 · STRUCTURAL ANALYSIS - ${floor.toString().toUpperCase()} FLOOR';
 
-                return pw.Column(
+              return [
+                pw.Container(
+                  width: double.infinity,
+                  padding: const pw.EdgeInsets.symmetric(vertical: 10),
+                  child: pw.Text(headerTitle,
+                      style: pw.TextStyle(
+                          fontSize: 18,
+                          fontWeight: pw.FontWeight.bold,
+                          color: primaryColor)),
+                ),
+                pw.Container(
+                    height: 2, width: double.infinity, color: accentOrange),
+                pw.SizedBox(height: 20),
+                if (floor == floors.first && imageStructural != null) ...[
+                  pw.ClipRRect(
+                      horizontalRadius: 8,
+                      verticalRadius: 8,
+                      child: pw.Image(pw.MemoryImage(imageStructural),
+                          fit: pw.BoxFit.cover, height: 200)),
+                  pw.SizedBox(height: 20),
+                ],
+                if (floor == floors.first) ...[
+                  pw.Text('Structural Estimation',
+                      style: pw.TextStyle(
+                          fontSize: 16,
+                          fontWeight: pw.FontWeight.bold,
+                          color: textDark)),
+                  pw.SizedBox(height: 10),
+                  pw.Text(
+                      'Based on AI engineering algorithms, the load-bearing distribution, column placement, and foundation specifications are evaluated.',
+                      style: pw.TextStyle(
+                          fontSize: 12, color: textMuted, lineSpacing: 1.5)),
+                  pw.SizedBox(height: 15),
+                ],
+                pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
                       pw.Text(title,
@@ -782,41 +855,55 @@ class PdfService {
                                     style: const pw.TextStyle(fontSize: 12)),
                               ])),
                       pw.SizedBox(height: 25),
-                    ]);
-              }).toList(),
-              pw.Text('- Status: VERIFIED',
-                  style: pw.TextStyle(
-                      fontSize: 12,
-                      fontWeight: pw.FontWeight.bold,
-                      color: accentGreen)),
-              pw.SizedBox(height: 5),
-              pw.Text('- Integrity Score: 94/100',
-                  style: pw.TextStyle(
-                      fontSize: 12,
-                      fontWeight: pw.FontWeight.bold,
-                      color: accentBlue)),
-            ];
-          },
-        ),
-      );
+                    ]),
+                if (floor == floors.last) ...[
+                  pw.Text('- Status: VERIFIED',
+                      style: pw.TextStyle(
+                          fontSize: 12,
+                          fontWeight: pw.FontWeight.bold,
+                          color: accentGreen)),
+                  pw.SizedBox(height: 5),
+                  pw.Text('- Integrity Score: 94/100',
+                      style: pw.TextStyle(
+                          fontSize: 12,
+                          fontWeight: pw.FontWeight.bold,
+                          color: accentBlue)),
+                ]
+              ];
+            },
+          ),
+        );
+      }
     }
 
     if (selectedReportIds.isEmpty || selectedReportIds.contains('elevation')) {
       // Page 6 - Elevation
       pdf.addPage(
         pw.MultiPage(
-          pageFormat: PdfPageFormat.a4,
-          margin: const pw.EdgeInsets.all(40),
+          pageTheme: pageTheme,
+          footer: buildPageFooter,
           build: (pw.Context context) {
             return [
-              pw.Header(
-                  level: 0,
-                  text: 'Front Elevation Blueprint',
-                  textStyle: pw.TextStyle(
-                      fontSize: 22,
-                      fontWeight: pw.FontWeight.bold,
-                      color: accentBlue)),
+              pw.Container(
+                width: double.infinity,
+                padding: const pw.EdgeInsets.symmetric(vertical: 10),
+                child: pw.Text('05 · FRONT ELEVATION BLUEPRINT',
+                    style: pw.TextStyle(
+                        fontSize: 18,
+                        fontWeight: pw.FontWeight.bold,
+                        color: primaryColor)),
+              ),
+              pw.Container(
+                  height: 2, width: double.infinity, color: accentOrange),
               pw.SizedBox(height: 20),
+              if (imageElevation != null) ...[
+                pw.ClipRRect(
+                    horizontalRadius: 8,
+                    verticalRadius: 8,
+                    child: pw.Image(pw.MemoryImage(imageElevation),
+                        fit: pw.BoxFit.cover, height: 250)),
+                pw.SizedBox(height: 20),
+              ],
               _buildNativeElevation(
                   ground,
                   isMultiFloor(floorsMap) ? floorsMap['first'] ?? {} : {},
@@ -845,17 +932,21 @@ class PdfService {
         : vastuRoot;
     pdf.addPage(
       pw.MultiPage(
-        pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(40),
+        pageTheme: pageTheme,
+        footer: buildPageFooter,
         build: (pw.Context context) {
           return [
-            pw.Header(
-                level: 0,
-                text: 'Project Summary',
-                textStyle: pw.TextStyle(
-                    fontSize: 22,
-                    fontWeight: pw.FontWeight.bold,
-                    color: textDark)),
+            pw.Container(
+              width: double.infinity,
+              padding: const pw.EdgeInsets.symmetric(vertical: 10),
+              child: pw.Text('06 · PROJECT SUMMARY',
+                  style: pw.TextStyle(
+                      fontSize: 18,
+                      fontWeight: pw.FontWeight.bold,
+                      color: primaryColor)),
+            ),
+            pw.Container(
+                height: 2, width: double.infinity, color: accentOrange),
             pw.SizedBox(height: 20),
             pw.Text('Overall Ratings',
                 style: pw.TextStyle(
@@ -904,21 +995,30 @@ class PdfService {
     // Page 8 - Thank You
     pdf.addPage(
       pw.Page(
-        pageFormat: PdfPageFormat.a4,
+        pageTheme: pageTheme,
         build: (pw.Context context) {
           return pw.Center(
+            child: pw.Container(
+              width: double.infinity,
+              padding: const pw.EdgeInsets.all(40),
+              decoration: pw.BoxDecoration(
+                border: pw.Border(
+                    bottom: pw.BorderSide(color: accentOrange, width: 6)),
+              ),
               child: pw.Column(
                   mainAxisAlignment: pw.MainAxisAlignment.center,
                   children: [
-                pw.Text('THANK YOU',
-                    style: pw.TextStyle(
-                        fontSize: 38,
-                        fontWeight: pw.FontWeight.bold,
-                        color: primaryColor)),
-                pw.SizedBox(height: 10),
-                pw.Text('for using Kanavu illam',
-                    style: pw.TextStyle(fontSize: 22, color: textMuted)),
-              ]));
+                    pw.Text('THANK YOU',
+                        style: pw.TextStyle(
+                            fontSize: 38,
+                            fontWeight: pw.FontWeight.bold,
+                            color: primaryColor)),
+                    pw.SizedBox(height: 10),
+                    pw.Text('for using Kanavu illam',
+                        style: pw.TextStyle(fontSize: 22, color: textDark)),
+                  ]),
+            ),
+          );
         },
       ),
     );
@@ -1080,7 +1180,7 @@ class PdfService {
         height: 350,
         width: double.infinity,
         decoration: pw.BoxDecoration(
-          color: PdfColor.fromHex('#0F172A'),
+          color: PdfColor.fromHex('#0B1325'), // Dark grid background
           borderRadius: pw.BorderRadius.circular(12),
         ),
         child: pw.LayoutBuilder(builder: (context, constraints) {
@@ -1100,19 +1200,31 @@ class PdfService {
                 child: pw.CustomPaint(
                     size: PdfPoint(drawW, drawH),
                     painter: (PdfGraphics canvas, PdfPoint size) {
+                      // Draw Grid Lines
+                      canvas.setStrokeColor(PdfColor.fromHex('#1E293B'));
+                      canvas.setLineWidth(1.0);
+                      double gridSpace = 20.0;
+                      for (double x = 0; x < size.x; x += gridSpace) {
+                        canvas.drawLine(x, 0, x, size.y);
+                      }
+                      for (double y = 0; y < size.y; y += gridSpace) {
+                        canvas.drawLine(0, y, size.x, y);
+                      }
+                      canvas.strokePath();
+
                       // Shadow
-                      canvas.setFillColor(PdfColor.fromHex('#000000'));
+                      canvas.setFillColor(const PdfColor(0, 0, 0, 0.5));
                       canvas.drawRect(8, -12, drawW, drawH);
                       canvas.fillPath();
 
                       // Floor Base
-                      canvas.setFillColor(PdfColor.fromHex('#94A3B8'));
+                      canvas.setFillColor(PdfColor.fromHex('#C9D1D9'));
                       canvas.drawRect(0, 0, drawW, drawH);
                       canvas.fillPath();
 
                       // Wall shadows (3D effect)
                       canvas.setStrokeColor(PdfColor.fromHex('#475569'));
-                      canvas.setLineWidth(6.0);
+                      canvas.setLineWidth(14.0);
                       for (var w in walls) {
                         double x1 = 0, y1 = 0, x2 = 0, y2 = 0;
                         if (w['start'] is List) {
@@ -1133,7 +1245,7 @@ class PdfService {
 
                       // Walls (Top surface)
                       canvas.setStrokeColor(PdfColor.fromHex('#F1F5F9'));
-                      canvas.setLineWidth(4.0);
+                      canvas.setLineWidth(10.0);
                       for (var w in walls) {
                         double x1 = 0, y1 = 0, x2 = 0, y2 = 0;
                         if (w['start'] is List) {
@@ -1190,8 +1302,12 @@ class PdfService {
                     padding: const pw.EdgeInsets.symmetric(
                         horizontal: 6, vertical: 4),
                     decoration: pw.BoxDecoration(
-                      color: PdfColor.fromHex('#0E7490'),
-                      borderRadius: pw.BorderRadius.circular(4),
+                      color:
+                          PdfColor(14 / 255.0, 116 / 255.0, 144 / 255.0, 0.85),
+                      borderRadius: pw.BorderRadius.circular(6),
+                      border: pw.Border.all(
+                          color: PdfColor(0, 200 / 255.0, 150 / 255.0, 0.5),
+                          width: 1.0),
                     ),
                     child: pw.Text(name,
                         style: pw.TextStyle(

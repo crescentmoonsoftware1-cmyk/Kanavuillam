@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:image_picker/image_picker.dart';
@@ -50,12 +51,17 @@ class _ShellScreenState extends State<ShellScreen> {
   bool _isGenerating = false;
   Map<String, dynamic>? _projectData;
   Set<String> _selectedReportIds = {};
+  Uint8List? _stored3DScreenshot;
   final bool _hasShownLogin = false;
+
+  // GlobalKey to access ViewerScreen's state for screenshot capture
+  final GlobalKey<ViewerScreenState> _viewerKey = GlobalKey<ViewerScreenState>();
 
   void _onProjectLoaded(Map<String, dynamic> project, Set<String> selectedIds) {
     setState(() {
       _projectData = project;
       _selectedReportIds = selectedIds;
+      _stored3DScreenshot = null; // Reset screenshot when new project loaded
       // Navigate to the first selected report if available, else 3D View
       if (selectedIds.contains('3d')) {
         _selectedIndex = 1;
@@ -132,85 +138,77 @@ class _ShellScreenState extends State<ShellScreen> {
     return indices;
   }
 
-  Widget _buildBody(int index) {
-    switch (index) {
-      case 0:
-        return UploadScreen(
+  Widget _buildBody() {
+    return IndexedStack(
+      index: _selectedIndex,
+      children: [
+        UploadScreen(
           onProjectLoaded: _onProjectLoaded,
           onStartGeneration: _startAIGeneration,
           isExternalLoading: _isGenerating,
-        );
-      case 1:
-        return _projectData != null
+        ),
+        _projectData != null
             ? ViewerScreen(
+                key: _viewerKey,
                 projectData: _projectData!,
                 onNavigateToVastu: () => setState(() => _selectedIndex = 2),
               )
             : _EmptyState(
                 icon: Icons.view_in_ar_rounded,
                 title: '3D View',
-                subtitle:
-                    'Upload a floor plan on the Home Map screen\nto generate your 3D model.',
+                subtitle: 'Upload a floor plan on the Home Map screen\nto generate your 3D model.',
                 accentColor: _accent,
-              );
-      case 2:
-        return _projectData != null
+              ),
+        _projectData != null
             ? VastuScreen(projectData: _projectData!)
             : _EmptyState(
                 icon: Icons.self_improvement_outlined,
                 title: 'Vastu Report',
-                subtitle:
-                    'Generate a project first to view\nyour Vastu analysis.',
+                subtitle: 'Generate a project first to view\nyour Vastu analysis.',
                 accentColor: _accent,
-              );
-      case 3:
-        return _projectData != null
+              ),
+        _projectData != null
             ? EstimationScreen(projectData: _projectData!)
             : _EmptyState(
                 icon: Icons.calculate_outlined,
                 title: 'Estimation',
-                subtitle:
-                    'Generate a project first to view\nyour cost estimate.',
+                subtitle: 'Generate a project first to view\nyour cost estimate.',
                 accentColor: _accent,
-              );
-      case 4:
-        return _projectData != null
+              ),
+        _projectData != null
             ? StructuralScreen(projectData: _projectData!)
             : _EmptyState(
                 icon: Icons.foundation_outlined,
                 title: 'Structural Report',
-                subtitle:
-                    'Generate a project first to view\nthe structural analysis.',
+                subtitle: 'Generate a project first to view\nthe structural analysis.',
                 accentColor: _accent,
-              );
-      case 5:
-        return _projectData != null
+              ),
+        _projectData != null
             ? ElevationScreen(projectData: _projectData!)
             : _EmptyState(
                 icon: Icons.architecture_outlined,
                 title: 'Elevation',
-                subtitle:
-                    'Generate a project first to view\nthe elevation design.',
+                subtitle: 'Generate a project first to view\nthe elevation design.',
                 accentColor: _accent,
-              );
-      case 6:
-        return _projectData != null
+              ),
+        _projectData != null
             ? DownloadScreen(
                 projectData: _projectData!,
                 selectedReportIds: _selectedReportIds,
                 onNavigateTo3D: () => setState(() => _selectedIndex = 1),
                 userData: widget.userData,
+                capture3DScreenshots: () async {
+                  return await _viewerKey.currentState?.captureAllFloorScreenshots() ?? {};
+                },
               )
             : _EmptyState(
                 icon: Icons.download_outlined,
                 title: 'Download Report',
-                subtitle:
-                    'Generate a project first to\ndownload your full report.',
+                subtitle: 'Generate a project first to\ndownload your full report.',
                 accentColor: _accent,
-              );
-      default:
-        return const SizedBox.shrink();
-    }
+              ),
+      ],
+    );
   }
 
   Widget _buildNavigationHeader() {
@@ -372,13 +370,7 @@ class _ShellScreenState extends State<ShellScreen> {
                     children: [
                       _buildNavigationHeader(),
                       Expanded(
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 400),
-                          child: KeyedSubtree(
-                            key: ValueKey(_selectedIndex),
-                            child: _buildBody(_selectedIndex),
-                          ),
-                        ),
+                        child: _buildBody(),
                       ),
                     ],
                   ),
@@ -413,13 +405,7 @@ class _ShellScreenState extends State<ShellScreen> {
         children: [
           _buildNavigationHeader(),
           Expanded(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              child: KeyedSubtree(
-                key: ValueKey(_selectedIndex),
-                child: _buildBody(_selectedIndex),
-              ),
-            ),
+            child: _buildBody(),
           ),
         ],
       ),
