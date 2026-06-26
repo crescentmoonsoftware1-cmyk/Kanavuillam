@@ -106,9 +106,9 @@ Camera:
 PREMIUM MODERN:
 
 "STRICTLY SINGLE-STORY (1 floor ONLY) ultra-realistic modern Indian house front elevation. 
-Structure: EXACTLY MATCH the front facade of the uploaded floor plan (including actual entrance location, window placements, stairs, portico/parking only if present, balconies only if present). 
-Materials & Style: Clean off-white/cream exterior walls with light grey accent bands, flat roof with simple modern parapet. Open portico with a grey flat concrete roof, square pillars, and a parked silver hatchback car. Black framed windows with horizontal safety grilles. Solid wooden main entrance door. Exposed outdoor straight stairs with metal railings (if stairs are on the outside).
-Settings: Low modern boundary wall with a small slatted metal gate and small landscaping plants. Bright sunny daytime, clear blue sky, photorealistic architectural photography, cinematic lighting, 8k"
+Structure: EXACTLY MATCH the front facade of the uploaded floor plan. Do NOT add a portico, parked car, or staircase unless they are explicitly present in the plan.
+Materials & Style: Clean off-white/cream exterior walls with light grey accent bands, flat roof with simple modern parapet. Premium modern windows and solid wooden main entrance door.
+Settings: Bright sunny daytime, clear blue sky, photorealistic architectural photography, cinematic lighting, 8k"
 
 STRUCTURAL PREVIEW:
 
