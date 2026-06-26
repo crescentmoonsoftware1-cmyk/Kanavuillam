@@ -163,7 +163,7 @@ The generated elevation must represent the actual house that would be constructe
         if os.getenv("OPENROUTER_API_KEY"):
             # Try multiple models for reliability
             models_to_try = [
-                "google/gemini-3.1-flash-lite"
+                "google/gemini-2.5-flash"
             ]
             
             raw_json = None

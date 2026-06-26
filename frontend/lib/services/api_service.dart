@@ -5,14 +5,16 @@ import 'package:image_picker/image_picker.dart';
 class ApiService {
   // For physical device via USB: run `adb reverse tcp:3000 tcp:3000` and use localhost
   // For Wi-Fi: use your PC's local IP (currently 172.20.10.4)
-  // static const String baseUrl = 'http://172.20.10.4:3000/api';
+  // static const String baseUrl = 'https://kanavuillam-production.up.railway.app/api';
   // static const String baseUrl = 'http://192.168.1.26:3000/api';
-  static const String baseUrl = 'https://ai-house-production.up.railway.app/api';
+  static const String baseUrl =
+      'https://kanavuillam-production.up.railway.app/api';
 
-  Future<Map<String, dynamic>> uploadPlan(XFile groundFile, XFile? firstFloorFile, XFile? secondFloorFile, String projectName) async {
+  Future<Map<String, dynamic>> uploadPlan(XFile groundFile,
+      XFile? firstFloorFile, XFile? secondFloorFile, String projectName) async {
     final request = http.MultipartRequest('POST', Uri.parse('$baseUrl/upload'));
     request.fields['name'] = projectName;
-    
+
     // Attach ground floor
     final groundBytes = await groundFile.readAsBytes();
     request.files.add(http.MultipartFile.fromBytes(
@@ -80,7 +82,8 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> analyzeVastu(String projectId, {String lang = 'English'}) async {
+  Future<Map<String, dynamic>> analyzeVastu(String projectId,
+      {String lang = 'English'}) async {
     final response = await http.post(
       Uri.parse('$baseUrl/analyze-vastu/$projectId'),
       headers: {'Content-Type': 'application/json'},
@@ -92,7 +95,9 @@ class ApiService {
     } else {
       try {
         final errorData = json.decode(response.body);
-        throw Exception(errorData['details'] ?? errorData['error'] ?? 'Vastu analysis failed');
+        throw Exception(errorData['details'] ??
+            errorData['error'] ??
+            'Vastu analysis failed');
       } catch (e) {
         throw Exception('Server Error: ${response.statusCode}');
       }
@@ -129,7 +134,8 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> verifyRazorpayPayment(Map<String, dynamic> data) async {
+  Future<Map<String, dynamic>> verifyRazorpayPayment(
+      Map<String, dynamic> data) async {
     final response = await http.post(
       Uri.parse('$baseUrl/payment/verify-payment'),
       headers: {'Content-Type': 'application/json'},
@@ -143,7 +149,8 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>?> post(String endpoint, Map<String, dynamic> body) async {
+  static Future<Map<String, dynamic>?> post(
+      String endpoint, Map<String, dynamic> body) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl$endpoint'),
