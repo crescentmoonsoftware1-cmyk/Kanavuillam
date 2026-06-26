@@ -1383,9 +1383,14 @@ class PdfService {
 
           final offsetX =
               constraints.maxWidth / 2 - (projW - projH) * cosA * scale / 2;
-          final offsetY = constraints.maxHeight / 2 +
-              (projW + projH) * sinA * scale / 2 -
-              (isoH * scale) / 2;
+          
+          // To perfectly center the isometric drawing vertically:
+          // Max Y = offsetY + totalZ * scale
+          // Min Y = offsetY - (projW + projH) * sinA * scale
+          // We want (Max Y + Min Y) / 2 = constraints.maxHeight / 2
+          final offsetY = (constraints.maxHeight / 2) - 
+                          (totalZ * scale / 2) + 
+                          ((projW + projH) * sinA * scale / 2);
 
           return pw.Stack(children: [
             pw.Positioned(
