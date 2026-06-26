@@ -803,10 +803,10 @@ app.post('/api/upload', (req, res, next) => {
         ? `The front facade structure from left to right is EXACTLY: First, ${facadeDescription.join('. Next to it, ')}.`
         : "The front facade has a simple modern layout.";
 
-      const floorStr = floors === 1 ? "SINGLE-STORY GROUND-FLOOR-ONLY (1 floor ONLY, NO upper floors, very short building height)" : floors === 2 ? "TWO-STORY (G+1 floors ONLY)" : "MULTI-STORY";
-      const styleKeywords = `STRICTLY ${floorStr} ultra-realistic modern Indian house front elevation. STYLE: Clean off-white/cream exterior walls with light grey accent bands and modern flat roofs. WIDE ANGLE SHOT, zoomed out, showing the ENTIRE house from ground to roof with clear margins around it. High quality architectural visualization, V-Ray render, sharp focus, bright sunny daytime, clear blue sky, 8k resolution. DO NOT GENERATE A MANSION. GENERATE ONLY WHAT IS DESCRIBED IN THE STRUCTURE BELOW.`;
+      const floorStr = floors === 1 ? "SINGLE-STORY GROUND-FLOOR-ONLY (1 floor ONLY, NO upper floors, very short building height)" : floors === 2 ? "EXACTLY TWO-STORY HOUSE (Ground + 1 First Floor ONLY, NO second floor, NO third floor)" : "MULTI-STORY";
+      const styleKeywords = `STRICTLY ${floorStr} ultra-realistic modern Indian house front elevation. STYLE: Clean off-white/cream exterior walls with light grey accent bands and modern flat roofs. PERFECTLY STRAIGHT FRONT-FACING ELEVATION VIEW, camera looking exactly straight at the front facade (no angle, 0-degree perspective), zoomed out showing the ENTIRE house from ground to roof with clear margins around it. High quality architectural visualization, V-Ray render, sharp focus, bright sunny daytime, clear blue sky, 8k resolution. DO NOT GENERATE A MANSION. GENERATE ONLY WHAT IS DESCRIBED IN THE STRUCTURE BELOW.`;
       
-      let extraInstructions = floors === 1 ? " DO NOT generate a second floor. Keep the roofline low." : "";
+      let extraInstructions = floors === 1 ? " DO NOT generate a second floor. Keep the roofline very low." : floors === 2 ? " DO NOT generate a third floor. Stop strictly at the first floor roof." : "";
       let mathPrompt = `${styleKeywords} ${structuralSplitStr} ${doorAddition} Follow the structural split exactly. No extra floors.${extraInstructions}`;
       
       let dynamicPrompt = mathPrompt;
@@ -829,7 +829,7 @@ app.post('/api/upload', (req, res, next) => {
         
         const aiResponse = visionResult.response.text().trim();
         if (aiResponse && aiResponse.length > 20) {
-           dynamicPrompt = `STRICTLY ${floorStr} ultra-realistic modern Indian house front elevation. STYLE: Clean off-white/cream exterior walls with light grey accent bands, modern flat roof. ` + aiResponse.replace(/STRICTLY.*elevation\./i, '') + ` WIDE ANGLE SHOT, zoomed out, showing the ENTIRE house exterior from ground to roof. High quality architectural visualization, V-Ray render, sharp focus, bright sunny day, 8k resolution.${extraInstructions}`;
+           dynamicPrompt = `STRICTLY ${floorStr} ultra-realistic modern Indian house front elevation. STYLE: Clean off-white/cream exterior walls with light grey accent bands, modern flat roof. ` + aiResponse.replace(/STRICTLY.*elevation\./i, '') + ` PERFECTLY STRAIGHT FRONT-FACING ELEVATION VIEW, camera looking exactly straight at the front facade (0-degree perspective), zoomed out showing the ENTIRE house exterior from ground to roof. High quality architectural visualization, V-Ray render, sharp focus, bright sunny day, 8k resolution.${extraInstructions}`;
         }
       } catch (e) {
       }
