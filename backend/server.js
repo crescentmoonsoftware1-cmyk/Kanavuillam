@@ -809,7 +809,78 @@ app.post('/api/upload', (req, res, next) => {
         let visionModel = genAI.getGenerativeModel({ model: 'gemini-2.5-pro' });
         const imgData = require('fs').readFileSync(groundPath).toString("base64");
         const parts = [
-          `You are an expert architectural AI. Your task is to translate this 2D floor plan into an exact 3D elevation prompt. Carefully analyze the FRONT edge (usually the bottom) of the floor plan. 1. Identify the exact Left-to-Right sequence of rooms/spaces at the front. 2. Identify Depth: Note which rooms protrude forward and which are recessed backward. Write a strict image generation prompt describing the exact physical layout. Example format: 'On the left, a protruding bedroom with a window. In the recessed center, a car parking space. On the right, a porch.' Do NOT add anything not in the plan. Return ONLY the physical layout description.`,
+          `You are a senior architect, architectural visualization expert, and AI building designer with 30+ years of experience.
+
+Your task is NOT to redesign the house.
+Your ONLY task is to write a highly detailed image generation prompt for a photorealistic front elevation that is 100% compatible with the uploaded 2D floor plan.
+
+===================================================
+VERY IMPORTANT RULE
+===================================================
+The uploaded image is the MASTER REFERENCE.
+Every wall, room, projection, setback, entrance, porch, balcony, staircase position, window, pillar, opening, offset, and corner MUST be inferred directly from the uploaded floor plan.
+DO NOT invent architecture. DO NOT change room locations. DO NOT add random balconies. DO NOT add random windows. DO NOT modify building proportions. DO NOT extend walls. DO NOT rotate the building. DO NOT mirror the layout. DO NOT imagine hidden structures.
+If any architectural element cannot be determined from the floor plan, leave it minimal instead of hallucinating.
+
+===================================================
+PRIMARY OBJECTIVE
+===================================================
+Generate a prompt for an elevation that would realistically be built from this exact floor plan.
+The elevation should appear as if a licensed architect designed it directly from the uploaded drawing.
+
+===================================================
+GEOMETRY EXTRACTION
+===================================================
+First understand: Outer wall footprint, Building boundary, Wall thickness, Main entrance, Secondary entrances, Porch, Sit-out, Balcony, Verandah, Staircase, Terrace access, Projection, Offsets, Corner walls, Room depth, Front façade width, Building depth, Window positions, Door positions, Pillar locations, Open spaces, Parking area, Landscape area, Compound wall, Gate position, Car porch.
+
+===================================================
+PROPORTION RULES
+===================================================
+Preserve Building width, Building depth, Room alignment, Corner offsets, Wall projections, Terrace size, Roof footprint. No stretching. No shrinking. No scaling errors. Maintain true architectural proportion.
+
+===================================================
+STYLE
+===================================================
+Create only a modern Indian residential elevation. Minimalistic, Luxury, Elegant, Architect designed, Premium, Contemporary, Sophisticated, Clean geometry, Balanced façade, Professional.
+
+===================================================
+WINDOW & DOOR RULES
+===================================================
+Generate windows ONLY where logically connected to rooms from the floor plan. Window width must suit room size. Never place windows randomly.
+Main entrance location must exactly match the uploaded floor plan. No additional entrance.
+
+===================================================
+BALCONY & STAIRCASE RULES
+===================================================
+Generate balcony ONLY if supported by the floor plan. If no balcony exists, DO NOT invent one.
+If staircase exists, generate corresponding stair tower or stair enclosure. Otherwise do not create one.
+
+===================================================
+ROOF & FACADE RULES
+===================================================
+Roof geometry must match the footprint. Terrace parapet follows outer wall.
+Use Stone cladding, Wood texture, Concrete finish, Glass railing, Premium paint, Aluminium windows, Modern lighting, Subtle textures, Natural colors, Architectural grooves. Simple luxury. Never overdesign.
+
+===================================================
+CAMERA & LIGHTING
+===================================================
+PERFECTLY STRAIGHT FRONT-FACING ELEVATION VIEW, camera looking exactly straight at the front facade (no angle, 0-degree perspective), zoomed out showing the ENTIRE house from ground to roof with clear margins around it.
+Golden hour sunlight, Soft shadows, Photorealistic lighting, Global illumination, Architectural rendering quality.
+
+===================================================
+QUALITY
+===================================================
+Ultra realistic, 8K, Professional architectural visualization, Ray traced, PBR materials, Highly detailed, Sharp edges, Correct perspective.
+
+===================================================
+NEGATIVE PROMPT
+===================================================
+Do not redesign, Do not hallucinate, Do not change layout, Do not rotate building, Do not mirror building, Do not modify footprint, Do not invent balcony, Do not invent windows, Do not invent doors, Do not change entrance, Do not crop, Do not distort, Do not generate fantasy architecture, Do not add unnecessary decorations, Do not generate extra floors, Do not change proportions, Do not generate impossible structures.
+
+===================================================
+OUTPUT FORMAT
+===================================================
+Based on the floor plan and these rules, write the final, strict image generation prompt (max 1000 characters) that describes the physical layout exactly. Include the fact that it is a ${floorStr}. DO NOT output conversational text, just the final prompt.`,
           { inlineData: { data: imgData, mimeType: "image/png" } }
         ];
         
@@ -823,7 +894,7 @@ app.post('/api/upload', (req, res, next) => {
         
         const aiResponse = visionResult.response.text().trim();
         if (aiResponse && aiResponse.length > 20) {
-           dynamicPrompt = `STRICTLY ${floorStr} ultra-realistic modern Indian house front elevation. STYLE: Clean off-white/cream exterior walls with light grey accent bands, modern flat roof. ` + aiResponse.replace(/STRICTLY.*elevation\./i, '') + ` PERFECTLY STRAIGHT FRONT-FACING ELEVATION VIEW, camera looking exactly straight at the front facade (0-degree perspective), zoomed out showing the ENTIRE house exterior from ground to roof. High quality architectural visualization, V-Ray render, sharp focus, bright sunny day, 8k resolution.${extraInstructions}`;
+           dynamicPrompt = aiResponse;
         }
       } catch (e) {
       }
