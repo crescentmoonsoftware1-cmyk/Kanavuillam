@@ -805,7 +805,7 @@ app.post('/api/upload', (req, res, next) => {
         let visionModel = genAI.getGenerativeModel({ model: 'gemini-2.5-pro' });
         const imgData = require('fs').readFileSync(groundPath).toString("base64");
         const parts = [
-          `You are an expert architectural AI. Your task is to translate this 2D floor plan into an exact 3D elevation prompt. Carefully analyze the FRONT edge (usually the bottom) of the floor plan. 1. Identify the exact Left-to-Right sequence of rooms/spaces at the front. 2. Identify Depth: Note which rooms protrude forward and which are recessed backward. Write a strict image generation prompt. Start with: 'STRICTLY ${floorStr} ultra-realistic modern Indian house front elevation. STYLE: Clean off-white/cream exterior walls with light grey accent bands, modern flat roof.' Then describe the exact physical layout. Example format: 'On the left, a protruding bedroom with a window. In the recessed center, a car parking space. On the right, a porch.' Do NOT add anything not in the plan. Return ONLY the final text prompt.`,
+          `You are an expert architectural AI. Your task is to translate this 2D floor plan into an exact 3D elevation prompt. Carefully analyze the FRONT edge (usually the bottom) of the floor plan. 1. Identify the exact Left-to-Right sequence of rooms/spaces at the front. 2. Identify Depth: Note which rooms protrude forward and which are recessed backward. Write a strict image generation prompt describing the exact physical layout. Example format: 'On the left, a protruding bedroom with a window. In the recessed center, a car parking space. On the right, a porch.' Do NOT add anything not in the plan. Return ONLY the physical layout description.`,
           { inlineData: { data: imgData, mimeType: "image/png" } }
         ];
         
@@ -819,7 +819,7 @@ app.post('/api/upload', (req, res, next) => {
         
         const aiResponse = visionResult.response.text().trim();
         if (aiResponse && aiResponse.length > 20) {
-           dynamicPrompt = aiResponse + " WIDE ANGLE SHOT, zoomed out, showing the ENTIRE house exterior from ground to roof. High quality architectural visualization, V-Ray render, sharp focus, bright sunny day, 8k resolution.";
+           dynamicPrompt = `STRICTLY ${floorStr} ultra-realistic modern Indian house front elevation. STYLE: Clean off-white/cream exterior walls with light grey accent bands, modern flat roof. ` + aiResponse.replace(/STRICTLY.*elevation\./i, '') + " WIDE ANGLE SHOT, zoomed out, showing the ENTIRE house exterior from ground to roof. High quality architectural visualization, V-Ray render, sharp focus, bright sunny day, 8k resolution.";
         }
       } catch (e) {
       }
