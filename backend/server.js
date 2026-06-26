@@ -783,7 +783,7 @@ app.post('/api/upload', (req, res, next) => {
         ? `The front facade structure from left to right is EXACTLY: First, ${facadeDescription.join('. Next to it, ')}.`
         : "The front facade has a simple modern layout.";
 
-      const styleKeywords = "STRICTLY SINGLE-STORY (1 floor ONLY) realistic Indian house front elevation. DO NOT GENERATE A MANSION. DO NOT GENERATE TWO FLOORS. Small, elegant, budget-friendly modern design with a flat roof. EXACTLY ONE parked car. Photorealistic, daytime, 8k resolution, architectural render.";
+      const styleKeywords = "STRICTLY SINGLE-STORY (1 floor ONLY) ultra-realistic modern Indian house front elevation. STYLE: Clean off-white/cream exterior walls with light grey accent bands and flat roofs. If there are stairs, they are exposed outdoor straight stairs with metal railings. The portico has a grey flat concrete roof with square pillars and a parked silver hatchback car. Black framed windows with horizontal safety grilles. Solid wooden main door. Low modern boundary wall with a small slatted metal gate and small landscaping plants outside. Bright sunny daytime, clear blue sky, photorealistic architectural photography, 8k resolution, Unreal Engine 5 render. DO NOT GENERATE A MANSION.";
 
       let mathPrompt = `${styleKeywords} ${structuralSplitStr} ${doorAddition} Follow the structural split exactly. No extra floors.`;
       
@@ -793,12 +793,12 @@ app.post('/api/upload', (req, res, next) => {
         const visionModel = genAI.getGenerativeModel({ model: 'gemini-2.5-pro' });
         const imgData = require('fs').readFileSync(groundPath).toString("base64");
         const visionResult = await visionModel.generateContent([
-          "You are an expert architect. Analyze this 2D floor plan image and identify the front elevation structure exactly. Write a highly detailed, strict text prompt to generate an exterior 3D elevation image of this house. If the plan shows a single floor, you MUST start the prompt with: 'STRICTLY SINGLE-STORY (1 floor ONLY) realistic Indian house front elevation. DO NOT GENERATE A MANSION.' Exactly list what is on the left, center, and right of the front view based ONLY on the drawing (e.g., stairs on left, car parking on right). Return ONLY the generated text prompt.",
+          "You are an expert architect. Analyze this 2D floor plan image and identify the front elevation structure exactly. Write a highly detailed, strict text prompt to generate an exterior 3D elevation image of this house. If the plan shows a single floor, you MUST start the prompt with: 'STRICTLY SINGLE-STORY (1 floor ONLY) ultra-realistic modern Indian house front elevation. STYLE: Clean off-white/cream exterior walls with light grey accent bands, flat roofs. Open portico with a grey concrete roof, square pillars, and a parked silver car. Black framed windows with horizontal grilles. Solid wooden main door. Exposed outdoor staircase with metal railing (if in plan). Low modern boundary wall with a metal gate. Bright sunny day, blue sky.' Exactly list what is on the left, center, and right of the front view based ONLY on the drawing (e.g., stairs on left, car parking on right). Return ONLY the generated text prompt.",
           { inlineData: { data: imgData, mimeType: "image/png" } }
         ]);
         const aiResponse = visionResult.response.text().trim();
         if (aiResponse && aiResponse.length > 20) {
-           dynamicPrompt = aiResponse + " Photorealistic, daytime, 8k resolution, Unreal Engine 5 render.";
+           dynamicPrompt = aiResponse + " Photorealistic architectural photography, 8k resolution, highly detailed.";
            console.log('[Step 8] ✓ AI Vision Generated Prompt:', dynamicPrompt);
         }
       } catch (e) {
