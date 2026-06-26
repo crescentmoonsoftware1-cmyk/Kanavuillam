@@ -794,10 +794,11 @@ app.post('/api/upload', (req, res, next) => {
         ? `The front facade structure from left to right is EXACTLY: First, ${facadeDescription.join('. Next to it, ')}.`
         : "The front facade has a simple modern layout.";
 
-      const floorStr = floors === 1 ? "SINGLE-STORY (1 floor ONLY)" : floors === 2 ? "TWO-STORY (G+1 floors ONLY)" : "MULTI-STORY";
+      const floorStr = floors === 1 ? "SINGLE-STORY GROUND-FLOOR-ONLY (1 floor ONLY, NO upper floors, very short building height)" : floors === 2 ? "TWO-STORY (G+1 floors ONLY)" : "MULTI-STORY";
       const styleKeywords = `STRICTLY ${floorStr} ultra-realistic modern Indian house front elevation. STYLE: Clean off-white/cream exterior walls with light grey accent bands and modern flat roofs. WIDE ANGLE SHOT, zoomed out, showing the ENTIRE house from ground to roof with clear margins around it. High quality architectural visualization, V-Ray render, sharp focus, bright sunny daytime, clear blue sky, 8k resolution. DO NOT GENERATE A MANSION. GENERATE ONLY WHAT IS DESCRIBED IN THE STRUCTURE BELOW.`;
-
-      let mathPrompt = `${styleKeywords} ${structuralSplitStr} ${doorAddition} Follow the structural split exactly. No extra floors.`;
+      
+      let extraInstructions = floors === 1 ? " DO NOT generate a second floor. Keep the roofline low." : "";
+      let mathPrompt = `${styleKeywords} ${structuralSplitStr} ${doorAddition} Follow the structural split exactly. No extra floors.${extraInstructions}`;
       
       let dynamicPrompt = mathPrompt;
       try {
@@ -819,7 +820,7 @@ app.post('/api/upload', (req, res, next) => {
         
         const aiResponse = visionResult.response.text().trim();
         if (aiResponse && aiResponse.length > 20) {
-           dynamicPrompt = `STRICTLY ${floorStr} ultra-realistic modern Indian house front elevation. STYLE: Clean off-white/cream exterior walls with light grey accent bands, modern flat roof. ` + aiResponse.replace(/STRICTLY.*elevation\./i, '') + " WIDE ANGLE SHOT, zoomed out, showing the ENTIRE house exterior from ground to roof. High quality architectural visualization, V-Ray render, sharp focus, bright sunny day, 8k resolution.";
+           dynamicPrompt = `STRICTLY ${floorStr} ultra-realistic modern Indian house front elevation. STYLE: Clean off-white/cream exterior walls with light grey accent bands, modern flat roof. ` + aiResponse.replace(/STRICTLY.*elevation\./i, '') + ` WIDE ANGLE SHOT, zoomed out, showing the ENTIRE house exterior from ground to roof. High quality architectural visualization, V-Ray render, sharp focus, bright sunny day, 8k resolution.${extraInstructions}`;
         }
       } catch (e) {
       }
