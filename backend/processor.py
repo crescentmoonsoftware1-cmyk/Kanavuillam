@@ -299,13 +299,11 @@ def get_gemini_analysis(image_path):
         with open(image_path, 'rb') as f:
             image_bytes = f.read()
         
-        # Priority: use latest available models in this project
+        # Priority: use 2.5 models since older ones are deprecated
         MODELS = [
-            'gemini-1.5-pro-latest',          # Requested high-end model
-            'gemini-1.5-flash-latest',  # State of the art
-            'gemini-2.5-flash',        # Very stable and fast
-            'gemini-2.0-flash',        # Fast multimodal
-            'gemini-flash-latest',      # Reliable fallback
+            'gemini-2.5-pro',
+            'gemini-2.5-flash',
+            'gemini-flash-latest',
         ]
 
         for model_name in MODELS:
@@ -361,9 +359,9 @@ def get_gemini_analysis(image_path):
                                 return validate_model_data(parsed)
                             except: pass
 
-                    print(f"[Warning] Model {model_name} output was not valid JSON, trying next model.", file=sys.stderr)
+                    print(f"[Warning] Model {model_name} output was not valid JSON, retrying (Attempt {attempt+1})...", file=sys.stderr)
                     time.sleep(1)
-                    break  # Move to next model
+                    continue  # Retry the same model
                 
                 except Exception as e:
                     print(f"[Error] Gemini {model_name} attempt {attempt+1} failed: {e}", file=sys.stderr)

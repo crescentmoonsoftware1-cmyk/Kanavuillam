@@ -256,7 +256,7 @@ async function runVastuAnalysis(modelData, lang = 'English', imagePath = null, f
   try {
     console.log('[Step 5] Using Gemini API for Vastu Analysis...');
     const model = genAI.getGenerativeModel({
-      model: 'gemini-1.5-pro-latest',
+      model: 'gemini-2.5-pro',
       generationConfig: { responseMimeType: "application/json" }
     });
 
@@ -425,7 +425,7 @@ app.post('/api/material/search', async (req, res) => {
     if (!data) {
       console.log(`[Material Search] Using Gemini directly for: ${query}`);
       const model = genAI.getGenerativeModel({
-        model: 'gemini-1.5-pro-latest',
+        model: 'gemini-2.5-pro',
         generationConfig: { responseMimeType: "application/json" }
       });
       const result = await model.generateContent(prompt);
@@ -789,8 +789,8 @@ app.post('/api/upload', (req, res, next) => {
       
       let dynamicPrompt = mathPrompt;
       try {
-        console.log('[Step 8] Asking Gemini 3.1 Pro Vision to analyze the 2D plan for Elevation...');
-        const visionModel = genAI.getGenerativeModel({ model: 'gemini-1.5-pro-latest' });
+        console.log('[Step 8] Asking Gemini Vision to analyze the 2D plan for Elevation...');
+        const visionModel = genAI.getGenerativeModel({ model: 'gemini-2.5-pro' });
         const imgData = require('fs').readFileSync(groundPath).toString("base64");
         const visionResult = await visionModel.generateContent([
           "You are an expert architect. Analyze this 2D floor plan image and identify the front elevation structure exactly. Write a highly detailed, strict text prompt to generate an exterior 3D elevation image of this house. If the plan shows a single floor, you MUST start the prompt with: 'STRICTLY SINGLE-STORY (1 floor ONLY) realistic Indian house front elevation. DO NOT GENERATE A MANSION.' Exactly list what is on the left, center, and right of the front view based ONLY on the drawing (e.g., stairs on left, car parking on right). Return ONLY the generated text prompt.",
