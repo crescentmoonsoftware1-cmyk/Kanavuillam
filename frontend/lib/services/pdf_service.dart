@@ -13,12 +13,24 @@ class PdfService {
         {String? imagePath, String? directUrl}) async {
       try {
         if (directUrl != null && directUrl.isNotEmpty) {
-          final res = await http.get(Uri.parse(directUrl), headers: {
+          // Use proxy to avoid CORS issues on Flutter Web when downloading images for PDF
+          final backendBase = ApiService.baseUrl.replaceAll(RegExp(r'/api$'), '');
+          final proxyUrl = '$backendBase/api/proxy-image?url=${Uri.encodeComponent(directUrl)}';
+          
+          final res = await http.get(Uri.parse(proxyUrl), headers: {
             'User-Agent':
                 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
           });
           if (res.statusCode == 200) return res.bodyBytes;
-          debugPrint('Failed to fetch directUrl. Status: ${res.statusCode}');
+          
+          // Fallback to direct url if proxy fails
+          final directRes = await http.get(Uri.parse(directUrl), headers: {
+            'User-Agent':
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+          });
+          if (directRes.statusCode == 200) return directRes.bodyBytes;
+          
+          debugPrint('Failed to fetch directUrl. Status: ${directRes.statusCode}');
         } else {
           final backendBase =
               ApiService.baseUrl.replaceAll(RegExp(r'/api$'), '');
