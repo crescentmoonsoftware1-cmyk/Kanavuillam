@@ -659,13 +659,13 @@ app.post('/api/upload', (req, res, next) => {
     
     if (firstPath) {
       console.log('Waiting before analyzing First Floor to respect rate limits...');
-      await new Promise(resolve => setTimeout(resolve, 6000));
+      await new Promise(resolve => setTimeout(resolve, 2000));
       firstResult = await runPython(firstPath).then(r => validateModelData(r));
     }
     
     if (secondPath) {
       console.log('Waiting before analyzing Second Floor to respect rate limits...');
-      await new Promise(resolve => setTimeout(resolve, 6000));
+      await new Promise(resolve => setTimeout(resolve, 2000));
       secondResult = await runPython(secondPath).then(r => validateModelData(r));
     }
 
@@ -690,11 +690,18 @@ app.post('/api/upload', (req, res, next) => {
     };
 
     // ── Step 5: Vastu Analysis (Separate Floors) ──────────────────────
-    console.log('[Step 5] Running Vastu analysis...');
+    console.log('[Step 5] Running Vastu analysis concurrently...');
+    const vastuPromises = {
+      ground: runVastuAnalysis(groundResult, 'English', groundPath, null, null, 'Ground')
+    };
+    if (firstResult) vastuPromises.first = runVastuAnalysis(firstResult, 'English', firstPath, null, null, 'First');
+    if (secondResult) vastuPromises.second = runVastuAnalysis(secondResult, 'English', secondPath, null, null, 'Second');
+    
     const vastu = {};
-    vastu.ground = await runVastuAnalysis(groundResult, 'English', groundPath, null, null, 'Ground');
-    if (firstResult) vastu.first = await runVastuAnalysis(firstResult, 'English', firstPath, null, null, 'First');
-    if (secondResult) vastu.second = await runVastuAnalysis(secondResult, 'English', secondPath, null, null, 'Second');
+    const vastuResults = await Promise.all(Object.values(vastuPromises));
+    Object.keys(vastuPromises).forEach((key, index) => {
+      vastu[key] = vastuResults[index];
+    });
     console.log(`[Step 5] ✓ Vastu Ground score: ${vastu.ground.score}/100`);
 
     // ── Step 6: Cost Estimation (Separate Floors) ────────────────────
@@ -734,12 +741,14 @@ app.post('/api/upload', (req, res, next) => {
       has_portico: elevation.has_portico,
       floors: elevation.floors
     };
-    let visualDesign = await runVisualizer(groundPath, projectMeta);
+    
+    // We skip runVisualizer() to save 15 seconds since it usually fails and triggers fallback anyway.
+    let visualDesign = { error: "Skipped to save time", variations: null };
 
     // Safety Fallback: If AI fails, generate DYNAMIC Pollinations URLs based on floor plan data
     const timestamp = Date.now();
     if (!visualDesign || visualDesign.error || !visualDesign.variations) {
-      console.log('[Step 8] AI Visualizer failed, constructing dynamic fallback prompts...');
+      console.log('[Step 8] Constructing dynamic fallback prompts directly for speed...');
       const pw = groundResult.project.width || 30;
       const ph = groundResult.project.height || 40;
       const floors = elevation.floors || 1;
