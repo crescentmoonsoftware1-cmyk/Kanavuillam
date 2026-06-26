@@ -783,7 +783,7 @@ app.post('/api/upload', (req, res, next) => {
         ? `The front facade structure from left to right is EXACTLY: First, ${facadeDescription.join('. Next to it, ')}.`
         : "The front facade has a simple modern layout.";
 
-      const styleKeywords = "STRICTLY SINGLE-STORY (1 floor ONLY) ultra-realistic modern Indian house front elevation. STYLE: Clean off-white/cream exterior walls with light grey accent bands and modern flat roofs. Photorealistic architectural photography, bright sunny daytime, clear blue sky, 8k resolution, Unreal Engine 5 render. DO NOT GENERATE A MANSION. GENERATE ONLY WHAT IS DESCRIBED IN THE STRUCTURE BELOW.";
+      const styleKeywords = "STRICTLY SINGLE-STORY (1 floor ONLY) ultra-realistic modern Indian house front elevation. STYLE: Clean off-white/cream exterior walls with light grey accent bands and modern flat roofs. WIDE ANGLE SHOT, zoomed out, showing the ENTIRE house from ground to roof with clear margins around it. High quality architectural visualization, V-Ray render, sharp focus, bright sunny daytime, clear blue sky, 8k resolution. DO NOT GENERATE A MANSION. GENERATE ONLY WHAT IS DESCRIBED IN THE STRUCTURE BELOW.";
 
       let mathPrompt = `${styleKeywords} ${structuralSplitStr} ${doorAddition} Follow the structural split exactly. No extra floors.`;
       
@@ -798,7 +798,7 @@ app.post('/api/upload', (req, res, next) => {
         ]);
         const aiResponse = visionResult.response.text().trim();
         if (aiResponse && aiResponse.length > 20) {
-           dynamicPrompt = aiResponse + " Photorealistic architectural photography, 8k resolution, highly detailed.";
+           dynamicPrompt = aiResponse + " WIDE ANGLE SHOT, zoomed out, showing the ENTIRE house exterior from ground to roof. High quality architectural visualization, V-Ray render, sharp focus, bright sunny day, 8k resolution.";
            console.log('[Step 8] ✓ AI Vision Generated Prompt:', dynamicPrompt);
         }
       } catch (e) {
@@ -813,8 +813,8 @@ app.post('/api/upload', (req, res, next) => {
       const roomNames = (groundResult.rooms || []).map(r => r.name).join(', ');
       let isometricPrompt = `Highly detailed photorealistic 3D isometric cutaway floor plan of a modern Indian house. Top-down angled view showing interior walls and realistic modern furniture. Rooms included: ${roomNames}. Cinematic lighting, ray tracing, 8k resolution, architectural visualization, Unreal Engine 5 render style.`;
 
-      let modernImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(dynamicPrompt)}?seed=${timestamp}&width=1024&height=1024&model=flux`;
-      let traditionalImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(traditionalPrompt)}?seed=${timestamp + 1}&width=1024&height=1024&model=flux`;
+      let modernImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(dynamicPrompt)}?seed=${timestamp}&width=1024&height=768&model=flux`;
+      let traditionalImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(traditionalPrompt)}?seed=${timestamp + 1}&width=1024&height=768&model=flux`;
       let isometricImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(isometricPrompt)}?seed=${timestamp + 2}&width=1024&height=1024&model=flux`;
 
       try {
@@ -826,7 +826,7 @@ app.post('/api/upload', (req, res, next) => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               instances: [{ prompt: prompt }],
-              parameters: { sampleCount: 1, aspectRatio: "1:1" }
+              parameters: { sampleCount: 1, aspectRatio: "4:3" }
             })
           });
           const data = await res.json();
