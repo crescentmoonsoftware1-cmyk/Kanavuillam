@@ -860,11 +860,13 @@ app.post('/api/upload', (req, res, next) => {
           });
           
           const data = await res.json();
-          if (data.error) throw new Error(data.error);
+          if (data.error) throw new Error(typeof data.error === 'string' ? data.error : data.error.message || JSON.stringify(data.error));
+          if (data.detail) throw new Error(data.detail);
+          
           if (data.output && data.output.length > 0) {
             return data.output[0]; // returns an image URL
           }
-          throw new Error("No output from Replicate");
+          throw new Error(`No output from Replicate. Status: ${data.status}`);
         };
 
         const [elevationImg, isometricImg] = await Promise.allSettled([
