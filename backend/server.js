@@ -652,22 +652,16 @@ app.post('/api/upload', (req, res, next) => {
     // ── Steps 1 & 2: Image → Structured JSON ──────────────────────────────
     console.log('\n═══ PIPELINE START ═══');
     
-    // Process sequentially to avoid Gemini API rate limits
-    const groundResult = await runPython(groundPath).then(r => validateModelData(r));
-    let firstResult = null;
-    let secondResult = null;
-    
-    if (firstPath) {
-      console.log('Waiting before analyzing First Floor to respect rate limits...');
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      firstResult = await runPython(firstPath).then(r => validateModelData(r));
-    }
-    
-    if (secondPath) {
-      console.log('Waiting before analyzing Second Floor to respect rate limits...');
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      secondResult = await runPython(secondPath).then(r => validateModelData(r));
-    }
+    // Process floors in parallel to drastically cut down processing time and avoid Railway timeout
+    console.log('[Step 1] Running floor plan extractions...');
+    const pythonPromises = [runPython(groundPath).then(r => validateModelData(r))];
+    if (firstPath) pythonPromises.push(runPython(firstPath).then(r => validateModelData(r)));
+    if (secondPath) pythonPromises.push(runPython(secondPath).then(r => validateModelData(r)));
+
+    const pythonResults = await Promise.all(pythonPromises);
+    const groundResult = pythonResults[0];
+    let firstResult = pythonResults.length > 1 ? pythonResults[1] : null;
+    let secondResult = pythonResults.length > 2 ? pythonResults[2] : null;
 
     if (!groundResult) throw new Error('Floor plan extraction failed for ground floor');
     console.log(`[Step 2] ✓ ${groundResult.rooms.length} rooms extracted for Ground Floor`);
