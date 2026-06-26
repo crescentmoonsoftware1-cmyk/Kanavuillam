@@ -255,7 +255,7 @@ async function runVastuAnalysis(modelData, lang = 'English', imagePath = null, f
 
   try {
     console.log('[Step 5] Using Gemini API for Vastu Analysis...');
-    const model = genAI.getGenerativeModel({
+    let model = genAI.getGenerativeModel({
       model: 'gemini-2.5-pro',
       generationConfig: { responseMimeType: "application/json" }
     });
@@ -271,11 +271,22 @@ async function runVastuAnalysis(modelData, lang = 'English', imagePath = null, f
       });
     }
 
-    const result = await model.generateContent(parts);
-    const rawText = result.response.text() || "";
-    return JSON.parse(rawText.replace(/```json|```/g, '').trim());
+    try {
+      const result = await model.generateContent(parts);
+      const rawText = result.response.text() || "";
+      return JSON.parse(rawText.replace(/```json|```/g, '').trim());
+    } catch (apiError) {
+      console.log(`[Step 5] gemini-2.5-pro failed (${apiError.message}), falling back to gemini-2.5-flash...`);
+      model = genAI.getGenerativeModel({
+        model: 'gemini-2.5-flash',
+        generationConfig: { responseMimeType: "application/json" }
+      });
+      const result = await model.generateContent(parts);
+      const rawText = result.response.text() || "";
+      return JSON.parse(rawText.replace(/```json|```/g, '').trim());
+    }
   } catch (e) {
-    console.error('[Step 5] Vastu error:', e.message);
+    console.error('[Step 5] Vastu error (all models failed):', e.message);
 
     // Create a slightly more dynamic fallback based on detected rooms
     const hasKitchen = (modelData.rooms || []).some(r => r.name.toLowerCase().includes('kitchen'));
@@ -791,19 +802,26 @@ app.post('/api/upload', (req, res, next) => {
       let dynamicPrompt = mathPrompt;
       try {
         console.log('[Step 8] Asking Gemini Vision to analyze the 2D plan for Elevation...');
-        const visionModel = genAI.getGenerativeModel({ model: 'gemini-2.5-pro' });
+        let visionModel = genAI.getGenerativeModel({ model: 'gemini-2.5-pro' });
         const imgData = require('fs').readFileSync(groundPath).toString("base64");
-        const visionResult = await visionModel.generateContent([
+        const parts = [
           `You are an expert architectural AI. Your task is to translate this 2D floor plan into an exact 3D elevation prompt. Carefully analyze the FRONT edge (usually the bottom) of the floor plan. 1. Identify the exact Left-to-Right sequence of rooms/spaces at the front. 2. Identify Depth: Note which rooms protrude forward and which are recessed backward. Write a strict image generation prompt. Start with: 'STRICTLY ${floorStr} ultra-realistic modern Indian house front elevation. STYLE: Clean off-white/cream exterior walls with light grey accent bands, modern flat roof.' Then describe the exact physical layout. Example format: 'On the left, a protruding bedroom with a window. In the recessed center, a car parking space. On the right, a porch.' Do NOT add anything not in the plan. Return ONLY the final text prompt.`,
           { inlineData: { data: imgData, mimeType: "image/png" } }
-        ]);
+        ];
+        
+        let visionResult;
+        try {
+          visionResult = await visionModel.generateContent(parts);
+        } catch (apiError) {
+          visionModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+          visionResult = await visionModel.generateContent(parts);
+        }
+        
         const aiResponse = visionResult.response.text().trim();
         if (aiResponse && aiResponse.length > 20) {
            dynamicPrompt = aiResponse + " WIDE ANGLE SHOT, zoomed out, showing the ENTIRE house exterior from ground to roof. High quality architectural visualization, V-Ray render, sharp focus, bright sunny day, 8k resolution.";
-           console.log('[Step 8] ✓ AI Vision Generated Prompt:', dynamicPrompt);
         }
       } catch (e) {
-        console.log('[Step 8] AI Vision prompt generation failed, using math logic:', e.message);
       }
 
       // Clean up whitespace
@@ -822,7 +840,7 @@ app.post('/api/upload', (req, res, next) => {
         console.log('[Step 8] Attempting Google Imagen 3 API for Front & Isometric Views...');
         
         const fetchImagen = async (prompt) => {
-          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${process.env.GEMINI_API_KEY}`, {
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict?key=${process.env.GEMINI_API_KEY}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -846,14 +864,14 @@ app.post('/api/upload', (req, res, next) => {
           console.log('[Step 8] ✓ Imagen 3 Elevation Successful!');
           modernImageUrl = elevationImg.value;
         } else {
-          console.log('[Step 8] Imagen 3 Elevation Error:', elevationImg.reason);
+          console.log(`[Step 8] Imagen 3 Elevation Error (${elevationImg.reason.message}), falling back to Pollinations...`);
         }
         
         if (isometricImg.status === 'fulfilled') {
           console.log('[Step 8] ✓ Imagen 3 Isometric Successful!');
           isometricImageUrl = isometricImg.value;
         } else {
-          console.log('[Step 8] Imagen 3 Isometric Error:', isometricImg.reason);
+          console.log(`[Step 8] Imagen 3 Isometric Error (${isometricImg.reason.message}), falling back to Pollinations...`);
         }
       } catch (err) {
         console.log('[Step 8] Imagen 3 Request Failed (Falling back to Flux):', err.message);
