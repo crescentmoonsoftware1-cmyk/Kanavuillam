@@ -72,12 +72,23 @@ class PdfService {
         (structuralData['ground'] as Map<String, dynamic>?) ?? structuralData;
 
     if (selectedReportIds.isEmpty || selectedReportIds.contains('3d')) {
-      // Use live 3D screenshots if captured from viewer, otherwise null (will use CustomPaint fallback)
       if (screenshots3D != null && screenshots3D.isNotEmpty) {
         images3d = screenshots3D;
         debugPrint('[PDF] Using live 3D screenshots');
+      } else {
+        // Fallback to the generated Isometric image from backend if available
+        final variations = (visualData['variations'] ?? visualData['elevations']) as List? ?? [];
+        if (variations.length > 2) {
+          final isoUrl = variations[2]['image_url']?.toString();
+          if (isoUrl != null && isoUrl.isNotEmpty) {
+            final fetchedIso = await fetchImage('isometric 3d architecture', directUrl: isoUrl);
+            if (fetchedIso != null) {
+              images3d = {'default': fetchedIso};
+              debugPrint('[PDF] Using backend generated Isometric view for 3D');
+            }
+          }
+        }
       }
-      // No asset fallback - will use _buildApp3DModel vector drawing instead
     }
 
     if (selectedReportIds.isEmpty || selectedReportIds.contains('structural')) {
@@ -136,6 +147,15 @@ class PdfService {
       final imagePathStr = data['image_url']?.toString() ?? '';
       imageElevation = await fetchImage(prompt,
           imagePath: imagePathStr, directUrl: directUrl);
+          
+      // Try traditional variation as fallback if the first one failed
+      if (imageElevation == null && variations.length > 1) {
+          final tradUrl = variations[1]['image_url']?.toString();
+          if (tradUrl != null && tradUrl.isNotEmpty) {
+              imageElevation = await fetchImage('traditional elevation', directUrl: tradUrl);
+          }
+      }
+      
       if (imageElevation == null) {
         try {
           final ByteData fileData =
