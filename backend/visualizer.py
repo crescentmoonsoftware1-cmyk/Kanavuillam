@@ -163,7 +163,7 @@ The generated elevation must represent the actual house that would be constructe
         if os.getenv("OPENROUTER_API_KEY"):
             # Try multiple models for reliability
             models_to_try = [
-                "google/gemini-2.5-flash"
+                "google/gemini-2.5-pro"
             ]
             
             raw_json = None
@@ -212,7 +212,7 @@ The generated elevation must represent the actual house that would be constructe
             from google.genai import types
             client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
             response = client.models.generate_content(
-                model='gemini-2.0-flash',
+                model='gemini-2.5-pro',
                 contents=[
                     prompt,
                     types.Part.from_bytes(data=base64.b64decode(image_base64), mime_type='image/png')

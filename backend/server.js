@@ -140,7 +140,7 @@ function runVisualizer(imagePath, metadata = null) {
 
 // ─── Step 5: Vastu Analysis Engine (Enhanced with OpenRouter) ────────────────
 
-async function askOpenRouter(prompt, imagePath = null, model = 'google/gemini-2.5-flash') {
+async function askOpenRouter(prompt, imagePath = null, model = 'google/gemini-2.5-pro') {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) return null;
 
@@ -418,8 +418,8 @@ app.post('/api/material/search', async (req, res) => {
 
     // Try OpenRouter first for maximum accuracy if available
     if (process.env.OPENROUTER_API_KEY) {
-      console.log(`[Material Search] Using OpenRouter for: ${query}`);
-      data = await askOpenRouter(prompt, null, 'google/gemini-2.0-flash-001');
+      console.log(`[Material Search] Querying OpenRouter (gemini-2.5-pro) for: ${query}`);
+      data = await askOpenRouter(prompt, null, 'google/gemini-2.5-pro');
     }
 
     if (!data) {
