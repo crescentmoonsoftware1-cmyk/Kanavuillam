@@ -837,44 +837,56 @@ app.post('/api/upload', (req, res, next) => {
       let isometricImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(isometricPrompt)}?seed=${timestamp + 2}&width=1024&height=1024&model=flux`;
 
       try {
-        console.log('[Step 8] Attempting Google Imagen 3 API for Front & Isometric Views...');
+        console.log('[Step 8] Attempting Replicate (Flux) API for Front & Isometric Views...');
         
-        const fetchImagen = async (prompt) => {
-          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict?key=${process.env.GEMINI_API_KEY}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+        const fetchReplicate = async (prompt) => {
+          if (!process.env.REPLICATE_API_TOKEN) throw new Error("No Replicate API token found");
+          
+          const res = await fetch("https://api.replicate.com/v1/models/black-forest-labs/flux-schnell/predictions", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${process.env.REPLICATE_API_TOKEN}`,
+              "Content-Type": "application/json",
+              "Prefer": "wait"
+            },
             body: JSON.stringify({
-              instances: [{ prompt: prompt }],
-              parameters: { sampleCount: 1, aspectRatio: "4:3" }
+              input: {
+                prompt: prompt,
+                aspect_ratio: "4:3",
+                output_format: "png",
+                go_fast: true
+              }
             })
           });
+          
           const data = await res.json();
-          if (data.predictions && data.predictions[0] && data.predictions[0].bytesBase64Encoded) {
-            return `data:image/jpeg;base64,${data.predictions[0].bytesBase64Encoded}`;
+          if (data.error) throw new Error(data.error);
+          if (data.output && data.output.length > 0) {
+            return data.output[0]; // returns an image URL
           }
-          throw new Error(data.error ? data.error.message : 'Unknown error');
+          throw new Error("No output from Replicate");
         };
 
         const [elevationImg, isometricImg] = await Promise.allSettled([
-          fetchImagen(dynamicPrompt),
-          fetchImagen(isometricPrompt)
+          fetchReplicate(dynamicPrompt),
+          fetchReplicate(isometricPrompt)
         ]);
 
         if (elevationImg.status === 'fulfilled') {
-          console.log('[Step 8] ✓ Imagen 3 Elevation Successful!');
+          console.log('[Step 8] ✓ Replicate Elevation Successful!');
           modernImageUrl = elevationImg.value;
         } else {
-          console.log(`[Step 8] Imagen 3 Elevation Error (${elevationImg.reason.message}), falling back to Pollinations...`);
+          console.log(`[Step 8] Replicate Elevation Error (${elevationImg.reason.message}), falling back to Pollinations...`);
         }
         
         if (isometricImg.status === 'fulfilled') {
-          console.log('[Step 8] ✓ Imagen 3 Isometric Successful!');
+          console.log('[Step 8] ✓ Replicate Isometric Successful!');
           isometricImageUrl = isometricImg.value;
         } else {
-          console.log(`[Step 8] Imagen 3 Isometric Error (${isometricImg.reason.message}), falling back to Pollinations...`);
+          console.log(`[Step 8] Replicate Isometric Error (${isometricImg.reason.message}), falling back to Pollinations...`);
         }
       } catch (err) {
-        console.log('[Step 8] Imagen 3 Request Failed (Falling back to Flux):', err.message);
+        console.log('[Step 8] Replicate API Request Failed (Falling back to Pollinations):', err.message);
       }
 
       visualDesign = {
