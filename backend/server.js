@@ -783,7 +783,8 @@ app.post('/api/upload', (req, res, next) => {
         ? `The front facade structure from left to right is EXACTLY: First, ${facadeDescription.join('. Next to it, ')}.`
         : "The front facade has a simple modern layout.";
 
-      const styleKeywords = "STRICTLY SINGLE-STORY (1 floor ONLY) ultra-realistic modern Indian house front elevation. STYLE: Clean off-white/cream exterior walls with light grey accent bands and modern flat roofs. WIDE ANGLE SHOT, zoomed out, showing the ENTIRE house from ground to roof with clear margins around it. High quality architectural visualization, V-Ray render, sharp focus, bright sunny daytime, clear blue sky, 8k resolution. DO NOT GENERATE A MANSION. GENERATE ONLY WHAT IS DESCRIBED IN THE STRUCTURE BELOW.";
+      const floorStr = floors === 1 ? "SINGLE-STORY (1 floor ONLY)" : floors === 2 ? "TWO-STORY (G+1 floors ONLY)" : "MULTI-STORY";
+      const styleKeywords = `STRICTLY ${floorStr} ultra-realistic modern Indian house front elevation. STYLE: Clean off-white/cream exterior walls with light grey accent bands and modern flat roofs. WIDE ANGLE SHOT, zoomed out, showing the ENTIRE house from ground to roof with clear margins around it. High quality architectural visualization, V-Ray render, sharp focus, bright sunny daytime, clear blue sky, 8k resolution. DO NOT GENERATE A MANSION. GENERATE ONLY WHAT IS DESCRIBED IN THE STRUCTURE BELOW.`;
 
       let mathPrompt = `${styleKeywords} ${structuralSplitStr} ${doorAddition} Follow the structural split exactly. No extra floors.`;
       
@@ -793,7 +794,7 @@ app.post('/api/upload', (req, res, next) => {
         const visionModel = genAI.getGenerativeModel({ model: 'gemini-2.5-pro' });
         const imgData = require('fs').readFileSync(groundPath).toString("base64");
         const visionResult = await visionModel.generateContent([
-          "You are an expert architectural AI. Your task is to translate this 2D floor plan into an exact 3D elevation prompt. Carefully analyze the FRONT edge (usually the bottom) of the floor plan. 1. Identify the exact Left-to-Right sequence of rooms/spaces at the front. 2. Identify Depth: Note which rooms protrude forward and which are recessed backward. Write a strict image generation prompt. Start with: 'STRICTLY SINGLE-STORY (1 floor ONLY) ultra-realistic modern Indian house front elevation. STYLE: Clean off-white/cream exterior walls with light grey accent bands, modern flat roof.' Then describe the exact physical layout. Example format: 'On the left, a protruding bedroom with a window. In the recessed center, a car parking space. On the right, a porch.' Do NOT add anything not in the plan. Return ONLY the final text prompt.",
+          `You are an expert architectural AI. Your task is to translate this 2D floor plan into an exact 3D elevation prompt. Carefully analyze the FRONT edge (usually the bottom) of the floor plan. 1. Identify the exact Left-to-Right sequence of rooms/spaces at the front. 2. Identify Depth: Note which rooms protrude forward and which are recessed backward. Write a strict image generation prompt. Start with: 'STRICTLY ${floorStr} ultra-realistic modern Indian house front elevation. STYLE: Clean off-white/cream exterior walls with light grey accent bands, modern flat roof.' Then describe the exact physical layout. Example format: 'On the left, a protruding bedroom with a window. In the recessed center, a car parking space. On the right, a porch.' Do NOT add anything not in the plan. Return ONLY the final text prompt.`,
           { inlineData: { data: imgData, mimeType: "image/png" } }
         ]);
         const aiResponse = visionResult.response.text().trim();

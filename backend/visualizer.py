@@ -105,7 +105,7 @@ Camera:
 
 PREMIUM MODERN:
 
-"STRICTLY SINGLE-STORY (1 floor ONLY) ultra-realistic modern Indian house front elevation. 
+"STRICTLY {floor_desc} ultra-realistic modern Indian house front elevation. 
 Structure: EXACTLY MATCH the front facade of the uploaded floor plan. Do NOT add a portico, parked car, or staircase unless they are explicitly present in the plan.
 Materials & Style: Clean off-white/cream exterior walls with light grey accent bands, flat roof with simple modern parapet. Premium modern windows and solid wooden main entrance door.
 Settings: WIDE ANGLE SHOT, zoomed out, showing the ENTIRE house from ground to roof with clear margins around it. Bright sunny daytime, clear blue sky, high quality architectural visualization, V-Ray render, sharp focus, 8k"
