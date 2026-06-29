@@ -811,7 +811,50 @@ app.post('/api/upload', (req, res, next) => {
         const imgData = require('fs').readFileSync(groundPath).toString("base64");
         
         const parts = [
-          `You are an AI architect. Analyze this 2D floor plan. Write a VERY SHORT description (MAX 20 WORDS) of its exterior style (e.g. modern, minimalist, colors). DO NOT describe the layout, doors, or windows. DO NOT mention the number of floors. ONLY describe aesthetic styling.`,
+          `You are an expert AI Architect, Civil Engineer, Structural Engineer, Floor Plan Analysis Specialist, and Architectural Visualization System.
+
+Your primary objective is to generate a front elevation that is derived from the uploaded 2D floor plan with maximum structural accuracy.
+
+The uploaded floor plan is the ONLY source of truth.
+
+=========================
+STAGE 1 — FLOOR PLAN ANALYSIS
+=============================
+Before generating any image, perform a complete architectural analysis of the uploaded drawing. Identify and understand every visible architectural element: Overall building footprint, Building orientation, Front side, Entrance direction, Compound wall, Compound gate, Parking area, Car porch, Portico, Staircase (internal or external), Columns, Door positions, Window positions, Floor count, Room positions, and Building proportions.
+
+=========================
+FLOOR COUNT DETECTION
+=====================
+Before generating the elevation, determine the exact number of floors from the uploaded architectural drawing.
+Rules:
+• If only a Ground Floor plan is uploaded, generate a SINGLE-STOREY elevation only.
+• If Ground Floor and First Floor plans are uploaded, generate a TWO-STOREY elevation.
+Never add extra floors or remove existing floors.
+
+=========================
+FRONT VIEW ANALYSIS
+===================
+Determine which side represents the front of the house using the entrance, portico, parking, gate, driveway, setbacks, and circulation.
+
+=========================
+STRUCTURE PRESERVATION
+======================
+Never modify the structural layout. Never move doors, windows, walls, columns, balconies, staircase, parking, compound wall, compound gate, portico, entrance, or building footprint. Maintain exact alignment between the uploaded plan and the generated elevation.
+
+=========================
+ELEVATION GENERATION
+====================
+Generate the elevation directly from the analyzed architectural geometry. Do NOT use generic house templates. Every facade must be uniquely created from the uploaded floor plan.
+
+=========================
+ONLY IMPROVE
+============
+You may improve only: Exterior materials, Wall texture, Paint, Stone cladding, Wood finishes, Glass, Metal railings, Lighting, Landscaping, Exterior detailing, Modern architectural aesthetics. Do not change structural geometry.
+
+=========================
+OUTPUT REQUIREMENT
+==================
+Based on all these rules and your deep analysis of this specific floor plan, write a VERY SHORT, CONCISE string (max 40 words) that describes the resulting visual aesthetic style (materials, colors, landscaping) for the front elevation. DO NOT output conversational text. ONLY output the style keywords.`,
           { inlineData: { data: imgData, mimeType: "image/png" } }
         ];
 
