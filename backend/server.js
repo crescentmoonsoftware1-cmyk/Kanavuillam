@@ -895,7 +895,7 @@ Based on the floor plan and these rules, write the final, strict image generatio
 
         const aiResponse = visionResult.response.text().trim();
         if (aiResponse && aiResponse.length > 20) {
-          dynamicPrompt = aiResponse;
+          dynamicPrompt = `${styleKeywords} [Architectural Details:] ${aiResponse} [Exact Layout:] ${structuralSplitStr} ${extraInstructions}`;
         }
       } catch (e) {
       }
