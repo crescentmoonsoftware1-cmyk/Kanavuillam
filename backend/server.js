@@ -858,8 +858,14 @@ app.post('/api/upload', (req, res, next) => {
 
         // Try DALL-E 3 first, fallback to Replicate Flux
         const [elevationImg, isometricImg] = await Promise.allSettled([
-          fetchOpenAIDalle(dynamicPrompt).catch(() => fetchReplicate(dynamicPrompt)),
-          fetchOpenAIDalle(isometricPrompt).catch(() => fetchReplicate(isometricPrompt))
+          fetchOpenAIDalle(dynamicPrompt).catch((e) => {
+             console.log('[Step 8] DALL-E 3 Elevation failed:', e.message);
+             return fetchReplicate(dynamicPrompt);
+          }),
+          fetchOpenAIDalle(isometricPrompt).catch((e) => {
+             console.log('[Step 8] DALL-E 3 Isometric failed:', e.message);
+             return fetchReplicate(isometricPrompt);
+          })
         ]);
 
         if (elevationImg.status === 'fulfilled') {
