@@ -802,106 +802,6 @@ app.post('/api/upload', (req, res, next) => {
       let mathPrompt = `${styleKeywords} [Exact Layout Details:] ${structuralSplitStr} ${doorAddition} Follow this layout exactly. ${extraInstructions}`;
 
       let dynamicPrompt = mathPrompt;
-      try {
-        console.log('[Step 8] Asking Gemini Vision to analyze the 2D plan for Elevation...');
-        let visionModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-        const imgData = require('fs').readFileSync(groundPath).toString("base64");
-        const parts = [
-          `You are a senior architect, architectural visualization expert, and AI building designer with 30+ years of experience.
-
-Your task is NOT to redesign the house.
-Your ONLY task is to write a highly detailed image generation prompt for a photorealistic front elevation that is 100% compatible with the uploaded 2D floor plan.
-
-===================================================
-VERY IMPORTANT RULE
-===================================================
-The uploaded image is the MASTER REFERENCE.
-Every wall, room, projection, setback, entrance, porch, balcony, staircase position, window, pillar, opening, offset, and corner MUST be inferred directly from the uploaded floor plan.
-DO NOT invent architecture. DO NOT change room locations. DO NOT add random balconies. DO NOT add random windows. DO NOT modify building proportions. DO NOT extend walls. DO NOT rotate the building. DO NOT mirror the layout. DO NOT imagine hidden structures.
-If any architectural element cannot be determined from the floor plan, leave it minimal instead of hallucinating.
-
-===================================================
-PRIMARY OBJECTIVE
-===================================================
-Generate a prompt for an elevation that would realistically be built from this exact floor plan.
-The elevation should appear as if a licensed architect designed it directly from the uploaded drawing.
-
-===================================================
-GEOMETRY EXTRACTION
-===================================================
-First understand: Outer wall footprint, Building boundary, Wall thickness, Main entrance, Secondary entrances, Porch, Sit-out, Balcony, Verandah, Staircase, Terrace access, Projection, Offsets, Corner walls, Room depth, Front façade width, Building depth, Window positions, Door positions, Pillar locations, Open spaces, Parking area, Landscape area, Compound wall, Gate position, Car porch.
-
-===================================================
-PROPORTION RULES
-===================================================
-Preserve Building width, Building depth, Room alignment, Corner offsets, Wall projections, Terrace size, Roof footprint. No stretching. No shrinking. No scaling errors. Maintain true architectural proportion.
-
-===================================================
-STYLE
-===================================================
-Create only a photorealistic modern Indian residential elevation. Real estate photography style, ultra-realistic, shot on DSLR. Minimalistic, Luxury, Clean geometry.
-IMPORTANT: The prompt MUST explicitly include a front compound wall with an entrance gate, street view, realistic potted plants, and a water tank on the flat roof.
-
-===================================================
-WINDOW & DOOR RULES
-===================================================
-Generate windows ONLY where logically connected to rooms from the floor plan. Window width must suit room size.
-Main entrance location must exactly match the uploaded floor plan. No additional entrance.
-
-===================================================
-BALCONY & STAIRCASE RULES
-===================================================
-Generate balcony ONLY if supported by the floor plan.
-If staircase exists, generate corresponding stair tower or external stair enclosure.
-
-===================================================
-ROOF & FACADE RULES
-===================================================
-Roof geometry must match the footprint. Terrace parapet follows outer wall. Include a roof water tank.
-Use realistic materials: Concrete finish, Premium paint, Aluminium windows. Simple luxury.
-
-===================================================
-CAMERA & LIGHTING
-===================================================
-PERFECTLY STRAIGHT FRONT-FACING ELEVATION VIEW, shot from street level, zoomed out showing the ENTIRE house from compound wall up to roof.
-Golden hour sunlight, Soft shadows, Photorealistic lighting, Global illumination, Architectural rendering quality.
-
-===================================================
-QUALITY
-===================================================
-Ultra realistic, 8K, Professional architectural visualization, Ray traced, PBR materials, Highly detailed, Sharp edges, Correct perspective.
-
-===================================================
-NEGATIVE PROMPT
-===================================================
-Do not redesign, Do not hallucinate, Do not change layout, Do not rotate building, Do not mirror building, Do not modify footprint, Do not invent balcony, Do not invent windows, Do not invent doors, Do not change entrance, Do not crop, Do not distort, Do not generate fantasy architecture, Do not add unnecessary decorations, Do not generate extra floors, Do not change proportions, Do not generate impossible structures.
-
-===================================================
-OUTPUT FORMAT
-===================================================
-Based on the floor plan and these rules, write the final, strict image generation prompt (max 1000 characters) that describes the physical layout exactly. Include the fact that it is a ${floorStr}. DO NOT output conversational text, just the final prompt.`,
-          { inlineData: { data: imgData, mimeType: "image/png" } }
-        ];
-
-        let visionResult;
-        try {
-          visionResult = await visionModel.generateContent(parts);
-        } catch (apiError) {
-          visionModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-          visionResult = await visionModel.generateContent(parts);
-        }
-
-        let aiResponse = visionResult.response.text().trim();
-        if (aiResponse && aiResponse.length > 20) {
-          // ANTI-HALLUCINATION FILTER: If single story, aggressively strip out words that make Flux draw mansions
-          if (floors === 1) {
-             aiResponse = aiResponse.replace(/two[\-\s]?story|second floor|first floor|balcon(y|ies)|mansion/gi, 'single-story');
-          }
-          // Combine the sanitized AI flair with the exact mathematical layout
-          dynamicPrompt = `${styleKeywords} [Architectural Style Details:] ${aiResponse} [CRITICAL EXACT LAYOUT (Follow Strictly):] ${structuralSplitStr} ${extraInstructions}`;
-        }
-      } catch (e) {
-      }
 
       // Clean up whitespace
       dynamicPrompt = dynamicPrompt.replace(/\s+/g, ' ').trim();
@@ -916,11 +816,31 @@ Based on the floor plan and these rules, write the final, strict image generatio
       let isometricImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(isometricPrompt)}?seed=${timestamp + 2}&width=1024&height=1024&model=flux`;
 
       try {
-        console.log('[Step 8] Attempting Replicate (Flux) API for Front & Isometric Views...');
+        console.log('[Step 8] Attempting OpenAI DALL-E 3 for Front & Isometric Views...');
+        
+        const fetchOpenAIDalle = async (prompt) => {
+          const apiKey = process.env.OPENAI_API_KEY;
+          const res = await fetch("https://api.openai.com/v1/images/generations", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${apiKey}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              model: "dall-e-3",
+              prompt: prompt.substring(0, 4000), // DALL-E 3 has a 4000 char prompt limit
+              n: 1,
+              size: "1024x1024"
+            })
+          });
+          const data = await res.json();
+          if (data.error) throw new Error(data.error.message);
+          if (data.data && data.data.length > 0) return data.data[0].url;
+          throw new Error("No image returned from DALL-E 3");
+        };
 
         const fetchReplicate = async (prompt) => {
           if (!process.env.REPLICATE_API_TOKEN) throw new Error("No Replicate API token found");
-
           const res = await fetch("https://api.replicate.com/v1/models/black-forest-labs/flux-schnell/predictions", {
             method: "POST",
             headers: {
@@ -928,46 +848,35 @@ Based on the floor plan and these rules, write the final, strict image generatio
               "Content-Type": "application/json",
               "Prefer": "wait"
             },
-            body: JSON.stringify({
-              input: {
-                prompt: prompt,
-                aspect_ratio: "4:3",
-                output_format: "png",
-                go_fast: true
-              }
-            })
+            body: JSON.stringify({ input: { prompt: prompt, aspect_ratio: "4:3", output_format: "png", go_fast: true } })
           });
-
           const data = await res.json();
           if (data.error) throw new Error(typeof data.error === 'string' ? data.error : data.error.message || JSON.stringify(data.error));
-          if (data.detail) throw new Error(data.detail);
-
-          if (data.output && data.output.length > 0) {
-            return data.output[0]; // returns an image URL
-          }
+          if (data.output && data.output.length > 0) return data.output[0];
           throw new Error(`No output from Replicate. Status: ${data.status}`);
         };
 
+        // Try DALL-E 3 first, fallback to Replicate Flux
         const [elevationImg, isometricImg] = await Promise.allSettled([
-          fetchReplicate(dynamicPrompt),
-          fetchReplicate(isometricPrompt)
+          fetchOpenAIDalle(dynamicPrompt).catch(() => fetchReplicate(dynamicPrompt)),
+          fetchOpenAIDalle(isometricPrompt).catch(() => fetchReplicate(isometricPrompt))
         ]);
 
         if (elevationImg.status === 'fulfilled') {
-          console.log('[Step 8] ✓ Replicate Elevation Successful!');
+          console.log('[Step 8] ✓ Elevation Successful!');
           modernImageUrl = elevationImg.value;
         } else {
-          console.log(`[Step 8] Replicate Elevation Error (${elevationImg.reason.message}), falling back to Pollinations...`);
+          console.log(`[Step 8] Elevation Error: ${elevationImg.reason.message}`);
         }
 
         if (isometricImg.status === 'fulfilled') {
-          console.log('[Step 8] ✓ Replicate Isometric Successful!');
+          console.log('[Step 8] ✓ Isometric Successful!');
           isometricImageUrl = isometricImg.value;
         } else {
-          console.log(`[Step 8] Replicate Isometric Error (${isometricImg.reason.message}), falling back to Pollinations...`);
+          console.log(`[Step 8] Isometric Error: ${isometricImg.reason.message}`);
         }
       } catch (err) {
-        console.log('[Step 8] Replicate API Request Failed (Falling back to Pollinations):', err.message);
+        console.log('[Step 8] Image Generation Request Failed:', err.message);
       }
 
       visualDesign = {
