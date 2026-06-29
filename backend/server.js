@@ -798,7 +798,7 @@ app.post('/api/upload', (req, res, next) => {
         : "The front facade has a simple modern layout.";
 
       const floorStr = floors === 1 ? "SINGLE-STORY GROUND-FLOOR-ONLY (1 floor ONLY, NO upper floors, very short building height)" : floors === 2 ? "EXACTLY TWO-STORY HOUSE (Ground + 1 First Floor ONLY, NO second floor, NO third floor)" : "MULTI-STORY";
-      const styleKeywords = `STRICTLY ${floorStr} ultra-realistic modern Indian house front elevation. STYLE: Clean off-white/cream exterior walls with light grey accent bands and modern flat roofs. PERFECTLY STRAIGHT FRONT-FACING ELEVATION VIEW, camera looking exactly straight at the front facade (no angle, 0-degree perspective), zoomed out showing the ENTIRE house from ground to roof with clear margins around it. High quality architectural visualization, V-Ray render, sharp focus, bright sunny daytime, clear blue sky, 8k resolution. DO NOT GENERATE A MANSION. GENERATE ONLY WHAT IS DESCRIBED IN THE STRUCTURE BELOW.`;
+      const styleKeywords = `STRICTLY ${floorStr} ultra-realistic modern Indian residential elevation. STYLE: Real estate photography, DSLR 35mm, highly realistic, shot from street level. Clean off-white exterior walls with light grey accent bands and modern flat roofs (with a water tank on top). PERFECTLY STRAIGHT FRONT-FACING ELEVATION VIEW, zoomed out showing the ENTIRE house, a modern compound wall in the front with an entrance gate, street view, natural potted plants, bright sunny daytime, clear blue sky, 8k resolution. DO NOT GENERATE A MANSION. GENERATE ONLY WHAT IS DESCRIBED IN THE STRUCTURE BELOW.`;
 
       let extraInstructions = floors === 1 ? " DO NOT generate a second floor. Keep the roofline very low." : floors === 2 ? " DO NOT generate a third floor. Stop strictly at the first floor roof." : "";
       let mathPrompt = `${styleKeywords} ${structuralSplitStr} ${doorAddition} Follow the structural split exactly. No extra floors.${extraInstructions}`;
@@ -841,30 +841,31 @@ Preserve Building width, Building depth, Room alignment, Corner offsets, Wall pr
 ===================================================
 STYLE
 ===================================================
-Create only a modern Indian residential elevation. Minimalistic, Luxury, Elegant, Architect designed, Premium, Contemporary, Sophisticated, Clean geometry, Balanced façade, Professional.
+Create only a photorealistic modern Indian residential elevation. Real estate photography style, ultra-realistic, shot on DSLR. Minimalistic, Luxury, Clean geometry.
+IMPORTANT: The prompt MUST explicitly include a front compound wall with an entrance gate, street view, realistic potted plants, and a water tank on the flat roof.
 
 ===================================================
 WINDOW & DOOR RULES
 ===================================================
-Generate windows ONLY where logically connected to rooms from the floor plan. Window width must suit room size. Never place windows randomly.
+Generate windows ONLY where logically connected to rooms from the floor plan. Window width must suit room size.
 Main entrance location must exactly match the uploaded floor plan. No additional entrance.
 
 ===================================================
 BALCONY & STAIRCASE RULES
 ===================================================
-Generate balcony ONLY if supported by the floor plan. If no balcony exists, DO NOT invent one.
-If staircase exists, generate corresponding stair tower or stair enclosure. Otherwise do not create one.
+Generate balcony ONLY if supported by the floor plan.
+If staircase exists, generate corresponding stair tower or external stair enclosure.
 
 ===================================================
 ROOF & FACADE RULES
 ===================================================
-Roof geometry must match the footprint. Terrace parapet follows outer wall.
-Use Stone cladding, Wood texture, Concrete finish, Glass railing, Premium paint, Aluminium windows, Modern lighting, Subtle textures, Natural colors, Architectural grooves. Simple luxury. Never overdesign.
+Roof geometry must match the footprint. Terrace parapet follows outer wall. Include a roof water tank.
+Use realistic materials: Concrete finish, Premium paint, Aluminium windows. Simple luxury.
 
 ===================================================
 CAMERA & LIGHTING
 ===================================================
-PERFECTLY STRAIGHT FRONT-FACING ELEVATION VIEW, camera looking exactly straight at the front facade (no angle, 0-degree perspective), zoomed out showing the ENTIRE house from ground to roof with clear margins around it.
+PERFECTLY STRAIGHT FRONT-FACING ELEVATION VIEW, shot from street level, zoomed out showing the ENTIRE house from compound wall up to roof.
 Golden hour sunlight, Soft shadows, Photorealistic lighting, Global illumination, Architectural rendering quality.
 
 ===================================================
@@ -905,7 +906,7 @@ Based on the floor plan and these rules, write the final, strict image generatio
       let traditionalPrompt = dynamicPrompt.replace(/flat roof and stylish parapet wall/i, 'sloping traditional Kerala roof with Mangalore tiles').replace(/modern Indian house style/i, 'Traditional Indian house style with wooden pillars');
 
       const roomNames = (groundResult.rooms || []).map(r => r.name).join(', ');
-      let isometricPrompt = `[Upload] detailed architectural 2D floor plan. [Synthesize] detailed, top-down isometric 3D cutaway view of exact geometry. Rooms included: ${roomNames}. [Render] replicate all furniture. [Project & Register] all original annotations and dimension lines onto 3D surfaces. [Legibility] Ensure all text (titles, room names, dimensions, North arrow) stay crisp and readable in the 3D scene. [Condition] Direct correspondence. [Output] A hybrid technical visualization.`;
+      let isometricPrompt = `Highly detailed photorealistic 3D isometric cutaway floor plan of a modern Indian house. Top-down angled view showing interior walls and realistic modern furniture. Rooms included: ${roomNames}. Cinematic lighting, ray tracing, 8k resolution, architectural visualization, Unreal Engine 5 render style.`;
 
       let modernImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(dynamicPrompt)}?seed=${timestamp}&width=1024&height=768&model=flux`;
       let traditionalImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(traditionalPrompt)}?seed=${timestamp + 1}&width=1024&height=768&model=flux`;
