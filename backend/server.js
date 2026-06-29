@@ -140,7 +140,7 @@ function runVisualizer(imagePath, metadata = null) {
 
 // ─── Step 5: Vastu Analysis Engine (Enhanced with OpenRouter) ────────────────
 
-async function askOpenRouter(prompt, imagePath = null, model = 'google/gemini-2.5-pro') {
+async function askOpenRouter(prompt, imagePath = null, model = 'google/gemini-2.5-flash') {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) return null;
 
@@ -190,7 +190,7 @@ async function runVastuAnalysis(modelData, lang = 'English', imagePath = null, f
   const roomsStr = (modelData.rooms || []).map(r => {
     const cx = (r.x || 0) + ((r.width || 0) / 2);
     const cy = (r.y || 0) + ((r.height || 0) / 2);
-    
+
     let lat = 'Center';
     if (cy < ph / 3) lat = 'North';
     else if (cy > (2 * ph) / 3) lat = 'South';
@@ -234,7 +234,7 @@ async function runVastuAnalysis(modelData, lang = 'English', imagePath = null, f
   2. ${fixedScore !== null ? `USE THIS EXACT SCORE: ${fixedScore}. DO NOT CALCULATE A NEW ONE.` : 'Calculate an accurate Vastu Score (0-100) based strictly on how well these specific room coordinates comply with traditional Vastu rules.'}
   3. ${fixedGrade !== null ? `USE THIS EXACT GRADE: "${fixedGrade}".` : 'Provide a grade based on the score.'}
   4. Provide 3+ specific strengths directly referencing the coordinates/rooms.
-  5. Provide 2+ detailed violations explicitly explaining WHY the score was reduced. Detail the exact room and its incorrect placement (e.g., "Kitchen is at (${pw/2}, ${ph/2}) which is the center, causing a -10 point reduction").
+  5. Provide 2+ detailed violations explicitly explaining WHY the score was reduced. Detail the exact room and its incorrect placement (e.g., "Kitchen is at (${pw / 2}, ${ph / 2}) which is the center, causing a -10 point reduction").
   6. Provide 3+ practical remedies for these specific violations.
   
   JSON FORMAT (STRICT):
@@ -256,7 +256,7 @@ async function runVastuAnalysis(modelData, lang = 'English', imagePath = null, f
   try {
     console.log('[Step 5] Using Gemini API for Vastu Analysis...');
     let model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-pro',
+      model: 'gemini-2.5-flash',
       generationConfig: { responseMimeType: "application/json" }
     });
 
@@ -276,7 +276,7 @@ async function runVastuAnalysis(modelData, lang = 'English', imagePath = null, f
       const rawText = result.response.text() || "";
       return JSON.parse(rawText.replace(/```json|```/g, '').trim());
     } catch (apiError) {
-      console.log(`[Step 5] gemini-2.5-pro failed (${apiError.message}), falling back to gemini-2.5-flash...`);
+      console.log(`[Step 5] gemini-2.5-flash failed (${apiError.message}), falling back to gemini-2.5-flash...`);
       model = genAI.getGenerativeModel({
         model: 'gemini-2.5-flash',
         generationConfig: { responseMimeType: "application/json" }
@@ -429,14 +429,14 @@ app.post('/api/material/search', async (req, res) => {
 
     // Try OpenRouter first for maximum accuracy if available
     if (process.env.OPENROUTER_API_KEY) {
-      console.log(`[Material Search] Querying OpenRouter (gemini-2.5-pro) for: ${query}`);
-      data = await askOpenRouter(prompt, null, 'google/gemini-2.5-pro');
+      console.log(`[Material Search] Querying OpenRouter (gemini-2.5-flash) for: ${query}`);
+      data = await askOpenRouter(prompt, null, 'google/gemini-2.5-flash');
     }
 
     if (!data) {
       console.log(`[Material Search] Using Gemini directly for: ${query}`);
       const model = genAI.getGenerativeModel({
-        model: 'gemini-2.5-pro',
+        model: 'gemini-2.5-flash',
         generationConfig: { responseMimeType: "application/json" }
       });
       const result = await model.generateContent(prompt);
@@ -454,18 +454,18 @@ app.post('/api/material/search', async (req, res) => {
     } else {
       data = [];
     }
-    
+
     res.json(data);
   } catch (err) {
     console.error('[API] Material search error:', err.message);
-    
+
     // Smart Fallback if Google API is rate-limited or blocked
     const q = query.toLowerCase();
     let fallback = [
       { brand: query + " (Estimated)", price: 500, unit: 'unit' },
       { brand: query + " Premium (Estimated)", price: 800, unit: 'unit' }
     ];
-    
+
     if (q.includes('cement') || q.includes('ultra tech') || q.includes('priya') || q.includes('acc')) {
       fallback = [
         { brand: "Priya Cement (Estimated)", price: 390, unit: 'bag' },
@@ -651,7 +651,7 @@ app.post('/api/upload', (req, res, next) => {
 
     // ── Steps 1 & 2: Image → Structured JSON ──────────────────────────────
     console.log('\n═══ PIPELINE START ═══');
-    
+
     // Process floors in parallel to drastically cut down processing time and avoid Railway timeout
     console.log('[Step 1] Running floor plan extractions...');
     const pythonPromises = [runPython(groundPath).then(r => validateModelData(r))];
@@ -690,7 +690,7 @@ app.post('/api/upload', (req, res, next) => {
     };
     if (firstResult) vastuPromises.first = runVastuAnalysis(firstResult, 'English', firstPath, null, null, 'First');
     if (secondResult) vastuPromises.second = runVastuAnalysis(secondResult, 'English', secondPath, null, null, 'Second');
-    
+
     const vastu = {};
     const vastuResults = await Promise.all(Object.values(vastuPromises));
     Object.keys(vastuPromises).forEach((key, index) => {
@@ -735,7 +735,7 @@ app.post('/api/upload', (req, res, next) => {
       has_portico: elevation.has_portico,
       floors: elevation.floors
     };
-    
+
     // We skip runVisualizer() to save 15 seconds since it usually fails and triggers fallback anyway.
     let visualDesign = { error: "Skipped to save time", variations: null };
 
@@ -746,10 +746,10 @@ app.post('/api/upload', (req, res, next) => {
       const pw = groundResult.project.width || 30;
       const ph = groundResult.project.height || 40;
       const floors = elevation.floors || 1;
-      
+
       // -- PREMIUM SMART PROMPT LOGIC INJECTED --
       const rooms = groundResult.rooms || [];
-      
+
       // 1. Identify the front of the house (Assuming Front is the max Y coordinate / bottom of plan)
       let maxY = 0;
       rooms.forEach(r => {
@@ -770,9 +770,9 @@ app.post('/api/upload', (req, res, next) => {
         const name = (room.name || '').toLowerCase();
         // Calculate what percentage of the front width this room takes
         const widthPercentage = Math.round(((room.width || 10) / pw) * 100);
-        
+
         let elementDesc = "";
-        
+
         if (name.includes('portico') || name.includes('parking') || name.includes('car')) {
           elementDesc = `occupying ${widthPercentage}% of the width is a wide, open car parking portico supported by modern pillars, with a parked modern car`;
         } else if (name.includes('stair') || name.includes('step')) {
@@ -793,20 +793,20 @@ app.post('/api/upload', (req, res, next) => {
       const doorAddition = hasHall ? "Deep inside the shaded area or portico, an elegant main entrance wooden door is visible. " : "";
 
       // 5. Combine everything into the final Prompt with EXACT STYLE MATCH
-      const structuralSplitStr = facadeDescription.length > 0 
+      const structuralSplitStr = facadeDescription.length > 0
         ? `The front facade structure from left to right is EXACTLY: First, ${facadeDescription.join('. Next to it, ')}.`
         : "The front facade has a simple modern layout.";
 
       const floorStr = floors === 1 ? "SINGLE-STORY GROUND-FLOOR-ONLY (1 floor ONLY, NO upper floors, very short building height)" : floors === 2 ? "EXACTLY TWO-STORY HOUSE (Ground + 1 First Floor ONLY, NO second floor, NO third floor)" : "MULTI-STORY";
       const styleKeywords = `STRICTLY ${floorStr} ultra-realistic modern Indian house front elevation. STYLE: Clean off-white/cream exterior walls with light grey accent bands and modern flat roofs. PERFECTLY STRAIGHT FRONT-FACING ELEVATION VIEW, camera looking exactly straight at the front facade (no angle, 0-degree perspective), zoomed out showing the ENTIRE house from ground to roof with clear margins around it. High quality architectural visualization, V-Ray render, sharp focus, bright sunny daytime, clear blue sky, 8k resolution. DO NOT GENERATE A MANSION. GENERATE ONLY WHAT IS DESCRIBED IN THE STRUCTURE BELOW.`;
-      
+
       let extraInstructions = floors === 1 ? " DO NOT generate a second floor. Keep the roofline very low." : floors === 2 ? " DO NOT generate a third floor. Stop strictly at the first floor roof." : "";
       let mathPrompt = `${styleKeywords} ${structuralSplitStr} ${doorAddition} Follow the structural split exactly. No extra floors.${extraInstructions}`;
-      
+
       let dynamicPrompt = mathPrompt;
       try {
         console.log('[Step 8] Asking Gemini Vision to analyze the 2D plan for Elevation...');
-        let visionModel = genAI.getGenerativeModel({ model: 'gemini-2.5-pro' });
+        let visionModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
         const imgData = require('fs').readFileSync(groundPath).toString("base64");
         const parts = [
           `You are a senior architect, architectural visualization expert, and AI building designer with 30+ years of experience.
@@ -883,7 +883,7 @@ OUTPUT FORMAT
 Based on the floor plan and these rules, write the final, strict image generation prompt (max 1000 characters) that describes the physical layout exactly. Include the fact that it is a ${floorStr}. DO NOT output conversational text, just the final prompt.`,
           { inlineData: { data: imgData, mimeType: "image/png" } }
         ];
-        
+
         let visionResult;
         try {
           visionResult = await visionModel.generateContent(parts);
@@ -891,21 +891,21 @@ Based on the floor plan and these rules, write the final, strict image generatio
           visionModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
           visionResult = await visionModel.generateContent(parts);
         }
-        
+
         const aiResponse = visionResult.response.text().trim();
         if (aiResponse && aiResponse.length > 20) {
-           dynamicPrompt = aiResponse;
+          dynamicPrompt = aiResponse;
         }
       } catch (e) {
       }
 
       // Clean up whitespace
       dynamicPrompt = dynamicPrompt.replace(/\s+/g, ' ').trim();
-      
+
       let traditionalPrompt = dynamicPrompt.replace(/flat roof and stylish parapet wall/i, 'sloping traditional Kerala roof with Mangalore tiles').replace(/modern Indian house style/i, 'Traditional Indian house style with wooden pillars');
-      
+
       const roomNames = (groundResult.rooms || []).map(r => r.name).join(', ');
-      let isometricPrompt = `Highly detailed photorealistic 3D isometric cutaway floor plan of a modern Indian house. Top-down angled view showing interior walls and realistic modern furniture. Rooms included: ${roomNames}. Cinematic lighting, ray tracing, 8k resolution, architectural visualization, Unreal Engine 5 render style.`;
+      let isometricPrompt = `[Upload] detailed architectural 2D floor plan. [Synthesize] detailed, top-down isometric 3D cutaway view of exact geometry. Rooms included: ${roomNames}. [Render] replicate all furniture. [Project & Register] all original annotations and dimension lines onto 3D surfaces. [Legibility] Ensure all text (titles, room names, dimensions, North arrow) stay crisp and readable in the 3D scene. [Condition] Direct correspondence. [Output] A hybrid technical visualization.`;
 
       let modernImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(dynamicPrompt)}?seed=${timestamp}&width=1024&height=768&model=flux`;
       let traditionalImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(traditionalPrompt)}?seed=${timestamp + 1}&width=1024&height=768&model=flux`;
@@ -913,10 +913,10 @@ Based on the floor plan and these rules, write the final, strict image generatio
 
       try {
         console.log('[Step 8] Attempting Replicate (Flux) API for Front & Isometric Views...');
-        
+
         const fetchReplicate = async (prompt) => {
           if (!process.env.REPLICATE_API_TOKEN) throw new Error("No Replicate API token found");
-          
+
           const res = await fetch("https://api.replicate.com/v1/models/black-forest-labs/flux-schnell/predictions", {
             method: "POST",
             headers: {
@@ -933,11 +933,11 @@ Based on the floor plan and these rules, write the final, strict image generatio
               }
             })
           });
-          
+
           const data = await res.json();
           if (data.error) throw new Error(typeof data.error === 'string' ? data.error : data.error.message || JSON.stringify(data.error));
           if (data.detail) throw new Error(data.detail);
-          
+
           if (data.output && data.output.length > 0) {
             return data.output[0]; // returns an image URL
           }
@@ -955,7 +955,7 @@ Based on the floor plan and these rules, write the final, strict image generatio
         } else {
           console.log(`[Step 8] Replicate Elevation Error (${elevationImg.reason.message}), falling back to Pollinations...`);
         }
-        
+
         if (isometricImg.status === 'fulfilled') {
           console.log('[Step 8] ✓ Replicate Isometric Successful!');
           isometricImageUrl = isometricImg.value;
@@ -1082,17 +1082,17 @@ app.post('/api/analyze-vastu/:id', async (req, res) => {
       const existingFloorVastu = existingVastu[floorName] || existingVastu;
       const fixedScore = existingFloorVastu.score || null;
       const fixedGrade = existingFloorVastu.grade || null;
-      
+
       result[floorName] = await runVastuAnalysis(
-        floorData, 
-        lang, 
-        floorName === 'ground' ? groundPath : null, 
-        fixedScore, 
+        floorData,
+        lang,
+        floorName === 'ground' ? groundPath : null,
+        fixedScore,
         fixedGrade,
         floorName
       );
     }
-    
+
     res.json(result);
   } catch (err) {
     console.error('[API] analyze-vastu internal error:', err.message);
@@ -1104,7 +1104,7 @@ app.get('/api/vastu/:id', async (req, res) => {
   const { data, error } = await supabase.from('projects').select('model_data, image_url').eq('id', req.params.id).single();
   if (error || !data) return res.status(404).json({ error: 'Project not found' });
   if (data.model_data?._vastu) return res.json(data.model_data._vastu);
-  
+
   const vastu = await runVastuAnalysis(data.model_data?.floors?.ground || data.model_data, 'English', data.image_url, null, null, 'Ground');
   res.json({ ground: vastu });
 });
@@ -1115,7 +1115,7 @@ app.get('/api/cost/:id', async (req, res) => {
   const { data, error } = await supabase.from('projects').select('model_data').eq('id', req.params.id).single();
   if (error || !data) return res.status(404).json({ error: 'Project not found' });
   if (data.model_data?._cost) return res.json(data.model_data._cost);
-  
+
   res.json({ ground: runCostEstimation(data.model_data?.floors?.ground || data.model_data) });
 });
 
@@ -1200,20 +1200,20 @@ const http = require('http');
 app.get('/api/proxy-image', async (req, res) => {
   const imageUrl = req.query.url;
   if (!imageUrl) return res.status(400).send('URL parameter is required');
-  
+
   try {
     console.log('[Proxy] Fetching:', imageUrl.substring(0, 80) + '...');
     const response = await fetch(imageUrl);
-    
+
     if (!response.ok) {
       return res.status(response.status).send('Failed to fetch image: ' + response.statusText);
     }
-    
+
     res.setHeader('Content-Type', response.headers.get('content-type') || 'image/jpeg');
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     res.setHeader('Cache-Control', 'public, max-age=86400');
-    
+
     const arrayBuffer = await response.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     res.send(buffer);
@@ -1228,24 +1228,24 @@ let elevationQueue = Promise.resolve();
 app.get('/api/generate-elevation', async (req, res) => {
   const prompt = req.query.prompt;
   const image_path = req.query.image_path;
-  
+
   if (!prompt) return res.status(400).send('Prompt is required');
 
   // Deterministic seed based on the prompt string so the image stays the same on reload
   let seed = 0;
   for (let i = 0; i < prompt.length; i++) {
-      seed = ((seed << 5) - seed) + prompt.charCodeAt(i);
-      seed |= 0; 
+    seed = ((seed << 5) - seed) + prompt.charCodeAt(i);
+    seed |= 0;
   }
   seed = Math.abs(seed);
 
   const token = process.env.REPLICATE_API_TOKEN;
-  
+
   if (image_path && token) {
     let filename = image_path.split('/').pop();
     if (filename.includes('?')) filename = filename.split('?')[0]; // strip query params if any
     const absPath = path.join(__dirname, 'uploads', filename);
-    
+
     if (fs.existsSync(absPath)) {
       try {
         console.log('[ControlNet] Generating exact CAD elevation for GET request...');
@@ -1288,7 +1288,7 @@ app.get('/api/generate-elevation', async (req, res) => {
             return res.redirect(resultUrl);
           }
         } else {
-            console.error('[ControlNet API Error]', await response.text());
+          console.error('[ControlNet API Error]', await response.text());
         }
       } catch (err) {
         console.error('[ControlNet Exception]', err);
@@ -1300,7 +1300,7 @@ app.get('/api/generate-elevation', async (req, res) => {
   elevationQueue = elevationQueue.then(() => {
     return new Promise((resolve) => {
       console.log('[Pollinations Queue] Fetching:', prompt.substring(0, 50));
-      
+
       const targetUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=1024&nologo=true&seed=${seed}`;
 
       fetch(targetUrl)
@@ -1340,9 +1340,9 @@ app.post('/api/auth/signup', async (req, res) => {
   } catch (err) {
     if (err.message && err.message.toLowerCase().includes('rate limit')) {
       console.log('[Auth] Supabase rate limit hit. Mocking signup for development.');
-      return res.json({ 
-        message: 'Mock Signup successful (Rate Limit Bypassed)', 
-        user: { email, user_metadata: { name, phone } } 
+      return res.json({
+        message: 'Mock Signup successful (Rate Limit Bypassed)',
+        user: { email, user_metadata: { name, phone } }
       });
     }
     res.status(400).json({ error: err.message });
@@ -1359,10 +1359,10 @@ app.post('/api/auth/login', async (req, res) => {
   } catch (err) {
     if (err.message && err.message.toLowerCase().includes('rate limit')) {
       console.log('[Auth] Supabase rate limit hit. Mocking login for development.');
-      return res.json({ 
-        message: 'Mock Login successful (Rate Limit Bypassed)', 
-        session: { access_token: 'mock_token' }, 
-        user: { email, user_metadata: { name: 'Test User', phone: '1234567890' } } 
+      return res.json({
+        message: 'Mock Login successful (Rate Limit Bypassed)',
+        session: { access_token: 'mock_token' },
+        user: { email, user_metadata: { name: 'Test User', phone: '1234567890' } }
       });
     }
     res.status(400).json({ error: err.message });
@@ -1398,10 +1398,10 @@ app.post('/api/auth/google/token', async (req, res) => {
     // If rate limit or other issue
     console.error('[Auth] Google ID Token error:', err.message);
     if (err.message && err.message.toLowerCase().includes('rate limit')) {
-      return res.json({ 
-        message: 'Mock Login successful (Rate Limit Bypassed)', 
-        session: { access_token: 'mock_token' }, 
-        user: { email, user_metadata: { name: name || 'Test User' } } 
+      return res.json({
+        message: 'Mock Login successful (Rate Limit Bypassed)',
+        session: { access_token: 'mock_token' },
+        user: { email, user_metadata: { name: name || 'Test User' } }
       });
     }
     res.status(400).json({ error: err.message });

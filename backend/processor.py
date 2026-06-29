@@ -301,7 +301,7 @@ def get_gemini_analysis(image_path):
         
         # Priority: use 2.5 models since older ones are deprecated
         MODELS = [
-            'gemini-2.5-pro',
+            'gemini-2.5-flash',
             'gemini-2.5-flash',
             'gemini-flash-latest',
         ]
