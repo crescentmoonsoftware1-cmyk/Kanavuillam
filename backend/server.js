@@ -893,9 +893,14 @@ Based on the floor plan and these rules, write the final, strict image generatio
           visionResult = await visionModel.generateContent(parts);
         }
 
-        const aiResponse = visionResult.response.text().trim();
+        let aiResponse = visionResult.response.text().trim();
         if (aiResponse && aiResponse.length > 20) {
-          dynamicPrompt = `${styleKeywords} [Architectural Details:] ${aiResponse} [Exact Layout:] ${structuralSplitStr} ${extraInstructions}`;
+          // ANTI-HALLUCINATION FILTER: If single story, aggressively strip out words that make Flux draw mansions
+          if (floors === 1) {
+             aiResponse = aiResponse.replace(/two[\-\s]?story|second floor|first floor|balcon(y|ies)|mansion/gi, 'single-story');
+          }
+          // Combine the sanitized AI flair with the exact mathematical layout
+          dynamicPrompt = `${styleKeywords} [Architectural Style Details:] ${aiResponse} [CRITICAL EXACT LAYOUT (Follow Strictly):] ${structuralSplitStr} ${extraInstructions}`;
         }
       } catch (e) {
       }
