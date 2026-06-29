@@ -801,7 +801,8 @@ app.post('/api/upload', (req, res, next) => {
       let extraInstructions = floors === 1 ? " DO NOT generate a second floor. Keep the roofline very low." : floors === 2 ? " DO NOT generate a third floor. Stop strictly at the first floor roof." : "";
       let mathPrompt = `${styleKeywords} [Exact Layout Details:] ${structuralSplitStr} ${doorAddition} Follow this layout exactly. ${extraInstructions}`;
 
-      let dynamicPrompt = mathPrompt;
+      // Reorder prompt to ensure layout is prioritized and not cut off
+      let dynamicPrompt = `[Exact Layout Details:] ${structuralSplitStr} ${doorAddition} Follow this exactly. ${extraInstructions} [Style:] ${styleKeywords}`;
 
       // --- GEMINI VISION ANALYSIS RESTORED ---
       try {
@@ -809,9 +810,8 @@ app.post('/api/upload', (req, res, next) => {
         let visionModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
         const imgData = require('fs').readFileSync(groundPath).toString("base64");
         
-        // Ask Gemini to be VERY concise so it doesn't break URL limits, and no hallucinations.
         const parts = [
-          `You are an AI architect. Analyze this 2D floor plan. Write a VERY SHORT description (MAX 30 WORDS) of its exterior style (e.g. modern, minimalist, colors). DO NOT describe the layout, doors, or windows. DO NOT mention the number of floors. ONLY describe aesthetic styling.`,
+          `You are an AI architect. Analyze this 2D floor plan. Write a VERY SHORT description (MAX 20 WORDS) of its exterior style (e.g. modern, minimalist, colors). DO NOT describe the layout, doors, or windows. DO NOT mention the number of floors. ONLY describe aesthetic styling.`,
           { inlineData: { data: imgData, mimeType: "image/png" } }
         ];
 
@@ -819,28 +819,24 @@ app.post('/api/upload', (req, res, next) => {
         let aiResponse = visionResult.response.text().trim();
         
         if (aiResponse && aiResponse.length > 5) {
-          // Anti-Hallucination Filter
-          if (floors === 1) {
-             aiResponse = aiResponse.replace(/two[\-\s]?story|second floor|first floor|balcon(y|ies)|mansion/gi, 'single-story');
-          }
-          // Merge Gemini's aesthetic flair with our strict math layout
-          dynamicPrompt = `${styleKeywords} [Aesthetic Style:] ${aiResponse} [Exact Layout Details:] ${structuralSplitStr} ${doorAddition} Follow this layout exactly. ${extraInstructions}`;
+          if (floors === 1) aiResponse = aiResponse.replace(/two[\-\s]?story|second floor|first floor|balcon(y|ies)|mansion/gi, 'single-story');
+          // Put Layout FIRST so it doesn't get cut off by URL limits
+          dynamicPrompt = `[CRITICAL LAYOUT:] ${structuralSplitStr} ${doorAddition} [Style:] ${aiResponse} ${styleKeywords}`;
         }
       } catch (e) {
         console.log('[Step 8] Gemini Vision failed, using pure math prompt.', e.message);
       }
 
-      // Clean up whitespace
       dynamicPrompt = dynamicPrompt.replace(/\s+/g, ' ').trim();
-
-      let traditionalPrompt = dynamicPrompt.replace(/flat roof and stylish parapet wall/i, 'sloping traditional Kerala roof with Mangalore tiles').replace(/modern Indian house style/i, 'Traditional Indian house style with wooden pillars');
+      let traditionalPrompt = dynamicPrompt.replace(/flat roof and stylish parapet wall/i, 'sloping traditional Kerala roof with Mangalore tiles');
 
       const roomNames = (groundResult.rooms || []).map(r => r.name).join(', ');
-      let isometricPrompt = `Highly detailed photorealistic 3D isometric cutaway floor plan of a modern Indian house. Top-down angled view showing interior walls and realistic modern furniture. Rooms included: ${roomNames}. Cinematic lighting, ray tracing, 8k resolution, architectural visualization, Unreal Engine 5 render style.`;
-      // Fallback URLs for Pollinations (Truncated to avoid URI Too Long errors in the frontend image tags)
-      const safeDynamicPrompt = dynamicPrompt.substring(0, 400);
-      const safeTraditionalPrompt = traditionalPrompt.substring(0, 400);
-      const safeIsometricPrompt = isometricPrompt.substring(0, 400);
+      let isometricPrompt = `Highly detailed 3D isometric cutaway of a modern Indian house. Rooms: ${roomNames}. Cinematic lighting, 8k.`;
+
+      // Safely truncate to 900 characters (Browsers support 2000+, but 900 is safe for Pollinations)
+      const safeDynamicPrompt = dynamicPrompt.substring(0, 900);
+      const safeTraditionalPrompt = traditionalPrompt.substring(0, 900);
+      const safeIsometricPrompt = isometricPrompt.substring(0, 900);
 
       let modernImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(safeDynamicPrompt)}?seed=${timestamp}&width=1024&height=768&model=flux`;
       let traditionalImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(safeTraditionalPrompt)}?seed=${timestamp + 1}&width=1024&height=768&model=flux`;
