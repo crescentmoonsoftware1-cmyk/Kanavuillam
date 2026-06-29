@@ -17,9 +17,9 @@ GEMINI_PROMPT = """You are a master architectural AI. Your ONLY goal is 1:1 EXAC
 TASK: Extract EVERY SINGLE ROOM, WALL, DOOR, WINDOW and FIXTURE visible in the image. Nothing can be omitted.
 
 === EXTRACTION RULES ===
-1. ROOMS: Detect ALL rooms — including small ones like toilets, utility areas, WC, portico, store room, pooja. 
-   - Use the EXACT room names written in the plan (e.g. "MASTER BDRM", "COMMON TOILET", "CAR PARKING PORTICO").
-   - Use the EXACT dimensions labeled in the plan (e.g. 13'0" x 16'6" → width=13.0, height=16.5).
+1. ROOMS: Detect ALL rooms — including small ones like toilets, utility areas, WC, portico, store room, pooja, AND STAIRCASES/STEPS. You MUST extract staircases as a room bounding box (e.g. {"name": "Staircase"}).
+   - Use the EXACT room names written in the plan (e.g. "MASTER BDRM", "COMMON TOILET", "CAR PARKING PORTICO", "STEPS").
+   - Use the EXACT dimensions labeled in the plan (e.g. 13'0" x 16'6" → width=13.0, height=16.5). If dimensions are missing, estimate from scale.
    - Use (0,0) as the top-left corner of the floor plan boundary.
    - x increases going RIGHT, y increases going DOWN.
 2. WALLS: Draw every wall segment. Exterior = 0.75ft thick, Interior = 0.37ft thick.

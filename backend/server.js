@@ -757,14 +757,21 @@ app.post('/api/upload', (req, res, next) => {
         if (roomBottomEdge > maxY) maxY = roomBottomEdge;
       });
 
-      // 2. Extract front elements (within 15ft of the front line)
-      let frontFacadeElements = rooms.filter(r => ((r.y || 0) + (r.height || 0)) >= (maxY - 15));
+      // 2. Extract front elements (within 20ft of the front line to catch recessed halls)
+      let frontFacadeElements = rooms.filter(r => ((r.y || 0) + (r.height || 0)) >= (maxY - 20));
 
       // 3. Spatially map them to Left, Center, or Right based on their X coordinates
       let leftDesc = "a solid wall";
       let centerDesc = "a solid wall";
       let rightDesc = "a solid wall";
+      
+      // Calculate door location strictly from the parsed doors data
       let doorLocation = "center";
+      if (groundResult.doors && groundResult.doors.length > 0) {
+          const mainDoor = groundResult.doors.find(d => d.is_main) || groundResult.doors[0];
+          const doorX = mainDoor.x || (pw / 2);
+          doorLocation = doorX < (pw / 3) ? 'left' : doorX > (pw * (2 / 3)) ? 'right' : 'center';
+      }
 
       frontFacadeElements.forEach((room) => {
         const name = (room.name || '').toLowerCase();
@@ -775,10 +782,9 @@ app.post('/api/upload', (req, res, next) => {
         if (name.includes('portico') || name.includes('parking') || name.includes('car')) {
           desc = "a wide open car parking portico with a parked car";
         } else if (name.includes('stair') || name.includes('step')) {
-          desc = "entry steps leading up";
+          desc = "a visible external staircase structure with steel railings going up to the roof";
         } else if (name.includes('bedroom') || name.includes('living') || name.includes('hall')) {
           desc = "a solid wall with a large modern window";
-          doorLocation = section; // Hall usually has the main door
         } else if (name.includes('kitchen')) {
           desc = "a solid wall with a kitchen window";
         } else if (name.includes('toilet') || name.includes('bath') || name.includes('wc')) {
