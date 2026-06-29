@@ -757,51 +757,49 @@ app.post('/api/upload', (req, res, next) => {
         if (roomBottomEdge > maxY) maxY = roomBottomEdge;
       });
 
-      // 2. Extract ONLY the rooms/structures that touch the front facade (within 10ft of max Y)
-      // and sort them strictly from Left to Right (based on X coordinate)
-      let frontFacadeElements = rooms
-        .filter(r => ((r.y || 0) + (r.height || 0)) >= (maxY - 10))
-        .sort((a, b) => (a.x || 0) - (b.x || 0));
+      // 2. Extract front elements (within 15ft of the front line)
+      let frontFacadeElements = rooms.filter(r => ((r.y || 0) + (r.height || 0)) >= (maxY - 15));
 
-      // 3. Build the structural description left-to-right dynamically
-      let facadeDescription = [];
+      // 3. Spatially map them to Left, Center, or Right based on their X coordinates
+      let leftDesc = "a solid wall";
+      let centerDesc = "a solid wall";
+      let rightDesc = "a solid wall";
+      let doorLocation = "center";
 
       frontFacadeElements.forEach((room) => {
         const name = (room.name || '').toLowerCase();
-        // Calculate what percentage of the front width this room takes
-        const widthPercentage = Math.round(((room.width || 10) / pw) * 100);
+        const roomCenterX = (room.x || 0) + ((room.width || 0) / 2);
+        const section = roomCenterX < (pw / 3) ? 'left' : roomCenterX > (pw * (2 / 3)) ? 'right' : 'center';
 
-        let elementDesc = "";
-
+        let desc = "";
         if (name.includes('portico') || name.includes('parking') || name.includes('car')) {
-          elementDesc = `occupying ${widthPercentage}% of the width is a wide, open car parking portico supported by modern pillars, with a parked modern car`;
+          desc = "a wide open car parking portico with a parked car";
         } else if (name.includes('stair') || name.includes('step')) {
-          elementDesc = `occupying ${widthPercentage}% of the width is a prominent, semi-enclosed staircase tower structure`;
+          desc = "entry steps leading up";
         } else if (name.includes('bedroom') || name.includes('living') || name.includes('hall')) {
-          elementDesc = `occupying ${widthPercentage}% of the width is a solid wall featuring a large modern front window`;
+          desc = "a solid wall with a large modern window";
+          doorLocation = section; // Hall usually has the main door
         } else if (name.includes('kitchen')) {
-          elementDesc = `occupying ${widthPercentage}% of the width is a solid wall with a kitchen window`;
+          desc = "a solid wall with a kitchen window";
         } else if (name.includes('toilet') || name.includes('bath') || name.includes('wc')) {
-          elementDesc = `occupying ${widthPercentage}% of the width is a solid wall with a small ventilation window`;
+          desc = "a solid wall with a small ventilation window and plumbing ducts";
         }
 
-        if (elementDesc) facadeDescription.push(elementDesc);
+        if (desc) {
+          if (section === 'left') leftDesc = desc;
+          if (section === 'center') centerDesc = desc;
+          if (section === 'right') rightDesc = desc;
+        }
       });
 
-      // 4. Check for Main Door (If a Hall/Living is set back, mention a door inside the shade)
-      const hasHall = rooms.some(r => r.name.toLowerCase().includes('hall') || r.name.toLowerCase().includes('living'));
-      const doorAddition = hasHall ? "Deep inside the shaded area or portico, an elegant main entrance wooden door is visible. " : "";
-
-      // 5. Combine everything into the final Prompt with EXACT STYLE MATCH
-      const structuralSplitStr = facadeDescription.length > 0
-        ? `The front facade structure from left to right is EXACTLY: First, ${facadeDescription.join('. Next to it, ')}.`
-        : "The front facade has a simple modern layout.";
+      const structuralSplitStr = `On the LEFT side of the facade is ${leftDesc}. In the CENTER of the facade is ${centerDesc}. On the RIGHT side of the facade is ${rightDesc}.`;
+      const doorAddition = `The main entrance wooden door is located deeply recessed on the ${doorLocation.toUpperCase()} side of the house.`;
 
       const floorStr = floors === 1 ? "SINGLE-STORY GROUND-FLOOR-ONLY (1 floor ONLY, NO upper floors, very short building height)" : floors === 2 ? "EXACTLY TWO-STORY HOUSE (Ground + 1 First Floor ONLY, NO second floor, NO third floor)" : "MULTI-STORY";
       const styleKeywords = `STRICTLY ${floorStr} ultra-realistic modern Indian residential elevation. STYLE: Real estate photography, DSLR 35mm, highly realistic, shot from street level. Clean off-white exterior walls with light grey accent bands and modern flat roofs (with a water tank on top). PERFECTLY STRAIGHT FRONT-FACING ELEVATION VIEW, zoomed out showing the ENTIRE house, a modern compound wall in the front with an entrance gate, street view, natural potted plants, bright sunny daytime, clear blue sky, 8k resolution. DO NOT GENERATE A MANSION. GENERATE ONLY WHAT IS DESCRIBED IN THE STRUCTURE BELOW.`;
 
       let extraInstructions = floors === 1 ? " DO NOT generate a second floor. Keep the roofline very low." : floors === 2 ? " DO NOT generate a third floor. Stop strictly at the first floor roof." : "";
-      let mathPrompt = `${styleKeywords} ${structuralSplitStr} ${doorAddition} Follow the structural split exactly. No extra floors.${extraInstructions}`;
+      let mathPrompt = `${styleKeywords} [Exact Layout Details:] ${structuralSplitStr} ${doorAddition} Follow this layout exactly. ${extraInstructions}`;
 
       let dynamicPrompt = mathPrompt;
       try {
