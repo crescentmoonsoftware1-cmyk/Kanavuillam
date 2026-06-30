@@ -193,11 +193,11 @@ class _EstimationScreenState extends State<EstimationScreen> {
   Widget _buildTierCards(Map estimates) {
     return Row(
       children: [
-        _TierCard(label: 'BASIC', amount: estimates['basic'], colors: const [Color(0xFF64748B), Color(0xFF475569)]),
+        _TierCard(label: 'BASIC', amount: estimates['basic'], colors: const [Color(0xFF64748B), Color(0xFF475569)], specs: "• Standard Red Bricks / Solid Blocks\n• Basic Ceramic Tiles (₹40-50/sqft)\n• Painted Wooden Windows & Flush Doors\n• Basic CPVC plumbing & wiring\n• Standard Emulsion Paint"),
         const SizedBox(width: 16),
-        _TierCard(label: 'STANDARD', amount: estimates['standard'], colors: const [Color(0xFF3B82F6), Color(0xFF2563EB)], isFeatured: true),
+        _TierCard(label: 'STANDARD', amount: estimates['standard'], colors: const [Color(0xFF3B82F6), Color(0xFF2563EB)], isFeatured: true, specs: "• AAC Blocks / Wire-cut Bricks\n• Vitrified Tiles (₹60-80/sqft)\n• UPVC Windows with mosquito mesh\n• Branded Plumbing (Astral) & Switches\n• Tractor Emulsion & Weatherproof Paint"),
         const SizedBox(width: 16),
-        _TierCard(label: 'PREMIUM', amount: estimates['premium'], colors: const [Color(0xFF8B5CF6), Color(0xFF6D28D9)]),
+        _TierCard(label: 'PREMIUM', amount: estimates['premium'], colors: const [Color(0xFF8B5CF6), Color(0xFF6D28D9)], specs: "• Porotherm Bricks / Top-tier AAC\n• Premium Vitrified / Italian Marble (₹120+/sqft)\n• Teak Wood or Aluminum System Windows\n• Luxury Bathroom Fittings (Jaquar/Kohler)\n• Royale Luxury Paint & Smart Wiring"),
       ],
     );
   }
@@ -447,8 +447,9 @@ class _TierCard extends StatelessWidget {
   final dynamic amount;
   final List<Color> colors;
   final bool isFeatured;
+  final String specs;
 
-  const _TierCard({required this.label, required this.amount, required this.colors, this.isFeatured = false});
+  const _TierCard({required this.label, required this.amount, required this.colors, this.isFeatured = false, required this.specs});
 
   @override
   Widget build(BuildContext context) {
@@ -459,22 +460,64 @@ class _TierCard extends StatelessWidget {
     } else if (val >= 100000) formatted = '₹${(val / 100000).toStringAsFixed(1)}L';
 
     return Expanded(
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: isFeatured ? 32 : 24, horizontal: 16),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(colors: colors, begin: Alignment.topLeft, end: Alignment.bottomRight),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            showDialog(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                backgroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                title: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: colors.last),
+                    const SizedBox(width: 8),
+                    Text('$label Finish Details', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  ],
+                ),
+                content: Text(specs, style: const TextStyle(fontSize: 15, height: 1.6, color: Color(0xFF333333))),
+                actions: [
+                  TextButton(
+                    onTap: () => Navigator.pop(ctx),
+                    child: Text('Close', style: TextStyle(color: colors.last, fontWeight: FontWeight.bold)),
+                  )
+                ],
+              ),
+            );
+          },
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [BoxShadow(color: colors.first.withValues(alpha: 0.3), blurRadius: isFeatured ? 20 : 10, offset: Offset(0, isFeatured ? 10 : 4))],
-        ),
-        child: Column(
-          children: [
-            Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.2)),
-            const SizedBox(height: 12),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(formatted, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -1)),
+          child: Container(
+            padding: EdgeInsets.symmetric(vertical: isFeatured ? 32 : 24, horizontal: 16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: colors, begin: Alignment.topLeft, end: Alignment.bottomRight),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [BoxShadow(color: colors.first.withValues(alpha: 0.3), blurRadius: isFeatured ? 20 : 10, offset: Offset(0, isFeatured ? 10 : 4))],
             ),
-          ],
+            child: Column(
+              children: [
+                Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.2)),
+                const SizedBox(height: 12),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(formatted, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -1)),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(12)),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.visibility, color: Colors.white, size: 12),
+                      SizedBox(width: 4),
+                      Text('View Specs', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold))
+                    ],
+                  ),
+                )
+              ],
+            ),
+          ),
         ),
       ),
     ).animate().fadeIn().slideY(begin: 0.1, end: 0);
