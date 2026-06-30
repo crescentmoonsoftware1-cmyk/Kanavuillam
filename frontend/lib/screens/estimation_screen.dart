@@ -479,7 +479,7 @@ class _TierCard extends StatelessWidget {
                 content: Text(specs, style: const TextStyle(fontSize: 15, height: 1.6, color: Color(0xFF333333))),
                 actions: [
                   TextButton(
-                    onTap: () => Navigator.pop(ctx),
+                    onPressed: () => Navigator.pop(ctx),
                     child: Text('Close', style: TextStyle(color: colors.last, fontWeight: FontWeight.bold)),
                   )
                 ],
