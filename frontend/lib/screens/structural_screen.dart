@@ -156,7 +156,34 @@ class _StructuralScreenState extends State<StructuralScreen> {
                 title: '3. 3D STRUCTURAL PILLAR & BEAM SKELETON',
                 child: ClipRRect(
                   borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(6), bottomRight: Radius.circular(6)),
-                  child: Image.network(structural['preview_url'], width: double.infinity, fit: BoxFit.cover),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 250),
+                    child: Image.network(
+                      structural['preview_url'], 
+                      width: double.infinity, 
+                      fit: BoxFit.cover,
+                      loadingBuilder: (ctx, child, progress) {
+                        if (progress == null) return child;
+                        return const SizedBox(height: 250, child: Center(child: CircularProgressIndicator()));
+                      },
+                      errorBuilder: (ctx, err, stack) {
+                        return Container(
+                          height: 250,
+                          color: const Color(0xFFF1F5F9),
+                          child: const Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.broken_image, color: Colors.grey, size: 40),
+                                SizedBox(height: 8),
+                                Text('Failed to load 3D visual', style: TextStyle(color: Colors.grey)),
+                              ]
+                            )
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                 ),
               ).animate().fadeIn(delay: 150.ms),
               const SizedBox(height: 24),

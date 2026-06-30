@@ -985,8 +985,8 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
           }
         ],
         structural: {
-          preview_url: `https://image.pollinations.ai/prompt/Highly%20detailed%203D%20architectural%20render%20of%20a%20building%20structural%20skeleton%20with%20straight%20vertical%20concrete%20pillars%20and%20beams%20standing%20up%20on%20top%20of%20a%202D%20floor%20plan%20blueprint%20drawing%20paper%20for%20a%20${floors}-story%20${pw}x${ph}ft%20house?seed=${timestamp + 2}&width=1024&height=1024&model=flux`,
-          blueprint_url: `https://image.pollinations.ai/prompt/2D%20technical%20structural%20blueprint%20of%20a%20${floors}-story%20${pw}x${ph}ft%20house%20white%20lines%20on%20dark%20navy?seed=${timestamp + 3}&width=1024&height=1024&model=flux`
+          preview_url: `https://image.pollinations.ai/prompt/Highly%20detailed%203D%20architectural%20render%20of%20a%20building%20structural%20skeleton%20with%20straight%20vertical%20concrete%20pillars%20and%20beams%20standing%20up%20on%20top%20of%20a%202D%20floor%20plan%20blueprint%20drawing%20paper%20for%20a%20${encodeURIComponent(floors + '-story ' + pw + 'x' + ph + 'ft house')}?seed=${timestamp + 2}&width=1024&height=1024&model=flux`,
+          blueprint_url: `https://image.pollinations.ai/prompt/2D%20technical%20structural%20blueprint%20of%20a%20${encodeURIComponent(floors + '-story ' + pw + 'x' + ph + 'ft house')}%20white%20lines%20on%20dark%20navy?seed=${timestamp + 3}&width=1024&height=1024&model=flux`
         }
       };
     } else if (!visualDesign.structural) {
@@ -994,8 +994,8 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
       const ph = groundResult.project.height || 40;
       const baseDesc = `${elevation.floors}-story ${pw}x${ph}ft house`;
       visualDesign.structural = {
-        preview_url: `https://image.pollinations.ai/prompt/Highly%20detailed%203D%20architectural%20render%20of%20a%20building%20structural%20skeleton%20with%20straight%20vertical%20concrete%20pillars%20and%20beams%20standing%20up%20on%20top%20of%20a%202D%20floor%20plan%20blueprint%20drawing%20paper%20for%20a%20${baseDesc}?seed=${timestamp + 2}&width=1024&height=1024&model=flux`,
-        blueprint_url: `https://image.pollinations.ai/prompt/2D%20technical%20structural%20blueprint%20of%20a%20${baseDesc}%20white%20lines%20on%20dark%20navy?seed=${timestamp + 3}&width=1024&height=1024&model=flux`
+        preview_url: `https://image.pollinations.ai/prompt/Highly%20detailed%203D%20architectural%20render%20of%20a%20building%20structural%20skeleton%20with%20straight%20vertical%20concrete%20pillars%20and%20beams%20standing%20up%20on%20top%20of%20a%202D%20floor%20plan%20blueprint%20drawing%20paper%20for%20a%20${encodeURIComponent(baseDesc)}?seed=${timestamp + 2}&width=1024&height=1024&model=flux`,
+        blueprint_url: `https://image.pollinations.ai/prompt/2D%20technical%20structural%20blueprint%20of%20a%20${encodeURIComponent(baseDesc)}%20white%20lines%20on%20dark%20navy?seed=${timestamp + 3}&width=1024&height=1024&model=flux`
       };
     }
     console.log(`[Step 8] ✓ AI 3D Design variations ready: ${visualDesign.variations?.length || 0}`);
