@@ -896,6 +896,7 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
       let modernImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(safeDynamicPrompt)}?seed=${timestamp}&width=1024&height=768&model=flux`;
       let traditionalImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(safeTraditionalPrompt)}?seed=${timestamp + 1}&width=1024&height=768&model=flux`;
       let isometricImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(safeIsometricPrompt)}?seed=${timestamp + 2}&width=1024&height=1024&model=flux`;
+      let structuralImageUrl = `https://image.pollinations.ai/prompt/Highly%20detailed%203D%20architectural%20render%20of%20a%20building%20structural%20skeleton%20with%20straight%20vertical%20concrete%20pillars%20and%20beams%20standing%20up%20on%20top%20of%20a%202D%20floor%20plan%20blueprint%20drawing%20paper?seed=${timestamp + 3}&width=1024&height=1024&model=flux`;
 
       try {
         console.log('[Step 8] Attempting OpenAI DALL-E 3 for Front & Isometric Views...');
@@ -939,8 +940,13 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
           throw new Error(`No output from Replicate. Status: ${data.status}`);
         };
 
+        const pw = groundResult.project.width || 30;
+        const ph = groundResult.project.height || 40;
+        const structuralDesc = `${elevation.floors}-story ${pw}x${ph}ft house`;
+        const structuralPrompt = `Highly detailed 3D architectural render of a building structural skeleton with straight vertical concrete pillars and beams standing up on top of a 2D floor plan blueprint drawing paper for a ${structuralDesc}`;
+
         // Try DALL-E 3 first, fallback to Replicate Flux
-        const [elevationImg, isometricImg] = await Promise.allSettled([
+        const [elevationImg, isometricImg, structuralImg] = await Promise.allSettled([
           fetchOpenAIDalle(dynamicPrompt).catch((e) => {
              console.log('[Step 8] DALL-E 3 Elevation failed:', e.message);
              return fetchReplicate(dynamicPrompt);
@@ -948,6 +954,10 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
           fetchOpenAIDalle(isometricPrompt).catch((e) => {
              console.log('[Step 8] DALL-E 3 Isometric failed:', e.message);
              return fetchReplicate(isometricPrompt);
+          }),
+          fetchOpenAIDalle(structuralPrompt).catch((e) => {
+             console.log('[Step 8] DALL-E 3 Structural failed:', e.message);
+             return fetchReplicate(structuralPrompt);
           })
         ]);
 
@@ -964,8 +974,21 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
         } else {
           console.log(`[Step 8] Isometric Error: ${isometricImg.reason.message}`);
         }
+
+        if (structuralImg.status === 'fulfilled') {
+          console.log('[Step 8] ✓ Structural Successful!');
+          structuralImageUrl = structuralImg.value;
+        } else {
+          console.log(`[Step 8] Structural Error: ${structuralImg.reason.message}`);
+          structuralImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(structuralPrompt)}?seed=${timestamp + 2}&width=1024&height=1024&model=flux`;
+        }
       } catch (err) {
         console.log('[Step 8] Image Generation Request Failed:', err.message);
+        const pw = groundResult.project.width || 30;
+        const ph = groundResult.project.height || 40;
+        const structuralDesc = `${elevation.floors}-story ${pw}x${ph}ft house`;
+        const structuralPrompt = `Highly detailed 3D architectural render of a building structural skeleton with straight vertical concrete pillars and beams standing up on top of a 2D floor plan blueprint drawing paper for a ${structuralDesc}`;
+        structuralImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(structuralPrompt)}?seed=${timestamp + 2}&width=1024&height=1024&model=flux`;
       }
 
       visualDesign = {
@@ -985,7 +1008,7 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
           }
         ],
         structural: {
-          preview_url: `https://image.pollinations.ai/prompt/Highly%20detailed%203D%20architectural%20render%20of%20a%20building%20structural%20skeleton%20with%20straight%20vertical%20concrete%20pillars%20and%20beams%20standing%20up%20on%20top%20of%20a%202D%20floor%20plan%20blueprint%20drawing%20paper%20for%20a%20${encodeURIComponent(floors + '-story ' + pw + 'x' + ph + 'ft house')}?seed=${timestamp + 2}&width=1024&height=1024&model=flux`,
+          preview_url: structuralImageUrl,
           blueprint_url: `https://image.pollinations.ai/prompt/2D%20technical%20structural%20blueprint%20of%20a%20${encodeURIComponent(floors + '-story ' + pw + 'x' + ph + 'ft house')}%20white%20lines%20on%20dark%20navy?seed=${timestamp + 3}&width=1024&height=1024&model=flux`
         }
       };
