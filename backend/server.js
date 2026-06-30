@@ -872,7 +872,9 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
         let aiResponse = visionResult.response.text().trim();
         
         if (aiResponse && aiResponse.length > 5) {
-          if (floors === 1) aiResponse = aiResponse.replace(/two[\-\s]?story|second floor|first floor|balcon(y|ies)|mansion/gi, 'single-story');
+          if (floors === 1) {
+             aiResponse = ""; // Completely drop Gemini Vision style for single floors to prevent G+1 hallucinations
+          }
           // Put Layout FIRST so it doesn't get cut off by URL limits
           dynamicPrompt = `[CRITICAL LAYOUT:] ${structuralSplitStr} ${doorAddition} Follow this exactly. ${extraInstructions} [Style:] ${aiResponse} ${styleKeywords}`;
         }
