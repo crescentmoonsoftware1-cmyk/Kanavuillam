@@ -757,9 +757,13 @@ app.post('/api/upload', (req, res, next) => {
         if (roomBottomEdge > maxY) maxY = roomBottomEdge;
       });
 
-      // 2. Extract front elements (within 15ft of the front line to catch front-most rooms)
-      let frontFacadeElements = rooms.filter(r => ((r.y || 0) + (r.height || 0)) >= (maxY - 15));
-
+      // 2. Extract front elements (within 15ft of the front line, but include stairs if within 30ft)
+      let frontFacadeElements = rooms.filter(r => {
+        const name = (r.name || '').toLowerCase();
+        const isStair = name.includes('stair') || name.includes('step');
+        const threshold = isStair ? 30 : 15;
+        return ((r.y || 0) + (r.height || 0)) >= (maxY - threshold);
+      });
       // 3. Sort them from Left to Right based on X coordinate
       frontFacadeElements.sort((a, b) => (a.x || 0) - (b.x || 0));
 
@@ -801,10 +805,10 @@ app.post('/api/upload', (req, res, next) => {
       
       const doorAddition = `The main entrance wooden door is located on ${doorLocation} of the facade. DO NOT add elements that are not mentioned. Strictly follow the left-to-right order.`;
 
-      const floorStr = floors === 1 ? "SINGLE-STORY GROUND-FLOOR-ONLY (1 floor ONLY, NO upper floors, very short building height)" : floors === 2 ? "EXACTLY TWO-STORY HOUSE (Ground + 1 First Floor ONLY, NO second floor, NO third floor)" : "MULTI-STORY";
+      const floorStr = floors === 1 ? "EXTREMELY SMALL SINGLE-STORY BUNGALOW (ONLY 1 GROUND FLOOR, NO upper floors, very low flat roof directly above the doors, NO balconies)" : floors === 2 ? "EXACTLY TWO-STORY HOUSE (Ground + 1 First Floor ONLY, NO second floor, NO third floor)" : "MULTI-STORY";
       const styleKeywords = `STRICTLY ${floorStr} ultra-realistic modern Indian residential elevation. STYLE: Real estate photography, DSLR 35mm, highly realistic, shot from street level. AESTHETICS: Light beige/cream exterior walls with subtle light grey accent blocks and a thick dark grey frame around the front window. Modern minimalist flat roof with subtle grooved lines and a black cylindrical water tank on top. Low-height modern compound wall with a small horizontal slatted metal entrance gate. Lush landscaping with crotons and red flowers in planters along the wall. PERFECTLY STRAIGHT FRONT-FACING ELEVATION VIEW, zoomed out showing the ENTIRE house from street up to roof, bright sunny daytime, clear blue sky, 8k resolution.`;
 
-      let extraInstructions = floors === 1 ? " DO NOT generate a second floor. Keep the roofline very low." : floors === 2 ? " DO NOT generate a third floor. Stop strictly at the first floor roof." : "";
+      let extraInstructions = floors === 1 ? " ABSOLUTELY DO NOT generate a second floor. Ensure the roofline is flat and very low immediately above the ground floor doors. There should be NO balconies." : floors === 2 ? " DO NOT generate a third floor. Stop strictly at the first floor roof." : "";
       let mathPrompt = `${styleKeywords} [Exact Layout Details:] ${structuralSplitStr} ${doorAddition} Follow this layout exactly. ${extraInstructions}`;
 
       // Reorder prompt to ensure layout is prioritized and not cut off
