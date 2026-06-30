@@ -151,6 +151,17 @@ class _StructuralScreenState extends State<StructuralScreen> {
                 .animate()
                 .fadeIn(delay: 100.ms),
             const SizedBox(height: 24),
+            if (structural['preview_url'] != null && structural['preview_url'].toString().isNotEmpty) ...[
+              _BlueprintCard(
+                title: '3. 3D STRUCTURAL PILLAR & BEAM SKELETON',
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(6), bottomRight: Radius.circular(6)),
+                  child: Image.network(structural['preview_url'], width: double.infinity, fit: BoxFit.cover),
+                ),
+              ).animate().fadeIn(delay: 150.ms),
+              const SizedBox(height: 24),
+            ],
+            const SizedBox(height: 24),
             _BeamScheduleCard(schedule: structural['beam_schedule'])
                 .animate()
                 .fadeIn(delay: 200.ms),
