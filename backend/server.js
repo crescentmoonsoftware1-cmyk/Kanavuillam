@@ -757,49 +757,49 @@ app.post('/api/upload', (req, res, next) => {
         if (roomBottomEdge > maxY) maxY = roomBottomEdge;
       });
 
-      // 2. Extract front elements (within 20ft of the front line to catch recessed halls)
-      let frontFacadeElements = rooms.filter(r => ((r.y || 0) + (r.height || 0)) >= (maxY - 20));
+      // 2. Extract front elements (within 15ft of the front line to catch front-most rooms)
+      let frontFacadeElements = rooms.filter(r => ((r.y || 0) + (r.height || 0)) >= (maxY - 15));
 
-      // 3. Spatially map them to Left, Center, or Right based on their X coordinates
-      let leftDesc = "a solid wall";
-      let centerDesc = "a solid wall";
-      let rightDesc = "a solid wall";
+      // 3. Sort them from Left to Right based on X coordinate
+      frontFacadeElements.sort((a, b) => (a.x || 0) - (b.x || 0));
+
+      // 4. Construct a dynamic description
+      let facadeDescriptions = [];
+      frontFacadeElements.forEach((room) => {
+        const name = (room.name || '').toLowerCase();
+        
+        let desc = "a solid wall";
+        if (name.includes('portico') || name.includes('parking') || name.includes('car') || name.includes('porch') || name.includes('garage')) {
+          desc = "an open car parking porch with pillars";
+        } else if (name.includes('stair') || name.includes('step')) {
+          desc = "a visible external staircase structure";
+        } else if (name.includes('bedroom') || name.includes('living') || name.includes('hall')) {
+          desc = "a wall with a large modern residential window";
+        } else if (name.includes('kitchen') || name.includes('dining')) {
+          desc = "a wall with a standard window";
+        } else if (name.includes('toilet') || name.includes('bath') || name.includes('wc')) {
+          desc = "a solid wall with a small high ventilation window";
+        } else if (name.includes('store') || name.includes('wash') || name.includes('utility') || name.includes('pooja')) {
+          desc = "a solid blank wall";
+        }
+        facadeDescriptions.push(desc);
+      });
+
+      let structuralSplitStr = "On the front facade from left to right: " + facadeDescriptions.join(", followed by ") + ".";
+      if (facadeDescriptions.length === 0) {
+          structuralSplitStr = "On the front facade: a standard residential entry.";
+      }
       
       // Calculate door location strictly from the parsed doors data
-      let doorLocation = "center";
+      let doorLocation = "the center";
       if (groundResult.doors && groundResult.doors.length > 0) {
           const mainDoor = groundResult.doors.find(d => d.is_main) || groundResult.doors[0];
           const doorX = mainDoor.x || (pw / 2);
-          doorLocation = doorX < (pw / 3) ? 'left' : doorX > (pw * (2 / 3)) ? 'right' : 'center';
+          if (doorX < (pw / 3)) doorLocation = "the left side";
+          else if (doorX > (pw * (2 / 3))) doorLocation = "the right side";
       }
-
-      frontFacadeElements.forEach((room) => {
-        const name = (room.name || '').toLowerCase();
-        const roomCenterX = (room.x || 0) + ((room.width || 0) / 2);
-        const section = roomCenterX < (pw / 3) ? 'left' : roomCenterX > (pw * (2 / 3)) ? 'right' : 'center';
-
-        let desc = "";
-        if (name.includes('portico') || name.includes('parking') || name.includes('car')) {
-          desc = "a wide open car parking portico with a parked car";
-        } else if (name.includes('stair') || name.includes('step')) {
-          desc = "a visible external staircase structure with steel railings going up to the roof";
-        } else if (name.includes('bedroom') || name.includes('living') || name.includes('hall')) {
-          desc = "a solid wall with a large modern window";
-        } else if (name.includes('kitchen')) {
-          desc = "a solid wall with a kitchen window";
-        } else if (name.includes('toilet') || name.includes('bath') || name.includes('wc')) {
-          desc = "a solid wall with a small ventilation window and plumbing ducts";
-        }
-
-        if (desc) {
-          if (section === 'left') leftDesc = desc;
-          if (section === 'center') centerDesc = desc;
-          if (section === 'right') rightDesc = desc;
-        }
-      });
-
-      const structuralSplitStr = `On the LEFT side of the facade is ${leftDesc}. In the CENTER of the facade is ${centerDesc}. On the RIGHT side of the facade is ${rightDesc}.`;
-      const doorAddition = `The main entrance wooden door is located deeply recessed on the ${doorLocation.toUpperCase()} side of the house.`;
+      
+      const doorAddition = `The main entrance wooden door is located on ${doorLocation} of the facade. DO NOT add elements that are not mentioned. Strictly follow the left-to-right order.`;
 
       const floorStr = floors === 1 ? "SINGLE-STORY GROUND-FLOOR-ONLY (1 floor ONLY, NO upper floors, very short building height)" : floors === 2 ? "EXACTLY TWO-STORY HOUSE (Ground + 1 First Floor ONLY, NO second floor, NO third floor)" : "MULTI-STORY";
       const styleKeywords = `STRICTLY ${floorStr} ultra-realistic modern Indian residential elevation. STYLE: Real estate photography, DSLR 35mm, highly realistic, shot from street level. AESTHETICS: Light beige/cream exterior walls with subtle light grey accent blocks and a thick dark grey frame around the front window. Modern minimalist flat roof with subtle grooved lines and a black cylindrical water tank on top. Low-height modern compound wall with a small horizontal slatted metal entrance gate. Lush landscaping with crotons and red flowers in planters along the wall. PERFECTLY STRAIGHT FRONT-FACING ELEVATION VIEW, zoomed out showing the ENTIRE house from street up to roof, bright sunny daytime, clear blue sky, 8k resolution.`;
