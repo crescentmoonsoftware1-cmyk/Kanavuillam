@@ -152,16 +152,19 @@ class _StructuralScreenState extends State<StructuralScreen> {
                 .fadeIn(delay: 100.ms),
             const SizedBox(height: 24),
             if (structural['preview_url'] != null && structural['preview_url'].toString().isNotEmpty) ...[
-              _BlueprintCard(
-                title: '3. 3D STRUCTURAL PILLAR & BEAM SKELETON',
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(6), bottomRight: Radius.circular(6)),
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(minHeight: 250),
-                    child: Image.network(
-                      structural['preview_url'], 
-                      width: double.infinity, 
-                      fit: BoxFit.cover,
+              Builder(
+                builder: (context) {
+                  String safeUrl = structural['preview_url'].toString().replaceAll(' ', '%20');
+                  return _BlueprintCard(
+                    title: '3. 3D STRUCTURAL PILLAR & BEAM SKELETON',
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(6), bottomRight: Radius.circular(6)),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(minHeight: 250),
+                        child: Image.network(
+                          safeUrl, 
+                          width: double.infinity, 
+                          fit: BoxFit.cover,
                       loadingBuilder: (ctx, child, progress) {
                         if (progress == null) return child;
                         return const SizedBox(height: 250, child: Center(child: CircularProgressIndicator()));
@@ -185,7 +188,8 @@ class _StructuralScreenState extends State<StructuralScreen> {
                     ),
                   ),
                 ),
-              ).animate().fadeIn(delay: 150.ms),
+              );
+            }).animate().fadeIn(delay: 150.ms),
               const SizedBox(height: 24),
             ],
             const SizedBox(height: 24),
