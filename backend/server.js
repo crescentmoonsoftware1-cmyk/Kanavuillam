@@ -874,7 +874,7 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
         if (aiResponse && aiResponse.length > 5) {
           if (floors === 1) aiResponse = aiResponse.replace(/two[\-\s]?story|second floor|first floor|balcon(y|ies)|mansion/gi, 'single-story');
           // Put Layout FIRST so it doesn't get cut off by URL limits
-          dynamicPrompt = `[CRITICAL LAYOUT:] ${structuralSplitStr} ${doorAddition} [Style:] ${aiResponse} ${styleKeywords}`;
+          dynamicPrompt = `[CRITICAL LAYOUT:] ${structuralSplitStr} ${doorAddition} Follow this exactly. ${extraInstructions} [Style:] ${aiResponse} ${styleKeywords}`;
         }
       } catch (e) {
         console.log('[Step 8] Gemini Vision failed, using pure math prompt.', e.message);
