@@ -884,7 +884,7 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
       let traditionalPrompt = dynamicPrompt.replace(/flat roof and stylish parapet wall/i, 'sloping traditional Kerala roof with Mangalore tiles');
 
       const roomNames = (groundResult.rooms || []).map(r => r.name).join(', ');
-      let isometricPrompt = `Highly detailed 3D isometric cutaway of a modern Indian house. Rooms: ${roomNames}. Cinematic lighting, 8k.`;
+      let isometricPrompt = `A highly detailed 3D isometric top-down cutaway render of a modern Indian house floor plan. The roof is completely removed to clearly reveal the interior rooms: ${roomNames}. Show neat, low-height walls, realistic furniture, internal doors, and clear external staircases. Professional architectural rendering, bright lighting, realistic textures, 8k.`;
 
       // Safely truncate to 900 characters (Browsers support 2000+, but 900 is safe for Pollinations)
       const safeDynamicPrompt = dynamicPrompt.substring(0, 900);
