@@ -771,7 +771,7 @@ app.post('/api/upload', (req, res, next) => {
       let facadeDescriptions = [];
       frontFacadeElements.forEach((room) => {
         const name = (room.name || '').toLowerCase();
-        
+
         let desc = "a solid wall";
         if (name.includes('portico') || name.includes('parking') || name.includes('car') || name.includes('porch') || name.includes('garage')) {
           desc = "an open car parking porch with pillars";
@@ -791,18 +791,18 @@ app.post('/api/upload', (req, res, next) => {
 
       let structuralSplitStr = "On the front facade from left to right: " + facadeDescriptions.join(", followed by ") + ".";
       if (facadeDescriptions.length === 0) {
-          structuralSplitStr = "On the front facade: a standard residential entry.";
+        structuralSplitStr = "On the front facade: a standard residential entry.";
       }
-      
+
       // Calculate door location strictly from the parsed doors data
       let doorLocation = "the center";
       if (groundResult.doors && groundResult.doors.length > 0) {
-          const mainDoor = groundResult.doors.find(d => d.is_main) || groundResult.doors[0];
-          const doorX = mainDoor.x || (pw / 2);
-          if (doorX < (pw / 3)) doorLocation = "the left side";
-          else if (doorX > (pw * (2 / 3))) doorLocation = "the right side";
+        const mainDoor = groundResult.doors.find(d => d.is_main) || groundResult.doors[0];
+        const doorX = mainDoor.x || (pw / 2);
+        if (doorX < (pw / 3)) doorLocation = "the left side";
+        else if (doorX > (pw * (2 / 3))) doorLocation = "the right side";
       }
-      
+
       const doorAddition = `The main entrance wooden door is located on ${doorLocation} of the facade. DO NOT add elements that are not mentioned. Strictly follow the left-to-right order.`;
 
       const floorStr = floors === 1 ? "EXTREMELY SMALL SINGLE-STORY BUNGALOW (ONLY 1 GROUND FLOOR, NO upper floors, very low flat roof directly above the doors, NO balconies)" : floors === 2 ? "EXACTLY TWO-STORY HOUSE (Ground + 1 First Floor ONLY, NO second floor, NO third floor)" : "MULTI-STORY";
@@ -819,7 +819,7 @@ app.post('/api/upload', (req, res, next) => {
         console.log('[Step 8] Asking Gemini Vision to analyze the 2D plan for Elevation...');
         let visionModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
         const imgData = require('fs').readFileSync(groundPath).toString("base64");
-        
+
         const parts = [
           `You are an expert AI Architect, Civil Engineer, Structural Engineer, Floor Plan Analysis Specialist, and Architectural Visualization System.
 
@@ -870,10 +870,10 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
 
         let visionResult = await visionModel.generateContent(parts);
         let aiResponse = visionResult.response.text().trim();
-        
+
         if (aiResponse && aiResponse.length > 5) {
           if (floors === 1) {
-             aiResponse = ""; // Completely drop Gemini Vision style for single floors to prevent G+1 hallucinations
+            aiResponse = ""; // Completely drop Gemini Vision style for single floors to prevent G+1 hallucinations
           }
           // Put Layout FIRST so it doesn't get cut off by URL limits
           dynamicPrompt = `[CRITICAL LAYOUT:] ${structuralSplitStr} ${doorAddition} Follow this exactly. ${extraInstructions} [Style:] ${aiResponse} ${styleKeywords}`;
@@ -896,11 +896,10 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
       let modernImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(safeDynamicPrompt)}?seed=${timestamp}&width=1024&height=768&model=flux`;
       let traditionalImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(safeTraditionalPrompt)}?seed=${timestamp + 1}&width=1024&height=768&model=flux`;
       let isometricImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(safeIsometricPrompt)}?seed=${timestamp + 2}&width=1024&height=1024&model=flux`;
-      let structuralImageUrl = `https://image.pollinations.ai/prompt/Highly%20detailed%203D%20architectural%20render%20of%20a%20building%20structural%20skeleton%20with%20straight%20vertical%20concrete%20pillars%20and%20beams%20standing%20up%20on%20top%20of%20a%202D%20floor%20plan%20blueprint%20drawing%20paper?seed=${timestamp + 3}&width=1024&height=1024&model=flux`;
 
       try {
         console.log('[Step 8] Attempting OpenAI DALL-E 3 for Front & Isometric Views...');
-        
+
         const fetchOpenAIDalle = async (prompt) => {
           // Split the key to bypass GitHub secret scanning so it works automatically on Railway
           const apiKey = process.env.OPENAI_API_KEY || ("sk-proj-s4Pc-SoShfnLP4Ar9WilBXDq7vl6bEUjZdZIeW7i7eITBGhU19" + "PJLhZGIg3Jucazq8h531b61dT3BlbkFJl0gpfVOO2bnjbpashLeNqIy_LmFoboCOf4-Y3fSoxbQS6UWcbA9kyZha7gzjPeCTzX0C-veQYA");
@@ -940,24 +939,15 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
           throw new Error(`No output from Replicate. Status: ${data.status}`);
         };
 
-        const pw = groundResult.project.width || 30;
-        const ph = groundResult.project.height || 40;
-        const structuralDesc = `${elevation.floors}-story ${pw}x${ph}ft house`;
-        const structuralPrompt = `Highly detailed 3D architectural render of a building structural skeleton with straight vertical concrete pillars and beams standing up on top of a 2D floor plan blueprint drawing paper for a ${structuralDesc}`;
-
         // Try DALL-E 3 first, fallback to Replicate Flux
-        const [elevationImg, isometricImg, structuralImg] = await Promise.allSettled([
+        const [elevationImg, isometricImg] = await Promise.allSettled([
           fetchOpenAIDalle(dynamicPrompt).catch((e) => {
-             console.log('[Step 8] DALL-E 3 Elevation failed:', e.message);
-             return fetchReplicate(dynamicPrompt);
+            console.log('[Step 8] DALL-E 3 Elevation failed:', e.message);
+            return fetchReplicate(dynamicPrompt);
           }),
           fetchOpenAIDalle(isometricPrompt).catch((e) => {
-             console.log('[Step 8] DALL-E 3 Isometric failed:', e.message);
-             return fetchReplicate(isometricPrompt);
-          }),
-          fetchOpenAIDalle(structuralPrompt).catch((e) => {
-             console.log('[Step 8] DALL-E 3 Structural failed:', e.message);
-             return fetchReplicate(structuralPrompt);
+            console.log('[Step 8] DALL-E 3 Isometric failed:', e.message);
+            return fetchReplicate(isometricPrompt);
           })
         ]);
 
@@ -974,21 +964,8 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
         } else {
           console.log(`[Step 8] Isometric Error: ${isometricImg.reason.message}`);
         }
-
-        if (structuralImg.status === 'fulfilled') {
-          console.log('[Step 8] ✓ Structural Successful!');
-          structuralImageUrl = structuralImg.value;
-        } else {
-          console.log(`[Step 8] Structural Error: ${structuralImg.reason.message}`);
-          structuralImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(structuralPrompt)}?seed=${timestamp + 2}&width=1024&height=1024&model=flux`;
-        }
       } catch (err) {
         console.log('[Step 8] Image Generation Request Failed:', err.message);
-        const pw = groundResult.project.width || 30;
-        const ph = groundResult.project.height || 40;
-        const structuralDesc = `${elevation.floors}-story ${pw}x${ph}ft house`;
-        const structuralPrompt = `Highly detailed 3D architectural render of a building structural skeleton with straight vertical concrete pillars and beams standing up on top of a 2D floor plan blueprint drawing paper for a ${structuralDesc}`;
-        structuralImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(structuralPrompt)}?seed=${timestamp + 2}&width=1024&height=1024&model=flux`;
       }
 
       visualDesign = {
@@ -1008,7 +985,7 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
           }
         ],
         structural: {
-          preview_url: structuralImageUrl,
+          preview_url: `https://image.pollinations.ai/prompt/Highly%20detailed%203D%20architectural%20render%20of%20a%20building%20structural%20skeleton%20with%20straight%20vertical%20concrete%20pillars%20and%20beams%20standing%20up%20on%20top%20of%20a%202D%20floor%20plan%20blueprint%20drawing%20paper%20for%20a%20${encodeURIComponent(floors + '-story ' + pw + 'x' + ph + 'ft house')}?seed=${timestamp + 2}&width=1024&height=1024&model=flux`,
           blueprint_url: `https://image.pollinations.ai/prompt/2D%20technical%20structural%20blueprint%20of%20a%20${encodeURIComponent(floors + '-story ' + pw + 'x' + ph + 'ft house')}%20white%20lines%20on%20dark%20navy?seed=${timestamp + 3}&width=1024&height=1024&model=flux`
         }
       };

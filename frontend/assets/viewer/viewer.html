@@ -312,6 +312,8 @@
 
     function buildWallMeshes(rooms, wallH, parent) {
       const walls = generateWallsFromRooms(rooms);
+      const pillarPts = new Set();
+      
       walls.forEach(w => {
         const dx = w.x2 - w.x1, dz = w.z2 - w.z1;
         const len = Math.sqrt(dx * dx + dz * dz);
@@ -323,7 +325,13 @@
         const mesh = mkBox(len, wallH, w.thickness, mat, cx, wallH / 2, cz);
         mesh.rotation.y = ang;
         parent.add(mesh);
+        
+        // Collect endpoints for pillars
+        pillarPts.add(`${w.x1.toFixed(2)},${w.z1.toFixed(2)}`);
+        pillarPts.add(`${w.x2.toFixed(2)},${w.z2.toFixed(2)}`);
       });
+      
+      return pillarPts;
     }
 
     // ─── Room Floor & Label ───────────────────────────────────────────────────────
@@ -375,7 +383,9 @@
 
     // ─── Column ───────────────────────────────────────────────────────────────────
     function buildColumn(c, parent) {
-      const sz = +c.size || 1.2, h = 10.5;
+      let sz = parseFloat(c.size);
+      if (isNaN(sz) || sz < 0.5) sz = 1.0; // Default to 1x1 ft pillar
+      const h = 10.5;
       parent.add(mkBox(sz, h, sz, M.column, +c.x, h / 2, +c.y));
     }
 
@@ -459,12 +469,22 @@
       // 1. Draw room floor tiles
       rooms.forEach(r => buildRoomFloor(r, group));
       // 2. Generate walls mathematically from room boundaries (ignores AI walls)
-      buildWallMeshes(rooms, wallH, group);
+      const pillarPts = buildWallMeshes(rooms, wallH, group);
       // 3. Place doors, windows, furniture
       (data.doors || []).forEach(d => buildDoor(d, group));
       (data.windows || []).forEach(w => buildWindow(w, group));
       (data.stairs || []).forEach(s => buildStairs(s, group));
-      (data.columns || []).forEach(c => buildColumn(c, group));
+      
+      // Auto-generate columns at wall intersections if missing or use provided ones
+      if (data.columns && data.columns.length > 0) {
+        data.columns.forEach(c => buildColumn(c, group));
+      } else {
+        pillarPts.forEach(pt => {
+          const [cx, cy] = pt.split(',').map(Number);
+          buildColumn({x: cx, y: cy, size: 1.0}, group);
+        });
+      }
+      
       (data.furnitures || []).forEach(f => buildFurniture(f, group));
     }
 
