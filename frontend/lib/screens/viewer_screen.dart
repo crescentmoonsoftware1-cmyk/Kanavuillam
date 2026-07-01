@@ -14,12 +14,14 @@ import 'web_stub.dart' if (dart.library.html) 'package:web/web.dart' as web;
 class ViewerScreen extends StatefulWidget {
   final Map<String, dynamic> projectData;
   final bool isElevation;
+  final bool isStructural;
   final VoidCallback? onNavigateToVastu;
   final void Function(Uint8List bytes)? onScreenshotReady;
   const ViewerScreen({
     super.key,
     required this.projectData,
     this.isElevation = false,
+    this.isStructural = false,
     this.onNavigateToVastu,
     this.onScreenshotReady,
   });
@@ -54,8 +56,9 @@ class ViewerScreenState extends State<ViewerScreen> {
   }
 
   void _setupWebView() {
-    final viewParam =
-        widget.isElevation ? '?view=elevation&hideToolbar=true' : '';
+    String viewParam = '';
+    if (widget.isElevation) viewParam = '?view=elevation&hideToolbar=true';
+    if (widget.isStructural) viewParam = '?view=structural&hideToolbar=true';
     final url = 'assets/viewer/viewer.html$viewParam';
 
     ui_web.platformViewRegistry.registerViewFactory(_viewId, (int viewId) {
@@ -119,7 +122,7 @@ class ViewerScreenState extends State<ViewerScreen> {
         ),
       )
       ..loadFlutterAsset(
-        'assets/viewer/viewer.html${widget.isElevation ? "?view=elevation&hideToolbar=true" : ""}',
+        'assets/viewer/viewer.html${widget.isElevation ? "?view=elevation&hideToolbar=true" : (widget.isStructural ? "?view=structural&hideToolbar=true" : "")}',
       );
   }
 
@@ -137,6 +140,12 @@ class ViewerScreenState extends State<ViewerScreen> {
       Future.delayed(const Duration(milliseconds: 400), () {
         _mobileController.runJavaScript(
           "if(window.setView) setView('elevation');",
+        );
+      });
+    } else if (widget.isStructural) {
+      Future.delayed(const Duration(milliseconds: 400), () {
+        _mobileController.runJavaScript(
+          "if(window.setView) setView('structural');",
         );
       });
     }
@@ -299,8 +308,9 @@ class ViewerScreenState extends State<ViewerScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── Header ────────────────────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(28, 28, 28, 12),
+          if (!widget.isStructural)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(28, 28, 28, 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

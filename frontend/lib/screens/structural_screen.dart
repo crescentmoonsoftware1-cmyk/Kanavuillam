@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'viewer_screen.dart';
 
 const _bgColor = Color(0xFFF8FAFC);
 const _navyColor = Color(0xFF1E293B);
@@ -151,47 +152,21 @@ class _StructuralScreenState extends State<StructuralScreen> {
                 .animate()
                 .fadeIn(delay: 100.ms),
             const SizedBox(height: 24),
-            if (structural['preview_url'] != null && structural['preview_url'].toString().isNotEmpty) ...[
-              Builder(
-                builder: (context) {
-                  String safeUrl = structural['preview_url'].toString().replaceAll(' ', '%20');
-                  return _BlueprintCard(
-                    title: '3. 3D STRUCTURAL PILLAR & BEAM SKELETON',
-                    child: ClipRRect(
-                      borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(6), bottomRight: Radius.circular(6)),
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(minHeight: 250),
-                        child: Image.network(
-                          safeUrl, 
-                          width: double.infinity, 
-                          fit: BoxFit.cover,
-                      loadingBuilder: (ctx, child, progress) {
-                        if (progress == null) return child;
-                        return const SizedBox(height: 250, child: Center(child: CircularProgressIndicator()));
-                      },
-                      errorBuilder: (ctx, err, stack) {
-                        return Container(
-                          height: 250,
-                          color: const Color(0xFFF1F5F9),
-                          child: const Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.broken_image, color: Colors.grey, size: 40),
-                                SizedBox(height: 8),
-                                Text('Failed to load 3D visual', style: TextStyle(color: Colors.grey)),
-                              ]
-                            )
-                          ),
-                        );
-                      },
-                    ),
+            _BlueprintCard(
+              title: '3. 3D STRUCTURAL PILLAR & BEAM SKELETON',
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(6), bottomRight: Radius.circular(6)),
+                child: SizedBox(
+                  height: 350,
+                  child: ViewerScreen(
+                    projectData: widget.projectData,
+                    isStructural: true,
                   ),
                 ),
-              );
-            }).animate().fadeIn(delay: 150.ms),
-              const SizedBox(height: 24),
-            ],
+              ),
+            ).animate().fadeIn(delay: 150.ms),
+            const SizedBox(height: 24),
             const SizedBox(height: 24),
             _BeamScheduleCard(schedule: structural['beam_schedule'])
                 .animate()
