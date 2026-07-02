@@ -4,6 +4,8 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
 import '../services/api_service.dart';
+import 'dart:ui' as ui;
+import '../screens/structural_screen.dart';
 
 class PdfService {
   static Future<Uint8List> createProfessionalPdf(
@@ -104,12 +106,37 @@ class PdfService {
     }
 
     if (selectedReportIds.isEmpty || selectedReportIds.contains('structural')) {
-      // Priority: visual_data.structural.blueprint_url → structural_data.ground.blueprint_url
-      final directStruct = visualStructural['blueprint_url']?.toString() ??
-          groundStructural['blueprint_url']?.toString();
-      imageStructural = await fetchImage(
-          'architectural engineering structural steel beam and column reinforcement blueprint diagram, construction plan',
-          directUrl: directStruct);
+      try {
+        final structData = (structuralData.containsKey('ground') 
+            ? structuralData['ground'] 
+            : structuralData) ?? {};
+        final r = ground['rooms'] ?? modelData['rooms'] ?? [];
+        final w = ground['walls'] ?? modelData['walls'] ?? [];
+        final pW = projWidth;
+        final pH = projHeight;
+
+        final recorder = ui.PictureRecorder();
+        final canvas = ui.Canvas(recorder);
+        const size = ui.Size(1024, 768);
+        
+        // Fill background
+        canvas.drawRect(ui.Offset.zero & size, ui.Paint()..color = const ui.Color(0xFFF1F5F9));
+        
+        final painter = StructuralIsometricPainter(
+          rooms: r,
+          walls: w,
+          pw: pW,
+          ph: pH,
+        );
+        
+        painter.paint(canvas, size);
+        final picture = recorder.endRecording();
+        final img = await picture.toImage(size.width.toInt(), size.height.toInt());
+        final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
+        imageStructural = byteData?.buffer.asUint8List();
+      } catch (e) {
+        debugPrint('[PDF] Error generating structural 3D image: $e');
+      }
     }
 
     if (selectedReportIds.isEmpty || selectedReportIds.contains('elevation')) {
@@ -716,7 +743,7 @@ class PdfService {
                       horizontalRadius: 8,
                       verticalRadius: 8,
                       child: pw.Image(pw.MemoryImage(imageStructural),
-                          fit: pw.BoxFit.cover, height: 200)),
+                          fit: pw.BoxFit.contain, height: 280)),
                   pw.SizedBox(height: 20),
                 ],
                 if (floor == floors.first) ...[

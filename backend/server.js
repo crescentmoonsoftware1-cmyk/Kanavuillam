@@ -140,7 +140,7 @@ function runVisualizer(imagePath, metadata = null) {
 
 // ─── Step 5: Vastu Analysis Engine (Enhanced with OpenRouter) ────────────────
 
-async function askOpenRouter(prompt, imagePath = null, model = 'google/gemini-2.5-flash') {
+async function askOpenRouter(prompt, imagePath = null, model = 'google/gemini-1.5-flash') {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) return null;
 
@@ -256,7 +256,7 @@ async function runVastuAnalysis(modelData, lang = 'English', imagePath = null, f
   try {
     console.log('[Step 5] Using Gemini API for Vastu Analysis...');
     let model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-1.5-flash',
       generationConfig: { responseMimeType: "application/json" }
     });
 
@@ -276,9 +276,9 @@ async function runVastuAnalysis(modelData, lang = 'English', imagePath = null, f
       const rawText = result.response.text() || "";
       return JSON.parse(rawText.replace(/```json|```/g, '').trim());
     } catch (apiError) {
-      console.log(`[Step 5] gemini-2.5-flash failed (${apiError.message}), falling back to gemini-2.5-flash...`);
+      console.log(`[Step 5] gemini-1.5-flash failed (${apiError.message}), falling back to gemini-1.5-flash...`);
       model = genAI.getGenerativeModel({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-1.5-flash',
         generationConfig: { responseMimeType: "application/json" }
       });
       const result = await model.generateContent(parts);
@@ -429,14 +429,14 @@ app.post('/api/material/search', async (req, res) => {
 
     // Try OpenRouter first for maximum accuracy if available
     if (process.env.OPENROUTER_API_KEY) {
-      console.log(`[Material Search] Querying OpenRouter (gemini-2.5-flash) for: ${query}`);
-      data = await askOpenRouter(prompt, null, 'google/gemini-2.5-flash');
+      console.log(`[Material Search] Querying OpenRouter (gemini-1.5-flash) for: ${query}`);
+      data = await askOpenRouter(prompt, null, 'google/gemini-1.5-flash');
     }
 
     if (!data) {
       console.log(`[Material Search] Using Gemini directly for: ${query}`);
       const model = genAI.getGenerativeModel({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-1.5-flash',
         generationConfig: { responseMimeType: "application/json" }
       });
       const result = await model.generateContent(prompt);
@@ -805,19 +805,19 @@ app.post('/api/upload', (req, res, next) => {
 
       const doorAddition = `The main entrance wooden door is located on ${doorLocation} of the facade. DO NOT add elements that are not mentioned. Strictly follow the left-to-right order.`;
 
-      const floorStr = floors === 1 ? "EXTREMELY SMALL SINGLE-STORY BUNGALOW (ONLY 1 GROUND FLOOR, NO upper floors, very low flat roof directly above the doors, NO balconies)" : floors === 2 ? "EXACTLY TWO-STORY HOUSE (Ground + 1 First Floor ONLY, NO second floor, NO third floor)" : "MULTI-STORY";
-      const styleKeywords = `STRICTLY ${floorStr} ultra-realistic modern Indian residential elevation. STYLE: Real estate photography, DSLR 35mm, highly realistic, shot from street level. AESTHETICS: Light beige/cream exterior walls with subtle light grey accent blocks and a thick dark grey frame around the front window. Modern minimalist flat roof with subtle grooved lines and a black cylindrical water tank on top. Low-height modern compound wall with a small horizontal slatted metal entrance gate. Lush landscaping with crotons and red flowers in planters along the wall. PERFECTLY STRAIGHT FRONT-FACING ELEVATION VIEW, zoomed out showing the ENTIRE house from street up to roof, bright sunny daytime, clear blue sky, 8k resolution.`;
+      const floorStr = floors === 1 ? "1-STORY BUNGALOW, NO upper floors, low flat roof, NO balconies" : floors === 2 ? "2-STORY HOUSE (G+1 ONLY)" : "MULTI-STORY";
+      const styleKeywords = `STRICTLY ${floorStr} ultra-realistic modern Indian elevation. STYLE & MATERIALS: Walls: Light beige/cream. Accents: Thick light-grey concrete window frames. Grey parapet with 3 vertical slits. Roof: Flat, black water tank. Windows/Doors: Black horizontal grills, clear glass, dark wood door. Portico: Flat grey ceiling, square pillars, silver car. Staircase: Grey stone, steel railings. Boundary: Low beige wall, grey slatted metal gate. Landscaping: Planters with ferns & red flowers. Clear sky, sunny, real estate photo, 8k.`;
 
-      let extraInstructions = floors === 1 ? " ABSOLUTELY DO NOT generate a second floor. Ensure the roofline is flat and very low immediately above the ground floor doors. There should be NO balconies." : floors === 2 ? " DO NOT generate a third floor. Stop strictly at the first floor roof." : "";
-      let mathPrompt = `${styleKeywords} [Exact Layout Details:] ${structuralSplitStr} ${doorAddition} Follow this layout exactly. ${extraInstructions}`;
+      let extraInstructions = floors === 1 ? " NO second floor. Flat roof above doors. NO balconies." : floors === 2 ? " NO third floor. Stop at first floor roof." : "";
+      let mathPrompt = `[CRITICAL LAYOUT:] ${structuralSplitStr} ${doorAddition} Follow exactly. ${extraInstructions} [MANDATORY STYLE:] ${styleKeywords}`;
 
       // Reorder prompt to ensure layout is prioritized and not cut off
-      let dynamicPrompt = `[Exact Layout Details:] ${structuralSplitStr} ${doorAddition} Follow this exactly. ${extraInstructions} [Style:] ${styleKeywords}`;
+      let dynamicPrompt = mathPrompt;
 
       // --- GEMINI VISION ANALYSIS RESTORED ---
       try {
         console.log('[Step 8] Asking Gemini Vision to analyze the 2D plan for Elevation...');
-        let visionModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        let visionModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
         const imgData = require('fs').readFileSync(groundPath).toString("base64");
 
         const parts = [
@@ -876,7 +876,7 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
             aiResponse = ""; // Completely drop Gemini Vision style for single floors to prevent G+1 hallucinations
           }
           // Put Layout FIRST so it doesn't get cut off by URL limits
-          dynamicPrompt = `[CRITICAL LAYOUT:] ${structuralSplitStr} ${doorAddition} Follow this exactly. ${extraInstructions} [Style:] ${aiResponse} ${styleKeywords}`;
+          dynamicPrompt = `[CRITICAL LAYOUT:] ${structuralSplitStr} ${doorAddition} Follow this exactly. ${extraInstructions} [MANDATORY STYLE:] ${styleKeywords} (Minor details: ${aiResponse})`;
         }
       } catch (e) {
         console.log('[Step 8] Gemini Vision failed, using pure math prompt.', e.message);
@@ -888,10 +888,10 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
       const roomNames = (groundResult.rooms || []).map(r => r.name).join(', ');
       let isometricPrompt = `A highly detailed 3D isometric top-down cutaway render of a modern Indian house floor plan. The roof is completely removed to clearly reveal the interior rooms: ${roomNames}. Show neat, low-height walls, realistic furniture, internal doors, and clear external staircases. Professional architectural rendering, bright lighting, realistic textures, 8k.`;
 
-      // Safely truncate to 900 characters (Browsers support 2000+, but 900 is safe for Pollinations)
-      const safeDynamicPrompt = dynamicPrompt.substring(0, 900);
-      const safeTraditionalPrompt = traditionalPrompt.substring(0, 900);
-      const safeIsometricPrompt = isometricPrompt.substring(0, 900);
+      // Safely truncate to 1500 characters (Browsers support 2000+, Pollinations handles long prompts)
+      const safeDynamicPrompt = dynamicPrompt.substring(0, 1500);
+      const safeTraditionalPrompt = traditionalPrompt.substring(0, 1500);
+      const safeIsometricPrompt = isometricPrompt.substring(0, 1500);
 
       let modernImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(safeDynamicPrompt)}?seed=${timestamp}&width=1024&height=768&model=flux`;
       let traditionalImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(safeTraditionalPrompt)}?seed=${timestamp + 1}&width=1024&height=768&model=flux`;

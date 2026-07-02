@@ -161,7 +161,7 @@ class _StructuralScreenState extends State<StructuralScreen> {
                   width: double.infinity,
                   color: const Color(0xFFF1F5F9), // Light background for the render
                   child: CustomPaint(
-                    painter: _StructuralIsometricPainter(
+                    painter: StructuralIsometricPainter(
                       rooms: rooms,
                       walls: walls,
                       pw: pw,
@@ -884,10 +884,10 @@ void _text(Canvas c, String t, double x, double y, double fs, Color col,
     ..paint(c, Offset(x - 10, y - 5));
 }
 
-class _StructuralIsometricPainter extends CustomPainter {
+class StructuralIsometricPainter extends CustomPainter {
   final List<dynamic> rooms, walls;
   final double pw, ph;
-  const _StructuralIsometricPainter({
+  const StructuralIsometricPainter({
     required this.rooms,
     required this.walls,
     required this.pw,
