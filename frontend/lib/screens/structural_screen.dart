@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'viewer_screen.dart';
 
 const _bgColor = Color(0xFFF8FAFC);
 const _navyColor = Color(0xFF1E293B);
@@ -157,11 +156,18 @@ class _StructuralScreenState extends State<StructuralScreen> {
               child: ClipRRect(
                 borderRadius: const BorderRadius.only(
                     bottomLeft: Radius.circular(6), bottomRight: Radius.circular(6)),
-                child: SizedBox(
-                  height: 350,
-                  child: ViewerScreen(
-                    projectData: widget.projectData,
-                    isStructural: true,
+                child: Container(
+                  height: 400,
+                  width: double.infinity,
+                  color: const Color(0xFFF1F5F9), // Light background for the render
+                  child: CustomPaint(
+                    painter: _StructuralIsometricPainter(
+                      rooms: rooms,
+                      walls: walls,
+                      pw: pw,
+                      ph: ph,
+                    ),
+                    size: Size.infinite,
                   ),
                 ),
               ),
@@ -876,4 +882,223 @@ void _text(Canvas c, String t, double x, double y, double fs, Color col,
       textDirection: TextDirection.ltr)
     ..layout()
     ..paint(c, Offset(x - 10, y - 5));
+}
+
+class _StructuralIsometricPainter extends CustomPainter {
+  final List<dynamic> rooms, walls;
+  final double pw, ph;
+  const _StructuralIsometricPainter({
+    required this.rooms,
+    required this.walls,
+    required this.pw,
+    required this.ph,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double isoScale = (size.width / (pw + ph)) * 0.8;
+
+    double cosA = 0.866025;
+    double sinA = 0.5;
+
+    double colW = 1.0; // Slightly thinner, more elegant columns
+    double beamH = 1.2;
+    double floorH = 16.0;
+
+    // Calculate bounds to center the drawing perfectly
+    double maxZ = floorH * 1.5; // Adjusted max height
+    double minSy = -maxZ * isoScale;
+    double maxSy = (pw + ph) * sinA * isoScale;
+    double offsetY = size.height / 2 - (minSy + maxSy) / 2;
+
+    double minSx = -ph * cosA * isoScale;
+    double maxSx = pw * cosA * isoScale;
+    double offsetX = size.width / 2 - (minSx + maxSx) / 2;
+
+    canvas.translate(offsetX, offsetY);
+
+    Offset project(double x, double y, double z) {
+      double sx = (x - y) * cosA * isoScale;
+      double sy = (x + y) * sinA * isoScale - (z * isoScale);
+      return Offset(sx, sy);
+    }
+    
+    Set<String> colSet = {};
+    List<Offset> colPoints = [];
+    for (var w in walls) {
+      List<Offset> pts = _getWallPts(w, 1, 1);
+      for (var pt in pts) {
+        String key = "${pt.dx.toStringAsFixed(1)}_${pt.dy.toStringAsFixed(1)}";
+        if (!colSet.contains(key)) {
+          colSet.add(key);
+          colPoints.add(pt);
+        }
+      }
+    }
+    
+    // Premium 3D materials (no heavy strokes)
+    final pillarFaceLeft = Paint()..color = const Color(0xFFF8FAFC);
+    final pillarFaceRight = Paint()..color = const Color(0xFFCBD5E1);
+    final pillarFaceTop = Paint()..color = Colors.white;
+    final pillarBorder = Paint()
+      ..color = const Color(0xFF94A3B8).withValues(alpha: 0.2)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.5;
+
+    final beamFaceLeft = Paint()..color = const Color(0xFFF8FAFC);
+    final beamFaceRight = Paint()..color = const Color(0xFFCBD5E1);
+    final beamFaceTop = Paint()..color = Colors.white;
+    
+    void drawBox(double x1, double y1, double x2, double y2, double z, double h, double t) {
+      bool isX = (x2 - x1).abs() > (y2 - y1).abs();
+      if (isX) {
+        if (x1 > x2) { double tmp=x1; x1=x2; x2=tmp; }
+        Offset p3 = project(x2, y1 + t/2, z);
+        Offset p4 = project(x1, y1 + t/2, z);
+        Offset t1 = project(x1, y1 - t/2, z + h);
+        Offset t2 = project(x2, y1 - t/2, z + h);
+        Offset t3 = project(x2, y1 + t/2, z + h);
+        Offset t4 = project(x1, y1 + t/2, z + h);
+
+        Path rightF = Path()..moveTo(p4.dx, p4.dy)..lineTo(p3.dx, p3.dy)..lineTo(t3.dx, t3.dy)..lineTo(t4.dx, t4.dy)..close();
+        canvas.drawPath(rightF, beamFaceRight);
+        canvas.drawPath(rightF, pillarBorder);
+
+        Path topF = Path()..moveTo(t1.dx, t1.dy)..lineTo(t2.dx, t2.dy)..lineTo(t3.dx, t3.dy)..lineTo(t4.dx, t4.dy)..close();
+        canvas.drawPath(topF, beamFaceTop);
+        canvas.drawPath(topF, pillarBorder);
+      } else {
+        if (y1 > y2) { double tmp=y1; y1=y2; y2=tmp; }
+        Offset p2 = project(x1 + t/2, y1, z);
+        Offset p3 = project(x1 + t/2, y2, z);
+        Offset t1 = project(x1 - t/2, y1, z + h);
+        Offset t2 = project(x1 + t/2, y1, z + h);
+        Offset t3 = project(x1 + t/2, y2, z + h);
+        Offset t4 = project(x1 - t/2, y2, z + h);
+
+        Path leftF = Path()..moveTo(p2.dx, p2.dy)..lineTo(p3.dx, p3.dy)..lineTo(t3.dx, t3.dy)..lineTo(t2.dx, t2.dy)..close();
+        canvas.drawPath(leftF, beamFaceLeft);
+        canvas.drawPath(leftF, pillarBorder);
+
+        Path topF = Path()..moveTo(t1.dx, t1.dy)..lineTo(t2.dx, t2.dy)..lineTo(t3.dx, t3.dy)..lineTo(t4.dx, t4.dy)..close();
+        canvas.drawPath(topF, beamFaceTop);
+        canvas.drawPath(topF, pillarBorder);
+      }
+    }
+
+    void drawPillar(double x, double y, double z, double h) {
+        double hw = colW / 2;
+        Offset p2 = project(x + hw, y - hw, z);
+        Offset p3 = project(x + hw, y + hw, z);
+        Offset p4 = project(x - hw, y + hw, z);
+        
+        Offset t1 = project(x - hw, y - hw, z + h);
+        Offset t2 = project(x + hw, y - hw, z + h);
+        Offset t3 = project(x + hw, y + hw, z + h);
+        Offset t4 = project(x - hw, y + hw, z + h);
+        
+        Path leftF = Path()..moveTo(p4.dx, p4.dy)..lineTo(p3.dx, p3.dy)..lineTo(t3.dx, t3.dy)..lineTo(t4.dx, t4.dy)..close();
+        canvas.drawPath(leftF, pillarFaceLeft);
+        canvas.drawPath(leftF, pillarBorder);
+        
+        Path rightF = Path()..moveTo(p2.dx, p2.dy)..lineTo(p3.dx, p3.dy)..lineTo(t3.dx, t3.dy)..lineTo(t2.dx, t2.dy)..close();
+        canvas.drawPath(rightF, pillarFaceRight);
+        canvas.drawPath(rightF, pillarBorder);
+        
+        Path topF = Path()..moveTo(t1.dx, t1.dy)..lineTo(t2.dx, t2.dy)..lineTo(t3.dx, t3.dy)..lineTo(t4.dx, t4.dy)..close();
+        canvas.drawPath(topF, pillarFaceTop);
+        canvas.drawPath(topF, pillarBorder);
+    }
+    
+    List<Map<String, dynamic>> renderQueue = [];
+    
+    // 1. Ground Grid (Blueprint feel)
+    renderQueue.add({'type': 'ground_grid', 'z': -0.1, 'depth': 0.0});
+
+    // 2. Ground Pillars
+    for (var col in colPoints) {
+      renderQueue.add({'type': 'pillar', 'x': col.dx, 'y': col.dy, 'z': 0.0, 'h': floorH * 0.45, 'depth': col.dx + col.dy});
+    }
+    // 3. Ground Beams
+    for (var w in walls) {
+      List<Offset> pts = _getWallPts(w, 1, 1);
+      renderQueue.add({'type': 'beam', 'pts': pts, 'z': 0.0, 'h': beamH, 'depth': (pts[0].dx + pts[1].dx) / 2 + (pts[0].dy + pts[1].dy) / 2});
+    }
+    
+    // 4. Ground Slab
+    renderQueue.add({
+      'type': 'slab',
+      'z': floorH * 0.45,
+      'depth': (pw/2) + (ph/2) - 0.1
+    });
+    
+    // 5. First Floor Beams
+    for (var w in walls) {
+      List<Offset> pts = _getWallPts(w, 1, 1);
+      renderQueue.add({'type': 'beam', 'pts': pts, 'z': floorH * 0.45, 'h': beamH, 'depth': (pts[0].dx + pts[1].dx) / 2 + (pts[0].dy + pts[1].dy) / 2});
+    }
+    
+    // 6. First Floor Pillars (taller, extending above)
+    for (var col in colPoints) {
+      renderQueue.add({'type': 'pillar', 'x': col.dx, 'y': col.dy, 'z': floorH * 0.45 + beamH, 'h': floorH * 0.7, 'depth': col.dx + col.dy});
+    }
+    
+    // Note: No roof beams to match the aesthetic of image 2.
+
+    // Robust Sorting: Primary Z, Secondary Depth
+    renderQueue.sort((a, b) {
+      double zA = a['z'] as double;
+      double zB = b['z'] as double;
+      if ((zA - zB).abs() > 0.1) {
+        return zA.compareTo(zB);
+      }
+      double dA = a['depth'] as double;
+      double dB = b['depth'] as double;
+      return dA.compareTo(dB);
+    });
+    
+    for (var item in renderQueue) {
+      if (item['type'] == 'ground_grid') {
+        final gridP = Paint()
+          ..color = const Color(0xFF64748B).withValues(alpha: 0.15)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.0;
+        
+        final double pad = 10.0;
+        for (double x = -pad; x <= pw + pad; x += 4.0) {
+          canvas.drawLine(project(x, -pad, 0), project(x, ph + pad, 0), gridP);
+        }
+        for (double y = -pad; y <= ph + pad; y += 4.0) {
+          canvas.drawLine(project(-pad, y, 0), project(pw + pad, y, 0), gridP);
+        }
+      } else if (item['type'] == 'pillar') {
+        drawPillar(item['x'], item['y'], item['z'], item['h']);
+      } else if (item['type'] == 'beam') {
+        List<Offset> pts = item['pts'];
+        drawBox(pts[0].dx, pts[0].dy, pts[1].dx, pts[1].dy, item['z'], item['h'], colW);
+      } else if (item['type'] == 'slab') {
+        final slabP = Paint()
+          ..color = const Color(0xFF3B82F6).withValues(alpha: 0.4) // Vibrant transparent blue
+          ..style = PaintingStyle.fill;
+        final slabBorderP = Paint()
+          ..color = const Color(0xFF2563EB).withValues(alpha: 0.6)
+          ..strokeWidth = 1.5
+          ..style = PaintingStyle.stroke;
+          
+        Path slabPath = Path();
+        double slabZ = item['z'];
+        slabPath.moveTo(project(0, 0, slabZ).dx, project(0, 0, slabZ).dy);
+        slabPath.lineTo(project(pw, 0, slabZ).dx, project(pw, 0, slabZ).dy);
+        slabPath.lineTo(project(pw, ph, slabZ).dx, project(pw, ph, slabZ).dy);
+        slabPath.lineTo(project(0, ph, slabZ).dx, project(0, ph, slabZ).dy);
+        slabPath.close();
+        
+        canvas.drawPath(slabPath, slabP);
+        canvas.drawPath(slabPath, slabBorderP);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter old) => true;
 }
