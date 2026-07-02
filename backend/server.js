@@ -805,14 +805,14 @@ app.post('/api/upload', (req, res, next) => {
 
       const doorAddition = `The main entrance wooden door is located on ${doorLocation} of the facade. DO NOT add elements that are not mentioned. Strictly follow the left-to-right order.`;
 
-      const floorStr = floors === 1 ? "1-STORY BUNGALOW, NO upper floors, low flat roof, NO balconies" : floors === 2 ? "2-STORY HOUSE (G+1 ONLY)" : "MULTI-STORY";
-      const styleKeywords = `STRICTLY ${floorStr} ultra-realistic modern Indian elevation. STYLE & MATERIALS: Walls: Light beige/cream. Accents: Thick light-grey concrete window frames. Grey parapet with 3 vertical slits. Roof: Flat, black water tank. Windows/Doors: Black horizontal grills, clear glass, dark wood door. Portico: Flat grey ceiling, square pillars, silver car. Staircase: Grey stone, steel railings. Boundary: Low beige wall, grey slatted metal gate. Landscaping: Planters with ferns & red flowers. Clear sky, sunny, real estate photo, 8k.`;
+      const floorStr = floors === 1 ? "EXTREMELY SMALL SINGLE-STORY BUNGALOW (ONLY 1 GROUND FLOOR, NO upper floors, very low flat roof directly above the doors, NO balconies)" : floors === 2 ? "EXACTLY TWO-STORY HOUSE (Ground + 1 First Floor ONLY, NO second floor, NO third floor)" : "MULTI-STORY";
+      const styleKeywords = `STRICTLY ${floorStr} ultra-realistic modern Indian residential elevation. STYLE: Real estate photography, DSLR 35mm, highly realistic, shot from street level. AESTHETICS: Light beige/cream exterior walls with subtle light grey accent blocks and a thick dark grey frame around the front window. Modern minimalist flat roof with subtle grooved lines and a black cylindrical water tank on top. Low-height modern compound wall with a small horizontal slatted metal entrance gate. Lush landscaping with crotons and red flowers in planters along the wall. PERFECTLY STRAIGHT FRONT-FACING ELEVATION VIEW, zoomed out showing the ENTIRE house from street up to roof, leave wide empty margins on all sides, do not crop, bright sunny daytime, clear blue sky, 8k resolution.`;
 
-      let extraInstructions = floors === 1 ? " NO second floor. Flat roof above doors. NO balconies." : floors === 2 ? " NO third floor. Stop at first floor roof." : "";
-      let mathPrompt = `[CRITICAL LAYOUT:] ${structuralSplitStr} ${doorAddition} Follow exactly. ${extraInstructions} [MANDATORY STYLE:] ${styleKeywords}`;
+      let extraInstructions = floors === 1 ? " ABSOLUTELY DO NOT generate a second floor. Ensure the roofline is flat and very low immediately above the ground floor doors. There should be NO balconies." : floors === 2 ? " DO NOT generate a third floor. Stop strictly at the first floor roof." : "";
+      let mathPrompt = `${styleKeywords} [Exact Layout Details:] ${structuralSplitStr} ${doorAddition} Follow this layout exactly. ${extraInstructions}`;
 
       // Reorder prompt to ensure layout is prioritized and not cut off
-      let dynamicPrompt = mathPrompt;
+      let dynamicPrompt = `[Exact Layout Details:] ${structuralSplitStr} ${doorAddition} Follow this exactly. ${extraInstructions} [Style:] ${styleKeywords}`;
 
       // --- GEMINI VISION ANALYSIS RESTORED ---
       try {
@@ -876,7 +876,7 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
             aiResponse = ""; // Completely drop Gemini Vision style for single floors to prevent G+1 hallucinations
           }
           // Put Layout FIRST so it doesn't get cut off by URL limits
-          dynamicPrompt = `[CRITICAL LAYOUT:] ${structuralSplitStr} ${doorAddition} Follow this exactly. ${extraInstructions} [MANDATORY STYLE:] ${styleKeywords} (Minor details: ${aiResponse})`;
+          dynamicPrompt = `[CRITICAL LAYOUT:] ${structuralSplitStr} ${doorAddition} Follow this exactly. ${extraInstructions} [Style:] ${aiResponse} ${styleKeywords}`;
         }
       } catch (e) {
         console.log('[Step 8] Gemini Vision failed, using pure math prompt.', e.message);
@@ -888,13 +888,13 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
       const roomNames = (groundResult.rooms || []).map(r => r.name).join(', ');
       let isometricPrompt = `A highly detailed 3D isometric top-down cutaway render of a modern Indian house floor plan. The roof is completely removed to clearly reveal the interior rooms: ${roomNames}. Show neat, low-height walls, realistic furniture, internal doors, and clear external staircases. Professional architectural rendering, bright lighting, realistic textures, 8k.`;
 
-      // Safely truncate to 1500 characters (Browsers support 2000+, Pollinations handles long prompts)
-      const safeDynamicPrompt = dynamicPrompt.substring(0, 1500);
-      const safeTraditionalPrompt = traditionalPrompt.substring(0, 1500);
-      const safeIsometricPrompt = isometricPrompt.substring(0, 1500);
+      // Safely truncate to 900 characters (Browsers support 2000+, but 900 is safe for Pollinations)
+      const safeDynamicPrompt = dynamicPrompt.substring(0, 900);
+      const safeTraditionalPrompt = traditionalPrompt.substring(0, 900);
+      const safeIsometricPrompt = isometricPrompt.substring(0, 900);
 
-      let modernImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(safeDynamicPrompt)}?seed=${timestamp}&width=1024&height=768&model=flux`;
-      let traditionalImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(safeTraditionalPrompt)}?seed=${timestamp + 1}&width=1024&height=768&model=flux`;
+      let modernImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(safeDynamicPrompt)}?seed=${timestamp}&width=1024&height=1024&model=flux`;
+      let traditionalImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(safeTraditionalPrompt)}?seed=${timestamp + 1}&width=1024&height=1024&model=flux`;
       let isometricImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(safeIsometricPrompt)}?seed=${timestamp + 2}&width=1024&height=1024&model=flux`;
 
       try {
