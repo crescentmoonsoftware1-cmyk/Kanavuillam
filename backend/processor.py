@@ -301,10 +301,9 @@ def get_gemini_analysis(image_path):
         with open(image_path, 'rb') as f:
             image_bytes = f.read()
         
-        # Priority: use 2.5 models as explicitly requested by user
+        # Priority: use 1.5 models for best balance of accuracy and high rate limits (1500/day) without 404 error
         MODELS = [
-            'gemini-2.5-flash',
-            'gemini-flash-latest',
+            'gemini-1.5-flash-latest',
         ]
 
         for model_name in MODELS:
