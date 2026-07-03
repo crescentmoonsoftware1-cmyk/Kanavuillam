@@ -417,39 +417,7 @@ class _ElevationScreenState extends State<ElevationScreen> {
             ),
           ),
 
-          // Action Buttons at Bottom
-          Positioned(
-            left: 20,
-            right: 20,
-            bottom: 40,
-            child: Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      // Trigger download or save
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Saving elevation image...')),
-                      );
-                    },
-                    icon:
-                        const Icon(Icons.download_rounded, color: Colors.white),
-                    label: const Text('Save Design',
-                        style: TextStyle(
-                            color: Colors.white, fontWeight: FontWeight.bold)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _accent,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                      elevation: 0,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          )
+
         ],
       ),
     );

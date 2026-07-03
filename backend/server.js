@@ -815,10 +815,10 @@ app.post('/api/upload', (req, res, next) => {
 
       const doorAddition = `The main entrance wooden door is located on ${doorLocation} of the facade. DO NOT add elements that are not mentioned. Strictly follow the left-to-right order.`;
 
-      const floorStr = floors === 1 ? "EXTREMELY SMALL SINGLE-STORY BUNGALOW (1 GROUND FLOOR ONLY, NO upstairs, NO stairs to roof, very low roof just above the entrance, completely flat). ZERO BALCONIES." : floors === 2 ? "EXACTLY TWO-STORY HOUSE (Ground + 1 First Floor ONLY, NO second floor, NO third floor)" : "MULTI-STORY";
+      const floorStr = floors === 1 ? "EXTREMELY SMALL SINGLE-STORY GROUND FLOOR ONLY BUILDING. ONLY ONE FLOOR. NO UPSTAIRS. ROOF MUST BE IMMEDIATELY ABOVE THE GROUND FLOOR WINDOWS." : floors === 2 ? "EXACTLY TWO-STORY HOUSE (Ground + 1 First Floor ONLY, NO second floor, NO third floor)" : "MULTI-STORY";
       const styleKeywords = `STRICTLY ${floorStr} ultra-realistic modern Indian residential elevation. STYLE: Real estate photography, DSLR 35mm, highly realistic, shot from street level. AESTHETICS: Light beige/cream exterior walls with subtle light grey accent blocks and a thick dark grey frame around the front window. Modern minimalist flat roof with subtle grooved lines and a black cylindrical water tank on top. Low-height modern compound wall with a small horizontal slatted metal entrance gate. Lush landscaping with crotons and red flowers in planters along the wall. PERFECTLY STRAIGHT FRONT-FACING ELEVATION VIEW, zoomed out showing the ENTIRE house from street up to roof, bright sunny daytime, clear blue sky, 8k resolution.`;
 
-      let extraInstructions = floors === 1 ? " ABSOLUTELY DO NOT generate a second floor. The building must be extremely short. Ensure the roofline is flat and very low immediately above the ground floor doors. There should be NO balconies." : floors === 2 ? " DO NOT generate a third floor. Stop strictly at the first floor roof." : "";
+      let extraInstructions = floors === 1 ? " ABSOLUTELY DO NOT DRAW A SECOND FLOOR. THIS IS A 1-STORY HOUSE. If you draw two floors, you fail. The roof must be flat and low." : floors === 2 ? " DO NOT generate a third floor. Stop strictly at the first floor roof." : "";
       let mathPrompt = `${styleKeywords} [Exact Layout Details:] ${structuralSplitStr} ${doorAddition} Follow this layout exactly. ${extraInstructions}`;
 
       // Reorder prompt to ensure layout is prioritized and not cut off
@@ -827,7 +827,7 @@ app.post('/api/upload', (req, res, next) => {
       // --- GEMINI VISION ANALYSIS RESTORED ---
       try {
         console.log('[Step 8] Asking Gemini Vision to analyze the 2D plan for Elevation...');
-        let visionModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        let visionModel = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
         const imgData = require('fs').readFileSync(groundPath).toString("base64");
 
         const parts = [
