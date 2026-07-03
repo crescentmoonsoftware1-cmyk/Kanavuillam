@@ -303,7 +303,7 @@ def get_gemini_analysis(image_path):
         
         # Priority: use 1.5 models for best balance of accuracy and high rate limits (1500/day) without 404 error
         MODELS = [
-            'gemini-1.5-flash-latest',
+            'gemini-flash-latest',
         ]
 
         for model_name in MODELS:
