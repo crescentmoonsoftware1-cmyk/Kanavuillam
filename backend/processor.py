@@ -301,9 +301,11 @@ def get_gemini_analysis(image_path):
         with open(image_path, 'rb') as f:
             image_bytes = f.read()
         
-        # Priority: use models that are confirmed to work in the current environment
+        # User requested to avoid gemini-flash-latest. Trying 2.0-flash and 1.5-pro-latest
         MODELS = [
-            'gemini-flash-latest',
+            'gemini-2.0-flash',
+            'gemini-1.5-pro-latest',
+            'gemini-pro'
         ]
 
         for model_name in MODELS:
