@@ -786,7 +786,7 @@ app.post('/api/upload', (req, res, next) => {
         if (name.includes('portico') || name.includes('parking') || name.includes('car') || name.includes('porch') || name.includes('garage')) {
           desc = "an open car parking porch with pillars";
         } else if (name.includes('stair') || name.includes('step')) {
-          desc = "a visible external staircase structure";
+          desc = "a prominent open external straight staircase with modern vertical metal railings leading upwards (exactly like an open side-staircase)";
         } else if (name.includes('bedroom') || name.includes('living') || name.includes('hall')) {
           desc = "a wall with a large modern residential window";
         } else if (name.includes('kitchen') || name.includes('dining')) {
