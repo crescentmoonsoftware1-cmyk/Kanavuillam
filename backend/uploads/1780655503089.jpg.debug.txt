@@ -1,0 +1,87 @@
+Model: gemini-3-flash-preview
+Response:
+{
+  "project": {
+    "width": 15.0,
+    "height": 46.0
+  },
+  "rooms": [
+    {
+      "name": "Bedroom",
+      "x": 0.75,
+      "y": 0.75,
+      "width": 13.5,
+      "height": 10.0
+    },
+    {
+      "name": "Toilet",
+      "x": 0.75,
+      "y": 11.12,
+      "width": 4.5,
+      "height": 9.0
+    },
+    {
+      "name": "Kitchen",
+      "x": 5.62,
+      "y": 11.12,
+      "width": 8.63,
+      "height": 9.0
+    },
+    {
+      "name": "Staircase",
+      "x": 0.75,
+      "y": 20.49,
+      "width": 6.0,
+      "height": 13.5
+    },
+    {
+      "name": "Drawing",
+      "x": 7.12,
+      "y": 20.49,
+      "width": 7.13,
+      "height": 13.5
+    },
+    {
+      "name": "Bedroom",
+      "x": 0.75,
+      "y": 34.36,
+      "width": 13.5,
+      "height": 10.89
+    }
+  ],
+  "walls": [
+    {"start": [0, 0], "end": [15, 0], "thickness": 0.75},
+    {"start": [15, 0], "end": [15, 46], "thickness": 0.75},
+    {"start": [15, 46], "end": [0, 46], "thickness": 0.75},
+    {"start": [0, 46], "end": [0, 0], "thickness": 0.75},
+    {"start": [0, 10.75], "end": [15, 10.75], "thickness": 0.37},
+    {"start": [0, 20.12], "end": [15, 20.12], "thickness": 0.37},
+    {"start": [0, 33.99], "end": [15, 33.99], "thickness": 0.37},
+    {"start": [5.25, 10.75], "end": [5.25, 20.12], "thickness": 0.37},
+    {"start": [6.75, 20.12], "end": [6.75, 33.99], "thickness": 0.37}
+  ],
+  "doors": [
+    {"x": 12.0, "y": 10.75, "width": 3.0, "is_main": false, "angle": 90},
+    {"x": 4.0, "y": 20.12, "width": 2.5, "is_main": false, "angle": 90},
+    {"x": 15.0, "y": 25.0, "width": 3.5, "is_main": true, "angle": 0},
+    {"x": 12.0, "y": 33.99, "width": 3.0, "is_main": false, "angle": 90}
+  ],
+  "windows": [
+    {"x": 7.5, "y": 0, "width": 4.0, "dir": "x"},
+    {"x": 15.0, "y": 5.0, "width": 3.0, "dir": "y"},
+    {"x": 0.0, "y": 15.0, "width": 2.0, "dir": "y"},
+    {"x": 15.0, "y": 15.0, "width": 3.0, "dir": "y"},
+    {"x": 15.0, "y": 28.0, "width": 4.0, "dir": "y"},
+    {"x": 7.5, "y": 46.0, "width": 4.0, "dir": "x"}
+  ],
+  "furnitures": [
+    {"type": "king_bed", "x": 1.5, "y": 2.0, "width": 6.5, "height": 7.0, "rotation": 90},
+    {"type": "wc", "x": 1.5, "y": 12.0, "width": 1.5, "height": 2.0, "rotation": 0},
+    {"type": "wash_basin", "x": 3.5, "y": 12.0, "width": 1.5, "height": 1.5, "rotation": 0},
+    {"type": "kitchen_stove", "x": 8.0, "y": 11.5, "width": 2.0, "height": 1.0, "rotation": 0},
+    {"type": "kitchen_sink", "x": 13.5, "y": 13.0, "width": 1.0, "height": 1.5, "rotation": 90},
+    {"type": "sofa_set", "x": 13.0, "y": 25.0, "width": 1.5, "height": 5.0, "rotation": 90},
+    {"type": "coffee_table", "x": 10.0, "y": 27.0, "width": 1.5, "height": 1.5, "rotation": 0},
+    {"type": "king_bed", "x": 1.5, "y": 36.0, "width": 6.5, "height": 7.0, "rotation": 90}
+  ]
+}

@@ -5,6 +5,7 @@ import sys
 import os
 import re
 import time
+import random
 from google import genai
 from google.genai import types
 from PIL import Image
@@ -286,10 +287,11 @@ def generate_walls_from_rooms(rooms, project):
 
 def get_gemini_analysis(image_path):
     """Use Gemini Vision to extract architectural data from a 2D floor plan."""
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key or api_key.strip() in ("", "your-gemini-api-key"):
+    gemini_keys = [v for k, v in os.environ.items() if k.startswith("GEMINI_API_KEY") and v.strip() and v.strip() != "your-gemini-api-key"]
+    if not gemini_keys:
         print("Error: No Gemini API key found in environment", file=sys.stderr)
         return None
+    api_key = random.choice(gemini_keys)
 
     try:
         # Initialize the new Google GenAI client
@@ -299,10 +301,10 @@ def get_gemini_analysis(image_path):
         with open(image_path, 'rb') as f:
             image_bytes = f.read()
         
-        # Priority: use 2.5 models since older ones are deprecated
+        # Priority: use 1.5 models for best balance of accuracy and high rate limits (1500/day)
         MODELS = [
-            'gemini-2.5-flash',
-            'gemini-2.5-flash',
+            'gemini-1.5-flash',
+            'gemini-1.5-pro',
             'gemini-flash-latest',
         ]
 

@@ -1,0 +1,264 @@
+Model: gemini-3-flash-preview
+Response:
+{
+  "project": {
+    "width": 40,
+    "height": 51
+  },
+  "rooms": [
+    {
+      "name": "ATT. TOILET",
+      "x": 0.75,
+      "y": 0.75,
+      "width": 6,
+      "height": 8
+    },
+    {
+      "name": "MASTER BEDROOM",
+      "x": 7.12,
+      "y": 0.75,
+      "width": 14,
+      "height": 14
+    },
+    {
+      "name": "BEDROOM 2",
+      "x": 27.25,
+      "y": 0.75,
+      "width": 12,
+      "height": 12
+    },
+    {
+      "name": "TOILET",
+      "x": 0.75,
+      "y": 9.12,
+      "width": 6,
+      "height": 8
+    },
+    {
+      "name": "FAMILY LIVING",
+      "x": 7.12,
+      "y": 15.12,
+      "width": 14,
+      "height": 16
+    },
+    {
+      "name": "STUDY ROOM",
+      "x": 29.25,
+      "y": 13.12,
+      "width": 10,
+      "height": 10
+    },
+    {
+      "name": "STAIRCASE",
+      "x": 21.12,
+      "y": 23.49,
+      "width": 8,
+      "height": 10
+    },
+    {
+      "name": "BEDROOM 3",
+      "x": 0.75,
+      "y": 31.49,
+      "width": 12,
+      "height": 12
+    },
+    {
+      "name": "BALCONY",
+      "x": 0.75,
+      "y": 43.86,
+      "width": 14,
+      "height": 6
+    },
+    {
+      "name": "OPEN TERRACE",
+      "x": 13.12,
+      "y": 33.86,
+      "width": 26.13,
+      "height": 16.39
+    }
+  ],
+  "walls": [
+    {
+      "start": [0, 0],
+      "end": [40, 0],
+      "thickness": 0.75
+    },
+    {
+      "start": [0, 0],
+      "end": [0, 51],
+      "thickness": 0.75
+    },
+    {
+      "start": [40, 0],
+      "end": [40, 51],
+      "thickness": 0.75
+    },
+    {
+      "start": [0, 51],
+      "end": [40, 51],
+      "thickness": 0.75
+    },
+    {
+      "start": [6.75, 0],
+      "end": [6.75, 17.12],
+      "thickness": 0.37
+    },
+    {
+      "start": [21.12, 0],
+      "end": [21.12, 31.12],
+      "thickness": 0.37
+    },
+    {
+      "start": [0, 8.75],
+      "end": [6.75, 8.75],
+      "thickness": 0.37
+    },
+    {
+      "start": [7.12, 14.75],
+      "end": [21.12, 14.75],
+      "thickness": 0.37
+    },
+    {
+      "start": [21.12, 23.12],
+      "end": [40, 23.12],
+      "thickness": 0.37
+    }
+  ],
+  "doors": [
+    {
+      "x": 21.12,
+      "y": 28,
+      "width": 3.5,
+      "is_main": true,
+      "angle": 90
+    },
+    {
+      "x": 14,
+      "y": 14.75,
+      "width": 3,
+      "is_main": false,
+      "angle": 0
+    },
+    {
+      "x": 23,
+      "y": 12.75,
+      "width": 3,
+      "is_main": false,
+      "angle": 0
+    },
+    {
+      "x": 10,
+      "y": 31.12,
+      "width": 3,
+      "is_main": false,
+      "angle": 0
+    },
+    {
+      "x": 11,
+      "y": 43.49,
+      "width": 3,
+      "is_main": false,
+      "angle": 0
+    }
+  ],
+  "windows": [
+    {
+      "x": 12,
+      "y": 0,
+      "width": 4,
+      "dir": "x"
+    },
+    {
+      "x": 32,
+      "y": 0,
+      "width": 4,
+      "dir": "x"
+    },
+    {
+      "x": 40,
+      "y": 18,
+      "width": 3,
+      "dir": "y"
+    },
+    {
+      "x": 6,
+      "y": 51,
+      "width": 5,
+      "dir": "x"
+    }
+  ],
+  "furnitures": [
+    {
+      "type": "king_bed",
+      "x": 8,
+      "y": 4,
+      "width": 6.5,
+      "height": 7,
+      "rotation": 90
+    },
+    {
+      "type": "king_bed",
+      "x": 30,
+      "y": 2,
+      "width": 6.5,
+      "height": 7,
+      "rotation": 0
+    },
+    {
+      "type": "king_bed",
+      "x": 2,
+      "y": 34,
+      "width": 6.5,
+      "height": 7,
+      "rotation": 90
+    },
+    {
+      "type": "sofa_set",
+      "x": 8,
+      "y": 22,
+      "width": 8,
+      "height": 6,
+      "rotation": 0
+    },
+    {
+      "type": "coffee_table",
+      "x": 11,
+      "y": 24,
+      "width": 3,
+      "height": 2,
+      "rotation": 0
+    },
+    {
+      "type": "tv_unit",
+      "x": 12,
+      "y": 15.5,
+      "width": 4,
+      "height": 1,
+      "rotation": 0
+    },
+    {
+      "type": "wc",
+      "x": 1.5,
+      "y": 4,
+      "width": 2,
+      "height": 2,
+      "rotation": 0
+    },
+    {
+      "type": "wash_basin",
+      "x": 1.5,
+      "y": 7,
+      "width": 2,
+      "height": 1.5,
+      "rotation": 0
+    },
+    {
+      "type": "desk",
+      "x": 36,
+      "y": 18,
+      "width": 3,
+      "height": 2,
+      "rotation": 90
+    }
+  ]
+}

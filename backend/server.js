@@ -20,7 +20,17 @@ const razorpay = new Razorpay({
 });
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+const geminiKeys = Object.keys(process.env)
+  .filter(k => k.startsWith('GEMINI_API_KEY') && process.env[k])
+  .map(k => process.env[k]);
+if (geminiKeys.length === 0) geminiKeys.push('NO_KEY');
+let currentGeminiKeyIndex = 0;
+function getGenAI() {
+  const key = geminiKeys[currentGeminiKeyIndex];
+  currentGeminiKeyIndex = (currentGeminiKeyIndex + 1) % geminiKeys.length;
+  return new GoogleGenerativeAI(key);
+}
 
 app.use(cors());
 app.use(express.json());
@@ -255,8 +265,8 @@ async function runVastuAnalysis(modelData, lang = 'English', imagePath = null, f
 
   try {
     console.log('[Step 5] Using Gemini API for Vastu Analysis...');
-    let model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash',
+    let model = getGenAI().getGenerativeModel({
+      model: 'gemini-1.5-flash',
       generationConfig: { responseMimeType: "application/json" }
     });
 
@@ -276,9 +286,9 @@ async function runVastuAnalysis(modelData, lang = 'English', imagePath = null, f
       const rawText = result.response.text() || "";
       return JSON.parse(rawText.replace(/```json|```/g, '').trim());
     } catch (apiError) {
-      console.log(`[Step 5] gemini-2.5-flash failed (${apiError.message}), falling back to gemini-2.5-flash...`);
-      model = genAI.getGenerativeModel({
-        model: 'gemini-2.5-flash',
+      console.log(`[Step 5] gemini-1.5-flash failed (${apiError.message}), falling back to gemini-1.5-flash...`);
+      model = getGenAI().getGenerativeModel({
+        model: 'gemini-1.5-flash',
         generationConfig: { responseMimeType: "application/json" }
       });
       const result = await model.generateContent(parts);

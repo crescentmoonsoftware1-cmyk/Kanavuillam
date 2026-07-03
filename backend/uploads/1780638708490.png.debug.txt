@@ -1,0 +1,266 @@
+Model: gemini-3-flash-preview
+Response:
+{
+  "project": {
+    "width": 38,
+    "height": 48
+  },
+  "rooms": [
+    {
+      "name": "KITCHEN",
+      "x": 5.75,
+      "y": 2.75,
+      "width": 10,
+      "height": 11
+    },
+    {
+      "name": "DINING",
+      "x": 16.12,
+      "y": 2.75,
+      "width": 10,
+      "height": 11
+    },
+    {
+      "name": "PUJA",
+      "x": 26.5,
+      "y": 2.75,
+      "width": 5.5,
+      "height": 11
+    },
+    {
+      "name": "TOILET",
+      "x": 5.75,
+      "y": 14.12,
+      "width": 10,
+      "height": 6.25
+    },
+    {
+      "name": "HALL",
+      "x": 16.12,
+      "y": 14.12,
+      "width": 16,
+      "height": 16
+    },
+    {
+      "name": "MASTER BEDROOM",
+      "x": 5.75,
+      "y": 20.75,
+      "width": 10,
+      "height": 16
+    },
+    {
+      "name": "PORTICO",
+      "x": 11.25,
+      "y": 30.5,
+      "width": 21.75,
+      "height": 16
+    },
+    {
+      "name": "TOILET",
+      "x": 5.75,
+      "y": 37.12,
+      "width": 6,
+      "height": 4
+    }
+  ],
+  "walls": [
+    {
+      "start": [5, 2],
+      "end": [33, 2],
+      "thickness": 0.75
+    },
+    {
+      "start": [5, 2],
+      "end": [5, 37],
+      "thickness": 0.75
+    },
+    {
+      "start": [33, 2],
+      "end": [33, 30],
+      "thickness": 0.75
+    },
+    {
+      "start": [5, 13.75],
+      "end": [16.12, 13.75],
+      "thickness": 0.37
+    },
+    {
+      "start": [5, 20.37],
+      "end": [16.12, 20.37],
+      "thickness": 0.37
+    },
+    {
+      "start": [15.75, 2.75],
+      "end": [15.75, 13.75],
+      "thickness": 0.37
+    },
+    {
+      "start": [26.12, 2.75],
+      "end": [26.12, 13.75],
+      "thickness": 0.37
+    }
+  ],
+  "doors": [
+    {
+      "x": 25,
+      "y": 30.12,
+      "width": 4,
+      "is_main": true,
+      "label": "MD"
+    },
+    {
+      "x": 15.75,
+      "y": 22,
+      "width": 3,
+      "label": "D"
+    },
+    {
+      "x": 15.75,
+      "y": 15,
+      "width": 3,
+      "label": "D1"
+    },
+    {
+      "x": 26.12,
+      "y": 11,
+      "width": 2.5,
+      "label": "PD"
+    },
+    {
+      "x": 15,
+      "y": 47.25,
+      "width": 10,
+      "label": "MG"
+    }
+  ],
+  "windows": [
+    {
+      "x": 10,
+      "y": 2,
+      "width": 4,
+      "dir": "x",
+      "label": "W"
+    },
+    {
+      "x": 5,
+      "y": 8,
+      "width": 4,
+      "dir": "y",
+      "label": "W"
+    },
+    {
+      "x": 20,
+      "y": 2,
+      "width": 4,
+      "dir": "x",
+      "label": "W"
+    },
+    {
+      "x": 5,
+      "y": 28,
+      "width": 4,
+      "dir": "y",
+      "label": "W"
+    },
+    {
+      "x": 33,
+      "y": 21,
+      "width": 4,
+      "dir": "y",
+      "label": "W1"
+    },
+    {
+      "x": 20,
+      "y": 30.12,
+      "width": 4,
+      "dir": "x",
+      "label": "W2"
+    },
+    {
+      "x": 28,
+      "y": 2,
+      "width": 2,
+      "dir": "x",
+      "label": "V"
+    },
+    {
+      "x": 5,
+      "y": 16,
+      "width": 2,
+      "dir": "y",
+      "label": "V"
+    }
+  ],
+  "furnitures": [
+    {
+      "type": "kitchen_stove",
+      "x": 13,
+      "y": 6,
+      "width": 2,
+      "height": 2
+    },
+    {
+      "type": "kitchen_sink",
+      "x": 13,
+      "y": 3,
+      "width": 2,
+      "height": 2
+    },
+    {
+      "type": "dining_table_6",
+      "x": 18,
+      "y": 5,
+      "width": 6,
+      "height": 4
+    },
+    {
+      "type": "sofa_set",
+      "x": 28,
+      "y": 21,
+      "width": 3,
+      "height": 6
+    },
+    {
+      "type": "coffee_table",
+      "x": 25,
+      "y": 22,
+      "width": 2,
+      "height": 3
+    },
+    {
+      "type": "king_bed",
+      "x": 7,
+      "y": 28,
+      "width": 6.5,
+      "height": 7
+    },
+    {
+      "type": "wc",
+      "x": 6.5,
+      "y": 16,
+      "width": 1.5,
+      "height": 2
+    },
+    {
+      "type": "car",
+      "x": 18,
+      "y": 35,
+      "width": 6,
+      "height": 12
+    },
+    {
+      "type": "plants",
+      "x": 2,
+      "y": 10,
+      "width": 2,
+      "height": 30
+    },
+    {
+      "type": "plants",
+      "x": 35,
+      "y": 10,
+      "width": 2,
+      "height": 30
+    }
+  ]
+}

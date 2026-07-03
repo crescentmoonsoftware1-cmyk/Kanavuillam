@@ -186,7 +186,8 @@ class _VastuScreenState extends State<VastuScreen> {
                           color: _surface,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                              color: _accent.withValues(alpha: 0.5), width: 1.5),
+                              color: _accent.withValues(alpha: 0.5),
+                              width: 1.5),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -264,8 +265,8 @@ class _VastuScreenState extends State<VastuScreen> {
                         offset: const Offset(0, 8),
                       ),
                     ],
-                    border:
-                        Border.all(color: _accent.withValues(alpha: 0.3), width: 1.5),
+                    border: Border.all(
+                        color: _accent.withValues(alpha: 0.3), width: 1.5),
                   ),
                   child: Row(
                     children: [
@@ -342,7 +343,7 @@ class _VastuScreenState extends State<VastuScreen> {
                   icon: Icons.lightbulb_outline_rounded,
                   delay: 240,
                 ),
-                
+
                 if (score < 100) ...[
                   _WhyPointsReduced(
                     lang: _selectedLang,

@@ -1,0 +1,291 @@
+Model: gemini-3-flash-preview
+Response:
+{
+  "project": {
+    "width": 38,
+    "height": 48
+  },
+  "rooms": [
+    {
+      "name": "KITCHEN",
+      "x": 5,
+      "y": 2,
+      "width": 10,
+      "height": 11
+    },
+    {
+      "name": "DINING",
+      "x": 15,
+      "y": 2,
+      "width": 10,
+      "height": 11
+    },
+    {
+      "name": "PUJA",
+      "x": 25,
+      "y": 2,
+      "width": 5.5,
+      "height": 11
+    },
+    {
+      "name": "TOILET",
+      "x": 5,
+      "y": 13,
+      "width": 10,
+      "height": 6.25
+    },
+    {
+      "name": "HALL",
+      "x": 15,
+      "y": 13,
+      "width": 16,
+      "height": 16
+    },
+    {
+      "name": "MASTER BEDROOM",
+      "x": 5,
+      "y": 19.25,
+      "width": 10,
+      "height": 16
+    },
+    {
+      "name": "PORTICO",
+      "x": 15,
+      "y": 29,
+      "width": 21.75,
+      "height": 16
+    },
+    {
+      "name": "TOILET",
+      "x": 5,
+      "y": 35.25,
+      "width": 6,
+      "height": 4
+    },
+    {
+      "name": "STAIRCASE",
+      "x": 5,
+      "y": 39.25,
+      "width": 10,
+      "height": 6.75
+    }
+  ],
+  "walls": [
+    {
+      "start": [0, 0],
+      "end": [38, 0],
+      "thickness": 0.75
+    },
+    {
+      "start": [38, 0],
+      "end": [38, 48],
+      "thickness": 0.75
+    },
+    {
+      "start": [38, 48],
+      "end": [0, 48],
+      "thickness": 0.75
+    },
+    {
+      "start": [0, 48],
+      "end": [0, 0],
+      "thickness": 0.75
+    },
+    {
+      "start": [5, 2],
+      "end": [33, 2],
+      "thickness": 0.75
+    },
+    {
+      "start": [5, 2],
+      "end": [5, 38],
+      "thickness": 0.75
+    },
+    {
+      "start": [33, 2],
+      "end": [33, 29],
+      "thickness": 0.75
+    },
+    {
+      "start": [5, 13],
+      "end": [15, 13],
+      "thickness": 0.37
+    },
+    {
+      "start": [15, 2],
+      "end": [15, 29],
+      "thickness": 0.37
+    },
+    {
+      "start": [25, 2],
+      "end": [25, 13],
+      "thickness": 0.37
+    },
+    {
+      "start": [5, 19.25],
+      "end": [15, 19.25],
+      "thickness": 0.37
+    }
+  ],
+  "doors": [
+    {
+      "x": 25,
+      "y": 29,
+      "width": 4,
+      "is_main": true,
+      "angle": 0
+    },
+    {
+      "x": 15,
+      "y": 22,
+      "width": 3,
+      "is_main": false,
+      "angle": 90
+    },
+    {
+      "x": 15,
+      "y": 15,
+      "width": 2.5,
+      "is_main": false,
+      "angle": 90
+    },
+    {
+      "x": 25,
+      "y": 11,
+      "width": 2.5,
+      "is_main": false,
+      "angle": 0
+    },
+    {
+      "x": 19,
+      "y": 48,
+      "width": 10,
+      "is_main": false,
+      "angle": 0
+    }
+  ],
+  "windows": [
+    {
+      "x": 10,
+      "y": 2,
+      "width": 3,
+      "dir": "x"
+    },
+    {
+      "x": 20,
+      "y": 2,
+      "width": 3,
+      "dir": "x"
+    },
+    {
+      "x": 27,
+      "y": 2,
+      "width": 2,
+      "dir": "x"
+    },
+    {
+      "x": 33,
+      "y": 20,
+      "width": 4,
+      "dir": "y"
+    },
+    {
+      "x": 20,
+      "y": 29,
+      "width": 3,
+      "dir": "x"
+    },
+    {
+      "x": 5,
+      "y": 25,
+      "width": 3,
+      "dir": "y"
+    },
+    {
+      "x": 5,
+      "y": 15,
+      "width": 2,
+      "dir": "y"
+    },
+    {
+      "x": 5,
+      "y": 7,
+      "width": 3,
+      "dir": "y"
+    }
+  ],
+  "furnitures": [
+    {
+      "type": "king_bed",
+      "x": 6,
+      "y": 25,
+      "width": 6.5,
+      "height": 7,
+      "rotation": 0
+    },
+    {
+      "type": "sofa_set",
+      "x": 25,
+      "y": 20,
+      "width": 6,
+      "height": 3,
+      "rotation": 90
+    },
+    {
+      "type": "dining_table_6",
+      "x": 17,
+      "y": 5,
+      "width": 6,
+      "height": 4,
+      "rotation": 0
+    },
+    {
+      "type": "kitchen_stove",
+      "x": 13,
+      "y": 8,
+      "width": 2,
+      "height": 2,
+      "rotation": 0
+    },
+    {
+      "type": "kitchen_sink",
+      "x": 13,
+      "y": 4,
+      "width": 2,
+      "height": 2,
+      "rotation": 0
+    },
+    {
+      "type": "wc",
+      "x": 6,
+      "y": 15,
+      "width": 1.5,
+      "height": 2,
+      "rotation": 0
+    },
+    {
+      "type": "car",
+      "x": 20,
+      "y": 35,
+      "width": 6,
+      "height": 12,
+      "rotation": 0
+    },
+    {
+      "type": "plants",
+      "x": 1,
+      "y": 5,
+      "width": 3,
+      "height": 30,
+      "rotation": 0
+    },
+    {
+      "type": "plants",
+      "x": 34,
+      "y": 5,
+      "width": 3,
+      "height": 30,
+      "rotation": 0
+    }
+  ]
+}
