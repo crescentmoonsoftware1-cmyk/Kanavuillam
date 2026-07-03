@@ -266,7 +266,7 @@ async function runVastuAnalysis(modelData, lang = 'English', imagePath = null, f
   try {
     console.log('[Step 5] Using Gemini API for Vastu Analysis...');
     let model = getGenAI().getGenerativeModel({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-flash-latest',
       generationConfig: { responseMimeType: "application/json" }
     });
 
@@ -286,9 +286,9 @@ async function runVastuAnalysis(modelData, lang = 'English', imagePath = null, f
       const rawText = result.response.text() || "";
       return JSON.parse(rawText.replace(/```json|```/g, '').trim());
     } catch (apiError) {
-      console.log(`[Step 5] gemini-1.5-flash failed (${apiError.message}), falling back to gemini-1.5-flash...`);
+      console.log(`[Step 5] gemini-flash-latest failed (${apiError.message}), falling back to gemini-flash-latest...`);
       model = getGenAI().getGenerativeModel({
-        model: 'gemini-1.5-flash',
+        model: 'gemini-flash-latest',
         generationConfig: { responseMimeType: "application/json" }
       });
       const result = await model.generateContent(parts);

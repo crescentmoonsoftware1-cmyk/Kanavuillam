@@ -301,10 +301,8 @@ def get_gemini_analysis(image_path):
         with open(image_path, 'rb') as f:
             image_bytes = f.read()
         
-        # Priority: use 1.5 models for best balance of accuracy and high rate limits (1500/day)
+        # Priority: use models that are confirmed to work in the current environment
         MODELS = [
-            'gemini-1.5-flash',
-            'gemini-1.5-pro',
             'gemini-flash-latest',
         ]
 
