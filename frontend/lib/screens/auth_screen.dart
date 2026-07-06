@@ -342,7 +342,7 @@ class _AuthScreenState extends State<AuthScreen> {
           // Background Image
           Positioned.fill(
             child: Image.asset(
-              'assets/viewer/Screenshot 2026-06-02 101208.png',
+              'assets/viewer/login.jpg',
               fit: BoxFit.cover,
             ),
           ),
@@ -462,7 +462,9 @@ class _AuthScreenState extends State<AuthScreen> {
                       const SizedBox(height: 4),
 
                       Text(
-                        _isLogin ? 'Welcome back! Ready to build?' : 'Join us and start building!',
+                        _isLogin
+                            ? 'Welcome back! Ready to build?'
+                            : 'Join us and start building!',
                         style: const TextStyle(
                           color: Colors.grey,
                           fontSize: 13,
@@ -602,7 +604,9 @@ class _AuthScreenState extends State<AuthScreen> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Text(
-                                      _isLogin ? 'Signing In...' : 'Signing Up...',
+                                      _isLogin
+                                          ? 'Signing In...'
+                                          : 'Signing Up...',
                                       style: const TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w600,
@@ -712,8 +716,11 @@ class _AuthScreenState extends State<AuthScreen> {
                           },
                           child: RichText(
                             text: TextSpan(
-                              text: _isLogin ? "Don't have an account? " : "Already have an account? ",
-                              style: const TextStyle(color: Colors.black54, fontSize: 14),
+                              text: _isLogin
+                                  ? "Don't have an account? "
+                                  : "Already have an account? ",
+                              style: const TextStyle(
+                                  color: Colors.black54, fontSize: 14),
                               children: [
                                 TextSpan(
                                   text: _isLogin ? 'Sign Up' : 'Sign In',
