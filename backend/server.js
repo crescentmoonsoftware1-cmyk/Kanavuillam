@@ -949,16 +949,31 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
           throw new Error(`No output from Replicate. Status: ${data.status}`);
         };
 
-        const fetchHuggingFace = async (prompt) => {
+        const fetchHuggingFace = async (prompt, floorCount = 1) => {
           if (!process.env.HUGGINGFACE_API_KEY) throw new Error("No Hugging Face API key found");
-          console.log("[Step 8] Calling Hugging Face SDXL API...");
+          console.log(`[Step 8] Calling Hugging Face SDXL API for ${floorCount} floor(s)...`);
+          
+          let negativePrompt = "";
+          if (floorCount === 1) {
+             negativePrompt = "multiple floors, two floors, three floors, tall building, upstairs, balcony, high rise, stairs going up to roof";
+          } else if (floorCount === 2) {
+             negativePrompt = "three floors, four floors, tall building, high rise, skyscraper";
+          } else {
+             negativePrompt = "distorted, poorly drawn, blurry, unrealistic";
+          }
+
           const res = await fetch("https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0", {
             method: "POST",
             headers: {
               "Authorization": `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
               "Content-Type": "application/json"
             },
-            body: JSON.stringify({ inputs: prompt })
+            body: JSON.stringify({ 
+               inputs: prompt,
+               parameters: {
+                  negative_prompt: negativePrompt
+               }
+            })
           });
           if (!res.ok) {
              const errText = await res.text();
@@ -974,11 +989,11 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
         const [elevationImg, isometricImg] = await Promise.allSettled([
           fetchOpenAIDalle(dynamicPrompt).catch((e) => {
             console.log('[Step 8] DALL-E 3 Elevation failed:', e.message);
-            return fetchHuggingFace(dynamicPrompt);
+            return fetchHuggingFace(dynamicPrompt, floors);
           }),
           fetchOpenAIDalle(isometricPrompt).catch((e) => {
             console.log('[Step 8] DALL-E 3 Isometric failed:', e.message);
-            return fetchHuggingFace(isometricPrompt);
+            return fetchHuggingFace(isometricPrompt, floors);
           })
         ]);
 
