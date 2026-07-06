@@ -181,10 +181,12 @@ class _StructuralScreenState extends State<StructuralScreen> {
             _TypicalBeamDetails(details: structural['beam_details'])
                 .animate()
                 .fadeIn(delay: 300.ms),
-            const SizedBox(height: 24),
-            const SizedBox(height: 24),
-            const SizedBox(height: 24),
-            const _FootingDetailsCard().animate().fadeIn(delay: 450.ms),
+            if (!isMultiFloor || _selectedFloor == 'ground') ...[
+              const SizedBox(height: 24),
+              const SizedBox(height: 24),
+              const SizedBox(height: 24),
+              const _FootingDetailsCard().animate().fadeIn(delay: 450.ms),
+            ],
             const SizedBox(height: 24),
             _StructuralMaterialEstimationCard(
                     estimation: structural['material_estimation'])

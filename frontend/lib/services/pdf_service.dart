@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
 import '../services/api_service.dart';
@@ -57,7 +58,7 @@ class PdfService {
     }
 
     Map<String, Uint8List>? images3d;
-    Uint8List? imageStructural;
+    Map<String, Uint8List> imagesStructural = {};
     Uint8List? imageElevation;
 
     final modelData = data['model_data'] ?? {};
@@ -69,6 +70,17 @@ class PdfService {
         {};
     final projWidth = (project['width'] as num?)?.toDouble() ?? 30.0;
     final projHeight = (project['height'] as num?)?.toDouble() ?? 40.0;
+
+    final costRoot = data['cost_data'] ?? data['_cost'] ?? modelData['_cost'] ?? {};
+    final vastuRoot = data['vastu_data'] ?? data['_vastu'] ?? modelData['_vastu'] ?? {};
+
+    bool isMultiFloor(Map m) => m.containsKey('ground');
+
+    // Use floorsMap to reliably detect floors if costRoot is missing them
+    final sourceForFloors = isMultiFloor(floorsMap) ? floorsMap : costRoot;
+    final floors = isMultiFloor(sourceForFloors)
+        ? sourceForFloors.keys.where((k) => k != 'total').toList()
+        : ['default'];
 
     // Backend returns: visual_data = { variations: [...], structural: { blueprint_url, preview_url } }
     final visualData = data['visual_data'] as Map<String, dynamic>? ??
@@ -106,36 +118,42 @@ class PdfService {
     }
 
     if (selectedReportIds.isEmpty || selectedReportIds.contains('structural')) {
-      try {
-        final structData = (structuralData.containsKey('ground') 
-            ? structuralData['ground'] 
-            : structuralData) ?? {};
-        final r = ground['rooms'] ?? modelData['rooms'] ?? [];
-        final w = ground['walls'] ?? modelData['walls'] ?? [];
-        final pW = projWidth;
-        final pH = projHeight;
+      for (var floor in floors) {
+        try {
+          final structData = (structuralData.containsKey('ground') 
+              ? structuralData['ground'] 
+              : structuralData) ?? {};
+              
+          final floorData = isMultiFloor(floorsMap) ? (floorsMap[floor] ?? ground) : ground;
+          final r = floorData['rooms'] ?? modelData['rooms'] ?? [];
+          final w = floorData['walls'] ?? modelData['walls'] ?? [];
+          final pW = projWidth;
+          final pH = projHeight;
 
-        final recorder = ui.PictureRecorder();
-        final canvas = ui.Canvas(recorder);
-        const size = ui.Size(1024, 768);
-        
-        // Fill background
-        canvas.drawRect(ui.Offset.zero & size, ui.Paint()..color = const ui.Color(0xFFF1F5F9));
-        
-        final painter = StructuralIsometricPainter(
-          rooms: r,
-          walls: w,
-          pw: pW,
-          ph: pH,
-        );
-        
-        painter.paint(canvas, size);
-        final picture = recorder.endRecording();
-        final img = await picture.toImage(size.width.toInt(), size.height.toInt());
-        final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
-        imageStructural = byteData?.buffer.asUint8List();
-      } catch (e) {
-        debugPrint('[PDF] Error generating structural 3D image: $e');
+          final recorder = ui.PictureRecorder();
+          final canvas = ui.Canvas(recorder);
+          const size = ui.Size(1024, 768);
+          
+          // Fill background
+          canvas.drawRect(ui.Offset.zero & size, ui.Paint()..color = const ui.Color(0xFFF1F5F9));
+          
+          final painter = StructuralIsometricPainter(
+            rooms: r,
+            walls: w,
+            pw: pW,
+            ph: pH,
+          );
+          
+          painter.paint(canvas, size);
+          final picture = recorder.endRecording();
+          final img = await picture.toImage(size.width.toInt(), size.height.toInt());
+          final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
+          if (byteData != null) {
+            imagesStructural[floor] = byteData.buffer.asUint8List();
+          }
+        } catch (e) {
+          debugPrint('[PDF] Error generating structural 3D image for floor $floor: $e');
+        }
       }
     }
 
@@ -210,21 +228,20 @@ class PdfService {
       logoImageBytes = logoData.buffer.asUint8List();
     } catch (_) {}
 
-    final pdf = pw.Document();
+    final tamilFont = await PdfGoogleFonts.notoSansTamilRegular();
+    final tamilFontBold = await PdfGoogleFonts.notoSansTamilBold();
+    
+    final pdfTheme = pw.ThemeData.withFont(
+      base: tamilFont,
+      bold: tamilFontBold,
+    );
+
+    final pdf = pw.Document(theme: pdfTheme);
 
     final name = data['name'] ?? 'My Project';
     final date = DateTime.now().toString().split('.')[0];
 
-    final model = data['model_data'] ?? {};
-    final costRoot = data['cost_data'] ?? data['_cost'] ?? model['_cost'] ?? {};
-    final vastuRoot =
-        data['vastu_data'] ?? data['_vastu'] ?? model['_vastu'] ?? {};
-
-    bool isMultiFloor(Map m) => m.containsKey('ground');
-
-    final floors = isMultiFloor(costRoot)
-        ? costRoot.keys.where((k) => k != 'total').toList()
-        : ['default'];
+    // model, costRoot, vastuRoot, and floors are already defined above
 
     final primaryColor = PdfColor.fromHex('#1B365D');
     final accentBlue = PdfColor.fromHex('#EFF6FF');
@@ -738,15 +755,15 @@ class PdfService {
                 pw.Container(
                     height: 2, width: double.infinity, color: accentOrange),
                 pw.SizedBox(height: 20),
-                if (floor == floors.first && imageStructural != null) ...[
+                if (imagesStructural[floor] != null) ...[
                   pw.ClipRRect(
                       horizontalRadius: 8,
                       verticalRadius: 8,
-                      child: pw.Image(pw.MemoryImage(imageStructural),
+                      child: pw.Image(pw.MemoryImage(imagesStructural[floor]!),
                           fit: pw.BoxFit.contain, height: 280)),
                   pw.SizedBox(height: 20),
                 ],
-                if (floor == floors.first) ...[
+                if (true) ...[
                   pw.Text('Structural Estimation',
                       style: pw.TextStyle(
                           fontSize: 16,

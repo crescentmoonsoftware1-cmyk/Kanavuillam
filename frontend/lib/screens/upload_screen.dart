@@ -1077,10 +1077,11 @@ class _CinematicOrbitEffectState extends State<CinematicOrbitEffect>
   late AnimationController _imageSwapController;
 
   final List<String> centerImages = [
-    'assets/viewer/elevation_traditional.png',
+    'assets/viewer/2d_house.png',
     'assets/viewer/image.png',
+    'assets/viewer/vastu.png',
+    'assets/viewer/image_copy_2.png',
     'assets/viewer/professional_house.png',
-    'assets/viewer/modern_box_elevation_design_1777547723799.png',
   ];
   int _currentImageIndex = 0;
 
@@ -1437,10 +1438,18 @@ class BackgroundOrbitPainter extends CustomPainter {
       ..strokeWidth = 40;
 
     canvas.drawCircle(center, radius, paintRing1);
-    canvas.drawCircle(center, radius - 30,
-        paintRing1..color = const Color(0xFF2979FF).withValues(alpha: 0.04)..strokeWidth = 1);
-    canvas.drawCircle(center, radius + 30,
-        paintRing1..color = const Color(0xFF2979FF).withValues(alpha: 0.04)..strokeWidth = 1);
+    canvas.drawCircle(
+        center,
+        radius - 30,
+        paintRing1
+          ..color = const Color(0xFF2979FF).withValues(alpha: 0.04)
+          ..strokeWidth = 1);
+    canvas.drawCircle(
+        center,
+        radius + 30,
+        paintRing1
+          ..color = const Color(0xFF2979FF).withValues(alpha: 0.04)
+          ..strokeWidth = 1);
     canvas.drawCircle(center, radius, paintRing2);
 
     // Orbiting particles
