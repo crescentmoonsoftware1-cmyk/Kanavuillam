@@ -1188,7 +1188,8 @@ class _CinematicOrbitEffectState extends State<CinematicOrbitEffect>
               // Center point adjusted slightly upwards for visual balance
               final center = Offset(MediaQuery.of(context).size.width / 2,
                   widget.height / 2 - 10);
-              final radius = MediaQuery.of(context).size.width * 0.38;
+              final radius =
+                  math.min(MediaQuery.of(context).size.width * 0.28, 160.0);
 
               return Stack(
                 children: List.generate(features.length, (i) {
@@ -1423,7 +1424,7 @@ class BackgroundOrbitPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     // We adjust the center upwards by 10 pixels to match the nodes and image position
     final center = Offset(size.width / 2, size.height / 2 - 10);
-    final radius = size.width * 0.38;
+    final radius = math.min(size.width * 0.28, 140.0);
 
     // Glowing rings
     final paintRing1 = Paint()
