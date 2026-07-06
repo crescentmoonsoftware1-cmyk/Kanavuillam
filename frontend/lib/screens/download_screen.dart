@@ -5,7 +5,9 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
 import '../services/pdf_service.dart';
+import '../services/api_service.dart';
 import 'package:flutter/material.dart';
+import 'feedback_screen.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
@@ -716,7 +718,15 @@ class DownloadScreen extends StatelessWidget {
   }
 
   Future<Uint8List> _createPdf(String title, String content) async {
-    final pdf = pw.Document();
+    final tamilFont = await PdfGoogleFonts.notoSansTamilRegular();
+    final tamilFontBold = await PdfGoogleFonts.notoSansTamilBold();
+    
+    final pdfTheme = pw.ThemeData.withFont(
+      base: tamilFont,
+      bold: tamilFontBold,
+    );
+
+    final pdf = pw.Document(theme: pdfTheme);
 
     pdf.addPage(
       pw.MultiPage(
@@ -975,10 +985,58 @@ class DownloadScreen extends StatelessWidget {
     return b.toString();
   }
 
+  Future<String?> _askVastuLanguage(BuildContext context) async {
+    return showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Vastu Language / வாஸ்து மொழி'),
+        content: const Text('Which language do you want for the Vastu report in the PDF?\n\nPDF-ல் வாஸ்து அறிக்கை எந்த மொழியில் வேண்டும்?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, 'English'),
+            child: const Text('English'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, 'Tamil'),
+            child: const Text('Tamil'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _downloadAll(BuildContext ctx, Map<String, dynamic> data) async {
+    if (selectedReportIds.isEmpty || selectedReportIds.contains('vastu')) {
+      final lang = await _askVastuLanguage(ctx);
+      if (lang == null) return;
+
+      if (lang == 'Tamil') {
+        _showSnack(ctx, 'Translating Vastu to Tamil... Please wait.', isSuccess: true);
+        try {
+          final backendBase = ApiService.baseUrl.replaceAll(RegExp(r'/api$'), '');
+          final res = await http.post(
+            Uri.parse('$backendBase/api/analyze-vastu/${data['id']}'),
+            headers: {'Content-Type': 'application/json'},
+            body: json.encode({'lang': 'Tamil'})
+          );
+          if (res.statusCode == 200) {
+            final newVastu = json.decode(res.body);
+            final completeData = Map<String, dynamic>.from(data);
+            completeData['vastu_data'] = newVastu;
+            if (completeData['model_data'] != null) {
+              completeData['model_data'] = Map<String, dynamic>.from(completeData['model_data']);
+              completeData['model_data']['_vastu'] = newVastu;
+            }
+            data = completeData;
+          }
+        } catch (e) {
+          debugPrint('Error fetching Tamil vastu: $e');
+        }
+      }
+    }
+
     final name = data['name'] ?? 'Project';
-    final filename =
-        '${name.toString().toLowerCase().replaceAll(' ', '_')}_comprehensive_report.pdf';
+    final filename = 'kanavu_illam_report.pdf';
 
     _showSnack(ctx, 'Generating Comprehensive Report PDF... Please wait.',
         isSuccess: true);
@@ -1017,6 +1075,15 @@ class DownloadScreen extends StatelessWidget {
       } else {
         await _downloadFileMobilePdf(ctx, filename, bytes);
       }
+
+      if (ctx.mounted) {
+        final prefs = await SharedPreferences.getInstance();
+        final uEmail = prefs.getString('user_email') ?? (userData?['email'] as String?) ?? 'unknown';
+        final countKey = 'download_count_$uEmail';
+        await prefs.setInt(countKey, (prefs.getInt(countKey) ?? 0) + 1);
+
+        Navigator.of(ctx).push(MaterialPageRoute(builder: (_) => FeedbackScreen(userData: userData)));
+      }
     } catch (e, stack) {
       debugPrint('Error generating Comprehensive PDF: $e\n$stack');
       if (ctx.mounted) {
@@ -1035,9 +1102,38 @@ class DownloadScreen extends StatelessWidget {
       return;
     }
 
+    if (label.contains('Vastu')) {
+      final lang = await _askVastuLanguage(ctx);
+      if (lang == null) return;
+
+      if (lang == 'Tamil') {
+        _showSnack(ctx, 'Translating Vastu to Tamil... Please wait.', isSuccess: true);
+        try {
+          final backendBase = ApiService.baseUrl.replaceAll(RegExp(r'/api$'), '');
+          final res = await http.post(
+            Uri.parse('$backendBase/api/analyze-vastu/${data['id']}'),
+            headers: {'Content-Type': 'application/json'},
+            body: json.encode({'lang': 'Tamil'})
+          );
+          if (res.statusCode == 200) {
+            final newVastu = json.decode(res.body);
+            final completeData = Map<String, dynamic>.from(data);
+            completeData['vastu_data'] = newVastu;
+            if (completeData['model_data'] != null) {
+              completeData['model_data'] = Map<String, dynamic>.from(completeData['model_data']);
+              completeData['model_data']['_vastu'] = newVastu;
+            }
+            data = completeData;
+          }
+        } catch (e) {
+          debugPrint('Error fetching Tamil vastu: $e');
+        }
+      }
+    }
+
     final name = data['name'] ?? 'Project';
     final model = data['model_data'] ?? {};
-    final filename = '${label.toLowerCase().replaceAll(' ', '_')}.pdf';
+    final filename = 'kanavu_illam_${label.toLowerCase().replaceAll(' ', '_')}.pdf';
     String content = '';
     String docTitle = label.toUpperCase();
 
@@ -1067,6 +1163,15 @@ class DownloadScreen extends StatelessWidget {
         _showSnack(ctx, 'Download initiated!', isSuccess: true);
       } else {
         await _downloadFileMobilePdf(ctx, filename, bytes);
+      }
+
+      if (ctx.mounted) {
+        final prefs = await SharedPreferences.getInstance();
+        final uEmail = prefs.getString('user_email') ?? (userData?['email'] as String?) ?? 'unknown';
+        final countKey = 'download_count_$uEmail';
+        await prefs.setInt(countKey, (prefs.getInt(countKey) ?? 0) + 1);
+
+        Navigator.of(ctx).push(MaterialPageRoute(builder: (_) => FeedbackScreen(userData: userData)));
       }
     } catch (e, stack) {
       debugPrint('Error generating $label PDF: $e\n$stack');

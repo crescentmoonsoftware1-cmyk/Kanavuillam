@@ -23,6 +23,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   String email = '';
   String phone = '';
   String address = '';
+  int downloadCount = 0;
 
   @override
   void initState() {
@@ -54,14 +55,15 @@ class _ProfileScreenState extends State<ProfileScreen>
   Future<void> _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      name = prefs.getString('user_name') ??
-          widget.userData?['user_metadata']?['name'] ??
-          'User';
-      email = prefs.getString('user_email') ?? widget.userData?['email'] ?? '';
-      phone = prefs.getString('user_phone') ??
-          widget.userData?['user_metadata']?['phone'] ??
-          '';
+      final meta = widget.userData?['user_metadata'] as Map<String, dynamic>?;
+      
+      name = prefs.getString('user_name') ?? (meta?['name'] as String?) ?? 'User';
+      email = prefs.getString('user_email') ?? (widget.userData?['email'] as String?) ?? 'unknown';
+      phone = prefs.getString('user_phone') ?? (meta?['phone'] as String?) ?? 'unknown';
       address = prefs.getString('user_address') ?? 'No Address Provided';
+      
+      final countKey = 'download_count_$email';
+      downloadCount = prefs.getInt(countKey) ?? 0;
     });
   }
 
@@ -373,6 +375,19 @@ class _ProfileScreenState extends State<ProfileScreen>
                             )
                                 .animate()
                                 .fadeIn(delay: 500.ms)
+                                .slideY(begin: 0.2, end: 0),
+
+                            _buildListItem(
+                              Icons.download_done_rounded,
+                              'Projects Downloaded',
+                              Text('$downloadCount times',
+                                  style: const TextStyle(
+                                      color: Colors.black87,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600)),
+                            )
+                                .animate()
+                                .fadeIn(delay: 550.ms)
                                 .slideY(begin: 0.2, end: 0),
 
                             const SizedBox(height: 16),
