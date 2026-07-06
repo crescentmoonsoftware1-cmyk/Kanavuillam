@@ -949,15 +949,36 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
           throw new Error(`No output from Replicate. Status: ${data.status}`);
         };
 
-        // Try DALL-E 3 first, fallback to Replicate Flux
+        const fetchHuggingFace = async (prompt) => {
+          if (!process.env.HUGGINGFACE_API_KEY) throw new Error("No Hugging Face API key found");
+          console.log("[Step 8] Calling Hugging Face SDXL API...");
+          const res = await fetch("https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ inputs: prompt })
+          });
+          if (!res.ok) {
+             const errText = await res.text();
+             throw new Error(`Hugging Face API error: ${res.status} - ${errText}`);
+          }
+          const arrayBuffer = await res.arrayBuffer();
+          const buffer = Buffer.from(arrayBuffer);
+          const base64 = buffer.toString('base64');
+          return `data:image/jpeg;base64,${base64}`;
+        };
+
+        // Try DALL-E 3 first, fallback to Hugging Face Free SDXL
         const [elevationImg, isometricImg] = await Promise.allSettled([
           fetchOpenAIDalle(dynamicPrompt).catch((e) => {
             console.log('[Step 8] DALL-E 3 Elevation failed:', e.message);
-            return fetchReplicate(dynamicPrompt);
+            return fetchHuggingFace(dynamicPrompt);
           }),
           fetchOpenAIDalle(isometricPrompt).catch((e) => {
             console.log('[Step 8] DALL-E 3 Isometric failed:', e.message);
-            return fetchReplicate(isometricPrompt);
+            return fetchHuggingFace(isometricPrompt);
           })
         ]);
 
