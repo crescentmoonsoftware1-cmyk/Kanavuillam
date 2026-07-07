@@ -106,9 +106,9 @@ Camera:
 PREMIUM MODERN:
 
 "STRICTLY {floor_desc} ultra-realistic modern Indian house front elevation. 
-Structure: EXACTLY MATCH the front facade of the uploaded floor plan. Do NOT add a portico, parked car, or staircase unless they are explicitly present in the plan.
-Materials & Style: Clean off-white/cream exterior walls with light grey accent bands, flat roof with simple modern parapet. Premium modern windows and solid wooden main entrance door.
-Settings: WIDE ANGLE SHOT, zoomed out, showing the ENTIRE house from ground to roof with clear margins around it. Bright sunny daytime, clear blue sky, high quality architectural visualization, V-Ray render, sharp focus, 8k"
+Structure: EXACTLY MATCH the front facade of the uploaded floor plan. Incorporate modern Indian architectural elements: a flat roof with geometric parapet designs, an open balcony/terrace with glass and steel railings, and an external staircase if appropriate.
+Materials & Style: Off-white/cream exterior walls with striking orange/terracotta and dark grey geometric accent panels, including decorative jali or CNC cut patterns. Premium modern windows and solid wooden main entrance door. Include a modern boundary wall with a stylish iron/steel gate in the foreground.
+Settings: WIDE ANGLE SHOT, zoomed out, showing the ENTIRE house from ground to roof including the boundary wall, with clear margins around it. Bright sunny daytime, clear blue sky, high quality architectural visualization, V-Ray render, sharp focus, 8k"
 
 STRUCTURAL PREVIEW:
 
