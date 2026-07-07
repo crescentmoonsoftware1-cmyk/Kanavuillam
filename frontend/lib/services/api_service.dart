@@ -5,10 +5,10 @@ import 'package:image_picker/image_picker.dart';
 class ApiService {
   // For physical device via USB: run `adb reverse tcp:3000 tcp:3000` and use localhost
   // For Wi-Fi: use your PC's local IP (currently 172.20.10.4)
-  // static const String baseUrl = 'https://kanavuillam-production.up.railway.app/api';
-  // static const String baseUrl = 'http://192.168.1.26:3000/api';
   static const String baseUrl =
       'https://kanavuillam-production.up.railway.app/api';
+  // static const String baseUrl = 'http://192.168.1.26:3000/api';
+  //static const String baseUrl = 'http://localhost:3000/api';
 
   Future<Map<String, dynamic>> uploadPlan(XFile groundFile,
       XFile? firstFloorFile, XFile? secondFloorFile, String projectName) async {

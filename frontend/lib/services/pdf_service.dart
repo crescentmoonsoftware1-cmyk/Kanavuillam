@@ -17,23 +17,29 @@ class PdfService {
       try {
         if (directUrl != null && directUrl.isNotEmpty) {
           // Use proxy to avoid CORS issues on Flutter Web when downloading images for PDF
-          final backendBase = ApiService.baseUrl.replaceAll(RegExp(r'/api$'), '');
-          final proxyUrl = '$backendBase/api/proxy-image?url=${Uri.encodeComponent(directUrl)}';
-          
+          // Pollinations natively supports CORS so we can skip the proxy for it.
+          final isPollinations = directUrl.contains('pollinations.ai');
+          final backendBase =
+              ApiService.baseUrl.replaceAll(RegExp(r'/api$'), '');
+          final proxyUrl = isPollinations 
+              ? directUrl 
+              : '$backendBase/api/proxy-image?url=${Uri.encodeComponent(directUrl)}';
+
           final res = await http.get(Uri.parse(proxyUrl), headers: {
             'User-Agent':
                 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
           });
           if (res.statusCode == 200) return res.bodyBytes;
-          
+
           // Fallback to direct url if proxy fails
           final directRes = await http.get(Uri.parse(directUrl), headers: {
             'User-Agent':
                 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
           });
           if (directRes.statusCode == 200) return directRes.bodyBytes;
-          
-          debugPrint('Failed to fetch directUrl. Status: ${directRes.statusCode}');
+
+          debugPrint(
+              'Failed to fetch directUrl. Status: ${directRes.statusCode}');
         } else {
           final backendBase =
               ApiService.baseUrl.replaceAll(RegExp(r'/api$'), '');
@@ -71,8 +77,10 @@ class PdfService {
     final projWidth = (project['width'] as num?)?.toDouble() ?? 30.0;
     final projHeight = (project['height'] as num?)?.toDouble() ?? 40.0;
 
-    final costRoot = data['cost_data'] ?? data['_cost'] ?? modelData['_cost'] ?? {};
-    final vastuRoot = data['vastu_data'] ?? data['_vastu'] ?? modelData['_vastu'] ?? {};
+    final costRoot =
+        data['cost_data'] ?? data['_cost'] ?? modelData['_cost'] ?? {};
+    final vastuRoot =
+        data['vastu_data'] ?? data['_vastu'] ?? modelData['_vastu'] ?? {};
 
     bool isMultiFloor(Map m) => m.containsKey('ground');
 
@@ -103,11 +111,14 @@ class PdfService {
         debugPrint('[PDF] Using live 3D screenshots');
       } else {
         // Fallback to the generated Isometric image from backend if available
-        final variations = (visualData['variations'] ?? visualData['elevations']) as List? ?? [];
+        final variations =
+            (visualData['variations'] ?? visualData['elevations']) as List? ??
+                [];
         if (variations.length > 2) {
           final isoUrl = variations[2]['image_url']?.toString();
           if (isoUrl != null && isoUrl.isNotEmpty) {
-            final fetchedIso = await fetchImage('isometric 3d architecture', directUrl: isoUrl);
+            final fetchedIso = await fetchImage('isometric 3d architecture',
+                directUrl: isoUrl);
             if (fetchedIso != null) {
               images3d = {'default': fetchedIso};
               debugPrint('[PDF] Using backend generated Isometric view for 3D');
@@ -120,11 +131,13 @@ class PdfService {
     if (selectedReportIds.isEmpty || selectedReportIds.contains('structural')) {
       for (var floor in floors) {
         try {
-          final structData = (structuralData.containsKey('ground') 
-              ? structuralData['ground'] 
-              : structuralData) ?? {};
-              
-          final floorData = isMultiFloor(floorsMap) ? (floorsMap[floor] ?? ground) : ground;
+          final structData = (structuralData.containsKey('ground')
+                  ? structuralData['ground']
+                  : structuralData) ??
+              {};
+
+          final floorData =
+              isMultiFloor(floorsMap) ? (floorsMap[floor] ?? ground) : ground;
           final r = floorData['rooms'] ?? modelData['rooms'] ?? [];
           final w = floorData['walls'] ?? modelData['walls'] ?? [];
           final pW = projWidth;
@@ -133,26 +146,29 @@ class PdfService {
           final recorder = ui.PictureRecorder();
           final canvas = ui.Canvas(recorder);
           const size = ui.Size(1024, 768);
-          
+
           // Fill background
-          canvas.drawRect(ui.Offset.zero & size, ui.Paint()..color = const ui.Color(0xFFF1F5F9));
-          
+          canvas.drawRect(ui.Offset.zero & size,
+              ui.Paint()..color = const ui.Color(0xFFF1F5F9));
+
           final painter = StructuralIsometricPainter(
             rooms: r,
             walls: w,
             pw: pW,
             ph: pH,
           );
-          
+
           painter.paint(canvas, size);
           final picture = recorder.endRecording();
-          final img = await picture.toImage(size.width.toInt(), size.height.toInt());
+          final img =
+              await picture.toImage(size.width.toInt(), size.height.toInt());
           final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
           if (byteData != null) {
             imagesStructural[floor] = byteData.buffer.asUint8List();
           }
         } catch (e) {
-          debugPrint('[PDF] Error generating structural 3D image for floor $floor: $e');
+          debugPrint(
+              '[PDF] Error generating structural 3D image for floor $floor: $e');
         }
       }
     }
@@ -204,15 +220,16 @@ class PdfService {
       final imagePathStr = data['image_url']?.toString() ?? '';
       imageElevation = await fetchImage(prompt,
           imagePath: imagePathStr, directUrl: directUrl);
-          
+
       // Try traditional variation as fallback if the first one failed
       if (imageElevation == null && variations.length > 1) {
-          final tradUrl = variations[1]['image_url']?.toString();
-          if (tradUrl != null && tradUrl.isNotEmpty) {
-              imageElevation = await fetchImage('traditional elevation', directUrl: tradUrl);
-          }
+        final tradUrl = variations[1]['image_url']?.toString();
+        if (tradUrl != null && tradUrl.isNotEmpty) {
+          imageElevation =
+              await fetchImage('traditional elevation', directUrl: tradUrl);
+        }
       }
-      
+
       if (imageElevation == null) {
         try {
           final ByteData fileData =
@@ -230,7 +247,7 @@ class PdfService {
 
     final tamilFont = await PdfGoogleFonts.notoSansTamilRegular();
     final tamilFontBold = await PdfGoogleFonts.notoSansTamilBold();
-    
+
     final pdfTheme = pw.ThemeData.withFont(
       base: tamilFont,
       bold: tamilFontBold,
@@ -371,12 +388,17 @@ class PdfService {
                               fontWeight: pw.FontWeight.bold,
                               color: textDark)),
                       pw.SizedBox(height: 10),
-                      if (images3d != null && (images3d![floor] != null || images3d!['default'] != null))
+                      if (images3d != null &&
+                          (images3d![floor] != null ||
+                              images3d!['default'] != null))
                         pw.ClipRRect(
                             horizontalRadius: 8,
                             verticalRadius: 8,
-                            child: pw.Image(pw.MemoryImage(images3d![floor] ?? images3d!['default']!),
-                                fit: pw.BoxFit.contain, height: 250))
+                            child: pw.Image(
+                                pw.MemoryImage(
+                                    images3d![floor] ?? images3d!['default']!),
+                                fit: pw.BoxFit.contain,
+                                height: 250))
                       else
                         _buildApp3DModel(floorData, projWidth, projHeight),
                       pw.SizedBox(height: 25),
@@ -1427,14 +1449,14 @@ class PdfService {
 
           final offsetX =
               constraints.maxWidth / 2 - (projW - projH) * cosA * scale / 2;
-          
+
           // To perfectly center the isometric drawing vertically:
           // Max Y = offsetY + totalZ * scale
           // Min Y = offsetY - (projW + projH) * sinA * scale
           // We want (Max Y + Min Y) / 2 = constraints.maxHeight / 2
-          final offsetY = (constraints.maxHeight / 2) - 
-                          (totalZ * scale / 2) + 
-                          ((projW + projH) * sinA * scale / 2);
+          final offsetY = (constraints.maxHeight / 2) -
+              (totalZ * scale / 2) +
+              ((projW + projH) * sinA * scale / 2);
 
           return pw.Stack(children: [
             pw.Positioned(
