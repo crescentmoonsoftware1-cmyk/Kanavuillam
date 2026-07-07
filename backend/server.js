@@ -822,7 +822,7 @@ app.post('/api/upload', (req, res, next) => {
       let mathPrompt = `${styleKeywords} [Exact Layout Details:] ${structuralSplitStr} ${doorAddition} Follow this layout exactly. ${extraInstructions}`;
 
       // Reorder prompt to ensure layout is prioritized and not cut off
-      let dynamicPrompt = `[Exact Layout Details:] ${structuralSplitStr} ${doorAddition} Follow this exactly. ${extraInstructions} [Style:] ${styleKeywords}`;
+      let dynamicPrompt = `[Style:] ${styleKeywords} [Exact Layout Details:] ${structuralSplitStr} ${doorAddition} Follow this exactly. ${extraInstructions}`;
 
       // --- GEMINI VISION ANALYSIS RESTORED ---
       try {
@@ -886,22 +886,22 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
             aiResponse = ""; // Completely drop Gemini Vision style for single floors to prevent G+1 hallucinations
           }
           // Put Layout FIRST so it doesn't get cut off by URL limits
-          dynamicPrompt = `[CRITICAL LAYOUT:] ${structuralSplitStr} ${doorAddition} Follow this exactly. ${extraInstructions} [Style:] ${aiResponse} ${styleKeywords}`;
+          dynamicPrompt = `[Style:] ${aiResponse} ${styleKeywords} [CRITICAL LAYOUT:] ${structuralSplitStr} ${doorAddition} Follow this exactly. ${extraInstructions}`;
         }
       } catch (e) {
         console.log('[Step 8] Gemini Vision failed, using pure math prompt.', e.message);
       }
 
       dynamicPrompt = dynamicPrompt.replace(/\s+/g, ' ').trim();
-      let traditionalPrompt = dynamicPrompt.replace(/flat roof and stylish parapet wall/i, 'sloping traditional Kerala roof with Mangalore tiles');
+      let traditionalPrompt = dynamicPrompt.replace(/flat roof/i, 'sloping traditional Kerala roof with Mangalore tiles');
 
       const roomNames = (groundResult.rooms || []).map(r => r.name).join(', ');
       let isometricPrompt = `A highly detailed 3D isometric top-down cutaway render of a modern Indian house floor plan. The roof is completely removed to clearly reveal the interior rooms: ${roomNames}. Show neat, low-height walls, realistic furniture, internal doors, and clear external staircases. Professional architectural rendering, bright lighting, realistic textures, 8k.`;
 
-      // Safely truncate to 900 characters (Browsers support 2000+, but 900 is safe for Pollinations)
-      const safeDynamicPrompt = dynamicPrompt.substring(0, 900);
-      const safeTraditionalPrompt = traditionalPrompt.substring(0, 900);
-      const safeIsometricPrompt = isometricPrompt.substring(0, 900);
+      // Safely truncate to 1500 characters (Browsers support 2000+, Pollinations handles 2000)
+      const safeDynamicPrompt = dynamicPrompt.substring(0, 1500);
+      const safeTraditionalPrompt = traditionalPrompt.substring(0, 1500);
+      const safeIsometricPrompt = isometricPrompt.substring(0, 1500);
 
       let modernImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(safeDynamicPrompt)}?seed=${timestamp}&width=1024&height=1024&model=flux`;
       let traditionalImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(safeTraditionalPrompt)}?seed=${timestamp + 1}&width=1024&height=1024&model=flux`;
