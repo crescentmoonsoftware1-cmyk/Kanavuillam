@@ -787,7 +787,7 @@ app.post('/api/upload', (req, res, next) => {
         if (name.includes('portico') || name.includes('parking') || name.includes('car') || name.includes('porch') || name.includes('garage')) {
           desc = `an open car parking porch with pillars ${widthDesc}`;
         } else if (name.includes('stair') || name.includes('step')) {
-          desc = floors === 1 ? `a small ground-level staircase ${widthDesc} (DO NOT draw a second floor above it)` : `a prominent open external straight staircase ${widthDesc} leading upwards`;
+          desc = floors === 1 ? `a highly prominent open external straight staircase ${widthDesc} leading up to the open flat roof, with metal railings (DO NOT draw a second floor above it)` : `a prominent open external straight staircase ${widthDesc} leading upwards`;
         } else if (name.includes('bedroom') || name.includes('living') || name.includes('hall')) {
           desc = `a wall ${widthDesc} with a large modern residential window`;
         } else if (name.includes('kitchen') || name.includes('dining')) {
@@ -818,7 +818,9 @@ app.post('/api/upload', (req, res, next) => {
 
       const floorStr = floors === 1 ? "1-STORY SINGLE-LEVEL BUNGALOW. ABSOLUTELY NO SECOND FLOOR." : floors === 2 ? "EXACTLY TWO-STORY HOUSE (Ground + 1 First Floor ONLY)" : "MULTI-STORY HOUSE";
       const balconyStr = floors >= 2 ? "Open balcony on the first floor with glass and steel railings. Include an external staircase." : "Simple flat roof terrace.";
-      const styleKeywords = `STRICTLY ${floorStr} ultra-realistic beautiful Indian residential elevation. STYLE: Real estate photography, DSLR, highly realistic, shot from street level. AESTHETICS: Elegant cream/white exterior walls with warm wood textures and subtle stone cladding. Neat flat roof with standard parapet designs. ${balconyStr} Include a modern boundary wall with a stylish iron/steel gate in the foreground. Lush green landscaping. PERFECTLY STRAIGHT FRONT-FACING ELEVATION VIEW, zoomed out showing the ENTIRE house from street up to roof, bright sunny daytime, clear blue sky, 8k resolution.`;
+      const styleKeywords = floors === 1 
+        ? `STRICTLY 1-STORY SINGLE-LEVEL BUNGALOW. ABSOLUTELY NO SECOND FLOOR. STYLE: Classic South Indian residential architecture, highly realistic, shot from street level. AESTHETICS: Crisp white and slate grey exterior walls. Warm wood-texture cladding accents on pillars and walls. Flat roof with modern parapet wall featuring horizontal slats and pergola details. Open concrete slab car porch with robust pillars. Include a modern boundary wall. PERFECTLY STRAIGHT FRONT-FACING ELEVATION VIEW, bright sunny daytime, 8k resolution.`
+        : `STRICTLY ${floorStr} ultra-realistic beautiful Indian residential elevation. STYLE: Real estate photography, DSLR, highly realistic, shot from street level. AESTHETICS: Elegant cream/white exterior walls with warm wood textures and subtle stone cladding. Neat flat roof with standard parapet designs. ${balconyStr} Include a modern boundary wall with a stylish iron/steel gate in the foreground. PERFECTLY STRAIGHT FRONT-FACING ELEVATION VIEW, bright sunny daytime, 8k resolution.`;
 
       let extraInstructions = floors === 1 ? " CRITICAL: THIS IS A 1-STORY HOUSE. DO NOT DRAW A SECOND FLOOR. DO NOT DRAW BALCONIES. The roof must be flat and directly above the ground floor." : floors === 2 ? " DO NOT generate a third floor. Stop strictly at the first floor roof." : "";
       let mathPrompt = `${styleKeywords} [Exact Layout Details:] ${structuralSplitStr} ${doorAddition} Follow this layout exactly. ${extraInstructions}`;
