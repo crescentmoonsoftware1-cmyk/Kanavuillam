@@ -286,9 +286,9 @@ async function runVastuAnalysis(modelData, lang = 'English', imagePath = null, f
       const rawText = result.response.text() || "";
       return JSON.parse(rawText.replace(/```json|```/g, '').trim());
     } catch (apiError) {
-      console.log(`[Step 5] gemini-2.5-flash-lite failed (${apiError.message}), falling back to gemini-2.5-flash-lite...`);
+      console.log(`[Step 5] gemini-2.5-flash-lite failed (${apiError.message}), falling back to gemini-2.5-flash...`);
       model = getGenAI().getGenerativeModel({
-        model: 'gemini-2.5-flash-lite',
+        model: 'gemini-2.5-flash',
         generationConfig: { responseMimeType: "application/json" }
       });
       const result = await model.generateContent(parts);
