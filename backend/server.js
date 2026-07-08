@@ -782,20 +782,20 @@ app.post('/api/upload', (req, res, next) => {
       let facadeDescriptions = [];
       frontFacadeElements.forEach((room) => {
         const name = (room.name || '').toLowerCase();
-
-        let desc = "a solid wall";
+        const roomWidth = Math.round(room.width || 10);
+        let desc = `a ${roomWidth}ft wide solid wall`;
         if (name.includes('portico') || name.includes('parking') || name.includes('car') || name.includes('porch') || name.includes('garage')) {
-          desc = "an open car parking porch with pillars";
+          desc = `a ${roomWidth}ft wide open car parking porch with pillars`;
         } else if (name.includes('stair') || name.includes('step')) {
-          desc = floors === 1 ? "an external staircase leading up to an empty open flat roof terrace" : "a prominent open external straight staircase leading upwards";
+          desc = floors === 1 ? `a ${roomWidth}ft wide external staircase leading up to an empty open flat roof terrace` : `a ${roomWidth}ft wide prominent open external straight staircase leading upwards`;
         } else if (name.includes('bedroom') || name.includes('living') || name.includes('hall')) {
-          desc = "a wall with a large modern residential window";
+          desc = `a ${roomWidth}ft wide wall with a large modern residential window`;
         } else if (name.includes('kitchen') || name.includes('dining')) {
-          desc = "a wall with a standard window";
+          desc = `a ${roomWidth}ft wide wall with a standard window`;
         } else if (name.includes('toilet') || name.includes('bath') || name.includes('wc')) {
-          desc = "a solid wall with a small high ventilation window";
+          desc = `a ${roomWidth}ft wide solid wall with a small high ventilation window`;
         } else if (name.includes('store') || name.includes('wash') || name.includes('utility') || name.includes('pooja')) {
-          desc = "a solid blank wall";
+          desc = `a ${roomWidth}ft wide solid blank wall`;
         }
         facadeDescriptions.push(desc);
       });
@@ -821,10 +821,11 @@ app.post('/api/upload', (req, res, next) => {
       const styleKeywords = `STRICTLY ${floorStr} ultra-realistic beautiful Indian residential elevation. STYLE: Real estate photography, DSLR, highly realistic, shot from street level. AESTHETICS: Elegant cream/white exterior walls with warm wood textures and subtle stone cladding. Neat flat roof with standard parapet designs. ${balconyStr} Include a modern boundary wall with a stylish iron/steel gate in the foreground. Lush green landscaping. PERFECTLY STRAIGHT FRONT-FACING ELEVATION VIEW, zoomed out showing the ENTIRE house from street up to roof, bright sunny daytime, clear blue sky, 8k resolution.`;
 
       let extraInstructions = floors === 1 ? " CRITICAL: THIS IS A 1-STORY HOUSE. DO NOT DRAW A SECOND FLOOR. DO NOT DRAW BALCONIES. The roof must be flat and directly above the ground floor." : floors === 2 ? " DO NOT generate a third floor. Stop strictly at the first floor roof." : "";
-      let mathPrompt = `${styleKeywords} [Exact Layout Details:] ${structuralSplitStr} ${doorAddition} Follow this layout exactly. ${extraInstructions}`;
+      const widthInstruction = `The total front facade is exactly ${Math.round(pw)} feet wide. The image MUST perfectly reflect these physical widths and proportions in its layout.`;
+      let mathPrompt = `${styleKeywords} [Exact Layout Details:] ${structuralSplitStr} ${doorAddition} ${widthInstruction} Follow this layout exactly. ${extraInstructions}`;
 
       // Reorder prompt to ensure layout is prioritized and not cut off
-      let dynamicPrompt = `[Style:] ${styleKeywords} [Exact Layout Details:] ${structuralSplitStr} ${doorAddition} Follow this exactly. ${extraInstructions}`;
+      let dynamicPrompt = `[Style:] ${styleKeywords} [Exact Layout Details:] ${structuralSplitStr} ${doorAddition} ${widthInstruction} Follow this exactly. ${extraInstructions}`;
 
       // --- GEMINI VISION ANALYSIS RESTORED ---
       try {
