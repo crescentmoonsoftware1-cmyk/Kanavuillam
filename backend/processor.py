@@ -287,7 +287,8 @@ def generate_walls_from_rooms(rooms, project):
 
 def get_gemini_analysis(image_path):
     """Use Gemini Vision to extract architectural data from a 2D floor plan."""
-    gemini_keys = [v for k, v in os.environ.items() if k.startswith("GEMINI_API_KEY") and v.strip() and v.strip() != "your-gemini-api-key"]
+    raw_keys_str = os.environ.get("GEMINI_API_KEY", "")
+    gemini_keys = [k.strip() for k in raw_keys_str.split(',') if k.strip() and k.strip() != "your-gemini-api-key"]
     if not gemini_keys:
         print("Error: No Gemini API key found in environment", file=sys.stderr)
         return None
