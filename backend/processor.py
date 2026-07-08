@@ -305,6 +305,7 @@ def get_gemini_analysis(image_path):
         MODELS = [
             'gemini-2.5-flash-lite',
             'gemini-2.5-flash',
+            'gemini-2.0-flash',
         ]
 
         for model_name in MODELS:
@@ -321,6 +322,7 @@ def get_gemini_analysis(image_path):
                         ],
                         config=types.GenerateContentConfig(
                             temperature=0.1,
+                            response_mime_type="application/json"
                         )
                     )
                     
