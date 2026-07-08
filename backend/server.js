@@ -816,13 +816,15 @@ app.post('/api/upload', (req, res, next) => {
 
       const doorAddition = `The main entrance wooden door is located on ${doorLocation} of the facade. DO NOT add elements that are not mentioned. Strictly follow the left-to-right order.`;
 
-      const floorStr = floors === 1 ? "1-STORY SINGLE-LEVEL BUNGALOW. ABSOLUTELY NO SECOND FLOOR." : floors === 2 ? "EXACTLY TWO-STORY HOUSE (Ground + 1 First Floor ONLY)" : "MULTI-STORY HOUSE";
+      const isNarrow = pw < 22;
+      const widthStyleDesc = isNarrow ? `VERY NARROW PLOT ARCHITECTURE (Row house style). The facade is extremely narrow (${Math.round(pw)} ft wide). ` : ``;
+      const floorStr = floors === 1 ? "1-STORY SINGLE-LEVEL BUNGALOW. ABSOLUTELY NO SECOND FLOOR." : floors === 2 ? "STRICTLY 2-STORY HOUSE (GROUND FLOOR + EXACTLY 1 UPPER FLOOR ONLY). NO THIRD FLOOR." : "MULTI-STORY HOUSE";
       const balconyStr = floors >= 2 ? "Open balcony on the first floor with glass and steel railings. Include an external staircase." : "Simple flat roof terrace.";
       const styleKeywords = floors === 1 
-        ? `STRICTLY 1-STORY SINGLE-LEVEL BUNGALOW. ABSOLUTELY NO SECOND FLOOR. STYLE: Classic South Indian residential architecture, highly realistic, shot from street level. AESTHETICS: Crisp white and slate grey exterior walls. Warm wood-texture cladding accents on pillars and walls. Flat roof with modern parapet wall featuring horizontal slats and pergola details. Open concrete slab car porch with robust pillars. Include a modern boundary wall. PERFECTLY STRAIGHT FRONT-FACING ELEVATION VIEW, bright sunny daytime, 8k resolution.`
-        : `STRICTLY ${floorStr} ultra-realistic beautiful Indian residential elevation. STYLE: Real estate photography, DSLR, highly realistic, shot from street level. AESTHETICS: Elegant cream/white exterior walls with warm wood textures and subtle stone cladding. Neat flat roof with standard parapet designs. ${balconyStr} Include a modern boundary wall with a stylish iron/steel gate in the foreground. PERFECTLY STRAIGHT FRONT-FACING ELEVATION VIEW, bright sunny daytime, 8k resolution.`;
+        ? `STRICTLY 1-STORY SINGLE-LEVEL BUNGALOW. ABSOLUTELY NO SECOND FLOOR. ${widthStyleDesc}STYLE: Classic South Indian residential architecture, highly realistic, shot from street level. AESTHETICS: Crisp white and slate grey exterior walls. Warm wood-texture cladding accents on pillars and walls. Flat roof with modern parapet wall featuring horizontal slats and pergola details. Open concrete slab car porch with robust pillars. Include a modern boundary wall. PERFECTLY STRAIGHT FRONT-FACING ELEVATION VIEW, bright sunny daytime, 8k resolution.`
+        : `STRICTLY 2-STORY HOUSE (GROUND FLOOR + EXACTLY 1 UPPER FLOOR ONLY). NO THIRD FLOOR. ${widthStyleDesc}STYLE: Real estate photography, DSLR, highly realistic, shot from street level. AESTHETICS: Elegant cream/white exterior walls with warm wood textures and subtle stone cladding. Neat flat roof with standard parapet designs. ${balconyStr} Include a modern boundary wall with a stylish iron/steel gate in the foreground. PERFECTLY STRAIGHT FRONT-FACING ELEVATION VIEW, bright sunny daytime, 8k resolution.`;
 
-      let extraInstructions = floors === 1 ? " CRITICAL: THIS IS A 1-STORY HOUSE. DO NOT DRAW A SECOND FLOOR. DO NOT DRAW BALCONIES. The roof must be flat and directly above the ground floor." : floors === 2 ? " DO NOT generate a third floor. Stop strictly at the first floor roof." : "";
+      let extraInstructions = floors === 1 ? " CRITICAL: THIS IS A 1-STORY HOUSE. DO NOT DRAW A SECOND FLOOR. DO NOT DRAW BALCONIES. The roof must be flat and directly above the ground floor." : floors === 2 ? " CRITICAL: THIS IS EXACTLY A 2-STORY HOUSE (G+1). DO NOT generate a third floor. Stop strictly at the first floor roof." : "";
       let mathPrompt = `${styleKeywords} [Exact Layout Details:] ${structuralSplitStr} ${doorAddition} Follow this layout exactly. ${extraInstructions}`;
 
       // Reorder prompt to ensure layout is prioritized and not cut off
@@ -908,8 +910,19 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
       const safeTraditionalPrompt = traditionalPrompt.substring(0, 1500);
       const safeIsometricPrompt = isometricPrompt.substring(0, 1500);
 
-      let modernImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(safeDynamicPrompt)}?seed=${timestamp}&width=1024&height=1024&model=flux`;
-      let traditionalImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(safeTraditionalPrompt)}?seed=${timestamp + 1}&width=1024&height=1024&model=flux`;
+      // Modify aspect ratio if narrow
+      let imgWidth = 1024;
+      let imgHeight = 1024;
+      if (pw < 22) {
+        imgWidth = 768; // Narow aspect ratio (tall)
+        imgHeight = 1024;
+      } else if (pw > 45) {
+        imgWidth = 1024;
+        imgHeight = 768; // Wide aspect ratio
+      }
+
+      let modernImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(safeDynamicPrompt)}?seed=${timestamp}&width=${imgWidth}&height=${imgHeight}&model=flux`;
+      let traditionalImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(safeTraditionalPrompt)}?seed=${timestamp + 1}&width=${imgWidth}&height=${imgHeight}&model=flux`;
       let isometricImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(safeIsometricPrompt)}?seed=${timestamp + 2}&width=1024&height=1024&model=flux`;
 
       try {
