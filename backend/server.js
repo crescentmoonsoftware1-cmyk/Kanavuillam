@@ -787,7 +787,7 @@ app.post('/api/upload', (req, res, next) => {
         if (name.includes('portico') || name.includes('parking') || name.includes('car') || name.includes('porch') || name.includes('garage')) {
           desc = `an open car parking porch with pillars ${widthDesc}`;
         } else if (name.includes('stair') || name.includes('step')) {
-          desc = floors === 1 ? `an external staircase ${widthDesc} leading up to an empty open flat roof terrace` : `a prominent open external straight staircase ${widthDesc} leading upwards`;
+          desc = floors === 1 ? `a small ground-level staircase ${widthDesc} (DO NOT draw a second floor above it)` : `a prominent open external straight staircase ${widthDesc} leading upwards`;
         } else if (name.includes('bedroom') || name.includes('living') || name.includes('hall')) {
           desc = `a wall ${widthDesc} with a large modern residential window`;
         } else if (name.includes('kitchen') || name.includes('dining')) {
@@ -886,10 +886,10 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
 
         if (aiResponse && aiResponse.length > 5) {
           if (floors === 1) {
-            aiResponse = ""; // Completely drop Gemini Vision style for single floors to prevent G+1 hallucinations
+            aiResponse = "EXTREMELY STRICT RULE: YOU MUST ONLY GENERATE A SINGLE-STORY (GROUND FLOOR ONLY) HOUSE. DO NOT DRAW BALCONIES. DO NOT DRAW UPPER FLOORS. ONLY A FLAT ROOF WITH PARAPET. " + aiResponse;
           }
           // Put Layout FIRST so it doesn't get cut off by URL limits
-          dynamicPrompt = `[Style:] ${aiResponse} ${styleKeywords} [CRITICAL LAYOUT:] ${structuralSplitStr} ${doorAddition} Follow this exactly. ${extraInstructions}`;
+          dynamicPrompt = `[Style:] ${styleKeywords} ${aiResponse} [CRITICAL LAYOUT:] ${structuralSplitStr} ${doorAddition} Follow this exactly. ${extraInstructions}`;
         }
       } catch (e) {
         console.log('[Step 8] Gemini Vision failed, using pure math prompt.', e.message);
