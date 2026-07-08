@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -15,27 +16,35 @@ class PdfService {
     Future<Uint8List?> fetchImage(String prompt,
         {String? imagePath, String? directUrl}) async {
       try {
+        if (directUrl != null && directUrl.startsWith('data:image')) {
+          final base64Str = directUrl.split(',').last;
+          return base64Decode(base64Str);
+        }
+
         if (directUrl != null && directUrl.isNotEmpty) {
-          // Use proxy to avoid CORS issues on Flutter Web when downloading images for PDF
-          // Pollinations natively supports CORS so we can skip the proxy for it.
-          final isPollinations = directUrl.contains('pollinations.ai');
+          // Always use proxy to avoid CORS/Cloudflare issues on Flutter Web when downloading images for PDF
           final backendBase =
               ApiService.baseUrl.replaceAll(RegExp(r'/api$'), '');
-          final proxyUrl = isPollinations 
-              ? directUrl 
-              : '$backendBase/api/proxy-image?url=${Uri.encodeComponent(directUrl)}';
+          final proxyUrl =
+              '$backendBase/api/proxy-image?url=${Uri.encodeComponent(directUrl)}';
 
-          final res = await http.get(Uri.parse(proxyUrl), headers: {
-            'User-Agent':
-                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-          });
+          final res = await http.get(Uri.parse(proxyUrl),
+              headers: kIsWeb
+                  ? null
+                  : {
+                      'User-Agent':
+                          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                    });
           if (res.statusCode == 200) return res.bodyBytes;
 
           // Fallback to direct url if proxy fails
-          final directRes = await http.get(Uri.parse(directUrl), headers: {
-            'User-Agent':
-                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-          });
+          final directRes = await http.get(Uri.parse(directUrl),
+              headers: kIsWeb
+                  ? null
+                  : {
+                      'User-Agent':
+                          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                    });
           if (directRes.statusCode == 200) return directRes.bodyBytes;
 
           debugPrint(
@@ -49,10 +58,13 @@ class PdfService {
             urlString += '&image_path=${Uri.encodeComponent(imagePath)}';
           }
           final url = Uri.parse(urlString);
-          final res = await http.get(url, headers: {
-            'User-Agent':
-                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-          });
+          final res = await http.get(url,
+              headers: kIsWeb
+                  ? null
+                  : {
+                      'User-Agent':
+                          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                    });
           if (res.statusCode == 200) return res.bodyBytes;
           debugPrint(
               'Failed to fetch from fallback API. Status: ${res.statusCode}');
@@ -999,7 +1011,7 @@ class PdfService {
                     horizontalRadius: 8,
                     verticalRadius: 8,
                     child: pw.Image(pw.MemoryImage(imageElevation),
-                        fit: pw.BoxFit.cover, height: 250)),
+                        fit: pw.BoxFit.contain, height: 350)),
                 pw.SizedBox(height: 20),
               ],
               _buildNativeElevation(
