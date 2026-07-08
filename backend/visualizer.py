@@ -40,7 +40,7 @@ Analyze the uploaded Ground Floor Plan and First Floor Plan carefully {meta_cont
 
 Generate highly detailed professional prompts for:
 
-1. A SINGLE 3D FRONT ELEVATION view (Premium Modern Style) matching the user's preferred aesthetic.
+1. A SINGLE 3D FRONT ELEVATION view (Premium Modern Style) matching the user's preferred aesthetic. If the house is 1-story, strictly do NOT include a second floor, balconies, or external staircases.
 
 2. A 3D STRUCTURAL PREVIEW
    - Columns
@@ -106,7 +106,7 @@ Camera:
 PREMIUM MODERN:
 
 "STRICTLY {floor_desc} ultra-realistic modern Indian house front elevation. 
-Structure: EXACTLY MATCH the front facade of the uploaded floor plan. Incorporate modern Indian architectural elements: a flat roof with geometric parapet designs, an open balcony/terrace with glass and steel railings, and an external staircase if appropriate.
+Structure: EXACTLY MATCH the front facade of the uploaded floor plan. Incorporate modern Indian architectural elements: a flat roof with geometric parapet designs. If 2 or more floors, include an open balcony/terrace with glass and steel railings and an external staircase. If 1 floor, use a simple flat roof with NO balconies and NO external staircase.
 Materials & Style: Off-white/cream exterior walls with striking orange/terracotta and dark grey geometric accent panels, including decorative jali or CNC cut patterns. Premium modern windows and solid wooden main entrance door. Include a modern boundary wall with a stylish iron/steel gate in the foreground.
 Settings: WIDE ANGLE SHOT, zoomed out, showing the ENTIRE house from ground to roof including the boundary wall, with clear margins around it. Bright sunny daytime, clear blue sky, high quality architectural visualization, V-Ray render, sharp focus, 8k"
 
@@ -163,7 +163,7 @@ The generated elevation must represent the actual house that would be constructe
         if os.getenv("OPENROUTER_API_KEY"):
             # Try multiple models for reliability
             models_to_try = [
-                "google/gemini-2.5-flash"
+                "google/gemini-1.5-flash"
             ]
             
             raw_json = None
@@ -212,7 +212,7 @@ The generated elevation must represent the actual house that would be constructe
             from google.genai import types
             client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
             response = client.models.generate_content(
-                model='gemini-2.5-flash',
+                model='gemini-1.5-flash',
                 contents=[
                     prompt,
                     types.Part.from_bytes(data=base64.b64decode(image_base64), mime_type='image/png')

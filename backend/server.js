@@ -150,7 +150,7 @@ function runVisualizer(imagePath, metadata = null) {
 
 // ─── Step 5: Vastu Analysis Engine (Enhanced with OpenRouter) ────────────────
 
-async function askOpenRouter(prompt, imagePath = null, model = 'google/gemini-2.5-flash') {
+async function askOpenRouter(prompt, imagePath = null, model = 'google/gemini-1.5-flash') {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) return null;
 
@@ -266,7 +266,7 @@ async function runVastuAnalysis(modelData, lang = 'English', imagePath = null, f
   try {
     console.log('[Step 5] Using Gemini API for Vastu Analysis...');
     let model = getGenAI().getGenerativeModel({
-      model: 'gemini-flash-latest',
+      model: 'gemini-1.5-flash',
       generationConfig: { responseMimeType: "application/json" }
     });
 
@@ -286,9 +286,9 @@ async function runVastuAnalysis(modelData, lang = 'English', imagePath = null, f
       const rawText = result.response.text() || "";
       return JSON.parse(rawText.replace(/```json|```/g, '').trim());
     } catch (apiError) {
-      console.log(`[Step 5] gemini-flash-latest failed (${apiError.message}), falling back to gemini-flash-latest...`);
+      console.log(`[Step 5] gemini-1.5-flash failed (${apiError.message}), falling back to gemini-1.5-flash...`);
       model = getGenAI().getGenerativeModel({
-        model: 'gemini-flash-latest',
+        model: 'gemini-1.5-flash',
         generationConfig: { responseMimeType: "application/json" }
       });
       const result = await model.generateContent(parts);
@@ -439,14 +439,15 @@ app.post('/api/material/search', async (req, res) => {
 
     // Try OpenRouter first for maximum accuracy if available
     if (process.env.OPENROUTER_API_KEY) {
-      console.log(`[Material Search] Querying OpenRouter (gemini-2.5-flash) for: ${query}`);
-      data = await askOpenRouter(prompt, null, 'google/gemini-2.5-flash');
+      console.log(`[Material Search] Querying OpenRouter (gemini-1.5-flash) for: ${query}`);
+      data = await askOpenRouter(prompt, null, 'google/gemini-1.5-flash');
     }
 
     if (!data) {
       console.log(`[Material Search] Using Gemini directly for: ${query}`);
+      const genAI = getGenAI();
       const model = genAI.getGenerativeModel({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-1.5-flash',
         generationConfig: { responseMimeType: "application/json" }
       });
       const result = await model.generateContent(prompt);
@@ -815,10 +816,11 @@ app.post('/api/upload', (req, res, next) => {
 
       const doorAddition = `The main entrance wooden door is located on ${doorLocation} of the facade. DO NOT add elements that are not mentioned. Strictly follow the left-to-right order.`;
 
-      const floorStr = floors === 1 ? "EXTREMELY SMALL SINGLE-STORY GROUND FLOOR ONLY BUILDING. ONLY ONE FLOOR. NO UPSTAIRS. ROOF MUST BE IMMEDIATELY ABOVE THE GROUND FLOOR WINDOWS." : floors === 2 ? "EXACTLY TWO-STORY HOUSE (Ground + 1 First Floor ONLY, NO second floor, NO third floor)" : "MULTI-STORY";
-      const styleKeywords = `STRICTLY ${floorStr} ultra-realistic modern Indian residential elevation. STYLE: Real estate photography, DSLR 35mm, highly realistic, shot from street level. AESTHETICS: Off-white exterior walls with striking orange/terracotta and dark grey geometric accent panels and jali/CNC patterns. Modern minimalist flat roof with geometric parapet designs. Open balcony/terrace with glass and steel railings. Include an external staircase. Modern compound wall with a stylish iron/steel entrance gate. Lush landscaping. PERFECTLY STRAIGHT FRONT-FACING ELEVATION VIEW, zoomed out showing the ENTIRE house from street up to roof, bright sunny daytime, clear blue sky, 8k resolution.`;
+      const floorStr = floors === 1 ? "1-STORY SINGLE-LEVEL BUNGALOW. ABSOLUTELY NO SECOND FLOOR." : floors === 2 ? "EXACTLY TWO-STORY HOUSE (Ground + 1 First Floor ONLY)" : "MULTI-STORY HOUSE";
+      const balconyStr = floors >= 2 ? "Open balcony on the first floor with glass and steel railings. Include an external staircase." : "Simple flat roof terrace.";
+      const styleKeywords = `STRICTLY ${floorStr} ultra-realistic modern Indian residential elevation. STYLE: Real estate photography, DSLR 35mm, highly realistic, shot from street level. AESTHETICS: Off-white exterior walls with striking orange/terracotta and dark grey geometric accent panels and jali/CNC patterns. Modern minimalist flat roof with geometric parapet designs. ${balconyStr} Modern compound wall with a stylish iron/steel entrance gate. Lush landscaping. PERFECTLY STRAIGHT FRONT-FACING ELEVATION VIEW, zoomed out showing the ENTIRE house from street up to roof, bright sunny daytime, clear blue sky, 8k resolution.`;
 
-      let extraInstructions = floors === 1 ? " ABSOLUTELY DO NOT DRAW A SECOND FLOOR. THIS IS A 1-STORY HOUSE. If you draw two floors, you fail. The roof must be flat and low." : floors === 2 ? " DO NOT generate a third floor. Stop strictly at the first floor roof." : "";
+      let extraInstructions = floors === 1 ? " CRITICAL: THIS IS A 1-STORY HOUSE. DO NOT DRAW A SECOND FLOOR. DO NOT DRAW BALCONIES. The roof must be flat and directly above the ground floor." : floors === 2 ? " DO NOT generate a third floor. Stop strictly at the first floor roof." : "";
       let mathPrompt = `${styleKeywords} [Exact Layout Details:] ${structuralSplitStr} ${doorAddition} Follow this layout exactly. ${extraInstructions}`;
 
       // Reorder prompt to ensure layout is prioritized and not cut off
@@ -827,7 +829,8 @@ app.post('/api/upload', (req, res, next) => {
       // --- GEMINI VISION ANALYSIS RESTORED ---
       try {
         console.log('[Step 8] Asking Gemini Vision to analyze the 2D plan for Elevation...');
-        let visionModel = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
+        const genAI = getGenAI();
+        let visionModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
         const imgData = require('fs').readFileSync(groundPath).toString("base64");
 
         const parts = [
@@ -949,51 +952,15 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
           throw new Error(`No output from Replicate. Status: ${data.status}`);
         };
 
-        const fetchHuggingFace = async (prompt, floorCount = 1) => {
-          if (!process.env.HUGGINGFACE_API_KEY) throw new Error("No Hugging Face API key found");
-          console.log(`[Step 8] Calling Hugging Face SDXL API for ${floorCount} floor(s)...`);
-          
-          let negativePrompt = "";
-          if (floorCount === 1) {
-             negativePrompt = "multiple floors, two floors, three floors, tall building, upstairs, balcony, high rise, stairs going up to roof";
-          } else if (floorCount === 2) {
-             negativePrompt = "three floors, four floors, tall building, high rise, skyscraper";
-          } else {
-             negativePrompt = "distorted, poorly drawn, blurry, unrealistic";
-          }
-
-          const res = await fetch("https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0", {
-            method: "POST",
-            headers: {
-              "Authorization": `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ 
-               inputs: prompt,
-               parameters: {
-                  negative_prompt: negativePrompt
-               }
-            })
-          });
-          if (!res.ok) {
-             const errText = await res.text();
-             throw new Error(`Hugging Face API error: ${res.status} - ${errText}`);
-          }
-          const arrayBuffer = await res.arrayBuffer();
-          const buffer = Buffer.from(arrayBuffer);
-          const base64 = buffer.toString('base64');
-          return `data:image/jpeg;base64,${base64}`;
-        };
-
-        // Try DALL-E 3 first, fallback to Hugging Face Free SDXL
+        // Try DALL-E 3 first (if fails, defaults to Pollinations URLs)
         const [elevationImg, isometricImg] = await Promise.allSettled([
           fetchOpenAIDalle(dynamicPrompt).catch((e) => {
             console.log('[Step 8] DALL-E 3 Elevation failed:', e.message);
-            return fetchHuggingFace(dynamicPrompt, floors);
+            throw e;
           }),
           fetchOpenAIDalle(isometricPrompt).catch((e) => {
             console.log('[Step 8] DALL-E 3 Isometric failed:', e.message);
-            return fetchHuggingFace(isometricPrompt, floors);
+            throw e;
           })
         ]);
 
