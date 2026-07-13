@@ -761,11 +761,27 @@ app.post('/api/upload', (req, res, next) => {
       // -- PREMIUM SMART PROMPT LOGIC INJECTED --
       const rooms = groundResult.rooms || [];
 
-      // 1. Identify the front of the house (Assuming Front is the max Y coordinate / bottom of plan)
+      // 1. Identify the front of the house
+      let isFrontAtTop = false;
+      let frontIndicators = rooms.filter(r => {
+         let n = (r.name || '').toLowerCase();
+         return n.includes('portico') || n.includes('parking') || n.includes('porch');
+      });
+      if (frontIndicators.length > 0) {
+         let avgY = frontIndicators.reduce((s, r) => s + (r.y || 0) + ((r.height || 0)/2), 0) / frontIndicators.length;
+         if (avgY < ph / 2) isFrontAtTop = true;
+      } else if (groundResult.doors && groundResult.doors.length > 0) {
+         const mainDoor = groundResult.doors.find(d => d.is_main) || groundResult.doors[0];
+         if ((mainDoor.y || 0) < ph / 2) isFrontAtTop = true;
+      }
+
       let maxY = 0;
+      let minY = ph;
       rooms.forEach(r => {
         const roomBottomEdge = (r.y || 0) + (r.height || 0);
+        const roomTopEdge = r.y || 0;
         if (roomBottomEdge > maxY) maxY = roomBottomEdge;
+        if (roomTopEdge < minY) minY = roomTopEdge;
       });
 
       // 2. Extract front elements (within 15ft of the front line, but include stairs if within 30ft)
@@ -773,7 +789,11 @@ app.post('/api/upload', (req, res, next) => {
         const name = (r.name || '').toLowerCase();
         const isStair = name.includes('stair') || name.includes('step');
         const threshold = isStair ? 30 : 15;
-        return ((r.y || 0) + (r.height || 0)) >= (maxY - threshold);
+        if (isFrontAtTop) {
+           return (r.y || 0) <= minY + threshold;
+        } else {
+           return ((r.y || 0) + (r.height || 0)) >= maxY - threshold;
+        }
       });
       // 3. Sort them from Left to Right based on X coordinate
       frontFacadeElements.sort((a, b) => (a.x || 0) - (b.x || 0));
@@ -787,7 +807,7 @@ app.post('/api/upload', (req, res, next) => {
         if (name.includes('portico') || name.includes('parking') || name.includes('car') || name.includes('porch') || name.includes('garage')) {
           desc = `an open car parking porch with pillars ${widthDesc}`;
         } else if (name.includes('stair') || name.includes('step')) {
-          desc = floors === 1 ? `a highly prominent open external straight staircase ${widthDesc} leading up to the open flat roof, with metal railings (DO NOT draw a second floor above it)` : `a prominent open external straight staircase ${widthDesc} leading upwards`;
+          desc = floors === 1 ? `a few low entrance steps on the ground level ${widthDesc}` : `a prominent open external straight staircase ${widthDesc} leading upwards`;
         } else if (name.includes('bedroom') || name.includes('living') || name.includes('hall')) {
           desc = `a wall ${widthDesc} with a large modern residential window`;
         } else if (name.includes('kitchen') || name.includes('dining')) {
@@ -818,16 +838,13 @@ app.post('/api/upload', (req, res, next) => {
 
       const isNarrow = pw < 22;
       const widthStyleDesc = isNarrow ? `VERY NARROW PLOT ARCHITECTURE (Row house style). The facade is extremely narrow (${Math.round(pw)} ft wide). ` : ``;
-      const floorStr = floors === 1 ? "1-STORY SINGLE-LEVEL BUNGALOW. ABSOLUTELY NO SECOND FLOOR." : floors === 2 ? "STRICTLY 2-STORY HOUSE (GROUND FLOOR + EXACTLY 1 UPPER FLOOR ONLY). NO THIRD FLOOR." : "MULTI-STORY HOUSE";
       const balconyStr = floors >= 2 ? "Open balcony on the first floor with glass and steel railings. Include an external staircase." : "Simple flat roof terrace.";
       const styleKeywords = floors === 1 
-        ? `STRICTLY 1-STORY SINGLE-LEVEL BUNGALOW. ABSOLUTELY NO SECOND FLOOR. ${widthStyleDesc}STYLE: Classic South Indian residential architecture, highly realistic, shot from street level. AESTHETICS: Crisp white and slate grey exterior walls. Warm wood-texture cladding accents on pillars and walls. Flat roof with modern parapet wall featuring horizontal slats and pergola details. Open concrete slab car porch with robust pillars. Include a modern boundary wall. PERFECTLY STRAIGHT FRONT-FACING ELEVATION VIEW, bright sunny daytime, 8k resolution.`
-        : `STRICTLY 2-STORY HOUSE (GROUND FLOOR + EXACTLY 1 UPPER FLOOR ONLY). NO THIRD FLOOR. ${widthStyleDesc}STYLE: Real estate photography, DSLR, highly realistic, shot from street level. AESTHETICS: Elegant cream/white exterior walls with warm wood textures and subtle stone cladding. Neat flat roof with standard parapet designs. ${balconyStr} Include a modern boundary wall with a stylish iron/steel gate in the foreground. PERFECTLY STRAIGHT FRONT-FACING ELEVATION VIEW, bright sunny daytime, 8k resolution.`;
+        ? `A photorealistic wide-angle street view of a VERY STRICT SINGLE-STOREY (GROUND FLOOR ONLY) house. IT IS CRITICAL THAT THERE IS NO SECOND FLOOR, NO UPPER BALCONIES, AND NO STAIRS LEADING TO ANOTHER FLOOR. ${widthStyleDesc}STYLE: Classic South Indian residential architecture, highly realistic. AESTHETICS: Crisp white and slate grey exterior walls. Warm wood-texture cladding accents. Flat roof with simple modern parapet wall. Open concrete slab car porch. Modern boundary wall. PERFECTLY STRAIGHT FRONT-FACING ELEVATION VIEW, bright sunny daytime, 8k resolution.`
+        : `A photorealistic street view of a STRICTLY 2-STORY HOUSE (GROUND FLOOR + EXACTLY 1 UPPER FLOOR ONLY). NO THIRD FLOOR. ${widthStyleDesc}STYLE: Real estate photography, DSLR, highly realistic. AESTHETICS: Elegant cream/white exterior walls with warm wood textures and subtle stone cladding. Neat flat roof with standard parapet designs. ${balconyStr} Include a modern boundary wall with a stylish iron gate. PERFECTLY STRAIGHT FRONT-FACING ELEVATION VIEW, bright sunny daytime, 8k resolution.`;
 
       let extraInstructions = floors === 1 ? " CRITICAL: THIS IS A 1-STORY HOUSE. DO NOT DRAW A SECOND FLOOR. DO NOT DRAW BALCONIES. The roof must be flat and directly above the ground floor." : floors === 2 ? " CRITICAL: THIS IS EXACTLY A 2-STORY HOUSE (G+1). DO NOT generate a third floor. Stop strictly at the first floor roof." : "";
-      let mathPrompt = `${styleKeywords} [Exact Layout Details:] ${structuralSplitStr} ${doorAddition} Follow this layout exactly. ${extraInstructions}`;
-
-      // Reorder prompt to ensure layout is prioritized and not cut off
+      
       let dynamicPrompt = `[Style:] ${styleKeywords} [Exact Layout Details:] ${structuralSplitStr} ${doorAddition} Follow this exactly. ${extraInstructions}`;
 
       // --- GEMINI VISION ANALYSIS RESTORED ---
@@ -910,15 +927,25 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
       const safeTraditionalPrompt = traditionalPrompt.substring(0, 1500);
       const safeIsometricPrompt = isometricPrompt.substring(0, 1500);
 
-      // Modify aspect ratio if narrow
+      // Modify aspect ratio based on house width and floors
       let imgWidth = 1024;
       let imgHeight = 1024;
-      if (pw < 22) {
-        imgWidth = 768; // Narow aspect ratio (tall)
-        imgHeight = 1024;
-      } else if (pw > 45) {
-        imgWidth = 1024;
+      let dalleSize = "1024x1024";
+      
+      if (pw < 25) {
+        if (floors >= 2) {
+           imgWidth = 768; // Narrow aspect ratio (tall)
+           imgHeight = 1024;
+           dalleSize = "1024x1792";
+        } else {
+           imgWidth = 1024;
+           imgHeight = 1024;
+           dalleSize = "1024x1024"; // Don't use tall for 1-story to prevent 2nd floor hallucination
+        }
+      } else if (pw > 35 || floors === 1) {
+        imgWidth = 1280;
         imgHeight = 768; // Wide aspect ratio
+        dalleSize = "1792x1024"; // Wide helps enforce 1-story
       }
 
       let modernImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(safeDynamicPrompt)}?seed=${timestamp}&width=${imgWidth}&height=${imgHeight}&model=flux`;
@@ -926,9 +953,9 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
       let isometricImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(safeIsometricPrompt)}?seed=${timestamp + 2}&width=1024&height=1024&model=flux`;
 
       try {
-        console.log('[Step 8] Attempting OpenAI DALL-E 3 for Front & Isometric Views...');
+        console.log(`[Step 8] Attempting OpenAI DALL-E 3 for Front & Isometric Views (Size: ${dalleSize})...`);
 
-        const fetchOpenAIDalle = async (prompt) => {
+        const fetchOpenAIDalle = async (prompt, size) => {
           // Split the key to bypass GitHub secret scanning so it works automatically on Railway
           const apiKey = process.env.OPENAI_API_KEY || ("sk-proj-s4Pc-SoShfnLP4Ar9WilBXDq7vl6bEUjZdZIeW7i7eITBGhU19" + "PJLhZGIg3Jucazq8h531b61dT3BlbkFJl0gpfVOO2bnjbpashLeNqIy_LmFoboCOf4-Y3fSoxbQS6UWcbA9kyZha7gzjPeCTzX0C-veQYA");
           const res = await fetch("https://api.openai.com/v1/images/generations", {
@@ -941,7 +968,7 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
               model: "dall-e-3",
               prompt: prompt.substring(0, 4000), // DALL-E 3 has a 4000 char prompt limit
               n: 1,
-              size: "1024x1024"
+              size: size
             })
           });
           const data = await res.json();
@@ -969,11 +996,11 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
 
         // Try DALL-E 3 first (if fails, defaults to Pollinations URLs)
         const [elevationImg, isometricImg] = await Promise.allSettled([
-          fetchOpenAIDalle(dynamicPrompt).catch((e) => {
+          fetchOpenAIDalle(dynamicPrompt, dalleSize).catch((e) => {
             console.log('[Step 8] DALL-E 3 Elevation failed:', e.message);
             throw e;
           }),
-          fetchOpenAIDalle(isometricPrompt).catch((e) => {
+          fetchOpenAIDalle(isometricPrompt, "1024x1024").catch((e) => {
             console.log('[Step 8] DALL-E 3 Isometric failed:', e.message);
             throw e;
           })
