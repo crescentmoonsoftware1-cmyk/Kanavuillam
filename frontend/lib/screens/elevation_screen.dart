@@ -166,6 +166,9 @@ class _ElevationScreenState extends State<ElevationScreen> {
     } else {
       String fallbackPrompt =
           'Professional front elevation of a Modern Indian $baseDesc. STRICT RULES: $constraintDesc $spatialFeatures Maintain exact portico and staircase location. STYLE REQUIREMENTS: Modern Contemporary Architecture, Flat Roof with Parapet Wall, Premium White + Light Grey Color Combination, Wooden Texture Accent Panels, Clean Geometric Design, Modern Entrance Canopy, Premium Main Door, Realistic Glass Windows, Exterior Wall Lighting, Architectural Groove Lines. RENDER SETTINGS: Ultra Realistic, Front Elevation View, Daylight, High Resolution, Architectural Visualization, Photorealistic, 4K Quality, Professional CAD-Based Elevation';
+      final fallbackWidth = floorCount == 1 ? 1280 : 1024;
+      final fallbackHeight = floorCount == 1 ? 768 : 1024;
+      
       _designs = [
         {
           'title': 'AI Dynamic Elevation',
@@ -175,7 +178,7 @@ class _ElevationScreenState extends State<ElevationScreen> {
           'badge': 'AI DYNAMIC',
           'isNetwork': true,
           'directUrl':
-              'https://image.pollinations.ai/prompt/${Uri.encodeComponent(fallbackPrompt)}?width=1024&height=1024&seed=$timestamp&nologo=true&model=flux'
+              'https://image.pollinations.ai/prompt/${Uri.encodeComponent(fallbackPrompt)}?width=$fallbackWidth&height=$fallbackHeight&seed=$timestamp&nologo=true&model=flux'
         }
       ];
     }

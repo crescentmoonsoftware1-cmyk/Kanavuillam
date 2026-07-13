@@ -932,20 +932,18 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
       let imgHeight = 1024;
       let dalleSize = "1024x1024";
       
-      if (pw < 25) {
-        if (floors >= 2) {
-           imgWidth = 768; // Narrow aspect ratio (tall)
-           imgHeight = 1024;
-           dalleSize = "1024x1792";
-        } else {
-           imgWidth = 1024;
-           imgHeight = 1024;
-           dalleSize = "1024x1024"; // Don't use tall for 1-story to prevent 2nd floor hallucination
-        }
-      } else if (pw > 35 || floors === 1) {
+      if (floors === 1) {
         imgWidth = 1280;
         imgHeight = 768; // Wide aspect ratio
-        dalleSize = "1792x1024"; // Wide helps enforce 1-story
+        dalleSize = "1792x1024"; // Wide canvas eliminates vertical space, forcing 1-story
+      } else if (pw < 25) {
+        imgWidth = 768; // Narrow aspect ratio (tall)
+        imgHeight = 1024;
+        dalleSize = "1024x1792";
+      } else if (pw > 35) {
+        imgWidth = 1280;
+        imgHeight = 768; // Wide aspect ratio
+        dalleSize = "1792x1024"; 
       }
 
       let modernImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(safeDynamicPrompt)}?seed=${timestamp}&width=${imgWidth}&height=${imgHeight}&model=flux`;
