@@ -150,7 +150,7 @@ function runVisualizer(imagePath, metadata = null) {
 
 // ─── Step 5: Vastu Analysis Engine (Enhanced with OpenRouter) ────────────────
 
-async function askOpenRouter(prompt, imagePath = null, model = 'google/gemini-2.5-flash') {
+async function askOpenRouter(prompt, imagePath = null, model = 'google/gemini-1.5-flash') {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) return null;
 
@@ -266,7 +266,7 @@ async function runVastuAnalysis(modelData, lang = 'English', imagePath = null, f
   try {
     console.log('[Step 5] Using Gemini API for Vastu Analysis...');
     let model = getGenAI().getGenerativeModel({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-1.5-flash',
       generationConfig: { responseMimeType: "application/json" }
     });
 
@@ -286,9 +286,9 @@ async function runVastuAnalysis(modelData, lang = 'English', imagePath = null, f
       const rawText = result.response.text() || "";
       return JSON.parse(rawText.replace(/```json|```/g, '').trim());
     } catch (apiError) {
-      console.log(`[Step 5] gemini-2.5-flash failed (${apiError.message}), falling back to gemini-2.0-flash...`);
+      console.log(`[Step 5] gemini-1.5-flash failed (${apiError.message}), falling back to gemini-1.5-flash-latest...`);
       model = getGenAI().getGenerativeModel({
-        model: 'gemini-2.0-flash',
+        model: 'gemini-1.5-flash-latest',
         generationConfig: { responseMimeType: "application/json" }
       });
       const result = await model.generateContent(parts);
@@ -439,15 +439,15 @@ app.post('/api/material/search', async (req, res) => {
 
     // Try OpenRouter first for maximum accuracy if available
     if (process.env.OPENROUTER_API_KEY) {
-      console.log(`[Material Search] Querying OpenRouter (gemini-2.5-flash) for: ${query}`);
-      data = await askOpenRouter(prompt, null, 'google/gemini-2.5-flash');
+      console.log(`[Material Search] Querying OpenRouter (gemini-1.5-flash) for: ${query}`);
+      data = await askOpenRouter(prompt, null, 'google/gemini-1.5-flash');
     }
 
     if (!data) {
       console.log(`[Material Search] Using Gemini directly for: ${query}`);
       const genAI = getGenAI();
       const model = genAI.getGenerativeModel({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-1.5-flash',
         generationConfig: { responseMimeType: "application/json" }
       });
       const result = await model.generateContent(prompt);
@@ -851,7 +851,7 @@ app.post('/api/upload', (req, res, next) => {
       try {
         console.log('[Step 8] Asking Gemini Vision to analyze the 2D plan for Elevation...');
         const genAI = getGenAI();
-        let visionModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        let visionModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
         const imgData = require('fs').readFileSync(groundPath).toString("base64");
 
         const parts = [
