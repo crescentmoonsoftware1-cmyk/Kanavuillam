@@ -46,7 +46,7 @@ class _SecurePaymentScreenState extends State<SecurePaymentScreen> {
       // ─── MOCK MODE ──────────────────────────────────────────────────
       // Automatically proceed to success screen without opening Razorpay
       await Future.delayed(const Duration(seconds: 1));
-      
+
       if (mounted) {
         Navigator.pushReplacement(
           context,
@@ -371,14 +371,14 @@ class _SecurePaymentScreenState extends State<SecurePaymentScreen> {
   Widget _buildPaymentMethods() {
     return Row(
       children: [
-        _methodCard('UPI', Icons.account_balance_wallet_rounded, 'Instant Transfer',
-            const Color(0xFF2979FF)),
+        _methodCard('UPI', Icons.account_balance_wallet_rounded,
+            'Instant Transfer', const Color(0xFF2979FF)),
         const SizedBox(width: 12),
         _methodCard('CARDS', Icons.credit_card_rounded, 'Visa / MasterCard',
             const Color(0xFFF472B6)),
         const SizedBox(width: 12),
-        _methodCard('NET BANKING', Icons.account_balance_rounded, 'All Major Banks',
-            const Color(0xFFA855F7)),
+        _methodCard('NET BANKING', Icons.account_balance_rounded,
+            'All Major Banks', const Color(0xFFA855F7)),
       ],
     );
   }
@@ -551,8 +551,8 @@ class _SecurePaymentScreenState extends State<SecurePaymentScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF2979FF),
               foregroundColor: Colors.white,
-              shape:
-                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
               elevation: 0,
             ),
             child: _isProcessing
