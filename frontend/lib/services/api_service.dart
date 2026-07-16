@@ -43,7 +43,9 @@ class ApiService {
       ));
     }
 
-    final response = await request.send();
+    final response = await request.send().timeout(const Duration(seconds: 120), onTimeout: () {
+      throw Exception("Request timed out. The AI is taking longer than expected. Please try again.");
+    });
     final responseData = await response.stream.bytesToString();
 
     if (response.statusCode == 200) {
@@ -62,8 +64,12 @@ class ApiService {
     }
   }
 
-  Future<List<dynamic>> getAllProjects() async {
-    final response = await http.get(Uri.parse('$baseUrl/projects'));
+  Future<List<dynamic>> getAllProjects([String? email]) async {
+    String url = '$baseUrl/projects';
+    if (email != null && email.isNotEmpty) {
+      url += '?email=${Uri.encodeComponent(email)}';
+    }
+    final response = await http.get(Uri.parse(url));
 
     if (response.statusCode == 200) {
       return json.decode(response.body);
