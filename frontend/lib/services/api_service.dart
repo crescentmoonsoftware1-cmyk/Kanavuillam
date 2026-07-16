@@ -43,7 +43,7 @@ class ApiService {
       ));
     }
 
-    final response = await request.send().timeout(const Duration(seconds: 120), onTimeout: () {
+    final response = await request.send().timeout(const Duration(seconds: 240), onTimeout: () {
       throw Exception("Request timed out. The AI is taking longer than expected. Please try again.");
     });
     final responseData = await response.stream.bytesToString();
