@@ -150,7 +150,7 @@ function runVisualizer(imagePath, metadata = null) {
 
 // ─── Step 5: Vastu Analysis Engine (Enhanced with OpenRouter) ────────────────
 
-async function askOpenRouter(prompt, imagePath = null, model = 'google/gemini-1.5-flash') {
+async function askOpenRouter(prompt, imagePath = null, model = 'google/gemini-2.5-flash') {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) return null;
 
@@ -266,7 +266,7 @@ async function runVastuAnalysis(modelData, lang = 'English', imagePath = null, f
   try {
     console.log('[Step 5] Using Gemini API for Vastu Analysis...');
     let model = getGenAI().getGenerativeModel({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       generationConfig: { responseMimeType: "application/json" }
     });
 
@@ -286,9 +286,9 @@ async function runVastuAnalysis(modelData, lang = 'English', imagePath = null, f
       const rawText = result.response.text() || "";
       return JSON.parse(rawText.replace(/```json|```/g, '').trim());
     } catch (apiError) {
-      console.log(`[Step 5] gemini-1.5-flash failed (${apiError.message}), falling back to gemini-1.5-flash-latest...`);
+      console.log(`[Step 5] gemini-2.5-flash failed (${apiError.message}), falling back to gemini-2.0-flash...`);
       model = getGenAI().getGenerativeModel({
-        model: 'gemini-1.5-flash-latest',
+        model: 'gemini-2.0-flash',
         generationConfig: { responseMimeType: "application/json" }
       });
       const result = await model.generateContent(parts);
@@ -439,15 +439,15 @@ app.post('/api/material/search', async (req, res) => {
 
     // Try OpenRouter first for maximum accuracy if available
     if (process.env.OPENROUTER_API_KEY) {
-      console.log(`[Material Search] Querying OpenRouter (gemini-1.5-flash) for: ${query}`);
-      data = await askOpenRouter(prompt, null, 'google/gemini-1.5-flash');
+      console.log(`[Material Search] Querying OpenRouter (gemini-2.5-flash) for: ${query}`);
+      data = await askOpenRouter(prompt, null, 'google/gemini-2.5-flash');
     }
 
     if (!data) {
       console.log(`[Material Search] Using Gemini directly for: ${query}`);
       const genAI = getGenAI();
       const model = genAI.getGenerativeModel({
-        model: 'gemini-1.5-flash',
+        model: 'gemini-2.5-flash',
         generationConfig: { responseMimeType: "application/json" }
       });
       const result = await model.generateContent(prompt);
@@ -764,15 +764,15 @@ app.post('/api/upload', (req, res, next) => {
       // 1. Identify the front of the house
       let isFrontAtTop = false;
       let frontIndicators = rooms.filter(r => {
-         let n = (r.name || '').toLowerCase();
-         return n.includes('portico') || n.includes('parking') || n.includes('porch');
+        let n = (r.name || '').toLowerCase();
+        return n.includes('portico') || n.includes('parking') || n.includes('porch');
       });
       if (frontIndicators.length > 0) {
-         let avgY = frontIndicators.reduce((s, r) => s + (r.y || 0) + ((r.height || 0)/2), 0) / frontIndicators.length;
-         if (avgY < ph / 2) isFrontAtTop = true;
+        let avgY = frontIndicators.reduce((s, r) => s + (r.y || 0) + ((r.height || 0) / 2), 0) / frontIndicators.length;
+        if (avgY < ph / 2) isFrontAtTop = true;
       } else if (groundResult.doors && groundResult.doors.length > 0) {
-         const mainDoor = groundResult.doors.find(d => d.is_main) || groundResult.doors[0];
-         if ((mainDoor.y || 0) < ph / 2) isFrontAtTop = true;
+        const mainDoor = groundResult.doors.find(d => d.is_main) || groundResult.doors[0];
+        if ((mainDoor.y || 0) < ph / 2) isFrontAtTop = true;
       }
 
       let maxY = 0;
@@ -790,9 +790,9 @@ app.post('/api/upload', (req, res, next) => {
         const isStair = name.includes('stair') || name.includes('step');
         const threshold = isStair ? 30 : 15;
         if (isFrontAtTop) {
-           return (r.y || 0) <= minY + threshold;
+          return (r.y || 0) <= minY + threshold;
         } else {
-           return ((r.y || 0) + (r.height || 0)) >= maxY - threshold;
+          return ((r.y || 0) + (r.height || 0)) >= maxY - threshold;
         }
       });
       // 3. Sort them from Left to Right based on X coordinate
@@ -839,19 +839,19 @@ app.post('/api/upload', (req, res, next) => {
       const isNarrow = pw < 22;
       const widthStyleDesc = isNarrow ? `VERY NARROW PLOT ARCHITECTURE (Row house style). The facade is extremely narrow (${Math.round(pw)} ft wide). ` : ``;
       const balconyStr = floors >= 2 ? "Open balcony on the first floor with glass and steel railings. Include an external staircase." : "Simple flat roof terrace.";
-      const styleKeywords = floors === 1 
-        ? `A photorealistic wide-angle street view of a VERY STRICT SINGLE-STOREY (GROUND FLOOR ONLY) house. IT IS CRITICAL THAT THERE IS NO SECOND FLOOR, NO UPPER BALCONIES, AND NO STAIRS LEADING TO ANOTHER FLOOR. ${widthStyleDesc}STYLE: Classic South Indian residential architecture, highly realistic. AESTHETICS: Crisp white and slate grey exterior walls. Warm wood-texture cladding accents. Flat roof with simple modern parapet wall. Open concrete slab car porch. Modern boundary wall. PERFECTLY STRAIGHT FRONT-FACING ELEVATION VIEW, bright sunny daytime, 8k resolution.`
-        : `A photorealistic street view of a STRICTLY 2-STORY HOUSE (GROUND FLOOR + EXACTLY 1 UPPER FLOOR ONLY). NO THIRD FLOOR. ${widthStyleDesc}STYLE: Real estate photography, DSLR, highly realistic. AESTHETICS: Elegant cream/white exterior walls with warm wood textures and subtle stone cladding. Neat flat roof with standard parapet designs. ${balconyStr} Include a modern boundary wall with a stylish iron gate. PERFECTLY STRAIGHT FRONT-FACING ELEVATION VIEW, bright sunny daytime, 8k resolution.`;
+      const styleKeywords = floors === 1
+        ? `A perfect, straight-on architectural front elevation rendering of a VERY STRICT SINGLE-STOREY (GROUND FLOOR ONLY) modern Indian house. NO perspective angle, perfectly flat front view. IT IS CRITICAL THAT THERE IS NO SECOND FLOOR. ${widthStyleDesc}STYLE: Strict ControlNet MLSD structural architectural CAD render, highly precise geometry. AESTHETICS: Crisp white paint, warm wood textures, flat roof with precise parapet wall, modern boundary wall in front. Photorealistic, 8k resolution, architectural facade view.`
+        : `A perfect, straight-on architectural front elevation rendering of a STRICTLY 2-STORY (G+1) modern Indian house. NO perspective angle, perfectly flat front view. NO THIRD FLOOR. ${widthStyleDesc}STYLE: Strict ControlNet MLSD structural architectural CAD render, highly precise geometry. AESTHETICS: Elegant cream/white walls, wood textures, stone cladding, flat roof with precise parapet. ${balconyStr} Include modern boundary wall with iron gate. Photorealistic, 8k resolution, architectural facade view.`;
 
       let extraInstructions = floors === 1 ? " CRITICAL: THIS IS A 1-STORY HOUSE. DO NOT DRAW A SECOND FLOOR. DO NOT DRAW BALCONIES. The roof must be flat and directly above the ground floor." : floors === 2 ? " CRITICAL: THIS IS EXACTLY A 2-STORY HOUSE (G+1). DO NOT generate a third floor. Stop strictly at the first floor roof." : "";
-      
+
       let dynamicPrompt = `[Style:] ${styleKeywords} [Exact Layout Details:] ${structuralSplitStr} ${doorAddition} Follow this exactly. ${extraInstructions}`;
 
       // --- GEMINI VISION ANALYSIS RESTORED ---
       try {
         console.log('[Step 8] Asking Gemini Vision to analyze the 2D plan for Elevation...');
         const genAI = getGenAI();
-        let visionModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        let visionModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
         const imgData = require('fs').readFileSync(groundPath).toString("base64");
 
         const parts = [
@@ -931,7 +931,7 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
       let imgWidth = 1024;
       let imgHeight = 1024;
       let dalleSize = "1024x1024";
-      
+
       if (floors === 1) {
         imgWidth = 1280;
         imgHeight = 768; // Wide aspect ratio
@@ -943,7 +943,7 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
       } else if (pw > 35) {
         imgWidth = 1280;
         imgHeight = 768; // Wide aspect ratio
-        dalleSize = "1792x1024"; 
+        dalleSize = "1792x1024";
       }
 
       let modernImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(safeDynamicPrompt)}?seed=${timestamp}&width=${imgWidth}&height=${imgHeight}&model=flux`;
@@ -992,30 +992,92 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
           throw new Error(`No output from Replicate. Status: ${data.status}`);
         };
 
-        // Try DALL-E 3 first (if fails, defaults to Pollinations URLs)
-        const [elevationImg, isometricImg] = await Promise.allSettled([
-          fetchOpenAIDalle(dynamicPrompt, dalleSize).catch((e) => {
-            console.log('[Step 8] DALL-E 3 Elevation failed:', e.message);
-            throw e;
-          }),
-          fetchOpenAIDalle(isometricPrompt, "1024x1024").catch((e) => {
-            console.log('[Step 8] DALL-E 3 Isometric failed:', e.message);
-            throw e;
-          })
-        ]);
+        const fetchReplicateControlNet = async (prompt, imagePath) => {
+          if (!process.env.REPLICATE_API_TOKEN) throw new Error("No Replicate API token found");
+          const fs = require('fs');
+          const imageData = fs.readFileSync(imagePath).toString('base64');
+          const imageUri = `data:image/png;base64,${imageData}`;
+          const res = await fetch("https://api.replicate.com/v1/predictions", {
+            method: "POST",
+            headers: {
+              "Authorization": `Token ${process.env.REPLICATE_API_TOKEN}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              version: "854e87270c1a1f42e08d388f618a38ec2d82bf4e69b3da59a0f443b740e53a26", // ControlNet MLSD
+              input: {
+                image: imageUri,
+                prompt: prompt,
+                num_samples: 1,
+                image_resolution: 512,
+                a_prompt: "best quality, extremely detailed, photorealistic, modern architecture, 8k resolution",
+                n_prompt: "lowres, worst quality, low quality, deformed, bad architecture"
+              }
+            })
+          });
+          const predictionInit = await res.json();
+          if (predictionInit.error) throw new Error(predictionInit.error);
+          let getUrl = predictionInit.urls.get;
+          let prediction = predictionInit;
+          while (prediction.status !== 'succeeded' && prediction.status !== 'failed') {
+            await new Promise(r => setTimeout(r, 2000));
+            const poll = await fetch(getUrl, { headers: { "Authorization": `Token ${process.env.REPLICATE_API_TOKEN}` } });
+            prediction = await poll.json();
+          }
+          if (prediction.status === 'succeeded') {
+            return Array.isArray(prediction.output) ? prediction.output[1] || prediction.output[0] : prediction.output;
+          }
+          throw new Error("ControlNet failed to generate");
+        };
 
-        if (elevationImg.status === 'fulfilled') {
-          console.log('[Step 8] ✓ Elevation Successful!');
-          modernImageUrl = elevationImg.value;
+        // Try Replicate ControlNet first, then DALL-E 3, then fallback to Pollinations
+        if (process.env.REPLICATE_API_TOKEN) {
+          console.log('[Step 8] Attempting Replicate ControlNet MLSD for Elevation...');
+          try {
+            modernImageUrl = await fetchReplicateControlNet(dynamicPrompt, groundPath);
+            console.log('[Step 8] ✓ Replicate ControlNet Elevation Successful!');
+          } catch (e) {
+            console.log('[Step 8] Replicate ControlNet failed, falling back to DALL-E:', e.message);
+            try {
+               modernImageUrl = await fetchOpenAIDalle(dynamicPrompt, dalleSize);
+            } catch (e2) {
+               console.log('[Step 8] DALL-E fallback also failed:', e2.message);
+            }
+          }
+          
+          try {
+             isometricImageUrl = await fetchReplicate(isometricPrompt); // Text-to-image for isometric
+             console.log('[Step 8] ✓ Replicate Isometric Successful!');
+          } catch (e) {
+             try {
+                isometricImageUrl = await fetchOpenAIDalle(isometricPrompt, "1024x1024");
+             } catch(e2) {}
+          }
         } else {
-          console.log(`[Step 8] Elevation Error: ${elevationImg.reason.message}`);
-        }
-
-        if (isometricImg.status === 'fulfilled') {
-          console.log('[Step 8] ✓ Isometric Successful!');
-          isometricImageUrl = isometricImg.value;
-        } else {
-          console.log(`[Step 8] Isometric Error: ${isometricImg.reason.message}`);
+          const [elevationImg, isometricImg] = await Promise.allSettled([
+            fetchOpenAIDalle(dynamicPrompt, dalleSize).catch((e) => {
+              console.log('[Step 8] DALL-E 3 Elevation failed:', e.message);
+              throw e;
+            }),
+            fetchOpenAIDalle(isometricPrompt, "1024x1024").catch((e) => {
+              console.log('[Step 8] DALL-E 3 Isometric failed:', e.message);
+              throw e;
+            })
+          ]);
+  
+          if (elevationImg.status === 'fulfilled') {
+            console.log('[Step 8] ✓ Elevation Successful!');
+            modernImageUrl = elevationImg.value;
+          } else {
+            console.log(`[Step 8] Elevation Error: ${elevationImg.reason.message}`);
+          }
+  
+          if (isometricImg.status === 'fulfilled') {
+            console.log('[Step 8] ✓ Isometric Successful!');
+            isometricImageUrl = isometricImg.value;
+          } else {
+            console.log(`[Step 8] Isometric Error: ${isometricImg.reason.message}`);
+          }
         }
       } catch (err) {
         console.log('[Step 8] Image Generation Request Failed:', err.message);
