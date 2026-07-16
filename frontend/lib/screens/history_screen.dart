@@ -96,8 +96,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
               final model = project['model_data'] ?? {};
               bool has3D = isLegacy 
-                ? (isValidData(project['visual_data']) || isValidData(project['elevation_data']) || isValidData(model['_visual']) || isValidData(model['_elevation']))
-                : selectedReports.contains('3d') || selectedReports.contains('elevation');
+                ? (isValidData(project['visual_data']) || isValidData(model['_visual']))
+                : selectedReports.contains('3d');
+              bool hasElevation = isLegacy 
+                ? (isValidData(project['elevation_data']) || isValidData(model['_elevation']))
+                : selectedReports.contains('elevation');
               bool hasVastu = isLegacy ? (isValidData(project['vastu_data']) || isValidData(model['_vastu'])) : selectedReports.contains('vastu');
               bool hasCost = isLegacy ? (isValidData(project['cost_data']) || isValidData(model['_cost'])) : selectedReports.contains('cost') || selectedReports.contains('boq');
               bool hasStructural = isLegacy ? (isValidData(project['structural_data']) || isValidData(model['_structural'])) : selectedReports.contains('structural');
@@ -105,6 +108,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               int totalPrice = isLegacy ? (() {
                 int p = 0;
                 if (has3D) p += 30;
+                if (hasElevation) p += 29;
                 if (hasVastu) p += 20;
                 if (hasCost) p += 20;
                 if (hasStructural) p += 29;
@@ -163,6 +167,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         runSpacing: 8,
                         children: [
                           if (has3D) _buildBadge(Icons.view_in_ar, '3D View', Colors.blue),
+                          if (hasElevation) _buildBadge(Icons.apartment_rounded, 'Elevation', Colors.red),
                           if (hasVastu) _buildBadge(Icons.explore, 'Vastu', Colors.orange),
                           if (hasCost) _buildBadge(Icons.calculate, 'Estimation', Colors.purple),
                           if (hasStructural) _buildBadge(Icons.foundation, 'Structural', Colors.redAccent),
