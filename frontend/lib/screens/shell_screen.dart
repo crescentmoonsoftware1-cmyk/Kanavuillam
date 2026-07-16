@@ -81,11 +81,20 @@ class _ShellScreenState extends State<ShellScreen> {
 
     try {
       final apiService = ApiService();
+      
+      final totalAmount = (selectedIds.contains('3d') ? 499.0 : 0.0) +
+          (selectedIds.contains('vastu') ? 299.0 : 0.0) +
+          (selectedIds.contains('cost') ? 199.0 : 0.0) +
+          (selectedIds.contains('structural') ? 999.0 : 0.0) +
+          (selectedIds.contains('elevation') ? 799.0 : 0.0);
+          
+      final projectName = 'Project ${DateTime.now().millisecondsSinceEpoch.toString().substring(10)}|${selectedIds.join(",")}|$totalAmount';
+
       final res = await apiService.uploadPlan(
         groundFile,
         firstFile,
         secondFile,
-        'Project ${DateTime.now().millisecondsSinceEpoch.toString().substring(10)}',
+        projectName,
       );
 
       debugPrint('SHELL: Upload successful, processing results...');

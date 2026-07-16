@@ -76,17 +76,40 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 return true;
               }
               
-              final model = project['model_data'] ?? {};
-              bool has3D = isValidData(project['visual_data']) || isValidData(project['elevation_data']) || isValidData(model['_visual']) || isValidData(model['_elevation']);
-              bool hasVastu = isValidData(project['vastu_data']) || isValidData(model['_vastu']);
-              bool hasCost = isValidData(project['cost_data']) || isValidData(model['_cost']);
-              bool hasStructural = isValidData(project['structural_data']) || isValidData(model['_structural']);
+              String rawName = project['name'] ?? 'Project';
+              String displayProjectName = rawName;
+              Set<String> selectedReports = {};
+              double amountPaid = 99.0;
+              bool isLegacy = true;
 
-              int totalPrice = 0;
-              if (has3D) totalPrice += 30;
-              if (hasVastu) totalPrice += 20;
-              if (hasCost) totalPrice += 20;
-              if (hasStructural) totalPrice += 29;
+              if (rawName.contains('|')) {
+                final parts = rawName.split('|');
+                displayProjectName = parts[0];
+                if (parts.length > 1 && parts[1].isNotEmpty) {
+                  selectedReports = parts[1].split(',').toSet();
+                  isLegacy = false;
+                }
+                if (parts.length > 2) {
+                  amountPaid = double.tryParse(parts[2]) ?? amountPaid;
+                }
+              }
+
+              final model = project['model_data'] ?? {};
+              bool has3D = isLegacy 
+                ? (isValidData(project['visual_data']) || isValidData(project['elevation_data']) || isValidData(model['_visual']) || isValidData(model['_elevation']))
+                : selectedReports.contains('3d') || selectedReports.contains('elevation');
+              bool hasVastu = isLegacy ? (isValidData(project['vastu_data']) || isValidData(model['_vastu'])) : selectedReports.contains('vastu');
+              bool hasCost = isLegacy ? (isValidData(project['cost_data']) || isValidData(model['_cost'])) : selectedReports.contains('cost') || selectedReports.contains('boq');
+              bool hasStructural = isLegacy ? (isValidData(project['structural_data']) || isValidData(model['_structural'])) : selectedReports.contains('structural');
+
+              int totalPrice = isLegacy ? (() {
+                int p = 0;
+                if (has3D) p += 30;
+                if (hasVastu) p += 20;
+                if (hasCost) p += 20;
+                if (hasStructural) p += 29;
+                return p;
+              })() : amountPaid.round();
               
               return Container(
                 margin: const EdgeInsets.only(bottom: 16),
@@ -112,7 +135,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         children: [
                           Expanded(
                             child: Text(
-                              project['name'] ?? 'Project', 
+                              displayProjectName, 
                               style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Colors.blue[900])
                             ),
                           ),

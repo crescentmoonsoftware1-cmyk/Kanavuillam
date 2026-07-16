@@ -77,7 +77,21 @@ class _ProfileScreenState extends State<ProfileScreen>
       if (mounted) {
         setState(() {
           runCount = projects.length;
-          amountSpent = projects.length * 99; // Assuming ₹99 per run
+          int total = 0;
+          for (var p in projects) {
+            String pName = p['name'] ?? '';
+            if (pName.contains('|')) {
+              var parts = pName.split('|');
+              if (parts.length > 2) {
+                total += (double.tryParse(parts[2]) ?? 99.0).round();
+              } else {
+                total += 99;
+              }
+            } else {
+              total += 99;
+            }
+          }
+          amountSpent = total;
         });
       }
     } catch (e) {
