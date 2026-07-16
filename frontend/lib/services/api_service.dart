@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 
 class ApiService {
   // For physical device via USB: run `adb reverse tcp:3000 tcp:3000` and use localhost
@@ -14,6 +16,10 @@ class ApiService {
       XFile? firstFloorFile, XFile? secondFloorFile, String projectName) async {
     final request = http.MultipartRequest('POST', Uri.parse('$baseUrl/upload'));
     request.fields['name'] = projectName;
+    
+    final prefs = await SharedPreferences.getInstance();
+    request.fields['email'] = prefs.getString('user_email') ?? 'unknown';
+
 
     // Attach ground floor
     final groundBytes = await groundFile.readAsBytes();
