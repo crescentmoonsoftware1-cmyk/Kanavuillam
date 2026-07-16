@@ -1147,8 +1147,14 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
       .from('projects')
       .insert([{
         name: req.body.name || 'New Project',
+        user_email: req.body.email || 'unknown',
         image_url: imageUrl,
         model_data: fullModelData,
+        vastu_data: vastu,
+        cost_data: costEstimate,
+        elevation_data: elevation,
+        structural_data: structural,
+        visual_data: visualDesign
       }])
       .select().single();
 
@@ -1242,7 +1248,14 @@ app.get('/api/cost/:id', async (req, res) => {
 // ─── Projects ────────────────────────────────────────────────────────────────
 
 app.get('/api/projects', async (req, res) => {
-  const { data, error } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
+  const { email } = req.query;
+  let query = supabase.from('projects').select('*').order('created_at', { ascending: false });
+  
+  if (email && email !== 'unknown') {
+    query = query.eq('user_email', email);
+  }
+  
+  const { data, error } = await query;
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
 });

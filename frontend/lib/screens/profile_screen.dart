@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'auth_screen.dart';
+import 'history_screen.dart';
+import '../services/api_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   final Map<String, dynamic>? userData;
@@ -23,7 +25,9 @@ class _ProfileScreenState extends State<ProfileScreen>
   String email = '';
   String phone = '';
   String address = '';
-  int downloadCount = 0;
+  int runCount = 0;
+  int amountSpent = 0;
+  final ApiService _apiService = ApiService();
 
   @override
   void initState() {
@@ -56,15 +60,29 @@ class _ProfileScreenState extends State<ProfileScreen>
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       final meta = widget.userData?['user_metadata'] as Map<String, dynamic>?;
-      
-      name = prefs.getString('user_name') ?? (meta?['name'] as String?) ?? 'User';
-      email = prefs.getString('user_email') ?? (widget.userData?['email'] as String?) ?? 'unknown';
-      phone = prefs.getString('user_phone') ?? (meta?['phone'] as String?) ?? 'unknown';
+
+      name =
+          prefs.getString('user_name') ?? (meta?['name'] as String?) ?? 'User';
+      email = prefs.getString('user_email') ??
+          (widget.userData?['email'] as String?) ??
+          'unknown';
+      phone = prefs.getString('user_phone') ??
+          (meta?['phone'] as String?) ??
+          'unknown';
       address = prefs.getString('user_address') ?? 'No Address Provided';
-      
-      final countKey = 'download_count_$email';
-      downloadCount = prefs.getInt(countKey) ?? 0;
     });
+
+    try {
+      final projects = await _apiService.getAllProjects(email);
+      if (mounted) {
+        setState(() {
+          runCount = projects.length;
+          amountSpent = projects.length * 99; // Assuming ₹99 per run
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching project stats: $e');
+    }
   }
 
   Widget _buildBall(double size, Color color) {
@@ -359,32 +377,36 @@ class _ProfileScreenState extends State<ProfileScreen>
                                 .slideY(begin: 0.2, end: 0),
 
                             _buildListItem(
-                              Icons.home_work_outlined,
-                              'Address',
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(address,
-                                      style: const TextStyle(
-                                          color: Colors.black87,
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600)),
-                                  const SizedBox(height: 2),
-                                ],
-                              ),
+                              Icons.analytics_outlined,
+                              'Projects count',
+                              Text('$runCount times',
+                                  style: const TextStyle(
+                                      color: Colors.black87,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w900)),
                             )
                                 .animate()
                                 .fadeIn(delay: 500.ms)
                                 .slideY(begin: 0.2, end: 0),
 
-                            _buildListItem(
-                              Icons.download_done_rounded,
-                              'Projects Downloaded',
-                              Text('$downloadCount times',
-                                  style: const TextStyle(
-                                      color: Colors.black87,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600)),
+                            InkWell(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          const HistoryScreen()),
+                                );
+                              },
+                              child: _buildListItem(
+                                Icons.history,
+                                'View Project History',
+                                const Text('See all past reports & payments',
+                                    style: TextStyle(
+                                        color: Colors.blueAccent,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w900)),
+                              ),
                             )
                                 .animate()
                                 .fadeIn(delay: 550.ms)
