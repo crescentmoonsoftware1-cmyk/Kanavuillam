@@ -951,7 +951,7 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
       let isometricImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(safeIsometricPrompt)}?seed=${timestamp + 2}&width=1024&height=1024&model=flux`;
 
       try {
-        console.log(`[Step 8] Attempting OpenAI DALL-E 3 for Front & Isometric Views (Size: ${dalleSize})...`);
+
 
         const fetchOpenAIDalle = async (prompt, size) => {
           // Split the key to bypass GitHub secret scanning so it works automatically on Railway
@@ -1016,7 +1016,9 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
             })
           });
           const predictionInit = await res.json();
-          if (predictionInit.error) throw new Error(predictionInit.error);
+          if (predictionInit.error) throw new Error(typeof predictionInit.error === 'string' ? predictionInit.error : JSON.stringify(predictionInit.error));
+          if (predictionInit.detail) throw new Error(typeof predictionInit.detail === 'string' ? predictionInit.detail : JSON.stringify(predictionInit.detail));
+          if (!predictionInit.urls) throw new Error("Unexpected Replicate response: " + JSON.stringify(predictionInit));
           let getUrl = predictionInit.urls.get;
           let prediction = predictionInit;
           while (prediction.status !== 'succeeded' && prediction.status !== 'failed') {
@@ -1027,7 +1029,7 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
           if (prediction.status === 'succeeded') {
             return Array.isArray(prediction.output) ? prediction.output[1] || prediction.output[0] : prediction.output;
           }
-          throw new Error("ControlNet failed to generate");
+          throw new Error("ControlNet failed to generate: " + (prediction.error || "Unknown error"));
         };
 
         // Try Replicate ControlNet first, then DALL-E 3, then fallback to Pollinations
