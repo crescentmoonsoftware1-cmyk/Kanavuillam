@@ -45,13 +45,22 @@ class _HistoryScreenState extends State<HistoryScreen> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error}", style: const TextStyle(color: Colors.red)));
+          if (snapshot.hasError || (snapshot.data != null && snapshot.data!.isEmpty)) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.history_toggle_off, size: 64, color: Colors.blue.withValues(alpha: 0.2)),
+                  const SizedBox(height: 16),
+                  Text(
+                    "No history data available",
+                    style: TextStyle(color: Colors.grey[600], fontSize: 16, fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+            );
           }
           final projects = snapshot.data ?? [];
-          if (projects.isEmpty) {
-            return Center(child: Text("No projects found", style: TextStyle(color: Colors.grey[600], fontSize: 16)));
-          }
 
           return ListView.builder(
             padding: const EdgeInsets.all(16),
