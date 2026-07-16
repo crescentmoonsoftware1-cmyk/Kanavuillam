@@ -997,15 +997,16 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
           const fs = require('fs');
           const imageData = fs.readFileSync(imagePath).toString('base64');
           const imageUri = `data:image/png;base64,${imageData}`;
-          const res = await fetch("https://api.replicate.com/v1/models/jagilley/controlnet/predictions", {
+          const res = await fetch("https://api.replicate.com/v1/predictions", {
             method: "POST",
             headers: {
               "Authorization": `Token ${process.env.REPLICATE_API_TOKEN}`,
               "Content-Type": "application/json"
             },
             body: JSON.stringify({
+              version: "8ebda4c70b3ea2a2bf86e44595afb562a2cdf85525c620f1671a78113c9f325b",
               input: {
-                model_type: "MLSD",
+                structure: "mlsd",
                 image: imageUri,
                 prompt: prompt,
                 num_samples: 1,
