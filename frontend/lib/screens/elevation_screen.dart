@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../services/api_service.dart';
 import 'js_stub.dart' if (dart.library.html) 'dart:js_interop';
-
 // Conditional imports to prevent mobile build crashes
 import 'web_stub.dart' if (dart.library.html) 'dart:ui_web' as ui_web;
 

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:responsive_framework/responsive_framework.dart';
-import 'screens/auth_screen.dart';
 import 'screens/splash_screen.dart';
 
 void main() {

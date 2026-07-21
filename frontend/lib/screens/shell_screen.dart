@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import '../services/api_service.dart';
 import 'upload_screen.dart';
 import 'viewer_screen.dart';
@@ -78,6 +79,9 @@ class _ShellScreenState extends State<ShellScreen> {
       XFile? secondFile, int floors, Set<String> selectedIds) async {
     setState(() => _isGenerating = true);
     debugPrint('SHELL: Starting AI Generation pipeline...');
+    
+    // Prevent phone from sleeping during long AI API calls (4 mins)
+    WakelockPlus.enable();
 
     try {
       final apiService = ApiService();
@@ -112,6 +116,8 @@ class _ShellScreenState extends State<ShellScreen> {
           backgroundColor: Colors.redAccent,
         ));
       }
+    } finally {
+      WakelockPlus.disable();
     }
   }
 
