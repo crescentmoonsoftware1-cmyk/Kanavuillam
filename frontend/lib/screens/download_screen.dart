@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io' show File, Directory, Platform;
-import 'dart:ui' as ui;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
@@ -12,18 +11,14 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:file_picker/file_picker.dart';
 import 'package:printing/printing.dart';
 import 'js_stub.dart' if (dart.library.html) 'dart:js_interop';
-
 // Conditional imports to prevent mobile build crashes
 import 'web_stub.dart' if (dart.library.html) 'dart:ui_web' as ui_web;
 
 import 'web_stub.dart' if (dart.library.html) 'package:web/web.dart' as web;
 
-const _bg = Color(0xFFF9FAFB); // Very light neat grey
 const _surface = Colors.white;
-const _accent = Color(0xFF111827); // Deep black/slate
 const _textPri = Color(0xFF111827);
 const _textSec = Color(0xFF6B7280);
 
