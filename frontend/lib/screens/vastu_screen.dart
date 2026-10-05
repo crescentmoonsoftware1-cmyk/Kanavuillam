@@ -120,133 +120,220 @@ class _VastuScreenState extends State<VastuScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // ── Header ──────────────────────────────────────────────────
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Flexible(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                _selectedLang == 'Tamil'
-                                    ? 'வாஸ்து அறிக்கை'
-                                    : 'Vastu Report',
-                                style: const TextStyle(
-                                  color: _textPri,
-                                  fontSize: 24, // Slightly smaller
-                                  fontWeight: FontWeight.bold,
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isNarrow = constraints.maxWidth < 600;
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Flexible(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        _selectedLang == 'Tamil'
+                                            ? 'வாஸ்து அறிக்கை'
+                                            : 'Vastu Report',
+                                        style: const TextStyle(
+                                          color: _textPri,
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          gradient: const LinearGradient(colors: [
+                                            Color.fromARGB(255, 11, 31, 184),
+                                            Color(0xFF00B4D8)
+                                          ]),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: const Text(
+                                          'KI',
+                                          style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                              letterSpacing: 1.0),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    _selectedLang == 'Tamil'
+                                        ? 'மிகவும் துல்லியமான வாஸ்து ஆய்வு'
+                                        : 'Highly accurate Vastu analysis',
+                                    style: const TextStyle(
+                                      color: _textSec,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (!isNarrow) ...[
+                              const SizedBox(width: 8),
+                              // Floor Switcher
+                              if (isMultiFloor &&
+                                  rootV.keys.where((k) => k != 'total').length > 1)
+                                Container(
+                                  margin: const EdgeInsets.only(right: 8),
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: _surface,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                        color: _accent.withValues(alpha: 0.5),
+                                        width: 1.5),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children:
+                                        rootV.keys.where((k) => k != 'total').map((k) {
+                                      final floorName = k.toString();
+                                      return _LangChip(
+                                        label: floorName == 'ground'
+                                            ? 'Ground'
+                                            : (floorName == 'first'
+                                                ? 'First'
+                                                : floorName.toUpperCase()),
+                                        isSelected: _selectedFloor == floorName,
+                                        onTap: () {
+                                          if (_selectedFloor != floorName) {
+                                            setState(() => _selectedFloor = floorName);
+                                          }
+                                        },
+                                      );
+                                    }).toList(),
+                                  ),
+                                ),
+                              // Language Switcher
+                              Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: _surface,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                      color: _accent.withValues(alpha: 0.5), width: 1.5),
+                                ),
+                                child: Row(
+                                  children: [
+                                    _LangChip(
+                                      label: 'EN',
+                                      isSelected: _selectedLang == 'English',
+                                      onTap: () {
+                                        if (_selectedLang != 'English') {
+                                          setState(() => _selectedLang = 'English');
+                                          _fetchVastu();
+                                        }
+                                      },
+                                    ),
+                                    _LangChip(
+                                      label: 'தமிழ்',
+                                      isSelected: _selectedLang == 'Tamil',
+                                      onTap: () {
+                                        if (_selectedLang != 'Tamil') {
+                                          setState(() => _selectedLang = 'Tamil');
+                                          _fetchVastu();
+                                        }
+                                      },
+                                    ),
+                                  ],
                                 ),
                               ),
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  gradient: const LinearGradient(colors: [
-                                    Color.fromARGB(255, 11, 31, 184),
-                                    Color(0xFF00B4D8)
-                                  ]),
-                                  borderRadius: BorderRadius.circular(6),
+                            ],
+                          ],
+                        ),
+                        if (isNarrow) ...[
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              if (isMultiFloor &&
+                                  rootV.keys.where((k) => k != 'total').length > 1)
+                                Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: _surface,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                        color: _accent.withValues(alpha: 0.5),
+                                        width: 1.5),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children:
+                                        rootV.keys.where((k) => k != 'total').map((k) {
+                                      final floorName = k.toString();
+                                      return _LangChip(
+                                        label: floorName == 'ground'
+                                            ? 'Ground'
+                                            : (floorName == 'first'
+                                                ? 'First'
+                                                : floorName.toUpperCase()),
+                                        isSelected: _selectedFloor == floorName,
+                                        onTap: () {
+                                          if (_selectedFloor != floorName) {
+                                            setState(() => _selectedFloor = floorName);
+                                          }
+                                        },
+                                      );
+                                    }).toList(),
+                                  ),
                                 ),
-                                child: const Text(
-                                  'KI',
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 1.0),
+                              Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: _surface,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                      color: _accent.withValues(alpha: 0.5), width: 1.5),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    _LangChip(
+                                      label: 'EN',
+                                      isSelected: _selectedLang == 'English',
+                                      onTap: () {
+                                        if (_selectedLang != 'English') {
+                                          setState(() => _selectedLang = 'English');
+                                          _fetchVastu();
+                                        }
+                                      },
+                                    ),
+                                    _LangChip(
+                                      label: 'தமிழ்',
+                                      isSelected: _selectedLang == 'Tamil',
+                                      onTap: () {
+                                        if (_selectedLang != 'Tamil') {
+                                          setState(() => _selectedLang = 'Tamil');
+                                          _fetchVastu();
+                                        }
+                                      },
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _selectedLang == 'Tamil'
-                                ? 'மிகவும் துல்லியமான வாஸ்து ஆய்வு'
-                                : 'Highly accurate Vastu analysis',
-                            style: const TextStyle(
-                              color: _textSec,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
                         ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    // Floor Switcher
-                    if (isMultiFloor &&
-                        rootV.keys.where((k) => k != 'total').length > 1)
-                      Container(
-                        margin: const EdgeInsets.only(right: 8),
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: _surface,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                              color: _accent.withValues(alpha: 0.5),
-                              width: 1.5),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children:
-                              rootV.keys.where((k) => k != 'total').map((k) {
-                            final floorName = k.toString();
-                            return _LangChip(
-                              label: floorName == 'ground'
-                                  ? 'Ground'
-                                  : (floorName == 'first'
-                                      ? 'First'
-                                      : floorName.toUpperCase()),
-                              isSelected: _selectedFloor == floorName,
-                              onTap: () {
-                                if (_selectedFloor != floorName) {
-                                  setState(() => _selectedFloor = floorName);
-                                }
-                              },
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                    // Language Switcher
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: _surface,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                            color: _accent.withValues(alpha: 0.5), width: 1.5),
-                      ),
-                      child: Row(
-                        children: [
-                          _LangChip(
-                            label: 'EN',
-                            isSelected: _selectedLang == 'English',
-                            onTap: () {
-                              if (_selectedLang != 'English') {
-                                setState(() => _selectedLang = 'English');
-                                _fetchVastu();
-                              }
-                            },
-                          ),
-                          _LangChip(
-                            label: 'தமிழ்',
-                            isSelected: _selectedLang == 'Tamil',
-                            onTap: () {
-                              if (_selectedLang != 'Tamil') {
-                                setState(() => _selectedLang = 'Tamil');
-                                _fetchVastu();
-                              }
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                      ],
+                    );
+                  },
                 ).animate().fadeIn(),
                 const SizedBox(height: 28),
 
@@ -662,16 +749,21 @@ class _PlacementAnalysis extends StatelessWidget {
                                   : const Color(0xFF991B1B),
                             ),
                             const SizedBox(width: 4),
-                            Text(
-                              isIdeal
-                                  ? (isTamil ? 'சரியான வாஸ்து திசை' : 'Correct Direction')
-                                  : (isTamil ? 'வாஸ்து குறைபாடு' : 'Wrong Placement'),
-                              style: TextStyle(
-                                color: isIdeal
-                                    ? const Color(0xFF065F46)
-                                    : const Color(0xFF991B1B),
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
+                            Flexible(
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  isIdeal
+                                      ? (isTamil ? 'சரியான வாஸ்து திசை' : 'Correct Direction')
+                                      : (isTamil ? 'வாஸ்து குறைபாடு' : 'Wrong Placement'),
+                                  style: TextStyle(
+                                    color: isIdeal
+                                        ? const Color(0xFF065F46)
+                                        : const Color(0xFF991B1B),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
                             ),
                           ],
