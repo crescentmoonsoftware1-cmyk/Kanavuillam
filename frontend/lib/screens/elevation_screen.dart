@@ -33,12 +33,8 @@ class _ElevationScreenState extends State<ElevationScreen> {
   // ─── Dynamic Design Gallery ────────────────────────────────────────────────
   List<Map<String, dynamic>> _designs = [];
 
-  // ─── Backend base URL (strips "/api" suffix) ───────────────────────────────
-  static String get _backendBase =>
-      ApiService.baseUrl.replaceAll(RegExp(r'/api$'), '');
-
-  /// Pollinations AI supports CORS natively, so we can bypass the backend proxy
-  /// and avoid any backend network parsing errors.
+  /// Routes all external images through our new backend proxy to 
+  /// entirely bypass Flutter Web CanvasKit CORS restrictions.
   String _proxyUrl(String rawUrl) {
     if (rawUrl.startsWith('http')) {
       return '${ApiService.baseUrl}/proxy-image?url=${Uri.encodeComponent(rawUrl)}';
@@ -197,13 +193,26 @@ class _ElevationScreenState extends State<ElevationScreen> {
         'message',
         (web.Event event) {
           final msg = event as web.MessageEvent;
-          if (msg.data.toString() == 'viewer_ready') _sendData();
+          String raw = '';
+          try {
+            final dartData = msg.data?.dartify();
+            raw = dartData?.toString() ?? '';
+          } catch (e) {}
+          if (raw == 'viewer_ready') _sendData();
         }.toJS,
       );
       return _webIFrame!;
     });
     Future.microtask(() {
       if (mounted) setState(() => _isReady = true);
+      
+      // Fallback
+      Future.delayed(const Duration(milliseconds: 1000), () {
+        if (mounted) _sendData();
+      });
+      Future.delayed(const Duration(milliseconds: 3000), () {
+        if (mounted) _sendData();
+      });
     });
   }
 
@@ -250,6 +259,25 @@ class _ElevationScreenState extends State<ElevationScreen> {
       url,
       key: key ?? ValueKey(url),
       fit: fit,
+      errorBuilder: (context, error, stackTrace) => Container(
+        color: const Color(0xFF1E293B),
+        child: Center(
+          child: isThumbnail
+              ? const Icon(Icons.broken_image_outlined, color: _textSec, size: 24)
+              : const Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.broken_image_rounded, color: Colors.white54, size: 48),
+                    SizedBox(height: 10),
+                    Text(
+                      'AI Image Generation took too long or failed.\nPlease try again later.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white70, fontSize: 14),
+                    ),
+                  ],
+                ),
+        ),
+      ),
       loadingBuilder: (context, child, progress) {
         if (progress == null) return child;
         return Center(
@@ -286,22 +314,6 @@ class _ElevationScreenState extends State<ElevationScreen> {
                 ),
         );
       },
-      errorBuilder: (context, error, stackTrace) => Center(
-        child: isThumbnail
-            ? const Icon(Icons.broken_image_outlined, color: _textSec, size: 24)
-            : Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.broken_image_outlined, color: _textSec, size: 40),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Image failed to load',
-                    style: const TextStyle(color: _textSec, fontSize: 11),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-      ),
     );
   }
 
@@ -314,41 +326,59 @@ class _ElevationScreenState extends State<ElevationScreen> {
       );
     }
 
-    final design = _designs[_selectedDesignIndex];
+    final design = _designs[0];
     final imageUrl = design['directUrl'] as String?;
+    
+    final modelData = widget.projectData['model_data'] as Map<String, dynamic>? ?? {};
+    final floors = modelData['floors'] as Map<String, dynamic>? ?? {};
+    final ground = floors['ground'] as Map<String, dynamic>? ?? {};
+    final first = floors['first'] as Map<String, dynamic>? ?? {};
+    final project = (ground['project'] as Map<String, dynamic>?) ?? (modelData['project'] as Map<String, dynamic>?) ?? {};
+    final pw = (project['width'] as num?)?.toDouble() ?? 30.0;
+    final ph = (project['height'] as num?)?.toDouble() ?? 40.0;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Background Image
-          if (imageUrl != null)
-            _buildNetworkImage(_proxyUrl(imageUrl), fit: BoxFit.cover)
+          // View Layer
+          if (_selectedDesignIndex == 0)
+            if (imageUrl != null)
+              _buildNetworkImage(_proxyUrl(imageUrl), fit: BoxFit.cover)
+            else
+              const Center(child: Text('No Elevation Image Available', style: TextStyle(color: _textSec, fontSize: 16)))
           else
-            const Center(
-              child: Text(
-                'No Elevation Image Available',
-                style: TextStyle(color: _textSec, fontSize: 16),
+            Container(
+              color: const Color(0xFFF8FAFC),
+              child: CustomPaint(
+                painter: _NativeElevationPainter(
+                  ground: ground,
+                  first: first,
+                  pw: pw,
+                  ph: ph,
+                ),
+                child: Container(),
               ),
             ),
 
-          // Dark Gradient Overlay for text readability
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black.withValues(alpha: 0.6),
-                  Colors.transparent,
-                  Colors.transparent,
-                  Colors.black.withValues(alpha: 0.8),
-                ],
-                stops: const [0.0, 0.2, 0.7, 1.0],
+          // Dark Gradient Overlay for text readability (only for image)
+          if (_selectedDesignIndex == 0)
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.6),
+                    Colors.transparent,
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.8),
+                  ],
+                  stops: const [0.0, 0.2, 0.7, 1.0],
+                ),
               ),
             ),
-          ),
 
           // Header
           Positioned(
@@ -364,18 +394,16 @@ class _ElevationScreenState extends State<ElevationScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: _accent.withValues(alpha: 0.2),
+                          color: _selectedDesignIndex == 0 ? _accent.withValues(alpha: 0.2) : Colors.blue.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(20),
-                          border:
-                              Border.all(color: _accent.withValues(alpha: 0.5)),
+                          border: Border.all(color: _selectedDesignIndex == 0 ? _accent.withValues(alpha: 0.5) : Colors.blue.withValues(alpha: 0.5)),
                         ),
                         child: Text(
-                          design['badge'] ?? 'AI VISION',
-                          style: const TextStyle(
-                            color: _accent,
+                          _selectedDesignIndex == 0 ? (design['badge'] ?? 'AI VISION') : 'CAD ISOMETRIC',
+                          style: TextStyle(
+                            color: _selectedDesignIndex == 0 ? _accent : Colors.blueAccent,
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 1.2,
@@ -384,38 +412,85 @@ class _ElevationScreenState extends State<ElevationScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        design['title'] ?? 'AI Elevation',
-                        style: const TextStyle(
-                          color: Colors.white,
+                        _selectedDesignIndex == 0 ? (design['title'] ?? 'AI Elevation') : 'Structural Isometric',
+                        style: TextStyle(
+                          color: _selectedDesignIndex == 0 ? Colors.white : _textPri,
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          shadows: [
-                            Shadow(
-                                color: Colors.black54,
-                                blurRadius: 4,
-                                offset: Offset(0, 2))
-                          ],
+                          shadows: _selectedDesignIndex == 0 ? const [Shadow(color: Colors.black54, blurRadius: 4, offset: Offset(0, 2))] : null,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        design['desc'] ??
-                            'Photorealistic 3D generated elevation.',
-                        style: const TextStyle(
-                          color: Colors.white70,
+                        _selectedDesignIndex == 0 ? (design['desc'] ?? 'Photorealistic 3D generated elevation.') : 'Exact CAD line drawing generated from 2D plan.',
+                        style: TextStyle(
+                          color: _selectedDesignIndex == 0 ? Colors.white70 : _textSec,
                           fontSize: 13,
-                          shadows: [
-                            Shadow(
-                                color: Colors.black54,
-                                blurRadius: 2,
-                                offset: Offset(0, 1))
-                          ],
+                          shadows: _selectedDesignIndex == 0 ? const [Shadow(color: Colors.black54, blurRadius: 2, offset: Offset(0, 1))] : null,
                         ),
                       ),
                     ],
                   ),
                 ),
               ],
+            ),
+          ),
+
+          // Bottom Toggle
+          Positioned(
+            bottom: 40,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(color: Colors.white24),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    GestureDetector(
+                      onTap: () => setState(() => _selectedDesignIndex = 0),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: _selectedDesignIndex == 0 ? _accent : Colors.transparent,
+                          borderRadius: BorderRadius.circular(26),
+                        ),
+                        child: Text(
+                          'Realistic Render',
+                          style: TextStyle(
+                            color: _selectedDesignIndex == 0 ? Colors.white : Colors.white70,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => setState(() => _selectedDesignIndex = 1),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: _selectedDesignIndex == 1 ? Colors.blueAccent : Colors.transparent,
+                          borderRadius: BorderRadius.circular(26),
+                        ),
+                        child: Text(
+                          'CAD Isometric',
+                          style: TextStyle(
+                            color: _selectedDesignIndex == 1 ? Colors.white : Colors.white70,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ],
@@ -588,6 +663,16 @@ class _NativeElevationPainter extends CustomPainter {
           y1 = (w['start'][1] as num).toDouble();
           x2 = (w['end'][0] as num).toDouble();
           y2 = (w['end'][1] as num).toDouble();
+        } else if (w['start'] is Map) {
+
+          x1 = (w['start']['x'] as num).toDouble();
+
+          y1 = (w['start']['y'] as num).toDouble();
+
+          x2 = (w['end']['x'] as num).toDouble();
+
+          y2 = (w['end']['y'] as num).toDouble();
+
         } else if (w['start_x'] != null) {
           x1 = (w['start_x'] as num).toDouble();
           y1 = (w['start_y'] as num).toDouble();
@@ -627,6 +712,16 @@ class _NativeElevationPainter extends CustomPainter {
           y1 = (w['start'][1] as num).toDouble();
           x2 = (w['end'][0] as num).toDouble();
           y2 = (w['end'][1] as num).toDouble();
+        } else if (w['start'] is Map) {
+
+          x1 = (w['start']['x'] as num).toDouble();
+
+          y1 = (w['start']['y'] as num).toDouble();
+
+          x2 = (w['end']['x'] as num).toDouble();
+
+          y2 = (w['end']['y'] as num).toDouble();
+
         } else if (w['start_x'] != null) {
           x1 = (w['start_x'] as num).toDouble();
           y1 = (w['start_y'] as num).toDouble();
@@ -645,6 +740,16 @@ class _NativeElevationPainter extends CustomPainter {
           y1 = (w['start'][1] as num).toDouble();
           x2 = (w['end'][0] as num).toDouble();
           y2 = (w['end'][1] as num).toDouble();
+        } else if (w['start'] is Map) {
+
+          x1 = (w['start']['x'] as num).toDouble();
+
+          y1 = (w['start']['y'] as num).toDouble();
+
+          x2 = (w['end']['x'] as num).toDouble();
+
+          y2 = (w['end']['y'] as num).toDouble();
+
         } else if (w['start_x'] != null) {
           x1 = (w['start_x'] as num).toDouble();
           y1 = (w['start_y'] as num).toDouble();

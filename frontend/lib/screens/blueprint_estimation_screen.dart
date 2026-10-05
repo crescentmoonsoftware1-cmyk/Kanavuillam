@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../services/api_service.dart';
 
 // ─── Premium Light Palette ──────────────────────────────────────────────────
 const _bg = Color(0xFFF1F5FB);
@@ -133,12 +134,51 @@ class _BlueprintEstimationScreenState extends State<BlueprintEstimationScreen> {
   };
 
   double _totalArea = 0;
+  bool _isLiveMarketActive = true;
 
   @override
   void initState() {
     super.initState();
     _totalArea = (widget.projectData['cost_data']?['total_area_sqft'] ?? 1200.0)
         .toDouble();
+    _fetchLiveMarketPrices();
+  }
+
+  Future<void> _fetchLiveMarketPrices() async {
+    try {
+      final liveData = await ApiService().getLiveMarketPrices();
+      if (liveData.containsKey('materials') && liveData['materials'] is Map) {
+        final m = liveData['materials'] as Map<String, dynamic>;
+        setState(() {
+          if (m['cement'] != null) {
+            _materials['Cement']?['price_per_unit'] = (m['cement']['standard'] as num?)?.toDouble() ?? 450.0;
+            _materials['Cement']?['base_price'] = (m['cement']['standard'] as num?)?.toDouble() ?? 450.0;
+          }
+          if (m['steel'] != null) {
+            _materials['Steel']?['price_per_unit'] = (m['steel']['standard'] as num?)?.toDouble() ?? 88.0;
+            _materials['Steel']?['base_price'] = (m['steel']['standard'] as num?)?.toDouble() ?? 88.0;
+          }
+          if (m['sand'] != null) {
+            _materials['Sand & Aggregate']?['price_per_unit'] = (m['sand']['standard'] as num?)?.toDouble() ?? 75.0;
+            _materials['Sand & Aggregate']?['base_price'] = (m['sand']['standard'] as num?)?.toDouble() ?? 75.0;
+          }
+          if (m['aggregate'] != null) {
+            _materials['Aggregates']?['price_per_unit'] = (m['aggregate']['standard'] as num?)?.toDouble() ?? 64.0;
+            _materials['Aggregates']?['base_price'] = (m['aggregate']['standard'] as num?)?.toDouble() ?? 64.0;
+          }
+          if (m['bricks'] != null) {
+            _materials['Bricks / Blocks']?['price_per_unit'] = (m['bricks']['standard'] as num?)?.toDouble() ?? 13.0;
+            _materials['Bricks / Blocks']?['base_price'] = (m['bricks']['standard'] as num?)?.toDouble() ?? 13.0;
+          }
+          if (m['tiles'] != null) {
+            _materials['Flooring']?['price_per_unit'] = (m['tiles']['standard'] as num?)?.toDouble() ?? 160.0;
+            _materials['Flooring']?['base_price'] = (m['tiles']['standard'] as num?)?.toDouble() ?? 160.0;
+          }
+        });
+      }
+    } catch (e) {
+      print('[BlueprintEstimation] Live market fetch notice: $e');
+    }
   }
 
   double _calculateTotal() {
@@ -165,7 +205,7 @@ class _BlueprintEstimationScreenState extends State<BlueprintEstimationScreen> {
             const SizedBox(height: 32),
             _buildTotalCard(liveTotal),
             const SizedBox(height: 40),
-            _sectionLabel('I. MATERIAL SELECTION (MANUAL)'),
+            _sectionLabel('I. LIVE MARKET MATERIAL SELECTION'),
             const SizedBox(height: 20),
             ..._materials.entries.map(
               (entry) => _buildMaterialEditor(entry.key, entry.value),
@@ -392,6 +432,9 @@ class _BlueprintEstimationScreenState extends State<BlueprintEstimationScreen> {
         child: DropdownButton<String>(
           value: data['selected'],
           isExpanded: true,
+          dropdownColor: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          elevation: 6,
           icon: const Icon(Icons.keyboard_arrow_down_rounded, color: _textSec),
           style: const TextStyle(
             color: Color.fromARGB(255, 65, 159, 164),
@@ -399,7 +442,17 @@ class _BlueprintEstimationScreenState extends State<BlueprintEstimationScreen> {
             fontWeight: FontWeight.w600,
           ),
           items: (data['options'] as List<String>)
-              .map((opt) => DropdownMenuItem(value: opt, child: Text(opt)))
+              .map((opt) => DropdownMenuItem(
+                    value: opt,
+                    child: Text(
+                      opt,
+                      style: const TextStyle(
+                        color: Color(0xFF0F172A),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ))
               .toList(),
           onChanged: (val) {
             setState(() {

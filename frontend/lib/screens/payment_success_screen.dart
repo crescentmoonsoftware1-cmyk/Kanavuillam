@@ -257,7 +257,7 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
                         )
                       else ...[
                         const Text(
-                          'START AI GENERATION',
+                          'GENERATE YOUR PLAN TO LIFE',
                           style: TextStyle(
                               fontSize: 16, fontWeight: FontWeight.bold),
                         ),
@@ -268,13 +268,6 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
                   ),
                 ),
               ).animate().fadeIn(delay: 1000.ms),
-
-              const SizedBox(height: 16),
-              Text(
-                'You will receive an email confirmation shortly',
-                style: TextStyle(color: const Color(0xFF94A3B8), fontSize: 11),
-              ).animate().fadeIn(delay: 1200.ms),
-              const SizedBox(height: 24),
             ],
           ),
         ),
@@ -302,4 +295,3 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
     );
   }
 }
-

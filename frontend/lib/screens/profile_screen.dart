@@ -1,4 +1,4 @@
-import 'dart:math';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -14,13 +14,7 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen>
-    with TickerProviderStateMixin {
-  late AnimationController _bgController1;
-  late AnimationController _bgController2;
-  late AnimationController _bgController3;
-  late AnimationController _bgController4;
-
+class _ProfileScreenState extends State<ProfileScreen> {
   String name = '';
   String email = '';
   String phone = '';
@@ -33,27 +27,6 @@ class _ProfileScreenState extends State<ProfileScreen>
   void initState() {
     super.initState();
     _loadUserData();
-    _bgController1 =
-        AnimationController(vsync: this, duration: const Duration(seconds: 12))
-          ..repeat(reverse: true);
-    _bgController2 =
-        AnimationController(vsync: this, duration: const Duration(seconds: 16))
-          ..repeat(reverse: true);
-    _bgController3 =
-        AnimationController(vsync: this, duration: const Duration(seconds: 14))
-          ..repeat(reverse: true);
-    _bgController4 =
-        AnimationController(vsync: this, duration: const Duration(seconds: 10))
-          ..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _bgController1.dispose();
-    _bgController2.dispose();
-    _bgController3.dispose();
-    _bgController4.dispose();
-    super.dispose();
   }
 
   Future<void> _loadUserData() async {
@@ -99,443 +72,600 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
   }
 
-  Widget _buildBall(double size, Color color) {
+  Widget _buildGlassItem({
+    required IconData icon,
+    required String title,
+    required Widget valueWidget,
+    VoidCallback? onTap,
+  }) {
     return Container(
-      width: size,
-      height: size,
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: RadialGradient(
-          colors: [color.withValues(alpha: 0.9), color.withValues(alpha: 0.0)],
-          center: Alignment.center,
-          radius: 0.8,
+        color: Colors.white.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.35),
+          width: 1.2,
         ),
       ),
-    );
-  }
-
-  Widget _buildDots() {
-    return Column(
-      children: List.generate(
-          5,
-          (i) => Row(
-                children: List.generate(
-                    5,
-                    (j) => Padding(
-                          padding: const EdgeInsets.all(6.0),
-                          child: Container(
-                            width: 3,
-                            height: 3,
-                            decoration: BoxDecoration(
-                              color: Colors.blue.withValues(alpha: 0.2),
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        )),
-              )),
-    );
-  }
-
-  Widget _buildListItem(
-      IconData icon, String title, Widget trailingOrSubtitle) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[300]!, width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          )
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: Colors.blue[50],
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: Colors.blue[600], size: 16),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
               children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: Colors.grey[500],
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFBBF24).withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.35),
+                    ),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  child: Icon(icon, color: const Color(0xFFFCD34D), size: 18),
                 ),
-                const SizedBox(height: 2),
-                trailingOrSubtitle,
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.55),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      valueWidget,
+                    ],
+                  ),
+                ),
+                if (onTap != null)
+                  const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    color: Color(0xFFFCD34D),
+                    size: 14,
+                  ),
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final w = size.width;
-
     return Scaffold(
-      backgroundColor: const Color(
-          0xFFF4F7FF), // Light gradient-like background matching AuthScreen
+      backgroundColor: const Color(0xFF090D16),
       body: Stack(
         children: [
-          // Background blobs for soft wave effect
-          AnimatedBuilder(
-            animation: _bgController1,
-            builder: (context, child) {
-              return Positioned(
-                top: -100 + 50 * sin(_bgController1.value * 2 * pi),
-                left: -80 + 50 * cos(_bgController1.value * 2 * pi),
-                child: _buildBall(
-                    300, const Color(0xFFD4DEFF)), // Top left light blue
-              );
-            },
-          ),
-          AnimatedBuilder(
-            animation: _bgController2,
-            builder: (context, child) {
-              return Positioned(
-                bottom: -150 + 60 * cos(_bgController2.value * 2 * pi),
-                left: -100 + 60 * sin(_bgController2.value * 2 * pi),
-                child: _buildBall(
-                    400, const Color(0xFF8BA6FF)), // Bottom left strong blue
-              );
-            },
-          ),
-          AnimatedBuilder(
-            animation: _bgController3,
-            builder: (context, child) {
-              return Positioned(
-                bottom: 50 + 40 * sin(_bgController3.value * 2 * pi),
-                right: -100 + 40 * cos(_bgController3.value * 2 * pi),
-                child: _buildBall(
-                    250, const Color(0xFFE2D9FF)), // Bottom right light purple
-              );
-            },
-          ),
-          AnimatedBuilder(
-            animation: _bgController4,
-            builder: (context, child) {
-              return Positioned(
-                top: 80 + 70 * sin(_bgController4.value * 2 * pi),
-                right: -50 + 70 * cos(_bgController4.value * 2 * pi),
-                child: _buildBall(
-                    200, const Color(0xFFC7D3FF)), // Top right soft blue
-              );
-            },
+          // 1. Luxury Architectural Background
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/luxury_villa_bg.png',
+              fit: BoxFit.cover,
+              alignment: Alignment.topCenter,
+              errorBuilder: (context, error, stackTrace) {
+                return Image.asset(
+                  'assets/images/architectural_bg.jpg',
+                  fit: BoxFit.cover,
+                  alignment: Alignment.topCenter,
+                );
+              },
+            ),
           ),
 
-          // Top left and bottom right dot patterns
-          Positioned(top: 120, right: 24, child: _buildDots()),
-          Positioned(bottom: 80, left: 24, child: _buildDots()),
-
-          // Main Glassmorphism Card
-          SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 340),
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 24),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.95),
-                          borderRadius: BorderRadius.circular(28),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.blue.withValues(alpha: 0.06),
-                              blurRadius: 30,
-                              offset: const Offset(0, 15),
-                            )
-                          ],
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            // Profile Avatar
-                            Container(
-                              width: 70,
-                              height: 70,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                    color: Colors.blue[300]!, width: 3),
-                                boxShadow: [
-                                  BoxShadow(
-                                      color: Colors.blue.withValues(alpha: 0.2),
-                                      blurRadius: 15,
-                                      spreadRadius: 2)
-                                ],
-                                image: const DecorationImage(
-                                  image: NetworkImage(
-                                      'https://i.pravatar.cc/300?img=11'), // Placeholder for engineer
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            ).animate().scale(
-                                delay: 200.ms,
-                                duration: 400.ms,
-                                curve: Curves.easeOutBack),
-
-                            const SizedBox(height: 10),
-
-                            // Name
-                            Text(
-                              name,
-                              style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w900,
-                                  color: Colors.blue[900]),
-                            ),
-
-                            const SizedBox(height: 6),
-
-                            // Premium Badge
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.blue[50],
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: Colors.blue[100]!),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.workspace_premium,
-                                      color: Colors.blue[600], size: 12),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    'Premium Member',
-                                    style: TextStyle(
-                                        color: Colors.blue[800],
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w700),
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                            const SizedBox(height: 20),
-
-                            // List Items
-                            _buildListItem(
-                              Icons.person_outline,
-                              'Name',
-                              Text(name,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                      color: Colors.black87,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600)),
-                            )
-                                .animate()
-                                .fadeIn(delay: 300.ms)
-                                .slideY(begin: 0.2, end: 0),
-
-                            _buildListItem(
-                              Icons.phone_outlined,
-                              'Phone Number',
-                              Text(phone,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                      color: Colors.black87,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600)),
-                            )
-                                .animate()
-                                .fadeIn(delay: 400.ms)
-                                .slideY(begin: 0.2, end: 0),
-
-                            _buildListItem(
-                              Icons.email_outlined,
-                              'Email Address',
-                              Text(email,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                      color: Colors.black87,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600)),
-                            )
-                                .animate()
-                                .fadeIn(delay: 450.ms)
-                                .slideY(begin: 0.2, end: 0),
-
-                            _buildListItem(
-                              Icons.analytics_outlined,
-                              'Projects count',
-                              Text('$runCount times',
-                                  style: const TextStyle(
-                                      color: Colors.black87,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w900)),
-                            )
-                                .animate()
-                                .fadeIn(delay: 500.ms)
-                                .slideY(begin: 0.2, end: 0),
-
-                            InkWell(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) =>
-                                          const HistoryScreen()),
-                                );
-                              },
-                              child: _buildListItem(
-                                Icons.history,
-                                'View Project History',
-                                const Text('See all past reports & payments',
-                                    style: TextStyle(
-                                        color: Colors.blueAccent,
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w900)),
-                              ),
-                            )
-                                .animate()
-                                .fadeIn(delay: 550.ms)
-                                .slideY(begin: 0.2, end: 0),
-
-                            const SizedBox(height: 16),
-
-                            // Logout Button
-                            SizedBox(
-                              width: 160,
-                              height: 40,
-                              child: DecoratedBox(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      Colors.blue[400]!,
-                                      Colors.blue[600]!
-                                    ],
-                                    begin: Alignment.centerLeft,
-                                    end: Alignment.centerRight,
-                                  ),
-                                  borderRadius: BorderRadius.circular(30),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.blue.withValues(alpha: 0.3),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 4),
-                                    )
-                                  ],
-                                ),
-                                child: ElevatedButton(
-                                  onPressed: () {
-                                    Navigator.of(context).pushReplacement(
-                                      MaterialPageRoute(
-                                          builder: (_) => const AuthScreen()),
-                                    );
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.transparent,
-                                    shadowColor: Colors.transparent,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(30),
-                                    ),
-                                  ),
-                                  child: const Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.logout,
-                                          color: Colors.white, size: 14),
-                                      SizedBox(width: 6),
-                                      Text(
-                                        'Logout',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ).animate().fadeIn(delay: 700.ms).scale(),
-                          ],
-                        ),
-                      ),
-                    ),
+          // 2. Dark Scrim & Gradient Overlay
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.45),
+                    Colors.black.withValues(alpha: 0.75),
+                    const Color(0xFF090D16).withValues(alpha: 0.98),
                   ],
                 ),
               ),
             ),
           ),
 
-          // Top App Bar Area (MOVED TO BOTTOM OF STACK SO IT IS TAPPABLE)
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          )
-                        ],
-                      ),
-                      child: Icon(Icons.arrow_back_ios_new,
-                          color: Colors.blue[900], size: 20),
-                    ),
-                  ),
-                  Text(
-                    '\nMy Profile',
-                    style: TextStyle(
-                      color: Colors.blue[900],
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(width: 40), // Spacer for balance
-                ],
+          // 3. Ambient Gold Warm Glow Bulbs
+          Positioned(
+            top: -40,
+            left: -40,
+            child: Container(
+              width: 220,
+              height: 220,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFFF59E0B).withValues(alpha: 0.18),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 60,
+            right: -50,
+            child: Container(
+              width: 240,
+              height: 240,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFFFCD34D).withValues(alpha: 0.12),
+              ),
+            ),
+          ),
+
+          // 4. Main Scrollable Content
+          Positioned.fill(
+            child: SafeArea(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                child: Column(
+                  children: [
+                    // Profile Header (Avatar + Name)
+                    _buildProfileHeader(),
+                    const SizedBox(height: 20),
+
+                    // Stats Bar (Projects Count & Total Investment)
+                    _buildStatsRow(),
+                    const SizedBox(height: 20),
+
+                    // Glass Profile Info Card
+                    _buildGlassInfoCard(),
+                    const SizedBox(height: 24),
+
+                    // Logout Button
+                    _buildLogoutButton(),
+                    const SizedBox(height: 24),
+                  ],
+                ),
               ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildProfileHeader() {
+    return Column(
+      children: [
+        // Avatar inside Gold Glow Halo
+        Container(
+          width: 86,
+          height: 86,
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: const Color(0xFFFBBF24).withValues(alpha: 0.18),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.40),
+              width: 1.8,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFFCD34D).withValues(alpha: 0.30),
+                blurRadius: 20,
+                spreadRadius: 2,
+              ),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.5),
+                blurRadius: 14,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: ClipOval(
+            child: Image.network(
+              'https://i.pravatar.cc/300?img=11',
+              fit: BoxFit.cover,
+              errorBuilder: (ctx, err, st) {
+                return Container(
+                  color: const Color(0xFF0F172A),
+                  child: const Icon(
+                    Icons.person_rounded,
+                    color: Color(0xFFFCD34D),
+                    size: 42,
+                  ),
+                );
+              },
+            ),
+          ),
+        )
+            .animate()
+            .scale(duration: 500.ms, curve: Curves.easeOutBack)
+            .fadeIn(duration: 400.ms),
+
+        const SizedBox(height: 12),
+
+        // User Name
+        Text(
+          name.isNotEmpty ? name : 'Architect User',
+          style: const TextStyle(
+            color: Color(0xFFFCD34D),
+            fontSize: 20,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 0.5,
+            shadows: [
+              Shadow(color: Colors.black, blurRadius: 8),
+            ],
+          ),
+        ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2),
+
+        const SizedBox(height: 4),
+
+        // Email
+        Text(
+          email.isNotEmpty ? email : 'user@kanavuillam.com',
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.70),
+            fontSize: 13,
+            fontWeight: FontWeight.w400,
+          ),
+        ).animate().fadeIn(delay: 300.ms),
+      ],
+    );
+  }
+
+  Widget _buildStatsRow() {
+    return Row(
+      children: [
+        // Projects Count Stat Card
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.35),
+                width: 1.2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.30),
+                  blurRadius: 14,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                child: Container(
+                  color: Colors.white.withValues(alpha: 0.08),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFBBF24).withValues(alpha: 0.20),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.analytics_rounded,
+                          color: Color(0xFFFCD34D),
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '$runCount',
+                              style: const TextStyle(
+                                color: Color(0xFFFCD34D),
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const Text(
+                              'Projects',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ).animate().fadeIn(delay: 350.ms).slideX(begin: -0.1),
+        ),
+
+        const SizedBox(width: 12),
+
+        // Total Spent Stat Card
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: const Color(0xFF34D399).withValues(alpha: 0.40),
+                width: 1.2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.30),
+                  blurRadius: 14,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                child: Container(
+                  color: Colors.white.withValues(alpha: 0.08),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF34D399).withValues(alpha: 0.20),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.payments_rounded,
+                          color: Color(0xFF34D399),
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '₹$amountSpent',
+                              style: const TextStyle(
+                                color: Color(0xFF34D399),
+                                fontSize: 17,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const Text(
+                              'Invested',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ).animate().fadeIn(delay: 400.ms).slideX(begin: 0.1),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGlassInfoCard() {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.35),
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.45),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(26),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+            color: Colors.white.withValues(alpha: 0.08),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Account Overview',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFBBF24).withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.35),
+                        ),
+                      ),
+                      child: const Text(
+                        'PROFILE',
+                        style: TextStyle(
+                          color: Color(0xFFFCD34D),
+                          fontSize: 8.5,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+
+                _buildGlassItem(
+                  icon: Icons.person_outline_rounded,
+                  title: 'Full Name',
+                  valueWidget: Text(
+                    name.isNotEmpty ? name : 'Not Set',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ).animate().fadeIn(delay: 450.ms).slideY(begin: 0.1),
+
+                _buildGlassItem(
+                  icon: Icons.phone_outlined,
+                  title: 'Phone Number',
+                  valueWidget: Text(
+                    phone.isNotEmpty ? phone : 'Not Provided',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.1),
+
+                _buildGlassItem(
+                  icon: Icons.email_outlined,
+                  title: 'Email Address',
+                  valueWidget: Text(
+                    email.isNotEmpty ? email : 'Not Provided',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ).animate().fadeIn(delay: 550.ms).slideY(begin: 0.1),
+
+                _buildGlassItem(
+                  icon: Icons.location_on_outlined,
+                  title: 'Site Location',
+                  valueWidget: Text(
+                    address.isNotEmpty ? address : 'No Address Provided',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.1),
+
+                _buildGlassItem(
+                  icon: Icons.history_rounded,
+                  title: 'Payment & Project History',
+                  valueWidget: const Text(
+                    'View all generated plans & receipts',
+                    style: TextStyle(
+                      color: Color(0xFFFCD34D),
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const HistoryScreen(),
+                      ),
+                    );
+                  },
+                ).animate().fadeIn(delay: 650.ms).slideY(begin: 0.1),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLogoutButton() {
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => const AuthScreen(),
+          ),
+        );
+      },
+      child: Container(
+        height: 50,
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [
+              Color(0xFFFBBF24),
+              Color(0xFFF59E0B),
+              Color(0xFFD97706),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(25),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFF59E0B).withValues(alpha: 0.40),
+              blurRadius: 16,
+              spreadRadius: 1,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.logout_rounded,
+              color: Color(0xFF0F172A),
+              size: 18,
+            ),
+            SizedBox(width: 8),
+            Text(
+              'Logout Account',
+              style: TextStyle(
+                color: Color(0xFF0F172A),
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ).animate().fadeIn(delay: 700.ms).slideY(begin: 0.2);
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -9,8 +10,8 @@ import 'viewer_screen.dart';
 import 'vastu_screen.dart';
 import 'estimation_screen.dart';
 import 'structural_screen.dart';
-import 'elevation_screen.dart';
 import 'download_screen.dart';
+import 'history_screen.dart';
 import 'profile_screen.dart';
 
 // ─── Nav Item Model ───────────────────────────────────────────────────────────
@@ -24,10 +25,11 @@ const _navItems = [
   _NavItem(Icons.home_outlined, 'Home Map'),
   _NavItem(Icons.view_in_ar_rounded, '3D View'),
   _NavItem(Icons.self_improvement_outlined, 'Vastu Report'),
-  _NavItem(Icons.calculate_outlined, 'Classic Estimation'),
+  _NavItem(Icons.calculate_outlined, 'Cost Estimation'),
   _NavItem(Icons.foundation_outlined, 'Structural Report'),
-  _NavItem(Icons.architecture_outlined, 'Elevation'),
   _NavItem(Icons.download_outlined, 'Download Report'),
+  _NavItem(Icons.history_rounded, 'History'),
+  _NavItem(Icons.person_outline_rounded, 'Profile'),
 ];
 
 // ─── Color Palette (Professional Light Theme) ──────────────────────────────────
@@ -48,6 +50,7 @@ class ShellScreen extends StatefulWidget {
 }
 
 class _ShellScreenState extends State<ShellScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _selectedIndex = 0;
   bool _isGenerating = false;
   Map<String, dynamic>? _projectData;
@@ -56,7 +59,8 @@ class _ShellScreenState extends State<ShellScreen> {
   final bool _hasShownLogin = false;
 
   // GlobalKey to access ViewerScreen's state for screenshot capture
-  final GlobalKey<ViewerScreenState> _viewerKey = GlobalKey<ViewerScreenState>();
+  final GlobalKey<ViewerScreenState> _viewerKey =
+      GlobalKey<ViewerScreenState>();
 
   void _onProjectLoaded(Map<String, dynamic> project, Set<String> selectedIds) {
     setState(() {
@@ -75,30 +79,37 @@ class _ShellScreenState extends State<ShellScreen> {
     });
   }
 
-  Future<void> _startAIGeneration(XFile groundFile, XFile? firstFile,
-      XFile? secondFile, int floors, Set<String> selectedIds) async {
+  Future<void> _startAIGeneration(
+      XFile groundFile,
+      XFile? firstFile,
+      XFile? secondFile,
+      int floors,
+      Set<String> selectedIds,
+      String orientation) async {
     setState(() => _isGenerating = true);
     debugPrint('SHELL: Starting AI Generation pipeline...');
-    
+
     // Prevent phone from sleeping during long AI API calls (4 mins)
     WakelockPlus.enable();
 
     try {
       final apiService = ApiService();
-      
+
       final totalAmount = (selectedIds.contains('3d') ? 499.0 : 0.0) +
           (selectedIds.contains('vastu') ? 299.0 : 0.0) +
           (selectedIds.contains('cost') ? 199.0 : 0.0) +
           (selectedIds.contains('structural') ? 999.0 : 0.0) +
           (selectedIds.contains('elevation') ? 799.0 : 0.0);
-          
-      final projectName = 'Project ${DateTime.now().millisecondsSinceEpoch.toString().substring(10)}|${selectedIds.join(",")}|$totalAmount';
+
+      final projectName =
+          'Project ${DateTime.now().millisecondsSinceEpoch.toString().substring(10)}|${selectedIds.join(",")}|$totalAmount';
 
       final res = await apiService.uploadPlan(
         groundFile,
         firstFile,
         secondFile,
         projectName,
+        orientation: orientation,
       );
 
       debugPrint('SHELL: Upload successful, processing results...');
@@ -132,15 +143,13 @@ class _ShellScreenState extends State<ShellScreen> {
         return 3;
       case 'structural':
         return 4;
-      case 'elevation':
-        return 5;
       default:
         return 1;
     }
   }
 
   List<int> get _visibleIndices {
-    List<int> indices = [0]; // Always show Home Map
+    List<int> indices = [0]; // Always include Home Map
     if (_selectedReportIds.contains('3d')) indices.add(1);
     if (_selectedReportIds.contains('vastu')) indices.add(2);
     if (_selectedReportIds.contains('cost') ||
@@ -148,8 +157,9 @@ class _ShellScreenState extends State<ShellScreen> {
       indices.add(3);
     }
     if (_selectedReportIds.contains('structural')) indices.add(4);
-    if (_selectedReportIds.contains('elevation')) indices.add(5);
-    indices.add(6); // Always show Download Report
+    if (_projectData != null) indices.add(5); // Download Report
+    indices.add(6); // History
+    indices.add(7); // Profile
     return indices;
   }
 
@@ -171,7 +181,8 @@ class _ShellScreenState extends State<ShellScreen> {
             : _EmptyState(
                 icon: Icons.view_in_ar_rounded,
                 title: '3D View',
-                subtitle: 'Upload a floor plan on the Home Map screen\nto generate your 3D model.',
+                subtitle:
+                    'Upload a floor plan on the Home Map screen\nto generate your 3D model.',
                 accentColor: _accent,
               ),
         _projectData != null
@@ -179,7 +190,8 @@ class _ShellScreenState extends State<ShellScreen> {
             : _EmptyState(
                 icon: Icons.self_improvement_outlined,
                 title: 'Vastu Report',
-                subtitle: 'Generate a project first to view\nyour Vastu analysis.',
+                subtitle:
+                    'Generate a project first to view\nyour Vastu analysis.',
                 accentColor: _accent,
               ),
         _projectData != null
@@ -187,7 +199,8 @@ class _ShellScreenState extends State<ShellScreen> {
             : _EmptyState(
                 icon: Icons.calculate_outlined,
                 title: 'Estimation',
-                subtitle: 'Generate a project first to view\nyour cost estimate.',
+                subtitle:
+                    'Generate a project first to view\nyour cost estimate.',
                 accentColor: _accent,
               ),
         _projectData != null
@@ -195,15 +208,8 @@ class _ShellScreenState extends State<ShellScreen> {
             : _EmptyState(
                 icon: Icons.foundation_outlined,
                 title: 'Structural Report',
-                subtitle: 'Generate a project first to view\nthe structural analysis.',
-                accentColor: _accent,
-              ),
-        _projectData != null
-            ? ElevationScreen(projectData: _projectData!)
-            : _EmptyState(
-                icon: Icons.architecture_outlined,
-                title: 'Elevation',
-                subtitle: 'Generate a project first to view\nthe elevation design.',
+                subtitle:
+                    'Generate a project first to view\nthe structural analysis.',
                 accentColor: _accent,
               ),
         _projectData != null
@@ -213,15 +219,20 @@ class _ShellScreenState extends State<ShellScreen> {
                 onNavigateTo3D: () => setState(() => _selectedIndex = 1),
                 userData: widget.userData,
                 capture3DScreenshots: () async {
-                  return await _viewerKey.currentState?.captureAllFloorScreenshots() ?? {};
+                  return await _viewerKey.currentState
+                          ?.captureAllFloorScreenshots() ??
+                      {};
                 },
               )
             : _EmptyState(
                 icon: Icons.download_outlined,
                 title: 'Download Report',
-                subtitle: 'Generate a project first to\ndownload your full report.',
+                subtitle:
+                    'Generate a project first to\ndownload your full report.',
                 accentColor: _accent,
               ),
+        const HistoryScreen(),
+        ProfileScreen(userData: widget.userData),
       ],
     );
   }
@@ -236,8 +247,7 @@ class _ShellScreenState extends State<ShellScreen> {
 
     if (currentIndexInVisible == -1) return const SizedBox.shrink();
 
-    final hasPrevious = currentIndexInVisible >
-        1; // Index 0 is Home Map, index 1 is usually 3D View. We allow back navigation if > 1.
+    final hasPrevious = currentIndexInVisible > 0;
     final hasNext = currentIndexInVisible < visible.length - 1;
 
     if (!hasPrevious && !hasNext) return const SizedBox.shrink();
@@ -261,7 +271,8 @@ class _ShellScreenState extends State<ShellScreen> {
                   backgroundColor: Colors.white,
                   foregroundColor: _textPri,
                   elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                     side: const BorderSide(color: _divider, width: 1.5),
@@ -317,7 +328,8 @@ class _ShellScreenState extends State<ShellScreen> {
                     foregroundColor: Colors.white,
                     shadowColor: Colors.transparent,
                     elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
@@ -351,56 +363,13 @@ class _ShellScreenState extends State<ShellScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isWide = screenWidth >= 700;
-
-    if (isWide) {
-      return Scaffold(
-        backgroundColor: _bgDark,
-        body: Row(
-          children: [
-            _Sidebar(
-              selectedIndex: _selectedIndex,
-              visibleIndices: _visibleIndices,
-              onTap: (i) => setState(() => _selectedIndex = i),
-            ),
-            Expanded(
-              child: ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(24),
-                  bottomLeft: Radius.circular(24),
-                ),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: _bgDark,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 30,
-                        offset: const Offset(-10, 0),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      _buildNavigationHeader(),
-                      Expanded(
-                        child: _buildBody(),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
     return Scaffold(
-      backgroundColor: _bgDark,
+      key: _scaffoldKey,
+      extendBody: true,
+      extendBodyBehindAppBar: true,
+      backgroundColor: const Color(0xFF090D16),
       drawer: Drawer(
-        backgroundColor: _sidebar,
+        backgroundColor: const Color(0xFF0F172A),
         child: _Sidebar(
           selectedIndex: _selectedIndex,
           visibleIndices: _visibleIndices,
@@ -412,10 +381,7 @@ class _ShellScreenState extends State<ShellScreen> {
           },
         ),
       ),
-      appBar: _MobileAppBar(
-        selectedIndex: _selectedIndex,
-        userData: widget.userData,
-      ),
+      appBar: null,
       body: Column(
         children: [
           _buildNavigationHeader(),
@@ -424,6 +390,18 @@ class _ShellScreenState extends State<ShellScreen> {
           ),
         ],
       ),
+      bottomNavigationBar: _isGenerating
+          ? null
+          : _FloatingCapsuleNavBar(
+              selectedIndex: _selectedIndex,
+              onTap: (index) {
+                if (index == 99) {
+                  _scaffoldKey.currentState?.openDrawer();
+                } else {
+                  setState(() => _selectedIndex = index);
+                }
+              },
+            ),
     );
   }
 }
@@ -442,9 +420,9 @@ class _Sidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 250,
-      color: _sidebar,
-      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+      width: 280,
+      color: const Color(0xFF0F172A),
+      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -452,14 +430,21 @@ class _Sidebar extends StatelessWidget {
             children: [
               Image.asset(
                 'assets/images/logo.png',
-                height: 80,
+                height: 44,
                 fit: BoxFit.contain,
-              )
-                  .animate(onPlay: (c) => c.repeat(reverse: true))
-                  .shimmer(duration: 3.seconds, color: _accentDim),
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                'Kanavu Illam',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ],
           ).animate().fadeIn(duration: 350.ms).slideX(begin: -0.2),
-          const SizedBox(height: 40),
+          const SizedBox(height: 30),
           Expanded(
             child: ListView.separated(
               itemCount: visibleIndices.length,
@@ -478,17 +463,17 @@ class _Sidebar extends StatelessWidget {
               },
             ),
           ),
-          const Divider(color: _divider, thickness: 1),
+          const Divider(color: Colors.white24, thickness: 1),
           const SizedBox(height: 12),
           Row(
             children: [
               const CircleAvatar(
                 radius: 14,
-                backgroundColor: _accent,
+                backgroundColor: Color(0xFFFBBF24),
                 child: Text(
                   'Ki',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: Color(0xFF0F172A),
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
                   ),
@@ -496,9 +481,9 @@ class _Sidebar extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               const Text(
-                'Kanavu illam v1.0',
+                'Kanavu Illam v1.0',
                 style: TextStyle(
-                  color: _textSec,
+                  color: Colors.white70,
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
@@ -534,24 +519,15 @@ class _SidebarItem extends StatelessWidget {
         duration: const Duration(milliseconds: 300),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: isActive ? _accent.withValues(alpha: 0.1) : Colors.transparent,
+          color: isActive ? const Color(0xFFFBBF24).withValues(alpha: 0.15) : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: isActive
-              ? [
-                  BoxShadow(
-                    color: _accent.withValues(alpha: 0.1),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : null,
           border: isActive
-              ? Border.all(color: _accent.withValues(alpha: 0.2), width: 1)
+              ? Border.all(color: const Color(0xFFFBBF24).withValues(alpha: 0.35), width: 1)
               : null,
         ),
         child: Row(
           children: [
-            Icon(icon, size: 22, color: isActive ? _accent : _textSec),
+            Icon(icon, size: 22, color: isActive ? const Color(0xFFFCD34D) : Colors.white70),
             const SizedBox(width: 14),
             Expanded(
               child: Text(
@@ -559,7 +535,7 @@ class _SidebarItem extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
-                  color: isActive ? _accent : _textSec,
+                  color: isActive ? Colors.white : Colors.white70,
                   letterSpacing: 0.1,
                 ),
                 maxLines: 1,
@@ -576,81 +552,131 @@ class _SidebarItem extends StatelessWidget {
   }
 }
 
-class _MobileAppBar extends StatelessWidget implements PreferredSizeWidget {
+class _FloatingCapsuleNavBar extends StatelessWidget {
   final int selectedIndex;
-  final Map<String, dynamic>? userData;
+  final ValueChanged<int> onTap;
 
-  const _MobileAppBar({
+  const _FloatingCapsuleNavBar({
     required this.selectedIndex,
-    this.userData,
+    required this.onTap,
   });
 
   @override
-  Size get preferredSize => const Size.fromHeight(64);
-
-  @override
   Widget build(BuildContext context) {
-    return AppBar(
-      backgroundColor: _sidebar,
-      elevation: 0,
-      centerTitle: false,
-      leading: IconButton(
-        icon: const Icon(Icons.menu_rounded, color: _textPri)
-            .animate(onPlay: (c) => c.repeat(reverse: true))
-            .shimmer(duration: 2.seconds, color: _accentDim),
-        onPressed: () => Scaffold.of(context).openDrawer(),
-      ),
-      title: Row(
-        children: [
-          Image.asset(
-            'assets/images/logo.png',
-            height: 40,
-            fit: BoxFit.contain,
+    return SafeArea(
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+        height: 60,
+        decoration: BoxDecoration(
+          color: const Color(0xD91E293B), // Dark frosted glass like Instagram Reels bottom bar
+          borderRadius: BorderRadius.circular(32),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.15),
+            width: 1,
           ),
-          const SizedBox(width: 4),
-          Flexible(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: _accent.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                _navItems[selectedIndex].label.toUpperCase(),
-                style: const TextStyle(
-                  color: _accent,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.45),
+              blurRadius: 24,
+              spreadRadius: 4,
+              offset: const Offset(0, 10),
             ),
-          ),
-        ],
-      ),
-      actions: [
-        IconButton(
-          icon: Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: _accent.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.person, color: _accent, size: 24),
-          )
-              .animate(onPlay: (c) => c.repeat(reverse: true))
-              .scaleXY(end: 1.05, duration: 2.seconds),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (_) => ProfileScreen(userData: userData)),
-            );
-          },
+          ],
         ),
-        const SizedBox(width: 8),
-      ],
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(32),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildNavItem(
+                    index: 0,
+                    icon: Icons.home_rounded,
+                    label: 'Home',
+                    isSelected: selectedIndex == 0,
+                  ),
+                  _buildNavItem(
+                    index: 6,
+                    icon: Icons.history_rounded,
+                    label: 'History',
+                    isSelected: selectedIndex == 6,
+                  ),
+                  _buildNavItem(
+                    index: 7,
+                    icon: Icons.person_rounded,
+                    label: 'Profile',
+                    isSelected: selectedIndex == 7,
+                  ),
+                  _buildNavItem(
+                    index: 99,
+                    icon: Icons.menu_rounded,
+                    label: 'Menu',
+                    isSelected: false,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem({
+    required int index,
+    required IconData icon,
+    required String label,
+    required bool isSelected,
+  }) {
+    return GestureDetector(
+      onTap: () => onTap(index),
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? const Color(0xFFFBBF24) // Active Amber capsule pill
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(22),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFFFBBF24).withValues(alpha: 0.40),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  )
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 22,
+              color: isSelected
+                  ? const Color(0xFF0F172A)
+                  : Colors.white.withValues(alpha: 0.75),
+            ),
+            if (isSelected) ...[
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Color(0xFF0F172A),
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ).animate().fadeIn(duration: 150.ms),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

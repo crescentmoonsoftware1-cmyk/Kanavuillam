@@ -43,16 +43,18 @@
 # macOS
 **/.DS_Store
 
-# Logs
+# Logs & Temporary Files
 *.log
+*.zip
 debug.txt
 debug_stderr.txt
+debug_error.txt
 output.json
-uploads/ c r e d e n t i a l s . j s o n  
- c r e d e n t i a l s . j s o n  
+backend/uploads/
+uploads/
+credentials.json
 temp*.json
 temp*.txt
 test*.jpg
 test*.html
-dummy*.jpg  
- c r e d e n t i a l s . j s o n  
+dummy*.jpg

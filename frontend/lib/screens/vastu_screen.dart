@@ -144,12 +144,14 @@ class _VastuScreenState extends State<VastuScreen> {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                      colors: [_accent, Color(0xFF00B4D8)]),
+                                  gradient: const LinearGradient(colors: [
+                                    Color.fromARGB(255, 11, 31, 184),
+                                    Color(0xFF00B4D8)
+                                  ]),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: const Text(
-                                  'AI',
+                                  'KI',
                                   style: TextStyle(
                                       color: Colors.white,
                                       fontSize: 10,
@@ -162,8 +164,8 @@ class _VastuScreenState extends State<VastuScreen> {
                           const SizedBox(height: 4),
                           Text(
                             _selectedLang == 'Tamil'
-                                ? 'AI-மூலம் வாஸ்து சாஸ்திர ஆய்வு'
-                                : 'Highly accurate AI-generated Vastu analysis',
+                                ? 'மிகவும் துல்லியமான வாஸ்து ஆய்வு'
+                                : 'Highly accurate Vastu analysis',
                             style: const TextStyle(
                               color: _textSec,
                               fontSize: 13,
@@ -248,6 +250,81 @@ class _VastuScreenState extends State<VastuScreen> {
                 ).animate().fadeIn(),
                 const SizedBox(height: 28),
 
+                // ── House Orientation Banner ────────────────────────────────
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF1E3A8A), Color(0xFF2563EB)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF2563EB).withValues(alpha: 0.25),
+                        blurRadius: 18,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                    border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.2), width: 1),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.18),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.explore_rounded,
+                            color: Colors.white, size: 28),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _selectedLang == 'Tamil'
+                                  ? 'வீட்டின் திசை அமைப்பு (House Facing Direction)'
+                                  : 'HOUSE FACING ORIENTATION',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.85),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 1.0,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '🏡 ${(v['orientation'] ?? 'EAST').toString().toUpperCase()} FACING HOUSE',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              _selectedLang == 'Tamil'
+                                  ? '2D வரைபடத்தில் காந்தப்புல மற்றும் சூரிய ஆற்றல் திசைக்கோடு'
+                                  : 'Solar magnetic alignment derived dynamically from 2D floor plan',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.8),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.08, end: 0),
+
+                const SizedBox(height: 16),
                 // ── Score Card ───────────────────────────────────────────────
                 Container(
                   padding: const EdgeInsets.all(28),
@@ -348,10 +425,16 @@ class _VastuScreenState extends State<VastuScreen> {
                   _WhyPointsReduced(
                     lang: _selectedLang,
                     score: score,
-                    violations: List<String>.from(v['violations'] ?? []),
+                    items: List<String>.from(v['whyPointsReduced'] ?? v['violations'] ?? []),
                     delay: 260,
                   ),
                 ],
+
+                const SizedBox(height: 24),
+                _VastuScienceExplanation(
+                  lang: _selectedLang,
+                  delay: 280,
+                ),
               ],
             ),
           );
@@ -375,43 +458,92 @@ class _PlacementAnalysis extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isTamil = lang == 'Tamil';
-    final items = [
-      {
-        'icon': Icons.door_front_door_outlined,
-        'label': isTamil ? 'தலைவாசல்' : 'Entrance',
-        'val': data['mainEntrance']
-      },
-      {
-        'icon': Icons.soup_kitchen_outlined,
-        'label': isTamil ? 'சமையலறை' : 'Kitchen',
-        'val': data['kitchen']
-      },
-      {
-        'icon': Icons.bed_outlined,
-        'label': isTamil ? 'படுக்கையறை' : 'Master Bed',
-        'val': data['masterBedroom']
-      },
-      {
-        'icon': Icons.bathroom_outlined,
-        'label': isTamil ? 'குளியலறை' : 'Bathroom',
-        'val': data['bathroom']
-      },
-      {
-        'icon': Icons.stairs_outlined,
-        'label': isTamil ? 'படிக்கட்டு' : 'Staircase',
-        'val': data['staircase']
-      },
-      {
-        'icon': Icons.brightness_5_outlined,
-        'label': isTamil ? 'பூஜை அறை' : 'Pooja Room',
-        'val': data['poojaRoom']
-      },
-      {
-        'icon': Icons.weekend_outlined,
-        'label': isTamil ? 'வரவேற்புறை' : 'Living Room',
-        'val': data['livingRoom']
-      },
-    ].where((i) => i['val'] != null && i['val'].toString().isNotEmpty).toList();
+    IconData getRoomIcon(String name) {
+      final n = name.toLowerCase();
+      if (n.contains('kitchen') || n.contains('cook')) return Icons.soup_kitchen_outlined;
+      if (n.contains('bed') || n.contains('master') || n.contains('guest')) return Icons.bed_outlined;
+      if (n.contains('bath') || n.contains('toilet') || n.contains('wc') || n.contains('wash')) return Icons.bathroom_outlined;
+      if (n.contains('stair') || n.contains('step')) return Icons.stairs_outlined;
+      if (n.contains('pooja') || n.contains('puja') || n.contains('prayer')) return Icons.brightness_5_outlined;
+      if (n.contains('living') || n.contains('hall') || n.contains('drawing')) return Icons.weekend_outlined;
+      if (n.contains('dining')) return Icons.restaurant_outlined;
+      if (n.contains('entrance') || n.contains('door') || n.contains('main')) return Icons.door_front_door_outlined;
+      if (n.contains('store') || n.contains('utility')) return Icons.inventory_2_outlined;
+      return Icons.meeting_room_outlined;
+    }
+
+    final List<Map<String, dynamic>> items = [];
+
+    if (data['roomPlacements'] is List && (data['roomPlacements'] as List).isNotEmpty) {
+      for (final r in (data['roomPlacements'] as List)) {
+        if (r is Map && r['name'] != null && r['text'] != null) {
+          items.add({
+            'icon': getRoomIcon(r['name'].toString()),
+            'label': r['name'].toString(),
+            'zone': r['zone']?.toString() ?? '',
+            'isIdeal': r['isIdeal'] == true,
+            'val': r['text'].toString(),
+          });
+        }
+      }
+    } else {
+      final fallbackItems = [
+        {
+          'icon': Icons.door_front_door_outlined,
+          'label': isTamil ? 'தலைவாசல்' : 'Entrance',
+          'zone': 'North-East',
+          'isIdeal': true,
+          'val': data['mainEntrance']
+        },
+        {
+          'icon': Icons.soup_kitchen_outlined,
+          'label': isTamil ? 'சமையலறை' : 'Kitchen',
+          'zone': 'South-East',
+          'isIdeal': true,
+          'val': data['kitchen']
+        },
+        {
+          'icon': Icons.bed_outlined,
+          'label': isTamil ? 'படுக்கையறை' : 'Master Bed',
+          'zone': 'South-West',
+          'isIdeal': true,
+          'val': data['masterBedroom']
+        },
+        {
+          'icon': Icons.bathroom_outlined,
+          'label': isTamil ? 'குளியலறை' : 'Bathroom',
+          'zone': 'North-West',
+          'isIdeal': true,
+          'val': data['bathroom']
+        },
+        {
+          'icon': Icons.stairs_outlined,
+          'label': isTamil ? 'படிக்கட்டு' : 'Staircase',
+          'zone': 'South-West',
+          'isIdeal': true,
+          'val': data['staircase']
+        },
+        {
+          'icon': Icons.brightness_5_outlined,
+          'label': isTamil ? 'பூஜை அறை' : 'Pooja Room',
+          'zone': 'North-East',
+          'isIdeal': true,
+          'val': data['poojaRoom']
+        },
+        {
+          'icon': Icons.weekend_outlined,
+          'label': isTamil ? 'வரவேற்புறை' : 'Living Room',
+          'zone': 'North-East',
+          'isIdeal': true,
+          'val': data['livingRoom']
+        },
+      ];
+      for (final i in fallbackItems) {
+        if (i['val'] != null && i['val'].toString().isNotEmpty) {
+          items.add(i);
+        }
+      }
+    }
 
     if (items.isEmpty) return const SizedBox.shrink();
 
@@ -444,62 +576,147 @@ class _PlacementAnalysis extends StatelessWidget {
                     color: _accent, size: 22),
               ),
               const SizedBox(width: 16),
-              Text(
-                isTamil ? 'அமைவிடம் ஆய்வு' : 'PLACEMENT ANALYSIS',
-                style: const TextStyle(
-                  color: _textPri,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.2,
+              Expanded(
+                child: Text(
+                  isTamil ? 'அமைவிடம் மற்றும் திசை ஆய்வு' : 'ROOM PLACEMENT & DIRECTION AUDIT',
+                  style: const TextStyle(
+                    color: _textPri,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.1,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 20),
-          ...items.map((item) => Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFDFBF7), // Match premium cream
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: _accent.withValues(alpha: 0.15)),
+          ...items.map((item) {
+            final isIdeal = item['isIdeal'] == true;
+            final zoneText = item['zone'].toString();
+            return Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFDFBF7),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isIdeal
+                      ? const Color(0xFF10B981).withValues(alpha: 0.35)
+                      : const Color(0xFFEF4444).withValues(alpha: 0.35),
+                  width: 1.5,
                 ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(item['icon'] as IconData, size: 24, color: _accent),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: RichText(
-                        text: TextSpan(
-                          style: const TextStyle(
-                              color: _textPri, fontSize: 14, height: 1.5),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Flexible(
+                        child: Row(
                           children: [
-                            TextSpan(
-                              text: '${item['label']}\n',
-                              style: const TextStyle(
+                            Icon(item['icon'] as IconData, size: 22, color: _accent),
+                            const SizedBox(width: 10),
+                            Flexible(
+                              child: Text(
+                                item['label'].toString().toUpperCase(),
+                                style: const TextStyle(
                                   fontWeight: FontWeight.w800,
-                                  fontSize: 11,
-                                  color: _textSec,
-                                  letterSpacing: 0.8),
-                            ),
-                            TextSpan(
-                              text: item['val'].toString(),
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w600, color: _textPri),
+                                  fontSize: 14,
+                                  color: _textPri,
+                                  letterSpacing: 0.5,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                           ],
                         ),
                       ),
+                      const SizedBox(width: 8),
+                      // Dynamic Status Badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: isIdeal
+                              ? const Color(0xFFD1FAE5)
+                              : const Color(0xFFFEE2E2),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isIdeal
+                                ? const Color(0xFF059669)
+                                : const Color(0xFFDC2626),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              isIdeal
+                                  ? Icons.check_circle_rounded
+                                  : Icons.cancel_rounded,
+                              size: 14,
+                              color: isIdeal
+                                  ? const Color(0xFF065F46)
+                                  : const Color(0xFF991B1B),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              isIdeal
+                                  ? (isTamil ? 'சரியான வாஸ்து திசை' : 'Correct Direction')
+                                  : (isTamil ? 'வாஸ்து குறைபாடு' : 'Wrong Placement'),
+                              style: TextStyle(
+                                color: isIdeal
+                                    ? const Color(0xFF065F46)
+                                    : const Color(0xFF991B1B),
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (zoneText.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: _accent.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '📍 Zone: $zoneText',
+                        style: const TextStyle(
+                          color: _accent,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                   ],
-                ),
-              )),
+                  const SizedBox(height: 12),
+                  Text(
+                    item['val'].toString(),
+                    style: const TextStyle(
+                      color: _textPri,
+                      fontSize: 13.5,
+                      height: 1.55,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
         ],
       ),
     ).animate().fadeIn(delay: delay.ms).slideX(begin: 0.05, end: 0);
   }
 }
+
 
 class _Section extends StatelessWidget {
   final String title;
@@ -518,6 +735,24 @@ class _Section extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final List<String> flatItems = [];
+    for (final item in items) {
+      if (item.contains('\n')) {
+        final lines = item.split('\n');
+        for (final l in lines) {
+          final trimmed = l.trim();
+          if (trimmed.isNotEmpty) {
+            flatItems.add(trimmed);
+          }
+        }
+      } else {
+        final trimmed = item.trim();
+        if (trimmed.isNotEmpty) {
+          flatItems.add(trimmed);
+        }
+      }
+    }
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -558,7 +793,7 @@ class _Section extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-          ...items.map(
+          ...flatItems.map(
             (item) => Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: Row(
@@ -729,13 +964,13 @@ class _VastuScoreCircle extends StatelessWidget {
 class _WhyPointsReduced extends StatelessWidget {
   final String lang;
   final int score;
-  final List<String> violations;
+  final List<String> items;
   final int delay;
 
   const _WhyPointsReduced({
     required this.lang,
     required this.score,
-    required this.violations,
+    required this.items,
     required this.delay,
   });
 
@@ -743,6 +978,24 @@ class _WhyPointsReduced extends StatelessWidget {
   Widget build(BuildContext context) {
     final int pointsLost = 100 - score;
     final isTamil = lang == 'Tamil';
+
+    final List<String> flatItems = [];
+    for (final item in items) {
+      if (item.contains('\n')) {
+        final lines = item.split('\n');
+        for (final l in lines) {
+          final trimmed = l.trim();
+          if (trimmed.isNotEmpty) {
+            flatItems.add(trimmed);
+          }
+        }
+      } else {
+        final trimmed = item.trim();
+        if (trimmed.isNotEmpty) {
+          flatItems.add(trimmed);
+        }
+      }
+    }
 
     return Container(
       margin: const EdgeInsets.only(top: 24),
@@ -791,29 +1044,34 @@ class _WhyPointsReduced extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          if (violations.isEmpty)
+          if (flatItems.isEmpty)
             Text(
               isTamil
                   ? 'குறிப்பிட்ட காரணங்கள் இல்லை.'
-                  : 'No specific violations listed.',
+                  : 'No specific reduction causes listed.',
               style: const TextStyle(color: _textSec, fontSize: 14),
             )
           else
-            ...violations.map((v) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0, top: 4.0),
+            ...flatItems.map((item) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12.0),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('• ',
-                          style: TextStyle(
-                              color: Color(0xFFE53935),
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold)),
+                      Container(
+                        margin: const EdgeInsets.only(top: 8),
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFE53935),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
                       Expanded(
                         child: Text(
-                          v,
+                          item,
                           style: const TextStyle(
-                              color: _textPri, fontSize: 14, height: 1.5),
+                              color: _textPri, fontSize: 14, height: 1.6, fontWeight: FontWeight.w500),
                         ),
                       ),
                     ],
@@ -824,3 +1082,135 @@ class _WhyPointsReduced extends StatelessWidget {
     ).animate().fadeIn(delay: delay.ms).slideY(begin: 0.05, end: 0);
   }
 }
+
+class _VastuScienceExplanation extends StatelessWidget {
+  final String lang;
+  final int delay;
+
+  const _VastuScienceExplanation({required this.lang, required this.delay});
+
+  @override
+  Widget build(BuildContext context) {
+    final isTamil = lang == 'Tamil';
+    return Container(
+      margin: const EdgeInsets.only(top: 24),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFF64748B).withValues(alpha: 0.2), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.auto_awesome_rounded, color: Color(0xFF2563EB), size: 22),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  isTamil
+                      ? 'வாஸ்து சாஸ்திரம் எவ்வாறு செயல்படுகிறது? (பஞ்சபூத இயற்பியல்)'
+                      : 'HOW VASTU SHASTRA WORKS (PANCHA BHOOTA SCIENCE)',
+                  style: const TextStyle(
+                    color: Color(0xFF1E293B),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            isTamil
+                ? 'வாஸ்து சாஸ்திரம் என்பது பூமியின் காந்தப்புலம் (Magnetic Field), சூரியனின் அகச்சிவப்பு கதிர்கள் (Solar Radiation) மற்றும் காற்று ஓட்டம் (Wind Energy) ஆகியவற்றை அடிப்படையாகக் கொண்ட கட்டிடக் கலை அறிவியலாகும். உங்கள் 2D வரைபடத்தில் 5 முக்கிய மண்டலங்கள் ஆய்வு செய்யப்பட்டுள்ளன:'
+                : 'Vastu Shastra is an architectural science that optimizes Magnetic Fields, Solar Radiation, and Wind Velocity for physical & mental well-being. Five key elemental zones govern your 2D floor plan layout:',
+            style: const TextStyle(color: Color(0xFF475569), fontSize: 13, height: 1.6, fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 16),
+          _elementTile(
+            title: isTamil ? '1. அக்னி மூலை (South-East Fire Zone)' : '1. South-East Zone (Agni - Fire Element)',
+            desc: isTamil
+                ? 'சமையலறைக்கு உகந்தது. சூரியனின் காலை வெப்பக் கதிர்கள் பாக்டீரியாக்களை அழித்து செரிமான ஆரோக்கியத்தை மேம்படுத்தும்.'
+                : 'Ideal for Kitchen. Harnesses morning solar heat, sanitizes cooking space, and energizes digestion.',
+            color: const Color(0xFFEF4444),
+          ),
+          _elementTile(
+            title: isTamil ? '2. நிருதி மூலை (South-West Earth Zone)' : '2. South-West Zone (Niruthi - Earth Element)',
+            desc: isTamil
+                ? 'முதன்மை படுக்கையறைக்கு உகந்தது. பூமியின் அதிக கனமான புவிஈர்ப்பு மண்டலம் குடும்பத் தலைவருக்கு நிலைத்தன்மையையும் மன உறுதியையும் தரும்.'
+                : 'Ideal for Master Bedroom. Highest gravitational mass stability that anchors financial security and authority.',
+            color: const Color(0xFFD97706),
+          ),
+          _elementTile(
+            title: isTamil ? '3. ஈசான்ய மூலை (North-East Water/Divine Zone)' : '3. North-East Zone (Eesanyam - Water Element)',
+            desc: isTamil
+                ? 'பூஜை அறை மற்றும் வரவேற்பறைக்கு உகந்தது. பூமியின் வடகிழக்கு காந்த அலைகள் ஊடுருவும் நுழைவாயிலாக இருப்பதால் லேசாகவும் தூய்மையாகவும் இருக்க வேண்டும்.'
+                : 'Ideal for Pooja & Open Hall. Gateway for cosmic magnetic forces; must be light, clean, and uncluttered.',
+            color: const Color(0xFF0284C7),
+          ),
+          _elementTile(
+            title: isTamil ? '4. வாயு மூலை (North-West Air Zone)' : '4. North-West Zone (Vayu - Air Element)',
+            desc: isTamil
+                ? 'கழிவறை மற்றும் விருந்தினர் அறைக்கு உகந்தது. காற்று சுழற்சி மண்டலம் துர்நாற்றம் மற்றும் கழிவு ஆற்றலை உடனுக்குடன் வெளியேற்றும்.'
+                : 'Ideal for Restrooms & Guest rooms. Air circulation sector that dispels toxins and movement energies efficiently.',
+            color: const Color(0xFF059669),
+          ),
+          _elementTile(
+            title: isTamil ? '5. பிரம்மஸ்தானம் (Center Space Element)' : '5. Center Core (Brahmasthan - Space Element)',
+            desc: isTamil
+                ? 'வீட்டின் மையப்பகுதி. இது கனமான சுவர்கள் இன்றி திறந்தவெளியாக இருப்பதால் ஆற்றல் சுழற்சி தடையின்றி நடக்கும்.'
+                : 'Central courtyard core. Must remain free of heavy structural loads for unhindered cosmic energy flow.',
+            color: const Color(0xFF7C3AED),
+          ),
+        ],
+      ),
+    ).animate().fadeIn(delay: delay.ms).slideY(begin: 0.05, end: 0);
+  }
+
+  Widget _elementTile({required String title, required String desc, required Color color}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            margin: const EdgeInsets.only(top: 4),
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: RichText(
+              text: TextSpan(
+                style: const TextStyle(fontSize: 13, height: 1.5, color: Color(0xFF1E293B)),
+                children: [
+                  TextSpan(text: '$title\n', style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 13)),
+                  TextSpan(text: desc, style: const TextStyle(color: Color(0xFF475569), fontSize: 12.5)),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+

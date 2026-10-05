@@ -62,14 +62,6 @@ class _PlanXReportPopupState extends State<PlanXReportPopup> {
       icon: Icons.architecture_rounded,
       iconColor: Colors.deepPurple,
     ),
-    ReportOption(
-      id: 'elevation',
-      title: 'Elevation Design',
-      description: 'Modern elevation views',
-      price: 799,
-      icon: Icons.home_work_rounded,
-      iconColor: Colors.redAccent,
-    ),
   ];
 
   final Set<String> _selectedIds = {'3d', 'vastu'}; // Default selections
