@@ -1,17 +1,17 @@
-# 🏠 Kanavu Illam (Kanavuillam) — AI-Powered Smart Home Design & Estimation Platform
+# 🏠 Kanavu Illam (Kanavuillam) — Smart Home Design & Blueprint Estimation Platform
 
-> **Kanavu Illam** (Dream House) is an AI-driven architectural design, 3D visualization, blueprint estimation, and Vastu compliance platform. It bridges home builders, architects, and structural engineers with automated estimations, custom elevations, and interactive 3D floor plan viewers.
+> **Kanavu Illam** (Dream House) is a comprehensive architectural design, interactive 3D visualization, blueprint estimation, and Vastu compliance platform. It empowers home builders, architects, and structural engineers with automated estimations, custom elevations, and interactive floor plan viewers.
 
 ---
 
-## ✨ Features
+## ✨ Key Features
 
-- 📐 **Smart Blueprint & Dimension Parsing**: Upload floor plans to automatically extract room dimensions, wall boundaries, and layout features using AI/Computer Vision.
-- 🧱 **Material & Structural Estimation**: Dynamic cost calculator for cement, steel, bricks, sand, paint, doors, windows, and labor estimation based on real-time market rates.
-- 🏛️ **3D Interactive Viewer & Elevation Designs**: Interactive 3D visualization for floor plans, customized room elevations (Modern, Tropical, Traditional), and custom door/window selections.
-- 🧭 **Vastu Compliance Engine**: AI-assisted Vastu Shastra analysis for room positioning and layout alignment.
-- 📄 **Automated PDF Report Generation**: Export complete estimation reports, structural specs, and breakdown summaries into downloadable PDF files.
-- 💳 **Secure Payment & Subscriptions**: Integrated Razorpay payment processing for premium reports and architectural blueprints.
+- 📐 **Smart Blueprint & Dimension Parsing**: Upload floor plans to seamlessly analyze room dimensions, wall boundaries, and layout features.
+- 🧱 **Material & Structural Estimation**: Dynamic cost calculation engine for cement, steel, bricks, sand, paint, doors, windows, and labor based on customizable market rates.
+- 🏛️ **3D Interactive Viewer & Elevation Designs**: Interactive 3D floor plan visualizer, room elevation styles (Modern, Tropical, Traditional), and customizable door/window selection tools.
+- 🧭 **Vastu Compliance Engine**: Automated Vastu Shastra orientation analysis for room positioning and layout alignment.
+- 📄 **Automated PDF Report Generation**: Export detailed estimation reports, structural specifications, and cost summaries as downloadable PDF documents.
+- 💳 **Secure Payment Integration**: Integrated Razorpay payment processing for premium architectural reports and estimation blueprints.
 
 ---
 
@@ -19,15 +19,13 @@
 
 ### **Frontend**
 - **Framework**: [Flutter](https://flutter.dev/) (Web & Cross-Platform)
-- **State & UI**: Custom Responsive Widgets, Interactive Canvas, Dynamic Glassmorphism UI
+- **State & UI**: Custom Responsive Widgets, Interactive Canvas, Dynamic UI Components
 - **PDF Engine**: `pdf` / `printing` Flutter packages
 
-### **Backend & AI Engine**
-- **API Server**: Node.js with Express 5
-- **Database**: [Supabase](https://supabase.com/) (PostgreSQL & Storage)
-- **AI & Vision**:
-  - Python (OpenCV, PyTorch YOLO room models)
-  - Google Gemini AI (`@google/generative-ai`)
+### **Backend Engine**
+- **API Server**: Node.js with Express
+- **Database**: [Supabase](https://supabase.com/) (PostgreSQL & Cloud Storage)
+- **Processing Engine**: Python (OpenCV & Image Processing)
 - **Payments**: Razorpay SDK
 
 ---
@@ -49,5 +47,3 @@ Kanavuillam/
 │   └── pubspec.yaml
 └── README.md
 ```
-
-
