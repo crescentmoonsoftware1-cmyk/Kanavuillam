@@ -386,7 +386,7 @@ class _ShellScreenState extends State<ShellScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: _isGenerating
+      bottomNavigationBar: (_isGenerating || _selectedIndex != 0)
           ? null
           : _FloatingCapsuleNavBar(
               selectedIndex: _selectedIndex,
