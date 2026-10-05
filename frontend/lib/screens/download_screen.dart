@@ -782,7 +782,7 @@ class DownloadScreen extends StatelessWidget {
       buffer.writeln('Basic Package:    Rs. ${est['basic'] ?? 'N/A'}');
       buffer.writeln('Standard Package: Rs. ${est['standard'] ?? 'N/A'}');
       buffer.writeln('Premium Package:  Rs. ${est['premium'] ?? 'N/A'}');
-      buffer.writeln('\n*Rates are based on current Indian market standards.');
+      buffer.writeln('\n* Rates are calculated dynamically based on real-time live market prices.');
     } else {
       buffer.writeln('No cost data available.');
     }

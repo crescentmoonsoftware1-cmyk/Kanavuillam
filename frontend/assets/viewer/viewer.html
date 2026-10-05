@@ -4,12 +4,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nirai</title>
+  <title>Kanavu Illam 3D Architectural Renderer</title>
   <style>
     * {
       margin: 0;
       padding: 0;
-      box-sizing: border-box
+      box-sizing: border-box;
     }
 
     html,
@@ -17,517 +17,492 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: #050a14
+      background: #8fa0b2;
+      color: #fff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
 
     #v {
       width: 100%;
       height: 100%;
-      position: absolute
-    }
-
-    .tb {
       position: absolute;
-      bottom: 18px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 5px;
+      top: 0;
+      left: 0;
+    }
+
+    /* UI Control Panel */
+    #ui-panel {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: rgba(15, 23, 42, 0.82);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 14px 18px;
+      border-radius: 12px;
       z-index: 100;
-      background: rgba(5, 10, 20, .92);
-      padding: 7px 14px;
-      border-radius: 40px;
-      border: 1px solid rgba(0, 200, 150, .3)
+      font-size: 13px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+      min-width: 170px;
     }
 
-    .tb button {
-      background: transparent;
-      border: none;
-      color: #94a3b8;
-      padding: 7px 13px;
-      border-radius: 18px;
-      cursor: pointer;
+    .ui-title {
       font-weight: 700;
-      font-size: 10px;
-      letter-spacing: .5px;
-      transition: all .2s
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #94a3b8;
+      margin-bottom: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 4px;
     }
 
-    .tb button.active {
-      background: #00C896;
-      color: #000
+    .ui-row {
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+      color: #e2e8f0;
+      font-weight: 500;
     }
 
+    .ui-row input[type="checkbox"] {
+      cursor: pointer;
+      width: 16px;
+      height: 16px;
+      accent-color: #38bdf8;
+      border-radius: 4px;
+    }
+
+    /* Loading overlay */
     #ld {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: #050a14;
-      color: #00C896;
-      font-size: 13px;
-      font-weight: 700;
-      z-index: 200;
+      background: #8fa0b2;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 12px
+      z-index: 200;
+      font-weight: 600;
+      color: #1e293b;
+      gap: 12px;
     }
 
-    .sp {
-      width: 32px;
-      height: 32px;
-      border: 3px solid rgba(0, 200, 150, .1);
-      border-top-color: #00C896;
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(30, 41, 59, 0.2);
+      border-top-color: #0284c7;
       border-radius: 50%;
-      animation: spin .7s linear infinite
+      animation: spin 0.8s linear infinite;
     }
 
     @keyframes spin {
       to {
-        transform: rotate(360deg)
+        transform: rotate(360deg);
       }
     }
 
-    #st {
+    /* Bottom toolbar */
+    .tb {
       position: absolute;
-      top: 14px;
-      right: 14px;
-      background: rgba(5, 10, 20, .7);
-      color: #475569;
-      padding: 4px 9px;
-      border-radius: 7px;
-      font-size: 9px;
-      font-weight: 600;
-      z-index: 100
-    }
-
-    #cb {
-      position: absolute;
-      top: 14px;
-      left: 14px;
-      z-index: 150;
-      pointer-events: none;
-      text-align: center
-    }
-
-    #cp {
-      width: 55px;
-      height: 55px;
-      background: rgba(5, 10, 20, .65);
-      border: 1.5px solid rgba(0, 200, 150, .3);
-      border-radius: 50%;
-      position: relative;
-      margin-bottom: 5px
-    }
-
-    .d {
-      position: absolute;
-      font-size: 8px;
-      font-weight: 900;
-      color: #cbd5e1;
-      width: 100%;
-      text-align: center
-    }
-
-    .d.n {
-      top: 2px;
-      color: #00C896
-    }
-
-    .d.s {
-      bottom: 2px
-    }
-
-    .d.e {
-      right: 2px;
-      top: 22px;
-      transform: rotate(90deg);
-      width: auto
-    }
-
-    .d.w {
-      left: 2px;
-      top: 22px;
-      transform: rotate(-90deg);
-      width: auto
-    }
-
-    #nd {
-      position: absolute;
-      top: 50%;
+      bottom: 20px;
       left: 50%;
-      width: 2px;
-      height: 20px;
-      background: #00C896;
-      transform: translate(-50%, -100%);
-      border-radius: 1px
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      z-index: 100;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(10px);
+      padding: 6px 12px;
+      border-radius: 30px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
     }
 
-    #fd {
-      background: rgba(0, 200, 150, .1);
-      color: #00C896;
-      padding: 3px 7px;
-      border-radius: 10px;
-      font-size: 8px;
-      font-weight: 800;
-      border: 1px solid rgba(0, 200, 150, .2)
+    .tb button {
+      background: transparent;
+      border: none;
+      color: #cbd5e1;
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      transition: all .2s ease;
+    }
+
+    .tb button:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
     }
   </style>
+  <script
+    type="importmap">{"imports":{"three":"https://unpkg.com/three@0.158.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.158.0/examples/jsm/"}}</script>
 </head>
 
 <body>
   <div id="ld">
-    <div class="sp"></div><span>BUILDING 3D MODEL...</span>
+    <div class="spinner"></div>
+    <div id="ld-txt">GENERATING PROFESSIONAL 3D FLOOR PLAN...</div>
   </div>
   <div id="v"></div>
-  <div class="tb">
-    <button id="bg" class="active" onclick="setView('ground')">GROUND</button>
-    <button id="bf" onclick="setView('first')" style="display:none">FIRST</button>
-    <button id="bs" onclick="setView('side')" style="display:none">SIDE-BY-SIDE</button>
-    <button id="bk" onclick="setView('stacked')" style="display:none">STACKED</button>
-  </div>
-  <div id="st">Rotate · Pan · Zoom</div>
-  <div id="cb">
-    <div id="cp">
-      <div class="d n">N</div>
-      <div class="d e">E</div>
-      <div class="d s">S</div>
-      <div class="d w">W</div>
-      <div id="nd"></div>
-    </div>
-    <div id="fd">N</div>
-  </div>
 
-  <script
-    type="importmap">{"imports":{"three":"https://unpkg.com/three@0.158.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.158.0/examples/jsm/"}}</script>
+  <script>
+    window.addEventListener('error', function (e) {
+      const ldTxt = document.getElementById('ld-txt');
+      if (ldTxt) ldTxt.innerHTML = '<span style="color:red; font-size: 14px;">Error: ' + e.message + '<br>' + e.filename + ':' + e.lineno + '</span>';
+    });
+    window.addEventListener('unhandledrejection', function (e) {
+      const ldTxt = document.getElementById('ld-txt');
+      if (ldTxt) ldTxt.innerHTML = '<span style="color:red; font-size: 14px;">Promise Error: ' + (e.reason && e.reason.message ? e.reason.message : e.reason) + '</span>';
+    });
+  </script>
   <script type="module">
     import * as THREE from 'three';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-    let scene, camera, renderer, controls, gGrp, fGrp, curData;
+    let scene, camera, renderer, controls;
+    let archGrp, furnGrp, envGrp, dbgGrp, ceilGrp;
+    let curData = null;
+    let floorCenter = new THREE.Vector3();
+    let floorSize = new THREE.Vector3();
 
-    // ─── Materials ────────────────────────────────────────────────────────────────
-    const M = {
-      extWall: new THREE.MeshStandardMaterial({ color: 0xfafaf9, roughness: 0.4, metalness: 0.1 }),
-      intWall: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5, metalness: 0.0 }),
-      base: new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.3, metalness: 0.4 }),
-      glass: new THREE.MeshStandardMaterial({ color: 0xbae6fd, transparent: true, opacity: .4, roughness: 0, metalness: 0.9 }),
-      column: new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.2, metalness: 0.5 }),
-      voidLine: new THREE.LineBasicMaterial({ color: 0x00C896, transparent: true, opacity: 0.5 }),
-      floor(name) {
-        const n = (name || '').toLowerCase();
-        let c = 0xe2e8f0;
-        if (n.includes('kitchen')) c = 0xfefce8;
-        if (n.includes('bath') || n.includes('toilet')) c = 0xf0f9ff;
-        if (n.includes('bedroom')) c = 0xfffbeb;
-        if (n.includes('hall') || n.includes('living')) c = 0xf0fdf4;
-        if (n.includes('dining')) c = 0xfdf2f8;
-        if (n.includes('shelf')) c = 0xcbd5e1; // Concrete/Shelf color
-        if (n.includes('portico') || n.includes('parking')) c = 0x475569; // Lighter slate for better visibility
-        return new THREE.MeshStandardMaterial({ color: c, roughness: 0.7, metalness: 0.0 });
-
-      }
+    const state = {
+      arch: true, furn: false, mat: true, light: true, dbg: false,
+      doorStyle: 'glass', windowStyle: 'wood'
     };
 
-    function mkBox(w, h, d, mat, x, y, z) {
-      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
-      m.position.set(x, y, z);
-      m.castShadow = true; m.receiveShadow = true;
-      return m;
-    }
+    const texLoader = new THREE.TextureLoader();
+    const texDoorGlass = texLoader.load('door_glass.jpg');
+    const texDoorTeak = texLoader.load('door_teak.jpg');
+    const texDoorPanel = texLoader.load('door_panel.jpg');
+    const texWindowWood = texLoader.load('window_wood.jpg');
+    const texWindowUPVC = texLoader.load('window_upvc.jpg');
+    const texWindowBlack = texLoader.load('window_black.jpg');
 
-    // ─── WALL GENERATOR FROM ROOM BOUNDARIES ─────────────────────────────────────
-    // Generates clean, non-overlapping walls directly from room geometry.
-    // Each room edge is a candidate wall. Shared edges between adjacent rooms
-    // become internal walls. Outer edges become exterior walls.
-    function generateWallsFromRooms(rooms) {
-      const EPS = 0.3; // Tolerance for snapping
-      const walls = []; // {x, z, len, isHoriz, isExt, thickness}
-
-      if (!rooms || rooms.length === 0) return walls;
-
-      // Collect all unique X and Z boundary lines from rooms
-      const xLines = new Map(); // key="z:z1:z2" -> {z, x, z1, z2, rooms:[]}
-      const zLines = new Map(); // key="x:x1:x2" -> {x, z, x1, x2, rooms:[]}
-
-      function snapVal(v, arr) {
-        for (const a of arr) if (Math.abs(v - a) < EPS) return a;
-        return v;
-      }
-
-      // Build snapped coordinate lists
-      const allX = [], allZ = [];
-      rooms.forEach(r => {
-        allX.push(+r.x, +r.x + +r.width);
-        allZ.push(+r.y, +r.y + +r.height);
-      });
-      allX.sort((a, b) => a - b);
-      allZ.sort((a, b) => a - b);
-
-      function snapX(v) { return snapVal(v, allX); }
-      function snapZ(v) { return snapVal(v, allZ); }
-
-      // For each room, collect its 4 edges
-      const edgeCount = new Map();
-      rooms.forEach(r => {
-        const x1 = snapX(+r.x), x2 = snapX(+r.x + +r.width);
-        const z1 = snapZ(+r.y), z2 = snapZ(+r.y + +r.height);
-
-        // Horizontal edges (constant Z, varying X)
-        [[z1, x1, x2], [z2, x1, x2]].forEach(([z, xa, xb]) => {
-          const key = `H:${z.toFixed(2)}:${xa.toFixed(2)}:${xb.toFixed(2)}`;
-          edgeCount.set(key, (edgeCount.get(key) || 0) + 1);
-        });
-        // Vertical edges (constant X, varying Z)
-        [[x1, z1, z2], [x2, z1, z2]].forEach(([x, za, zb]) => {
-          const key = `V:${x.toFixed(2)}:${za.toFixed(2)}:${zb.toFixed(2)}`;
-          edgeCount.set(key, (edgeCount.get(key) || 0) + 1);
-        });
-      });
-
-      edgeCount.forEach((count, key) => {
-        const parts = key.split(':');
-        const isHoriz = parts[0] === 'H';
-        const isExt = count === 1; // Only one room touches this edge → exterior
-        const thickness = isExt ? 0.75 : 0.37;
-
-        if (isHoriz) {
-          const z = parseFloat(parts[1]);
-          const x1 = parseFloat(parts[2]);
-          const x2 = parseFloat(parts[3]);
-          walls.push({ x1, x2, z1: z, z2: z, isHoriz: true, thickness, isExt });
-        } else {
-          const x = parseFloat(parts[1]);
-          const z1 = parseFloat(parts[2]);
-          const z2 = parseFloat(parts[3]);
-          walls.push({ x1: x, x2: x, z1, z2, isHoriz: false, thickness, isExt });
-        }
-      });
-
-      return walls;
-    }
-
-    function buildWallMeshes(rooms, wallH, parent) {
-      const walls = generateWallsFromRooms(rooms);
-      const pillarPts = new Set();
-      
-      walls.forEach(w => {
-        const dx = w.x2 - w.x1, dz = w.z2 - w.z1;
-        const len = Math.sqrt(dx * dx + dz * dz);
-        if (len < 0.1) return;
-        const mat = w.isExt ? M.extWall : M.intWall;
-        const cx = (w.x1 + w.x2) / 2;
-        const cz = (w.z1 + w.z2) / 2;
-        const ang = -Math.atan2(dz, dx);
-        const mesh = mkBox(len, wallH, w.thickness, mat, cx, wallH / 2, cz);
-        mesh.rotation.y = ang;
-        parent.add(mesh);
-        
-        // Collect endpoints for pillars
-        pillarPts.add(`${w.x1.toFixed(2)},${w.z1.toFixed(2)}`);
-        pillarPts.add(`${w.x2.toFixed(2)},${w.z2.toFixed(2)}`);
-      });
-      
-      return pillarPts;
-    }
-
-    // ─── Room Floor & Label ───────────────────────────────────────────────────────
-    function buildRoomFloor(r, parent) {
-      const n = (r.name || '').toLowerCase();
-      const isVoid = n.includes('void') || n.includes('open below') || n.includes('double height') || n.includes('open bel');
-
-      const rx = +r.x, rz = +r.y, rw = +r.width, rh = +r.height;
-      const cx = rx + rw / 2, cz = rz + rh / 2;
-
-      if (isVoid) {
-        const pts = [
-          new THREE.Vector3(rx, 0.1, rz), new THREE.Vector3(rx + rw, 0.1, rz),
-          new THREE.Vector3(rx + rw, 0.1, rz + rh), new THREE.Vector3(rx, 0.1, rz + rh),
-          new THREE.Vector3(rx, 0.1, rz)
-        ];
-        const geo = new THREE.BufferGeometry().setFromPoints(pts);
-        const line = new THREE.Line(geo, M.voidLine);
-        parent.add(line);
-      } else {
-        parent.add(mkBox(rw, 0.3, rh, M.floor(r.name), cx, 0.15, cz));
-      }
-
-      // Label
+    // ─── PROCEDURAL TEXTURE GENERATORS ────────────────────────────────────
+    function createWoodTexture() {
       const cv = document.createElement('canvas');
-      cv.width = 512; cv.height = 128;
+      cv.width = 512; cv.height = 512;
       const ctx = cv.getContext('2d');
-      ctx.fillStyle = 'rgba(15,23,42,0.85)';
-      ctx.beginPath(); ctx.roundRect(10, 10, 492, 108, 24); ctx.fill();
-      ctx.strokeStyle = 'rgba(0,200,150,0.4)'; ctx.lineWidth = 4; ctx.stroke();
-      ctx.font = '900 42px Inter, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#00C896';
-      ctx.fillText((r.name || 'ROOM').toUpperCase(), 256, 75);
-      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false }));
-      sp.scale.set(Math.max(5, rw * 0.6), 1.4, 1);
-      sp.position.set(cx, isVoid ? 0.5 : 1.2, cz);
-      parent.add(sp);
-    }
+      ctx.fillStyle = '#c58b4e';
+      ctx.fillRect(0, 0, 512, 512);
 
-    // ─── Staircase ────────────────────────────────────────────────────────────────
-    function buildStairs(s, parent) {
-      const steps = 12, sw = +s.width, sd = +s.height, sh = 10.5 / steps;
-      const cx = +s.x + sw / 2, cz = +s.y + sd / 2;
-      const stepDepth = sd / steps;
-      for (let i = 0; i < steps; i++) {
-        const y = sh * (i + 1);
-        parent.add(mkBox(sw, y, stepDepth, M.base, cx, y / 2, +s.y + i * stepDepth + stepDepth / 2));
-      }
-    }
+      const plankHeight = 32;
+      for (let y = 0; y < 512; y += plankHeight) {
+        ctx.fillStyle = 'rgba(70, 40, 10, 0.25)';
+        ctx.fillRect(0, y, 512, 2);
 
-    // ─── Column ───────────────────────────────────────────────────────────────────
-    function buildColumn(c, parent) {
-      let sz = parseFloat(c.size);
-      if (isNaN(sz) || sz < 0.5) sz = 1.0; // Default to 1x1 ft pillar
-      const h = 10.5;
-      parent.add(mkBox(sz, h, sz, M.column, +c.x, h / 2, +c.y));
-    }
-
-    // ─── Door ─────────────────────────────────────────────────────────────────────
-    function buildDoor(d, parent) {
-      const w = +(d.width || 3.5), h = 8.5;
-      const mat = new THREE.MeshStandardMaterial({ color: d.is_main ? 0x451a03 : 0x78350f, roughness: 0.6 });
-      const g = new THREE.Group();
-      g.position.set(+d.x, 0, +d.y);
-      g.rotation.y = +(d.angle || 0);
-      const pg = new THREE.Group();
-      pg.add(mkBox(w, h, 0.25, mat, w / 2, h / 2, 0));
-      pg.rotation.y = -Math.PI / 3;
-      g.add(pg);
-      g.add(mkBox(0.2, h + 0.3, 0.5, M.base, 0, h / 2, 0));
-      g.add(mkBox(0.2, h + 0.3, 0.5, M.base, w, h / 2, 0));
-      g.add(mkBox(w + 0.4, 0.2, 0.5, M.base, w / 2, h + 0.15, 0));
-      parent.add(g);
-    }
-
-    // ─── Window ───────────────────────────────────────────────────────────────────
-    function buildWindow(w, parent) {
-      const ww = +(w.width || 4), wh = 4.5;
-      const g = new THREE.Group();
-      g.position.set(+w.x, 5.5, +w.y);
-      if (w.dir === 'x' || w.dir === 'vertical') g.rotation.y = Math.PI / 2;
-      g.add(mkBox(ww, wh, 0.15, M.glass, 0, 0, 0));
-      const fm = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.8, roughness: 0.2 });
-      g.add(mkBox(ww + .2, .2, .2, fm, 0, wh / 2, 0));
-      g.add(mkBox(ww + .2, .2, .2, fm, 0, -wh / 2, 0));
-      g.add(mkBox(.2, wh, .2, fm, ww / 2, 0, 0));
-      g.add(mkBox(.2, wh, .2, fm, -ww / 2, 0, 0));
-      parent.add(g);
-    }
-
-    // ─── Furniture ────────────────────────────────────────────────────────────────
-    function buildFurniture(f, parent) {
-      const t = (f.type || '').toLowerCase(), fw = +(f.width || 4.5), fh = +(f.height || 4.5);
-      const g = new THREE.Group();
-      const wm = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.8 });
-      const wt = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.5 });
-      const sf = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.9 });
-
-      if (t.includes('bed')) {
-        g.add(mkBox(fw, 1.2, fh, wm, 0, .6, 0));
-        g.add(mkBox(fw - .4, .4, fh - .4, wt, 0, 1.4, 0));
-        g.add(mkBox(1.5, .4, 1, wt, -fw / 4, 1.6, -fh / 2 + .8));
-        g.add(mkBox(1.5, .4, 1, wt, fw / 4, 1.6, -fh / 2 + .8));
-      } else if (t.includes('sofa') || t.includes('couch')) {
-        g.add(mkBox(fw, 1.6, fh, sf, 0, .8, 0));
-        g.add(mkBox(fw, 2.2, .5, sf, 0, 1.1, -fh / 2 + .25));
-      } else if (t.includes('staircase')) {
-        const steps = 10; const sh = 10.5 / steps;
-        for (let i = 0; i < steps; i++) {
-          g.add(mkBox(fw, sh * (i + 1), fh / steps, sf, 0, (sh * (i + 1)) / 2, -fh / 2 + (i * fh / steps) + (fh / steps / 2)));
+        const offset = (y / plankHeight % 2) * 160;
+        for (let x = offset; x < 512; x += 320) {
+          ctx.fillRect(x, y, 2, plankHeight);
         }
-      } else if (t.includes('dining') || t.includes('table')) {
-
-        g.add(mkBox(fw, .2, fh, M.glass, 0, 2.8, 0));
-        [[fw / 2 - .2, fh / 2 - .2], [fw / 2 - .2, -fh / 2 + .2], [-fw / 2 + .2, fh / 2 - .2], [-fw / 2 + .2, -fh / 2 + .2]].forEach(([lx, lz]) => {
-          g.add(mkBox(.2, 2.8, .2, wm, lx, 1.4, lz));
-        });
-      } else if (t.includes('toilet') || t === 'wc') {
-        g.add(mkBox(1.4, 1.6, 2, wt, 0, .8, 0));
-        g.add(mkBox(1.4, 1.2, .5, wt, 0, 2.2, -.75));
-      } else if (t.includes('wardrobe') || t.includes('almirah')) {
-        g.add(mkBox(fw, 7.5, fh, wm, 0, 3.75, 0));
-      } else {
-        g.add(mkBox(fw, 1.2, fh, new THREE.MeshStandardMaterial({ color: 0x64748b }), 0, .6, 0));
       }
-      g.position.set(+f.x, 0, +f.y);
-      g.rotation.y = (+(f.rotation || 0)) * Math.PI / 180;
-      parent.add(g);
+
+      for (let i = 0; i < 15000; i++) {
+        ctx.fillStyle = Math.random() > 0.5 ? 'rgba(255, 235, 200, 0.08)' : 'rgba(80, 45, 15, 0.06)';
+        const gx = Math.random() * 512;
+        const gy = Math.random() * 512;
+        ctx.fillRect(gx, gy, Math.random() * 12 + 2, 1);
+      }
+
+      const tex = new THREE.CanvasTexture(cv);
+      tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(3, 3);
+      return tex;
     }
 
-    // ─── Build Full Floor ─────────────────────────────────────────────────────────
-    function buildFloor(data, group) {
-      if (!data) return;
-      const wallH = 10.5;
-      const rooms = data.rooms || [];
-      // 1. Draw room floor tiles
-      rooms.forEach(r => buildRoomFloor(r, group));
-      // 2. Generate walls mathematically from room boundaries (ignores AI walls)
-      const pillarPts = buildWallMeshes(rooms, wallH, group);
-      // 3. Place doors, windows, furniture
-      (data.doors || []).forEach(d => buildDoor(d, group));
-      (data.windows || []).forEach(w => buildWindow(w, group));
-      (data.stairs || []).forEach(s => buildStairs(s, group));
-      
-      // Auto-generate columns at wall intersections if missing or use provided ones
-      if (data.columns && data.columns.length > 0) {
-        data.columns.forEach(c => buildColumn(c, group));
-      } else {
-        pillarPts.forEach(pt => {
-          const [cx, cy] = pt.split(',').map(Number);
-          buildColumn({x: cx, y: cy, size: 1.0}, group);
-        });
+    function createDoorGlassTexture() {
+      const cv = document.createElement('canvas');
+      cv.width = 512; cv.height = 1024;
+      const ctx = cv.getContext('2d');
+      ctx.fillStyle = '#2A1208';
+      ctx.fillRect(0, 0, 512, 1024);
+      for (let i = 0; i < 1000; i++) {
+        ctx.fillStyle = Math.random() > 0.5 ? 'rgba(75, 35, 15, 0.3)' : 'rgba(15, 5, 2, 0.25)';
+        ctx.fillRect(Math.random() * 512, Math.random() * 1024, Math.random() * 4 + 1, Math.random() * 100 + 20);
       }
-      
-      (data.furnitures || []).forEach(f => buildFurniture(f, group));
+      ctx.strokeStyle = '#150602'; ctx.lineWidth = 14;
+      ctx.strokeRect(10, 10, 492, 1004);
+      ctx.fillStyle = '#CBE3F7';
+      ctx.fillRect(280, 80, 160, 864);
+      ctx.strokeStyle = '#0F0603'; ctx.lineWidth = 8;
+      ctx.strokeRect(280, 80, 160, 864);
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(455, 420, 16, 260);
+
+      const tex = new THREE.CanvasTexture(cv);
+      return tex;
     }
 
-    // ─── Init ─────────────────────────────────────────────────────────────────────
+    function createDoorTeakTexture() {
+      const cv = document.createElement('canvas');
+      cv.width = 512; cv.height = 1024;
+      const ctx = cv.getContext('2d');
+      ctx.fillStyle = '#8B4513';
+      ctx.fillRect(0, 0, 512, 1024);
+      for (let i = 0; i < 1400; i++) {
+        ctx.fillStyle = Math.random() > 0.5 ? 'rgba(160, 90, 35, 0.35)' : 'rgba(60, 25, 5, 0.28)';
+        ctx.fillRect(Math.random() * 512, Math.random() * 1024, Math.random() * 5 + 1, Math.random() * 120 + 30);
+      }
+      ctx.fillStyle = 'rgba(30, 10, 2, 0.45)';
+      for (let x = 64; x < 512; x += 64) {
+        ctx.fillRect(x, 0, 4, 1024);
+      }
+      const tex = new THREE.CanvasTexture(cv);
+      return tex;
+    }
+
+    function createDoorPanelTexture() {
+      const cv = document.createElement('canvas');
+      cv.width = 512; cv.height = 1024;
+      const ctx = cv.getContext('2d');
+      ctx.fillStyle = '#3B1A0E';
+      ctx.fillRect(0, 0, 512, 1024);
+      const panels = [
+        [40, 60, 190, 400], [280, 60, 190, 400],
+        [40, 520, 190, 440], [280, 520, 190, 440]
+      ];
+      panels.forEach(([px, py, pw, ph]) => {
+        ctx.fillStyle = '#4A2214';
+        ctx.fillRect(px, py, pw, ph);
+        ctx.strokeStyle = '#1C0B05'; ctx.lineWidth = 10;
+        ctx.strokeRect(px, py, pw, ph);
+      });
+      const tex = new THREE.CanvasTexture(cv);
+      return tex;
+    }
+
+    function createWindowWoodTexture() {
+      const cv = document.createElement('canvas');
+      cv.width = 512; cv.height = 512;
+      const ctx = cv.getContext('2d');
+      ctx.fillStyle = '#6e4624';
+      ctx.fillRect(0, 0, 512, 512);
+      for (let i = 0; i < 600; i++) {
+        ctx.fillStyle = 'rgba(50, 25, 10, 0.25)';
+        ctx.fillRect(Math.random() * 512, Math.random() * 512, Math.random() * 6 + 1, Math.random() * 60 + 10);
+      }
+      const tex = new THREE.CanvasTexture(cv);
+      return tex;
+    }
+
+    function createTileTexture(colorHex, lineHex, tileSize = 64) {
+      const cv = document.createElement('canvas');
+      cv.width = 512; cv.height = 512;
+      const ctx = cv.getContext('2d');
+      ctx.fillStyle = colorHex;
+      ctx.fillRect(0, 0, 512, 512);
+
+      ctx.strokeStyle = lineHex;
+      ctx.lineWidth = 2;
+      for (let x = 0; x <= 512; x += tileSize) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 512); ctx.stroke();
+      }
+      for (let y = 0; y <= 512; y += tileSize) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(512, y); ctx.stroke();
+      }
+
+      const tex = new THREE.CanvasTexture(cv);
+      tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(4, 4);
+      return tex;
+    }
+
+    function createPlasterTexture() {
+      const cv = document.createElement('canvas');
+      cv.width = 256; cv.height = 256;
+      const ctx = cv.getContext('2d');
+      ctx.fillStyle = '#fafafa';
+      ctx.fillRect(0, 0, 256, 256);
+      for (let i = 0; i < 4000; i++) {
+        ctx.fillStyle = `rgba(0, 0, 0, ${Math.random() * 0.03})`;
+        ctx.fillRect(Math.random() * 256, Math.random() * 256, 2, 2);
+      }
+      const tex = new THREE.CanvasTexture(cv);
+      tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(4, 4);
+      return tex;
+    }
+
+    function createGraniteTexture() {
+      const cv = document.createElement('canvas');
+      cv.width = 256; cv.height = 256;
+      const ctx = cv.getContext('2d');
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(0, 0, 256, 256);
+      for (let i = 0; i < 3000; i++) {
+        ctx.fillStyle = Math.random() > 0.5 ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.3)';
+        ctx.fillRect(Math.random() * 256, Math.random() * 256, 2, 2);
+      }
+      const tex = new THREE.CanvasTexture(cv);
+      tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+      return tex;
+    }
+
+    function createChevronParquetTexture() {
+      const cv = document.createElement('canvas');
+      cv.width = 512; cv.height = 512;
+      const ctx = cv.getContext('2d');
+
+      // Base Honey Teak Wood Background
+      ctx.fillStyle = '#c68436';
+      ctx.fillRect(0, 0, 512, 512);
+
+      // Fine Wood Grain Texture
+      for (let i = 0; i < 2000; i++) {
+        ctx.fillStyle = Math.random() > 0.5 ? 'rgba(140, 75, 20, 0.25)' : 'rgba(230, 165, 80, 0.3)';
+        ctx.fillRect(Math.random() * 512, Math.random() * 512, Math.random() * 4 + 1, Math.random() * 50 + 10);
+      }
+
+      // Chevron V-Pattern Planks & Dark Plank Joints
+      ctx.strokeStyle = '#4a2408';
+      ctx.lineWidth = 3;
+
+      const numColumns = 4;
+      const colWidth = 512 / numColumns;
+      const vHeight = 64;
+
+      for (let y = -512; y <= 1024; y += vHeight) {
+        for (let col = 0; col < numColumns; col++) {
+          const xLeft = col * colWidth;
+          const xMid = xLeft + colWidth / 2;
+          const xRight = xLeft + colWidth;
+
+          // Draw Chevron V shape seam
+          ctx.beginPath();
+          ctx.moveTo(xLeft, y);
+          ctx.lineTo(xMid, y + vHeight / 2);
+          ctx.lineTo(xRight, y);
+          ctx.stroke();
+
+          // Fill alternating planks with subtle tone variation for realistic wood parquet depth
+          ctx.fillStyle = (col + Math.floor(y / vHeight)) % 2 === 0
+            ? 'rgba(255, 200, 120, 0.12)'
+            : 'rgba(60, 25, 5, 0.12)';
+          ctx.beginPath();
+          ctx.moveTo(xLeft, y);
+          ctx.lineTo(xMid, y + vHeight / 2);
+          ctx.lineTo(xRight, y);
+          ctx.lineTo(xRight, y + vHeight);
+          ctx.lineTo(xMid, y + vHeight / 2 + vHeight);
+          ctx.lineTo(xLeft, y + vHeight);
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+
+      // Vertical Column Joint Seams
+      for (let col = 0; col <= numColumns; col++) {
+        ctx.strokeStyle = '#381803';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(col * colWidth, 0);
+        ctx.lineTo(col * colWidth, 512);
+        ctx.stroke();
+      }
+
+      const tex = new THREE.CanvasTexture(cv);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(6, 6);
+      return tex;
+    }
+
+    const texWood = createWoodTexture();
+    const texProcDoorGlass = createDoorGlassTexture();
+    const texProcDoorTeak = createDoorTeakTexture();
+    const texProcDoorPanel = createDoorPanelTexture();
+    const texProcWindowWood = createWindowWoodTexture();
+    const texChevronParquet = createChevronParquetTexture();
+    const texLightTile = createTileTexture('#f8fafc', '#cbd5e1', 64);
+    const texSlateTile = createTileTexture('#475569', '#334155', 64);
+    const texPlaster = createPlasterTexture();
+    const texGranite = createGraniteTexture();
+
+    // ─── MATERIALS SYSTEM ──────────────────────────────────────────────────
+    function getMat(type, label = '') {
+      if (!state.mat) {
+        return new THREE.MeshBasicMaterial({ color: type === 'glass' ? 0x88ccff : 0xdddddd });
+      }
+
+      const lbl = (label || '').toLowerCase();
+
+      if (type === 'wall') return new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8, metalness: 0.05 });
+      if (type === 'door') {
+        let doorTex = texProcDoorGlass;
+        if (state.doorStyle === 'panel') doorTex = texProcDoorPanel;
+        if (state.doorStyle === 'teak') doorTex = texProcDoorTeak;
+        return new THREE.MeshStandardMaterial({ map: doorTex, roughness: 0.35, metalness: 0.1 });
+      }
+      if (type === 'wood_frame') return new THREE.MeshStandardMaterial({ map: texProcWindowWood, color: 0x6e4624, roughness: 0.45 });
+      if (type === 'upvc_frame') return new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.2, metalness: 0.05 });
+      if (type === 'black_frame') return new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.3, metalness: 0.8 });
+      if (type === 'black_handle') return new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.25, metalness: 0.85 });
+      if (type === 'brass') return new THREE.MeshStandardMaterial({ color: 0xd4af37, roughness: 0.2, metalness: 0.85 });
+      if (type === 'steel') return new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.2, metalness: 0.9 });
+      if (type === 'glass') return new THREE.MeshPhysicalMaterial({ color: 0xe0f2fe, transmission: 0.92, opacity: 0.85, transparent: true, roughness: 0.05, ior: 1.52, reflectivity: 0.6 });
+      if (type === 'frosted_glass') return new THREE.MeshPhysicalMaterial({ color: 0xe0f2fe, transmission: 0.85, opacity: 0.8, transparent: true, roughness: 0.35, reflectivity: 0.5 });
+      if (type === 'mesh') return new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.9, transparent: true, opacity: 0.6 });
+      if (type === 'frame') return new THREE.MeshStandardMaterial({ map: texWood, color: 0x5c3a1e, roughness: 0.4 });
+
+      if (type === 'floor') {
+        // Universal Option 1: Chevron Honey Teak Wooden Parquet Tiles for ALL rooms and spaces
+        return new THREE.MeshStandardMaterial({ map: texChevronParquet, roughness: 0.35, metalness: 0.05 });
+      }
+
+      if (type === 'stair') return new THREE.MeshStandardMaterial({ map: texWood, roughness: 0.6 });
+
+      if (type === 'sofa_red') return new THREE.MeshStandardMaterial({ color: 0xd92626, roughness: 0.85 });
+      if (type === 'cushion_cream') return new THREE.MeshStandardMaterial({ color: 0xfef08a, roughness: 0.9 });
+      if (type === 'rug_cream') return new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.95 });
+      if (type === 'furn_wood') return new THREE.MeshStandardMaterial({ map: texWood, roughness: 0.5 });
+      if (type === 'furn_dark_wood') return new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.6 });
+      if (type === 'bed_sheet') return new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.9 });
+      if (type === 'bed_blanket') return new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.8 });
+      if (type === 'pillow') return new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9 });
+      if (type === 'granite') return new THREE.MeshStandardMaterial({ map: texGranite, roughness: 0.2, metalness: 0.1 });
+      if (type === 'ceramic') return new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.1, metalness: 0.05 });
+      if (type === 'plant_leaf') return new THREE.MeshStandardMaterial({ color: 0x16a34a, roughness: 0.6 });
+      if (type === 'chrome') return new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.1, metalness: 0.9 });
+
+      return new THREE.MeshStandardMaterial({ color: 0xe2e8f0 });
+    }
+
+    // ─── INITIALIZATION ────────────────────────────────────────────────────
     function init() {
       scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x050a14);
-      scene.fog = new THREE.FogExp2(0x050a14, .006);
+      scene.background = new THREE.Color(0x8fa0b2);
 
-      camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, .1, 2000);
-      camera.position.set(55, 50, 55);
-
-      renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+      camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.1, 2000);
+      renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, alpha: false });
       renderer.setSize(innerWidth, innerHeight);
       renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
       renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = THREE.BasicShadowMap;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.15;
+
       document.getElementById('v').appendChild(renderer.domElement);
 
       controls = new OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
       controls.maxPolarAngle = Math.PI / 2.05;
-      controls.minDistance = 5; controls.maxDistance = 250;
 
-      scene.add(new THREE.AmbientLight(0xffffff, .85));
-      const sun = new THREE.DirectionalLight(0xfff8e8, 1.1);
-      sun.position.set(60, 120, 60); sun.castShadow = true;
-      sun.shadow.mapSize.set(1024, 1024);
-      sun.shadow.camera.left = -150; sun.shadow.camera.right = 150;
-      sun.shadow.camera.top = 150; sun.shadow.camera.bottom = -150;
-      scene.add(sun);
-      scene.add(new THREE.HemisphereLight(0x87ceeb, 0x1e293b, .45));
-
-      // Ground
-      const gnd = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000), new THREE.MeshStandardMaterial({ color: 0x0a0f1e, roughness: 0.8 }));
-      gnd.rotation.x = -Math.PI / 2;
-      gnd.receiveShadow = true;
-      scene.add(gnd);
-
-      const grid = new THREE.GridHelper(1000, 100, 0x1e293b, 0x111827);
-      grid.position.y = 0.01;
-      scene.add(grid);
-      scene.add(new THREE.GridHelper(500, 100, 0x1e293b, 0x1e293b));
+      archGrp = new THREE.Group(); scene.add(archGrp);
+      furnGrp = new THREE.Group(); scene.add(furnGrp);
+      envGrp = new THREE.Group(); scene.add(envGrp);
+      dbgGrp = new THREE.Group(); scene.add(dbgGrp);
+      ceilGrp = new THREE.Group(); ceilGrp.visible = false; scene.add(ceilGrp);
 
       window.addEventListener('resize', () => {
         camera.aspect = innerWidth / innerHeight;
@@ -535,143 +510,1700 @@
         renderer.setSize(innerWidth, innerHeight);
       });
 
-      (function loop() {
-        requestAnimationFrame(loop);
+      renderer.setAnimationLoop(() => {
         controls.update();
-        const az = controls.getAzimuthalAngle();
-        document.getElementById('cp').style.transform = `rotate(${az * 180 / Math.PI}deg)`;
-        const deg = ((az * 180 / Math.PI) + 360) % 360;
-        document.getElementById('fd').textContent = deg > 315 || deg <= 45 ? 'N' : deg > 45 && deg <= 135 ? 'W' : deg > 135 && deg <= 225 ? 'S' : 'E';
+        if (animatedFans && animatedFans.length > 0) {
+          animatedFans.forEach(fan => {
+            if (fan) fan.rotation.y += 0.22;
+          });
+        }
         renderer.render(scene, camera);
-      })();
+      });
     }
 
-    // ─── Render Project ───────────────────────────────────────────────────────────
-    window.renderProject = function (data) {
-      curData = data;
-      if (gGrp) scene.remove(gGrp);
-      if (fGrp) scene.remove(fGrp);
-      if (window.sGrp) scene.remove(window.sGrp);
-      gGrp = new THREE.Group(); fGrp = new THREE.Group(); window.sGrp = new THREE.Group();
+    function setupUI() {
+      // UI removed
+    }
 
-      const gData = data.floors?.ground || (data.rooms ? data : null);
-      const fData = data.floors?.first || null;
-      const sData = data.floors?.second || null;
-      buildFloor(gData, gGrp); buildFloor(fData, fGrp); buildFloor(sData, window.sGrp);
-      scene.add(gGrp); if (fData) scene.add(fGrp); if (sData) scene.add(window.sGrp);
+    function updateVisibility() {
+      archGrp.visible = state.arch;
+      furnGrp.visible = state.furn;
+      dbgGrp.visible = state.dbg;
 
-      const hasSecond = !!sData;
-      const hasFirst = !!fData || hasSecond;
+      envGrp.visible = state.light;
+      scene.background = state.light ? new THREE.Color(0x8fa0b2) : new THREE.Color(0x1e293b);
 
-      // Show/hide buttons based on floors
-      ['bf', 'bs', 'bk'].forEach(id => document.getElementById(id).style.display = hasFirst ? '' : 'none');
-      // Add a button for second floor if it exists
-      let secBtn = document.getElementById('bsec');
-      if (!secBtn) {
-        secBtn = document.createElement('button');
-        secBtn.id = 'bsec';
-        secBtn.innerText = 'SECOND';
-        secBtn.onclick = () => setView('second');
-        document.querySelector('.tb').insertBefore(secBtn, document.getElementById('bs'));
-      }
-      secBtn.style.display = hasSecond ? '' : 'none';
+      if (curData) rebuildAll(curData);
+    }
 
-      document.getElementById('ld').style.display = 'none';
-
-      const bb = new THREE.Box3().setFromObject(gGrp);
-      const ctr = bb.getCenter(new THREE.Vector3());
-      const sz = bb.getSize(new THREE.Vector3());
-      const d = Math.max(sz.x, sz.z);
-      controls.target.copy(ctr);
-      camera.position.set(ctr.x + d, d * .9, ctr.z + d);
-      controls.update();
-      setView('ground');
+    window.resetCamera = () => {
+      if (!floorSize.x) return;
+      const maxDim = Math.max(floorSize.x, floorSize.z);
+      camera.position.set(
+        floorCenter.x + maxDim * 0.48,
+        maxDim * 0.58 + 4,
+        floorCenter.z + maxDim * 0.48
+      );
+      controls.target.copy(floorCenter);
     };
 
-    window.setView = function (v) {
-      if (!gGrp) return;
-      [['ground', 'bg'], ['first', 'bf'], ['second', 'bsec'], ['side', 'bs'], ['stacked', 'bk']].forEach(([n, id]) => {
-        const el = document.getElementById(id);
-        if (el) el.classList.toggle('active', n === v);
+    window.fitToPlan = () => {
+      if (!floorSize.x) return;
+      const maxDim = Math.max(floorSize.x, floorSize.z);
+      camera.position.set(floorCenter.x, maxDim * 1.1 + 5, floorCenter.z + 0.1);
+      controls.target.copy(floorCenter);
+    };
+
+    // ─── GEOMETRY UTILS ────────────────────────────────────────────────────
+    function createTextSprite(text, color) {
+      const cv = document.createElement('canvas');
+      cv.width = 256; cv.height = 64;
+      const ctx = cv.getContext('2d');
+      ctx.fillStyle = color;
+      ctx.font = 'bold 28px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(text, 128, 42);
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false }));
+      sp.scale.set(5, 1.25, 1);
+      return sp;
+    }
+
+    function pointInPolygon(pt, poly) {
+      let inside = false;
+      for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+        const xi = poly[i][0], yi = poly[i][1];
+        const xj = poly[j][0], yj = poly[j][1];
+        const intersect = ((yi > pt[1]) != (yj > pt[1])) && (pt[0] < (xj - xi) * (pt[1] - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+      }
+      return inside;
+    }
+
+    // ─── FURNITURE BUILDERS ───────────────────────────────────────────────
+    function buildDoubleBed() {
+      const grp = new THREE.Group();
+      const frame = new THREE.Mesh(new THREE.BoxGeometry(6.2, 0.8, 6.8), getMat('furn_dark_wood'));
+      frame.position.y = 0.4; frame.castShadow = true; frame.receiveShadow = true;
+      grp.add(frame);
+
+      const hb = new THREE.Mesh(new THREE.BoxGeometry(6.4, 3.2, 0.5), getMat('furn_dark_wood'));
+      hb.position.set(0, 1.6, -3.2); hb.castShadow = true;
+      grp.add(hb);
+
+      const mat = new THREE.Mesh(new THREE.BoxGeometry(5.8, 0.9, 6.2), getMat('bed_sheet'));
+      mat.position.set(0, 1.15, 0.1); mat.castShadow = true; mat.receiveShadow = true;
+      grp.add(mat);
+
+      const blk = new THREE.Mesh(new THREE.BoxGeometry(5.82, 0.2, 4.0), getMat('bed_blanket'));
+      blk.position.set(0, 1.62, 1.1); blk.castShadow = true;
+      grp.add(blk);
+
+      const p1 = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.25, 1.4), getMat('pillow'));
+      p1.position.set(-1.5, 1.65, -2.1); p1.rotation.x = 0.1; p1.castShadow = true;
+      const p2 = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.25, 1.4), getMat('pillow'));
+      p2.position.set(1.5, 1.65, -2.1); p2.rotation.x = 0.1; p2.castShadow = true;
+      grp.add(p1, p2);
+
+      [-3.8, 3.8].forEach(x => {
+        const tbl = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.5, 1.6), getMat('furn_wood'));
+        tbl.position.set(x, 0.75, -2.6); tbl.castShadow = true;
+
+        const lBase = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.4, 0.6), getMat('chrome'));
+        lBase.position.set(x, 1.8, -2.6);
+        const lShade = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.6, 0.7), getMat('cushion_cream'));
+        lShade.position.set(x, 2.35, -2.6);
+        grp.add(tbl, lBase, lShade);
       });
 
-      gGrp.visible = true; gGrp.position.set(0, 0, 0);
-      if (fGrp) { fGrp.visible = true; fGrp.position.set(0, 0, 0); }
-      if (window.sGrp) { window.sGrp.visible = true; window.sGrp.position.set(0, 0, 0); }
+      return grp;
+    }
 
-      const pw = curData?.project?.width || 30;
+    function buildSingleBed() {
+      const grp = new THREE.Group();
+      const frame = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.8, 6.5), getMat('furn_wood'));
+      frame.position.y = 0.4; frame.castShadow = true;
 
-      if (v === 'ground') {
-        if (fGrp) fGrp.visible = false;
-        if (window.sGrp) window.sGrp.visible = false;
-      }
-      else if (v === 'first') {
-        gGrp.visible = false;
-        if (window.sGrp) window.sGrp.visible = false;
-      }
-      else if (v === 'second') {
-        gGrp.visible = false;
-        if (fGrp) fGrp.visible = false;
-      }
-      else if (v === 'side') {
-        gGrp.position.x = 0;
-        const boxG = new THREE.Box3().setFromObject(gGrp);
-        let maxX = isFinite(boxG.max.x) ? boxG.max.x : pw;
+      const hb = new THREE.Mesh(new THREE.BoxGeometry(3.8, 2.8, 0.4), getMat('furn_wood'));
+      hb.position.set(0, 1.4, -3.05); hb.castShadow = true;
 
-        if (fGrp) {
-          fGrp.position.x = 0;
-          const boxF = new THREE.Box3().setFromObject(fGrp);
-          const minX = isFinite(boxF.min.x) ? boxF.min.x : 0;
-          fGrp.position.x = maxX - minX + 15;
-          const newBoxF = new THREE.Box3().setFromObject(fGrp);
-          maxX = isFinite(newBoxF.max.x) ? newBoxF.max.x : (fGrp.position.x + pw);
+      const mat = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.8, 6.0), getMat('bed_sheet'));
+      mat.position.set(0, 1.1, 0.1); mat.castShadow = true;
+
+      const pillow = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.25, 1.4), getMat('pillow'));
+      pillow.position.set(0, 1.55, -2.0); pillow.castShadow = true;
+
+      grp.add(frame, hb, mat, pillow);
+      return grp;
+    }
+
+    function buildLSectionalSofa() {
+      const grp = new THREE.Group();
+      const rug = new THREE.Mesh(new THREE.BoxGeometry(11.0, 0.05, 9.0), getMat('rug_cream'));
+      rug.position.set(0, 0.03, 0); rug.receiveShadow = true;
+      grp.add(rug);
+
+      const base1 = new THREE.Mesh(new THREE.BoxGeometry(9.0, 0.6, 3.0), getMat('sofa_red'));
+      base1.position.set(0, 0.5, -2.5); base1.castShadow = true;
+      const seat1 = new THREE.Mesh(new THREE.BoxGeometry(8.8, 0.6, 2.8), getMat('sofa_red'));
+      seat1.position.set(0, 0.9, -2.5); seat1.castShadow = true;
+      const back1 = new THREE.Mesh(new THREE.BoxGeometry(9.0, 1.8, 0.6), getMat('sofa_red'));
+      back1.position.set(0, 1.5, -3.8); back1.castShadow = true;
+
+      const base2 = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.6, 4.5), getMat('sofa_red'));
+      base2.position.set(3.0, 0.5, 1.0); base2.castShadow = true;
+      const seat2 = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.6, 4.3), getMat('sofa_red'));
+      seat2.position.set(3.0, 0.9, 1.0); seat2.castShadow = true;
+      const back2 = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.8, 4.5), getMat('sofa_red'));
+      back2.position.set(4.2, 1.5, 1.0); back2.castShadow = true;
+
+      const armL = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.4, 3.2), getMat('sofa_red'));
+      armL.position.set(-4.55, 1.2, -2.5); armL.castShadow = true;
+
+      const cTable = new THREE.Mesh(new THREE.BoxGeometry(4.0, 1.1, 2.2), getMat('furn_dark_wood'));
+      cTable.position.set(-1.0, 0.6, 0.5); cTable.castShadow = true; cTable.receiveShadow = true;
+
+      const chairBase = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.2, 2.6), getMat('sofa_red'));
+      chairBase.position.set(-3.5, 0.8, 2.5); chairBase.castShadow = true;
+      const chairBack = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.6, 0.5), getMat('sofa_red'));
+      chairBack.position.set(-3.5, 1.5, 3.6); chairBack.castShadow = true;
+
+      const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.4, 1.2), getMat('ceramic'));
+      pot.position.set(-4.6, 0.6, -3.8); pot.castShadow = true;
+      const plant = new THREE.Mesh(new THREE.SphereGeometry(1.0, 8, 8), getMat('plant_leaf'));
+      plant.position.set(-4.6, 1.8, -3.8); plant.castShadow = true;
+
+      grp.add(base1, seat1, back1, base2, seat2, back2, armL, cTable, chairBase, chairBack, pot, plant);
+      return grp;
+    }
+
+    function buildDiningSet() {
+      const grp = new THREE.Group();
+      const top = new THREE.Mesh(new THREE.BoxGeometry(6.0, 0.3, 3.6), getMat('furn_wood'));
+      top.position.y = 2.45; top.castShadow = true; top.receiveShadow = true;
+      grp.add(top);
+
+      [[-2.7, -1.5], [2.7, -1.5], [-2.7, 1.5], [2.7, 1.5]].forEach(([x, z]) => {
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.3, 2.3, 0.3), getMat('furn_dark_wood'));
+        leg.position.set(x, 1.15, z); leg.castShadow = true;
+        grp.add(leg);
+      });
+
+      const chairPositions = [
+        [-1.8, 0, -2.4, 0], [1.8, 0, -2.4, 0],
+        [-1.8, 0, 2.4, Math.PI], [1.8, 0, 2.4, Math.PI],
+        [-3.6, 0, 0, Math.PI / 2], [3.6, 0, 0, -Math.PI / 2]
+      ];
+
+      chairPositions.forEach(([cx, cy, cz, rot]) => {
+        const cGrp = new THREE.Group();
+        cGrp.position.set(cx, cy, cz); cGrp.rotation.y = rot;
+
+        const cSeat = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.15, 1.3), getMat('furn_dark_wood'));
+        cSeat.position.y = 1.4; cSeat.castShadow = true;
+        const cBack = new THREE.Mesh(new THREE.BoxGeometry(1.3, 1.3, 0.15), getMat('furn_dark_wood'));
+        cBack.position.set(0, 2.0, 0.58); cBack.castShadow = true;
+
+        cGrp.add(cSeat, cBack);
+        grp.add(cGrp);
+      });
+
+      return grp;
+    }
+
+    function buildKitchenCounter() {
+      const grp = new THREE.Group();
+      const cab = new THREE.Mesh(new THREE.BoxGeometry(8.5, 2.7, 2.2), getMat('ceramic'));
+      cab.position.set(0, 1.35, 0); cab.castShadow = true;
+
+      const top = new THREE.Mesh(new THREE.BoxGeometry(8.7, 0.2, 2.4), getMat('granite'));
+      top.position.set(0, 2.8, 0); top.castShadow = true; top.receiveShadow = true;
+
+      const sink = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.05, 1.4), getMat('chrome'));
+      sink.position.set(-2.5, 2.91, 0);
+
+      const faucet = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.6), getMat('chrome'));
+      faucet.position.set(-2.5, 3.2, -0.6);
+
+      const stove = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.05, 1.6), getMat('chrome'));
+      stove.position.set(2.0, 2.91, 0);
+
+      grp.add(cab, top, sink, faucet, stove);
+      return grp;
+    }
+
+    function buildBathroomSet() {
+      const grp = new THREE.Group();
+      const tubOuter = new THREE.Mesh(new THREE.BoxGeometry(5.0, 2.0, 2.5), getMat('ceramic'));
+      tubOuter.position.set(-1.5, 1.0, -1.5); tubOuter.castShadow = true;
+      grp.add(tubOuter);
+
+      const wcBowl = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.4, 2.0), getMat('ceramic'));
+      wcBowl.position.set(2.2, 0.7, 1.5); wcBowl.castShadow = true;
+      const wcTank = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.6, 0.8), getMat('ceramic'));
+      wcTank.position.set(2.2, 1.7, 2.1); wcTank.castShadow = true;
+      grp.add(wcBowl, wcTank);
+
+      const vanity = new THREE.Mesh(new THREE.BoxGeometry(2.5, 2.4, 1.6), getMat('furn_wood'));
+      vanity.position.set(-1.5, 1.2, 1.5); vanity.castShadow = true;
+      const vSink = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.2, 1.7), getMat('ceramic'));
+      vSink.position.set(-1.5, 2.4, 1.5); vSink.castShadow = true;
+      grp.add(vanity, vSink);
+
+      return grp;
+    }
+
+    function buildCar() {
+      const grp = new THREE.Group();
+      const bodyMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8, roughness: 0.2 });
+      const chassis = new THREE.Mesh(new THREE.BoxGeometry(6.5, 1.4, 13.5), bodyMat);
+      chassis.position.y = 1.0; chassis.castShadow = true; chassis.receiveShadow = true;
+
+      const glassMat = getMat('glass');
+      const cabin = new THREE.Mesh(new THREE.BoxGeometry(5.8, 1.3, 7.5), glassMat);
+      cabin.position.set(0, 2.25, -0.5); cabin.castShadow = true;
+
+      const roof = new THREE.Mesh(new THREE.BoxGeometry(5.6, 0.1, 7.2), bodyMat);
+      roof.position.set(0, 2.92, -0.5);
+
+      const wheelMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.9 });
+      const wheelGeo = new THREE.CylinderGeometry(0.7, 0.7, 0.5, 16);
+      [[-3.2, 0.7, 4.0], [3.2, 0.7, 4.0], [-3.2, 0.7, -4.0], [3.2, 0.7, -4.0]].forEach(([x, y, z]) => {
+        const wheel = new THREE.Mesh(wheelGeo, wheelMat);
+        wheel.rotation.z = Math.PI / 2;
+        wheel.position.set(x, y, z);
+        wheel.castShadow = true;
+        grp.add(wheel);
+      });
+
+      const lampMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+      const hl1 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.4, 0.1), lampMat);
+      hl1.position.set(-2.2, 1.2, 6.76);
+      const hl2 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.4, 0.1), lampMat);
+      hl2.position.set(2.2, 1.2, 6.76);
+
+      grp.add(chassis, cabin, roof, hl1, hl2);
+      return grp;
+    }
+
+    let animatedFans = [];
+
+    function buildCeilingFan() {
+      const grp = new THREE.Group();
+
+      // Downrod from ceiling down to motor
+      const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.2, 12), getMat('chrome'));
+      rod.position.y = -0.6;
+      grp.add(rod);
+
+      // Top canopy (cap at ceiling)
+      const topCap = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.15, 0.25, 16), getMat('ceramic'));
+      topCap.position.y = -0.12;
+      grp.add(topCap);
+
+      // Motor Housing
+      const motor = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.5, 0.3, 16), getMat('ceramic'));
+      motor.position.y = -1.2;
+      grp.add(motor);
+
+      // Rotating Blade Assembly Group
+      const bladeGrp = new THREE.Group();
+      bladeGrp.position.y = -1.25;
+
+      const numBlades = 3;
+      for (let i = 0; i < numBlades; i++) {
+        const angle = (i * Math.PI * 2) / numBlades;
+        const blade = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.02, 2.0), getMat('ceramic'));
+        blade.position.set(Math.sin(angle) * 1.0, 0, Math.cos(angle) * 1.0);
+        blade.rotation.y = angle;
+        blade.castShadow = true;
+        bladeGrp.add(blade);
+      }
+
+      grp.add(bladeGrp);
+      animatedFans.push(bladeGrp);
+      return grp;
+    }
+
+    // ─── STAIRCASE BUILDERS ───────────────────────────────────────────────
+    function buildDogLeggedStaircase(rw = 8, rd = 12) {
+      const grp = new THREE.Group();
+      const isHorizontal = rw > rd;
+      const roomW = isHorizontal ? rd : rw;
+      const roomD = isHorizontal ? rw : rd;
+
+      // Strict scaling: Staircase footprint fits comfortably inside room bounds (max 85% of dimensions)
+      const effW = Math.min(Math.max(2.8, roomW * 0.85), 6.0);
+      const effD = Math.min(Math.max(5.0, roomD * 0.85), 10.5);
+
+      const numSteps = 7;
+      const stepH = 5.0 / numSteps;
+      const stepD = (effD * 0.40) / numSteps;
+      const stepW = effW * 0.44;
+
+      // Marble steps & White risers matching user sample 3D layout
+      const matTread = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.25, metalness: 0.05 });
+      const matRiser = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 });
+      const matRail = getMat('steel') || new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8, roughness: 0.2 });
+
+      // Flight 1 (ascending on left)
+      const leftX = -effW / 2 + stepW / 2;
+      for (let i = 0; i < numSteps; i++) {
+        const tr = new THREE.Mesh(new THREE.BoxGeometry(stepW, 0.2, stepD), matTread);
+        tr.position.set(leftX, i * stepH + 0.1, -effD * 0.25 + i * stepD);
+        tr.castShadow = true; tr.receiveShadow = true;
+        const rs = new THREE.Mesh(new THREE.BoxGeometry(stepW, stepH, 0.1), matRiser);
+        rs.position.set(leftX, i * stepH + stepH / 2, -effD * 0.25 + i * stepD - stepD / 2);
+        grp.add(tr, rs);
+      }
+
+      // Mid-Landing Platform
+      const landing = new THREE.Mesh(new THREE.BoxGeometry(effW * 0.95, 0.3, effD * 0.25), matTread);
+      landing.position.set(0, 5.0, effD * 0.30);
+      landing.castShadow = true; landing.receiveShadow = true;
+      grp.add(landing);
+
+      // Flight 2 (ascending on right in reverse)
+      const rightX = effW / 2 - stepW / 2;
+      for (let i = 0; i < numSteps; i++) {
+        const tr = new THREE.Mesh(new THREE.BoxGeometry(stepW, 0.2, stepD), matTread);
+        tr.position.set(rightX, 5.0 + i * stepH + 0.1, effD * 0.18 - i * stepD);
+        tr.castShadow = true; tr.receiveShadow = true;
+        const rs = new THREE.Mesh(new THREE.BoxGeometry(stepW, stepH, 0.1), matRiser);
+        rs.position.set(rightX, 5.0 + i * stepH + stepH / 2, effD * 0.18 - i * stepD + stepD / 2);
+        grp.add(tr, rs);
+      }
+
+      // Stainless Steel Railings with Vertical Balusters (as in sample image)
+      const railTop = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, effD * 0.75), matRail);
+      railTop.position.set(0, 3.2, 0);
+      grp.add(railTop);
+
+      for (let k = -2; k <= 2; k++) {
+        const baluster = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 3.2), matRail);
+        baluster.position.set(0, 3.2, k * (effD * 0.15));
+        grp.add(baluster);
+      }
+
+      if (isHorizontal) {
+        grp.rotation.y = Math.PI / 2;
+      }
+
+      return grp;
+    }
+
+    function buildStraightStaircase(rw = 6, rd = 12) {
+      const grp = new THREE.Group();
+      const effW = Math.min(3.5, Math.max(2.8, rw * 0.45));
+      const effD = Math.min(10.5, Math.max(7.5, rd * 0.75));
+
+      const numSteps = 14;
+      const stepH = 10.0 / numSteps;
+      const stepD = (effD * 0.85) / numSteps;
+      const stepW = effW * 0.85;
+      const matTread = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.25, metalness: 0.05 });
+      const matRiser = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 });
+      const matRail = getMat('steel');
+
+      for (let i = 0; i < numSteps; i++) {
+        const tr = new THREE.Mesh(new THREE.BoxGeometry(stepW, 0.2, stepD), matTread);
+        tr.position.set(0, i * stepH + 0.1, -effD * 0.4 + i * stepD);
+        tr.castShadow = true; tr.receiveShadow = true;
+        const rs = new THREE.Mesh(new THREE.BoxGeometry(stepW, stepH, 0.1), matRiser);
+        rs.position.set(0, i * stepH + stepH / 2, -effD * 0.4 + i * stepD - stepD / 2);
+        grp.add(tr, rs);
+      }
+
+      // Steel Railing bar & Balusters
+      const topRail = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, effD * 0.88), matRail);
+      topRail.position.set(stepW / 2, 5.0, 0);
+      grp.add(topRail);
+
+      for (let k = -4; k <= 4; k++) {
+        const bal = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 3.0), matRail);
+        bal.position.set(stepW / 2, 5.0, k * (effD * 0.09));
+        grp.add(bal);
+      }
+
+      return grp;
+    }
+
+
+    // ─── GEOMETRY LOCK HASH ────────────────────────────────────────────────
+    async function hashGeometry(data) {
+      const canonical = {
+        rooms: data.rooms?.map(r => ({ id: r.id, polygon: r.polygon })),
+        sub_spaces: data.sub_spaces?.map(r => ({ id: r.id, polygon: r.polygon })),
+        walls: data.walls?.map(w => ({ id: w.id, start: w.start, end: w.end, thickness: w.thickness })),
+        openings: data.openings?.map(o => ({ id: o.id, start: o.start, end: o.end, type: o.type })),
+        furniture: data.furniture?.map(f => ({ id: f.id, type: f.type, polygon: f.polygon })),
+        vehicles: data.vehicles?.map(v => ({ id: v.id, type: v.type, polygon: v.polygon }))
+      };
+      const str = JSON.stringify(canonical);
+      const encoder = new TextEncoder();
+      const buffer = encoder.encode(str);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    let currentGeometryHash = null;
+
+    // ─── REBUILD ENGINE ────────────────────────────────────────────────────
+    async function rebuildAll(data) {
+      const ld = document.getElementById('ld');
+      const ldTxt = document.getElementById('ld-txt');
+      if (ld) ld.style.display = 'flex';
+
+      if (ldTxt) ldTxt.innerText = 'Analyzing architectural plan...';
+      await new Promise(r => setTimeout(r, 20));
+
+      // Calculate initial Geometry Lock Hash
+      currentGeometryHash = await hashGeometry(data);
+      console.log("🔒 Initial Geometry Hash:", currentGeometryHash);
+
+      while (archGrp.children.length) archGrp.remove(archGrp.children[0]);
+      while (furnGrp.children.length) furnGrp.remove(furnGrp.children[0]);
+      while (envGrp.children.length) envGrp.remove(envGrp.children[0]);
+      while (dbgGrp.children.length) dbgGrp.remove(dbgGrp.children[0]);
+      while (ceilGrp.children.length) ceilGrp.remove(ceilGrp.children[0]);
+      animatedFans = [];
+
+      if (ldTxt) ldTxt.innerText = 'Configuring studio lighting...';
+      await new Promise(r => setTimeout(r, 20));
+
+      if (state.light) {
+        const ambLight = new THREE.AmbientLight(0xffffff, 0.65);
+        envGrp.add(ambLight);
+
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x64748b, 0.45);
+        envGrp.add(hemiLight);
+
+        const sun = new THREE.DirectionalLight(0xfffdf0, 1.15);
+        sun.position.set(70, 110, 70);
+        sun.castShadow = true;
+        sun.shadow.mapSize.width = 4096;
+        sun.shadow.mapSize.height = 4096;
+        sun.shadow.camera.left = -120;
+        sun.shadow.camera.right = 120;
+        sun.shadow.camera.top = 120;
+        sun.shadow.camera.bottom = -120;
+        sun.shadow.camera.near = 10;
+        sun.shadow.camera.far = 400;
+        sun.shadow.bias = -0.0003;
+        sun.shadow.radius = 2.0;
+        envGrp.add(sun);
+
+        const fillLight = new THREE.DirectionalLight(0xe0f2fe, 0.4);
+        fillLight.position.set(-60, 80, -60);
+        envGrp.add(fillLight);
+
+        const gndGeo = new THREE.PlaneGeometry(1200, 1200);
+        const gndMat = new THREE.MeshStandardMaterial({ color: 0x8fa0b2, roughness: 0.95, metalness: 0.0 });
+        const gnd = new THREE.Mesh(gndGeo, gndMat);
+        gnd.rotation.x = -Math.PI / 2;
+        gnd.position.y = -0.05;
+        gnd.receiveShadow = true;
+        envGrp.add(gnd);
+      } else {
+        envGrp.add(new THREE.AmbientLight(0xffffff, 1.0));
+      }
+
+      if (ldTxt) ldTxt.innerText = 'Building deterministic geometry...';
+      await new Promise(r => setTimeout(r, 20));
+
+      // Coordinate System Definition
+      // CV (x, y) -> World (X, 0, Z)
+      // 1 unit = 1 foot
+
+      let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+      const isCanonical = data.schema_version === "1.0" || data.schema_version === "2.0";
+
+      (data.rooms || []).forEach(r => {
+        (r.polygon || []).forEach(pt => {
+          const px = isCanonical ? pt.x : pt[0];
+          const pz = isCanonical ? pt.y : pt[1];
+          if (px < minX) minX = px; if (px > maxX) maxX = px;
+          if (pz < minZ) minZ = pz; if (pz > maxZ) maxZ = pz;
+        });
+      });
+      const cx = (minX === Infinity) ? 0 : (minX + maxX) / 2;
+      const cz = (minZ === Infinity) ? 0 : (minZ + maxZ) / 2;
+
+      function distToSegment(px, pz, x1, z1, x2, z2) {
+        const l2 = (x2 - x1) * (x2 - x1) + (z2 - z1) * (z2 - z1);
+        if (l2 === 0) return Math.hypot(px - x1, pz - z1);
+        let t = ((px - x1) * (x2 - x1) + (pz - z1) * (z2 - z1)) / l2;
+        t = Math.max(0, Math.min(1, t));
+        return Math.hypot(px - (x1 + t * (x2 - x1)), pz - (z1 + t * (z2 - z1)));
+      }
+
+      // Calculate plot outer boundaries and indoor house room bounding box
+      let plotMinX = Infinity, plotMaxX = -Infinity, plotMinZ = Infinity, plotMaxZ = -Infinity;
+      (data.walls || []).forEach(w => {
+        const sx = (isCanonical ? w.start.x : w.start[0]) - cx;
+        const sz = (isCanonical ? w.start.y : w.start[1]) - cz;
+        const ex = (isCanonical ? w.end.x : w.end[0]) - cx;
+        const ez = (isCanonical ? w.end.y : w.end[1]) - cz;
+        if (sx < plotMinX) plotMinX = sx; if (sx > plotMaxX) plotMaxX = sx;
+        if (ex < plotMinX) plotMinX = ex; if (ex > plotMaxX) plotMaxX = ex;
+        if (sz < plotMinZ) plotMinZ = sz; if (sz > plotMaxZ) plotMaxZ = sz;
+        if (ez < plotMinZ) plotMinZ = ez; if (ez > plotMaxZ) plotMaxZ = ez;
+      });
+
+      let houseMinX = Infinity, houseMaxX = -Infinity, houseMinZ = Infinity, houseMaxZ = -Infinity;
+      (data.rooms || []).forEach(r => {
+        const rName = String(r.name || r.label || '').toLowerCase();
+        // Strictly consider INDOOR rooms only for house bounding box
+        const isIndoor = rName.includes('kitchen') || rName.includes('dining') || rName.includes('living') ||
+          rName.includes('hall') || rName.includes('bedroom') || rName.includes('toilet') ||
+          rName.includes('bath') || rName.includes('puja') || rName.includes('pooja') ||
+          rName.includes('bed') || rName.includes('store') || rName.includes('utility');
+        const isOutdoor = rName.includes('compound') || rName.includes('setback') || rName.includes('yard') ||
+          rName.includes('boundary') || rName.includes('outdoor') || rName.includes('portico') ||
+          rName.includes('porch') || rName.includes('parking');
+
+        if (isIndoor && !isOutdoor) {
+          (r.polygon || []).forEach(pt => {
+            const px = (isCanonical ? pt.x : pt[0]) - cx;
+            const pz = (isCanonical ? pt.y : pt[1]) - cz;
+            if (px < houseMinX) houseMinX = px; if (px > houseMaxX) houseMaxX = px;
+            if (pz < houseMinZ) houseMinZ = pz; if (pz > houseMaxZ) houseMaxZ = pz;
+          });
         }
-        if (window.sGrp) {
-          window.sGrp.position.x = 0;
-          const boxS = new THREE.Box3().setFromObject(window.sGrp);
-          const minX = isFinite(boxS.min.x) ? boxS.min.x : 0;
-          window.sGrp.position.x = maxX - minX + 15;
+      });
+
+      // 1. OPENING COLLECTION & CATEGORIZATION
+      const allOpenings = [];
+      const addedIds = new Set();
+
+      function getOpeningCategory(item, defaultType) {
+        const typeStr = String(item.type || item.openingType || defaultType || '').toUpperCase();
+        const labelStr = String(item.label || item.name || item.id || item.source_id || '').toUpperCase();
+
+        if (labelStr === 'O' || labelStr === '0' || labelStr.startsWith('OPEN') || typeStr.includes('ARCH') || typeStr === 'OPENING') {
+          return 'archway';
+        }
+        if (labelStr === 'MG' || labelStr.includes('GATE') || typeStr.includes('GATE') || typeStr === 'MAIN_GATE') {
+          return 'gate';
+        }
+        if (labelStr.startsWith('W') || labelStr.startsWith('V') || typeStr.includes('WIN') || typeStr === 'WINDOW' || typeStr.includes('VENT')) {
+          return 'window';
+        }
+        if (labelStr.startsWith('MD') || labelStr.startsWith('D') || labelStr.startsWith('PD') || labelStr.startsWith('SD') || typeStr.includes('DOOR') || typeStr === 'DOOR') {
+          return 'door';
+        }
+        return (defaultType || 'window').toLowerCase();
+      }
+
+      function addOp(item, defaultType) {
+        if (!item) return;
+        const itemID = item.id || item.source_id || (defaultType + '_' + Math.random().toString(36).substr(2, 5));
+        if (addedIds.has(itemID)) return;
+        addedIds.add(itemID);
+        const finalCategory = getOpeningCategory(item, defaultType);
+        allOpenings.push({ ...item, id: itemID, openingCategory: finalCategory });
+      }
+
+      (data.doors || []).forEach(d => addOp(d, 'door'));
+      (data.windows || []).forEach(w => addOp(w, 'window'));
+      (data.openings || []).forEach(op => addOp(op, op.type || 'opening'));
+
+      // AUTOMATED FALLBACK: If 0 doors detected in 2D layout, synthesize 3D door openings for indoor rooms
+      const existingDoorCount = allOpenings.filter(o => o.openingCategory === 'door').length;
+      if (existingDoorCount === 0 && (data.rooms || []).length > 0) {
+        let autoDIdx = 1;
+        (data.rooms || []).forEach(r => {
+          if (!r.polygon || r.polygon.length < 3) return;
+          const rName = String(r.name || r.label || '').toLowerCase();
+          
+          // Find longest wall segment for this room
+          let bestP1 = null, bestP2 = null, maxLen = 0;
+          for (let i = 0; i < r.polygon.length; i++) {
+            const p1 = r.polygon[i];
+            const p2 = r.polygon[(i + 1) % r.polygon.length];
+            const p1x = isCanonical ? p1.x : p1[0];
+            const p1y = isCanonical ? p1.y : p1[1];
+            const p2x = isCanonical ? p2.x : p2[0];
+            const p2y = isCanonical ? p2.y : p2[1];
+            const len = Math.hypot(p2x - p1x, p2y - p1y);
+            if (len > maxLen) {
+              maxLen = len;
+              bestP1 = { x: p1x, y: p1y };
+              bestP2 = { x: p2x, y: p2y };
+            }
+          }
+
+          if (bestP1 && bestP2 && maxLen >= 2.0) {
+            const midX = (bestP1.x + bestP2.x) / 2;
+            const midY = (bestP1.y + bestP2.y) / 2;
+            const isMain = rName.includes('living') || rName.includes('hall') || rName.includes('portico');
+            const isToilet = rName.includes('toilet') || rName.includes('bath') || rName.includes('wc');
+
+            addOp({
+              id: `auto_door_${autoDIdx++}`,
+              type: 'DOOR',
+              label: isMain ? 'MD' : (isToilet ? 'D1' : 'D'),
+              position: { x: midX, y: midY },
+              width_ft: isMain ? 3.5 : (isToilet ? 2.2 : 3.0)
+            }, 'door');
+          }
+        });
+      }
+
+      // Pre-calculate 3D segment coordinates for all openings
+      const processedOpenings3D = [];
+      allOpenings.forEach(op => {
+        let sx, sz, ex, ez, len, ang = 0, thick = 0.5;
+        const category = op.openingCategory || 'window';
+
+        if (op.position) {
+          const cx_pos = op.position.x - cx;
+          const cz_pos = op.position.y - cz;
+          len = op.width_ft || op.width || 3.0;
+
+          let bestWall = null;
+          let bestDist = Infinity;
+          let bestAng = 0;
+          let bestThick = 0.5;
+          let bestSnapX = cx_pos;
+          let bestSnapZ = cz_pos;
+
+          (data.walls || []).forEach(w => {
+            const wsx = w.start ? (isCanonical ? w.start.x - cx : w.start[0] - cx) : w.sx;
+            const wsz = w.start ? (isCanonical ? w.start.y - cz : w.start[1] - cz) : w.sz;
+            const wex = w.end ? (isCanonical ? w.end.x - cx : w.end[0] - cx) : w.ex;
+            const wez = w.end ? (isCanonical ? w.end.y - cz : w.end[1] - cz) : w.ez;
+
+            const wdx = wex - wsx, wdz = wez - wsz;
+            const wLenSq = wdx * wdx + wdz * wdz;
+            if (wLenSq < 0.01) return;
+            const wLen = Math.sqrt(wLenSq);
+
+            let t = ((cx_pos - wsx) * wdx + (cz_pos - wsz) * wdz) / wLenSq;
+            const dist = distToSegment(cx_pos, cz_pos, wsx, wsz, wex, wez);
+
+            // Give preference to wall matching op.wall_id
+            const isTargetWall = (op.wall_id && (w.source_id === op.wall_id || w.id === op.wall_id));
+            let score = dist + ((t >= 0.02 && t <= 0.98) ? 0 : 3.0) - (isTargetWall ? 2.0 : 0);
+
+            if (score < bestDist) {
+              bestDist = score;
+              bestWall = w;
+              bestAng = -Math.atan2(wdz, wdx);
+              bestThick = w.thickness_ft || w.thick || 0.5;
+
+              // Clamp t so opening doesn't protrude past wall corners
+              const halfTFraction = Math.min(0.45, (len / 2) / wLen);
+              const clampedT = Math.max(halfTFraction, Math.min(1.0 - halfTFraction, t));
+              bestSnapX = wsx + clampedT * wdx;
+              bestSnapZ = wsz + clampedT * wdz;
+            }
+          });
+
+          if (bestWall) {
+            ang = bestAng;
+            thick = bestThick;
+            sx = bestSnapX - (Math.cos(-ang) * len / 2);
+            sz = bestSnapZ - (Math.sin(-ang) * len / 2);
+            ex = bestSnapX + (Math.cos(-ang) * len / 2);
+            ez = bestSnapZ + (Math.sin(-ang) * len / 2);
+          } else {
+            sx = cx_pos - len / 2; sz = cz_pos;
+            ex = cx_pos + len / 2; ez = cz_pos;
+          }
+        } else if (op.start && op.end) {
+          sx = (isCanonical ? op.start.x : op.start[0]) - cx;
+          sz = (isCanonical ? op.start.y : op.start[1]) - cz;
+          ex = (isCanonical ? op.end.x : op.end[0]) - cx;
+          ez = (isCanonical ? op.end.y : op.end[1]) - cz;
+          thick = op.thickness || 0.5;
+          const dx = ex - sx, dz = ez - sz;
+          len = Math.hypot(dx, dz);
+          if (len < 0.05) return;
+          ang = -Math.atan2(dz, dx);
+        } else return;
+
+        processedOpenings3D.push({ ...op, sx, sz, ex, ez, len, ang, thick, cx_op: (sx + ex) / 2, cz_op: (sz + ez) / 2, category });
+      });
+
+      const WALL_HEIGHT = 10.0;
+      const COMPOUND_WALL_HEIGHT = 5.0;
+      const wallMat = getMat('wall');
+      const compoundWallMat = new THREE.MeshStandardMaterial({ color: 0xd1d5db, roughness: 0.75, metalness: 0.05 });
+      const wallTopMat = getMat('wall_top');
+      const createdWallBoundingBoxes = [];
+
+      // Helper: Subdivide wall segment and cut out solid wall inside door/window spaces
+      function buildWallSegmentWithOpenings(sx, sz, ex, ez, thick, isCompound, sourceId) {
+        const dx = ex - sx, dz = ez - sz;
+        const totalLen = Math.hypot(dx, dz);
+        if (totalLen < 0.05) return;
+        const ang = -Math.atan2(dz, dx);
+        const height = isCompound ? COMPOUND_WALL_HEIGHT : WALL_HEIGHT;
+        const curWallMat = isCompound ? compoundWallMat : wallMat;
+
+        // Find openings on this segment
+        const segmentOpenings = [];
+        processedOpenings3D.forEach(op => {
+          const d = distToSegment(op.cx_op, op.cz_op, sx, sz, ex, ez);
+          if (d < 1.0) {
+            const l2 = dx * dx + dz * dz;
+            let t = l2 > 0 ? ((op.cx_op - sx) * dx + (op.cz_op - sz) * dz) / l2 : 0;
+            t = Math.max(0, Math.min(1, t));
+            const halfT = (op.len / 2) / totalLen;
+            const t1 = Math.max(0, t - halfT);
+            const t2 = Math.min(1, t + halfT);
+            if (t2 - t1 > 0.01) {
+              segmentOpenings.push({ t1, t2, op, category: op.category });
+            }
+          }
+        });
+
+        segmentOpenings.sort((a, b) => a.t1 - b.t1);
+
+        // Subdivide [0, 1] interval
+        let currentT = 0;
+        const intervals = [];
+        segmentOpenings.forEach(so => {
+          if (so.t1 > currentT + 0.01) {
+            intervals.push({ t1: currentT, t2: so.t1, isOpening: false });
+          }
+          intervals.push({ t1: Math.max(currentT, so.t1), t2: so.t2, isOpening: true, op: so.op, category: so.category });
+          currentT = Math.max(currentT, so.t2);
+        });
+
+        if (currentT < 0.99) {
+          intervals.push({ t1: currentT, t2: 1.0, isOpening: false });
+        }
+
+        intervals.forEach(inv => {
+          const subLen = (inv.t2 - inv.t1) * totalLen;
+          if (subLen < 0.05) return;
+          const subMidX = sx + ((inv.t1 + inv.t2) / 2) * dx;
+          const subMidZ = sz + ((inv.t1 + inv.t2) / 2) * dz;
+
+          if (!inv.isOpening) {
+            // Non-opening part: FULL HEIGHT SOLID WALL
+            const mesh = new THREE.Mesh(new THREE.BoxGeometry(subLen, height, thick), curWallMat);
+            mesh.position.set(subMidX, height / 2, subMidZ);
+            mesh.rotation.y = ang;
+            mesh.castShadow = true; mesh.receiveShadow = true;
+            mesh.userData = { sourceType: 'wall', sourceId: sourceId, isCompound: isCompound };
+            archGrp.add(mesh);
+
+            const topCap = new THREE.Mesh(new THREE.BoxGeometry(subLen, 0.05, thick + 0.02), wallTopMat);
+            topCap.position.set(subMidX, height + 0.025, subMidZ);
+            topCap.rotation.y = ang;
+            archGrp.add(topCap);
+          } else {
+            // Opening part: Render ONLY Lintel and Wall Sill, leaving TRUE VOID in middle!
+            if (!isCompound && inv.category !== 'gate') {
+              const lintelH = 3.0; // Y=7 to 10ft
+              const lintel = new THREE.Mesh(new THREE.BoxGeometry(subLen, lintelH, thick), wallMat);
+              lintel.position.set(subMidX, WALL_HEIGHT - lintelH / 2, subMidZ);
+              lintel.rotation.y = ang;
+              lintel.castShadow = true; lintel.receiveShadow = true;
+              lintel.userData = { sourceType: 'opening', sourceId: inv.op.id, openingType: inv.category };
+              archGrp.add(lintel);
+            }
+
+            if (inv.category === 'window' && !isCompound) {
+              const winBaseY = 3.0; // Y=0 to 3ft
+              const wallSill = new THREE.Mesh(new THREE.BoxGeometry(subLen, winBaseY, thick), wallMat);
+              wallSill.position.set(subMidX, winBaseY / 2, subMidZ);
+              wallSill.rotation.y = ang;
+              wallSill.castShadow = true; wallSill.receiveShadow = true;
+              archGrp.add(wallSill);
+            }
+          }
+        });
+
+        createdWallBoundingBoxes.push({ sx, sz, ex, ez, len: totalLen, ang, height, thick, source_id: sourceId, isCompound });
+      }
+
+      // 1A. WALL GENERATION FROM DATA.WALLS
+      (data.walls || []).forEach(w => {
+        const sx = (isCanonical ? w.start.x : w.start[0]) - cx;
+        const sz = (isCanonical ? w.start.y : w.start[1]) - cz;
+        const ex = (isCanonical ? w.end.x : w.end[0]) - cx;
+        const ez = (isCanonical ? w.end.y : w.end[1]) - cz;
+        const thick = isCanonical ? (w.thickness_ft || 0.5) : (w.thickness || 0.5);
+
+        const sourceIdStr = String(w.source_id || w.id || w.name || w.type || '').toLowerCase();
+        const isCompound = w.is_compound === true ||
+          w.type === 'compound' ||
+          w.type === 'boundary' ||
+          w.type === 'compound_wall' ||
+          sourceIdStr.includes('compound') ||
+          sourceIdStr.includes('boundary') ||
+          sourceIdStr.includes('parapet') ||
+          sourceIdStr.includes('plot_boundary');
+
+        buildWallSegmentWithOpenings(sx, sz, ex, ez, thick, isCompound, w.source_id || w.id);
+      });
+
+      // 1B. SYNTHESIZE MISSING WALLS FROM ROOM POLYGON EDGES (Only if data.walls is empty/missing)
+      if (!data.walls || data.walls.length === 0) {
+        (data.rooms || []).forEach(r => {
+          if (!r.polygon || r.polygon.length < 3) return;
+          const pts = r.polygon;
+          const rName = String(r.name || r.label || '').toLowerCase();
+          const isOutdoorRoom = rName.includes('compound') || rName.includes('yard') || rName.includes('boundary') || rName.includes('setback');
+
+          for (let i = 0; i < pts.length; i++) {
+            const p1 = pts[i];
+            const p2 = pts[(i + 1) % pts.length];
+            const p1x = (isCanonical ? p1.x : p1[0]) - cx;
+            const p1z = (isCanonical ? p1.y : p1[1]) - cz;
+            const p2x = (isCanonical ? p2.x : p2[0]) - cx;
+            const p2z = (isCanonical ? p2.y : p2[1]) - cz;
+
+            const dx = p2x - p1x, dz = p2z - p1z;
+            const len = Math.hypot(dx, dz);
+            if (len < 0.5) continue;
+
+            // Check sub-intervals along edge to find uncovered gaps
+            const subStepFt = 1.5;
+            const numSteps = Math.max(1, Math.ceil(len / subStepFt));
+            let missingSegments = [];
+            let currentMissing = null;
+
+            for (let s = 0; s < numSteps; s++) {
+              const tStart = s / numSteps;
+              const tEnd = (s + 1) / numSteps;
+              const tMid = (tStart + tEnd) / 2;
+              const mx_pt = p1x + tMid * dx;
+              const mz_pt = p1z + tMid * dz;
+
+              const isCovered = createdWallBoundingBoxes.some(wb => distToSegment(mx_pt, mz_pt, wb.sx, wb.sz, wb.ex, wb.ez) < 0.9);
+              if (!isCovered) {
+                if (!currentMissing) currentMissing = { tStart: tStart, tEnd: tEnd };
+                else currentMissing.tEnd = tEnd;
+              } else {
+                if (currentMissing) {
+                  missingSegments.push(currentMissing);
+                  currentMissing = null;
+                }
+              }
+            }
+            if (currentMissing) missingSegments.push(currentMissing);
+
+            missingSegments.forEach(seg => {
+              const segP1x = p1x + seg.tStart * dx;
+              const segP1z = p1z + seg.tStart * dz;
+              const segP2x = p1x + seg.tEnd * dx;
+              const segP2z = p1z + seg.tEnd * dz;
+              const segDx = segP2x - segP1x, segDz = segP2z - segP1z;
+              const segLen = Math.hypot(segDx, segDz);
+              if (segLen < 0.4) return;
+
+              const thick = 0.4;
+              const isComp = isOutdoorRoom;
+              buildWallSegmentWithOpenings(segP1x, segP1z, segP2x, segP2z, thick, isComp, 'syn_' + (r.id || 'r') + '_' + i);
+            });
+          }
+        });
+      }
+
+      // 2. RENDER 3D VISUAL DOOR LEAF, WINDOW GLASS & ARCHWAY PASSAGES
+      processedOpenings3D.forEach(op => {
+        const { sx, sz, ex, ez, len, ang, thick, category } = op;
+
+        if (state.arch) {
+          const frameMat = getMat('frame');
+          const frameThick = thick + 0.06;
+          const frameDepth = 0.12;
+
+          const isWin = category === 'window';
+          const opH = isWin ? 4.0 : 7.0;
+          const opCenterY = isWin ? 5.0 : 3.5;
+          const topY = isWin ? 7.0 : 7.0;
+
+          const jambLeft = new THREE.Mesh(new THREE.BoxGeometry(frameDepth, opH, frameThick), frameMat);
+          jambLeft.position.set(sx, opCenterY, sz);
+          jambLeft.rotation.y = ang;
+          jambLeft.translateX(frameDepth / 2);
+
+          const jambRight = new THREE.Mesh(new THREE.BoxGeometry(frameDepth, opH, frameThick), frameMat);
+          jambRight.position.set(ex, opCenterY, ez);
+          jambRight.rotation.y = ang;
+          jambRight.translateX(-frameDepth / 2);
+
+          const headJamb = new THREE.Mesh(new THREE.BoxGeometry(len, frameDepth, frameThick), frameMat);
+          headJamb.position.set((sx + ex) / 2, topY - frameDepth / 2, (sz + ez) / 2);
+          headJamb.rotation.y = ang;
+
+          archGrp.add(jambLeft, jambRight, headJamb);
+
+          if (isWin) {
+            const winHeight = 4.0;
+            const winBaseY = 3.0;
+
+            let winFrameMat = getMat('wood_frame');
+            if (state.windowStyle === 'upvc') winFrameMat = getMat('upvc_frame');
+            if (state.windowStyle === 'black') winFrameMat = getMat('black_frame');
+
+            const sillDepth = thick + 0.16;
+            const sillHeight = 0.18;
+            const sillLedge = new THREE.Mesh(new THREE.BoxGeometry(len + 0.25, sillHeight, sillDepth), winFrameMat);
+            sillLedge.position.set((sx + ex) / 2, winBaseY + sillHeight / 2, (sz + ez) / 2);
+            sillLedge.rotation.y = ang;
+            sillLedge.castShadow = true; sillLedge.receiveShadow = true;
+            archGrp.add(sillLedge);
+
+            const glassWidth = len - frameDepth * 2;
+            const glassHeight = winHeight - frameDepth * 2;
+            const glassMat = state.windowStyle === 'black' ?
+              new THREE.MeshPhysicalMaterial({ color: 0x384554, transmission: 0.7, opacity: 0.85, transparent: true, roughness: 0.1, reflectivity: 0.8 }) :
+              getMat('glass');
+
+            const glassMesh = new THREE.Mesh(new THREE.BoxGeometry(glassWidth, glassHeight, 0.05), glassMat);
+            glassMesh.position.set((sx + ex) / 2, winBaseY + winHeight / 2, (sz + ez) / 2);
+            glassMesh.rotation.y = ang;
+            archGrp.add(glassMesh);
+
+            if (state.windowStyle === 'wood') {
+              const vertMullion = new THREE.Mesh(new THREE.BoxGeometry(0.1, glassHeight, 0.08), winFrameMat);
+              vertMullion.position.set((sx + ex) / 2, winBaseY + winHeight / 2, (sz + ez) / 2);
+              vertMullion.rotation.y = ang;
+              const horizMullion = new THREE.Mesh(new THREE.BoxGeometry(glassWidth, 0.1, 0.08), winFrameMat);
+              horizMullion.position.set((sx + ex) / 2, winBaseY + winHeight / 2, (sz + ez) / 2);
+              horizMullion.rotation.y = ang;
+              archGrp.add(vertMullion, horizMullion);
+            } else if (state.windowStyle === 'upvc') {
+              const midDivider = new THREE.Mesh(new THREE.BoxGeometry(0.12, glassHeight, 0.12), winFrameMat);
+              midDivider.position.set((sx + ex) / 2, winBaseY + winHeight / 2, (sz + ez) / 2);
+              midDivider.rotation.y = ang;
+              archGrp.add(midDivider);
+            } else if (state.windowStyle === 'black') {
+              [-glassWidth / 4, glassWidth / 4].forEach(xOff => {
+                const bar = new THREE.Mesh(new THREE.BoxGeometry(0.06, glassHeight, 0.08), winFrameMat);
+                bar.position.set((sx + ex) / 2 + Math.cos(-ang) * xOff, winBaseY + winHeight / 2, (sz + ez) / 2 + Math.sin(-ang) * xOff);
+                bar.rotation.y = ang;
+                archGrp.add(bar);
+              });
+            }
+
+          } else if (category === 'door') {
+            const leafMat = getMat('door');
+            const handleMat = state.doorStyle === 'glass' ? getMat('black_handle') : (state.doorStyle === 'teak' ? getMat('steel') : getMat('brass'));
+            const leafWidth = len - frameDepth * 2;
+            const leafHeight = 6.8;
+            const leafThick = 0.14;
+
+            const pivot = new THREE.Group();
+            pivot.position.set(sx, 3.4, sz);
+            pivot.rotation.y = ang;
+            pivot.translateX(frameDepth);
+
+            const leafMesh = new THREE.Mesh(new THREE.BoxGeometry(leafWidth, leafHeight, leafThick), leafMat);
+            leafMesh.position.set(leafWidth / 2, 0, 0);
+            leafMesh.castShadow = true; leafMesh.receiveShadow = true;
+            pivot.add(leafMesh);
+
+            if (state.doorStyle === 'glass') {
+              const glassInsertW = leafWidth * 0.26;
+              const glassInsertH = leafHeight * 0.78;
+              const glassInsert = new THREE.Mesh(
+                new THREE.BoxGeometry(glassInsertW, glassInsertH, leafThick + 0.04),
+                getMat('frosted_glass')
+              );
+              glassInsert.position.set(leafWidth * 0.28, 0, 0);
+              leafMesh.add(glassInsert);
+
+              const handleBarH = 3.0;
+              const handleBarFront = new THREE.Mesh(new THREE.BoxGeometry(0.07, handleBarH, 0.07), handleMat);
+              handleBarFront.position.set(leafWidth - 0.22, 0, leafThick / 2 + 0.07);
+
+              const handleBarBack = new THREE.Mesh(new THREE.BoxGeometry(0.07, handleBarH, 0.07), handleMat);
+              handleBarBack.position.set(leafWidth - 0.22, 0, -leafThick / 2 - 0.07);
+
+              [-handleBarH / 2 + 0.15, handleBarH / 2 - 0.15].forEach(yPos => {
+                const mountF = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.07, 0.07), handleMat);
+                mountF.position.set(leafWidth - 0.22, yPos, leafThick / 2 + 0.035);
+                const mountB = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.07, 0.07), handleMat);
+                mountB.position.set(leafWidth - 0.22, yPos, -leafThick / 2 - 0.035);
+                leafMesh.add(mountF, mountB);
+              });
+
+              leafMesh.add(handleBarFront, handleBarBack);
+
+            } else if (state.doorStyle === 'teak') {
+              const handleBarH = 3.4;
+              const barFront = new THREE.Mesh(new THREE.BoxGeometry(0.07, handleBarH, 0.07), handleMat);
+              barFront.position.set(leafWidth - 0.2, 0, leafThick / 2 + 0.07);
+              const barBack = new THREE.Mesh(new THREE.BoxGeometry(0.07, handleBarH, 0.07), handleMat);
+              barBack.position.set(leafWidth - 0.2, 0, -leafThick / 2 - 0.07);
+              leafMesh.add(barFront, barBack);
+
+            } else {
+              const plateF = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.48, 0.04), handleMat);
+              plateF.position.set(leafWidth - 0.25, 0, leafThick / 2 + 0.02);
+              const plateB = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.48, 0.04), handleMat);
+              plateB.position.set(leafWidth - 0.25, 0, -leafThick / 2 - 0.02);
+              const leverF = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.06, 0.06), handleMat);
+              leverF.position.set(leafWidth - 0.32, 0, leafThick / 2 + 0.09);
+              const leverB = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.06, 0.06), handleMat);
+              leverB.position.set(leafWidth - 0.32, 0, -leafThick / 2 - 0.09);
+              leafMesh.add(plateF, plateB, leverF, leverB);
+            }
+
+            pivot.rotation.y += (Math.PI / 180) * 45;
+            archGrp.add(pivot);
+          } else if (category === 'archway') {
+            // OPEN ARCHWAY ('O'): Clean opening passage without door leaf
+          } else if (category === 'gate') {
+            // MAIN GATE ('MG'): Gate in Compound Wall
+          }
+
+          if (state.dbg) {
+            const sp = createTextSprite(op.label || op.id || 'opening', '#f59e0b');
+            sp.position.set((sx + ex) / 2, WALL_HEIGHT - 3.0 / 2 - 1.0, (sz + ez) / 2);
+            dbgGrp.add(sp);
+          }
+        }
+      });
+
+      // 3. FLOOR GENERATION
+      (data.rooms || []).forEach(r => {
+        if (!r.polygon || r.polygon.length < 3) return;
+        const shape = new THREE.Shape();
+        const pLast = r.polygon[r.polygon.length - 1];
+        shape.moveTo((isCanonical ? pLast.x : pLast[0]) - cx, (isCanonical ? pLast.y : pLast[1]) - cz);
+        for (let i = r.polygon.length - 2; i >= 0; i--) {
+          shape.lineTo((isCanonical ? r.polygon[i].x : r.polygon[i][0]) - cx, (isCanonical ? r.polygon[i].y : r.polygon[i][1]) - cz);
+        }
+
+        let rCx = 0, rCz = 0;
+        let rMinX = Infinity, rMaxX = -Infinity, rMinZ = Infinity, rMaxZ = -Infinity;
+        r.polygon.forEach(p => {
+          const px = isCanonical ? p.x : p[0];
+          const pz = isCanonical ? p.y : p[1];
+          rCx += px - cx; rCz += pz - cz;
+          if (px - cx < rMinX) rMinX = px - cx; if (px - cx > rMaxX) rMaxX = px - cx;
+          if (pz - cz < rMinZ) rMinZ = pz - cz; if (pz - cz > rMaxZ) rMaxZ = pz - cz;
+        });
+        rCx /= r.polygon.length; rCz /= r.polygon.length;
+        const rw = rMaxX - rMinX;
+        const rd = rMaxZ - rMinZ;
+        const effectiveLabel = r.name || r.label || 'Unknown';
+        const mat = getMat('floor', effectiveLabel);
+        mat.side = THREE.DoubleSide; // Prevents winding issues causing invisible floors
+        const mesh = new THREE.Mesh(new THREE.ShapeGeometry(shape), mat);
+        mesh.rotation.x = Math.PI / 2;
+        mesh.position.y = 0.02;
+        mesh.receiveShadow = true;
+        mesh.userData = { sourceType: 'room', sourceId: r.id, roomLabel: effectiveLabel };
+        archGrp.add(mesh);
+
+        // Ceiling (Phase 3.3)
+        if (state.arch) {
+          const ceilMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.9 });
+          ceilMat.side = THREE.DoubleSide;
+          const ceilMesh = new THREE.Mesh(new THREE.ShapeGeometry(shape), ceilMat);
+          ceilMesh.rotation.x = -Math.PI / 2;
+          ceilMesh.position.y = WALL_HEIGHT; // Cap the room
+          ceilMesh.castShadow = true; ceilMesh.receiveShadow = true;
+          ceilGrp.add(ceilMesh);
+        }
+
+        const sp = createTextSprite(effectiveLabel.toUpperCase(), '#0284c7');
+        sp.position.set(rCx, 0.15, rCz);
+        archGrp.add(sp);
+
+        if (state.dbg) {
+          const dbgSp = createTextSprite(r.id || 'room', '#10b981');
+          dbgSp.position.set(rCx, 1.5, rCz);
+          dbgGrp.add(dbgSp);
+
+          // Draw Bounding Box outline
+          const bbGeo = new THREE.BoxGeometry(rw, 0.1, rd);
+          const bbMat = new THREE.MeshBasicMaterial({ color: 0x10b981, wireframe: true });
+          const bbMesh = new THREE.Mesh(bbGeo, bbMat);
+          bbMesh.position.set(rCx, 0.1, rCz);
+          dbgGrp.add(bbMesh);
+        }
+
+        if (state.light) {
+          const roomLight = new THREE.PointLight(0xfff7ed, 0.45, 22);
+          roomLight.position.set(rCx, WALL_HEIGHT - 1.0, rCz);
+          envGrp.add(roomLight);
+        }
+      });
+
+      // 4. SUB-SPACES GENERATION (Wardrobes, etc.)
+      (data.sub_spaces || []).forEach(r => {
+        if (!r.polygon || r.polygon.length < 3) return;
+        const shape = new THREE.Shape();
+        const pLast = r.polygon[r.polygon.length - 1];
+        shape.moveTo((isCanonical ? pLast.x : pLast[0]) - cx, (isCanonical ? pLast.y : pLast[1]) - cz);
+        for (let i = r.polygon.length - 2; i >= 0; i--) {
+          shape.lineTo((isCanonical ? r.polygon[i].x : r.polygon[i][0]) - cx, (isCanonical ? r.polygon[i].y : r.polygon[i][1]) - cz);
+        }
+
+        const effectiveLabel = r.name || r.label || 'Unknown';
+        const mat = getMat('floor', effectiveLabel);
+        mat.side = THREE.DoubleSide;
+        const mesh = new THREE.Mesh(new THREE.ShapeGeometry(shape), mat);
+        mesh.rotation.x = Math.PI / 2;
+        mesh.position.y = 0.03;
+        mesh.receiveShadow = true;
+        mesh.userData = { sourceType: 'sub_space', sourceId: r.id, roomLabel: effectiveLabel };
+        archGrp.add(mesh);
+      });
+
+      // 4.5. ANIMATED CEILING FANS GENERATION (Always visible & spinning)
+      (data.rooms || []).forEach(r => {
+        if (!r.polygon || r.polygon.length < 3) return;
+        let rCx = 0, rCz = 0;
+        r.polygon.forEach(pt => {
+          const px = (isCanonical ? pt.x : pt[0]) - cx;
+          const pz = (isCanonical ? pt.y : pt[1]) - cz;
+          rCx += px; rCz += pz;
+        });
+        rCx /= r.polygon.length;
+        rCz /= r.polygon.length;
+
+        const rName = String(r.name || r.label || '').toLowerCase();
+        const isToiletOrPortico = rName.includes('toilet') || rName.includes('bath') || rName.includes('wc') || rName.includes('portico') || rName.includes('porch') || rName.includes('parking') || rName.includes('car');
+        if (!isToiletOrPortico) {
+          const fanMesh = buildCeilingFan();
+          fanMesh.position.set(rCx, WALL_HEIGHT, rCz);
+          fanMesh.userData = { sourceType: 'auto_ceiling_fan', sourceId: r.id };
+          archGrp.add(fanMesh);
+        }
+      });
+
+      // 5. EXPLICIT DETECTED FURNITURE & VEHICLES & ROOM-BASED FURNITURE GENERATION
+      if (state.furn) {
+        const spawnedRoomIds = new Set();
+
+        // Helper to get room dimensions for any point (x, z)
+        const getRoomForPoint = (px, pz) => {
+          for (let r of (data.rooms || [])) {
+            if (!r.polygon || r.polygon.length < 3) continue;
+            let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+            const polyPts = r.polygon.map(pt => [(isCanonical ? pt.x : pt[0]) - cx, (isCanonical ? pt.y : pt[1]) - cz]);
+            polyPts.forEach(p => {
+              if (p[0] < minX) minX = p[0]; if (p[0] > maxX) maxX = p[0];
+              if (p[1] < minZ) minZ = p[1]; if (p[1] > maxZ) maxZ = p[1];
+            });
+            if (pointInPolygon([px, pz], polyPts)) {
+              return { room: r, rw: maxX - minX, rd: maxZ - minZ };
+            }
+          }
+          return { room: null, rw: 12.0, rd: 12.0 };
+        };
+
+        const spawnFurnitureItem = (f, parentRoomId = null) => {
+          let fCx = 0, fCz = 0, fw = 6.0, fd = 6.0;
+
+          if (f.polygon && f.polygon.length >= 3) {
+            let fMinX = Infinity, fMaxX = -Infinity, fMinZ = Infinity, fMaxZ = -Infinity;
+            f.polygon.forEach(p => {
+              const p_x = isCanonical ? p.x : p[0];
+              const p_z = isCanonical ? p.y : p[1];
+              const px = p_x - cx, pz = p_z - cz;
+              if (px < fMinX) fMinX = px; if (px > fMaxX) fMaxX = px;
+              if (pz < fMinZ) fMinZ = pz; if (pz > fMaxZ) fMaxZ = pz;
+            });
+            fCx = (fMinX + fMaxX) / 2;
+            fCz = (fMinZ + fMaxZ) / 2;
+            fw = Math.max(1.0, fMaxX - fMinX);
+            fd = Math.max(1.0, fMaxZ - fMinZ);
+          } else if (f.position || f.x !== undefined) {
+            const posX = f.position ? f.position.x : f.x;
+            const posZ = f.position ? f.position.y : f.y;
+            fCx = posX - cx;
+            fCz = posZ - cz;
+            fw = f.width_ft || f.width || 6.0;
+            fd = f.height_ft || f.height || 6.0;
+          } else {
+            return;
+          }
+
+          const { rw, rd } = getRoomForPoint(fCx, fCz);
+          const maxTargetW = Math.min(fw, rw * 0.48);
+          const maxTargetD = Math.min(fd, rd * 0.48);
+
+          let furnMesh = null;
+          const type = String(f.type || f.name || f.label || '').toLowerCase();
+
+          if (type.includes('bed')) {
+            furnMesh = buildDoubleBed();
+            const s = Math.min(maxTargetW / 9.2, maxTargetD / 6.8);
+            furnMesh.scale.set(s, Math.max(0.7, s), s);
+          } else if (type.includes('sofa') || type.includes('couch') || type.includes('seating') || type.includes('living')) {
+            furnMesh = buildLSectionalSofa();
+            const s = Math.min(maxTargetW / 11.0, maxTargetD / 9.0);
+            furnMesh.scale.set(s, Math.max(0.7, s), s);
+          } else if (type.includes('din') || type.includes('table')) {
+            furnMesh = buildDiningSet();
+            const s = Math.min(maxTargetW / 8.5, maxTargetD / 6.0);
+            furnMesh.scale.set(s, Math.max(0.7, s), s);
+          } else if (type.includes('car') || type.includes('vehicle') || type.includes('auto') || type.includes('portico') || type.includes('parking')) {
+            furnMesh = buildCar();
+            if (fw > fd) furnMesh.rotation.y = Math.PI / 2;
+            const s = Math.min(Math.min(rw, rd) * 0.6 / 6.5, Math.max(rw, rd) * 0.65 / 13.5);
+            furnMesh.scale.set(s, Math.max(0.7, s), s);
+          } else if (type.includes('kitchen') || type.includes('counter')) {
+            furnMesh = buildKitchenCounter();
+            const s = Math.min(Math.max(rw, rd) * 0.48 / 8.7, Math.min(rw, rd) * 0.28 / 2.4);
+            furnMesh.scale.set(s, Math.max(0.7, s), s);
+          } else if (type.includes('bath') || type.includes('toilet') || type.includes('wc')) {
+            furnMesh = buildBathroomSet();
+            const s = Math.min(Math.min(rw, rd) * 0.42 / 5.7, Math.min(rw, rd) * 0.42 / 5.7);
+            furnMesh.scale.set(s, Math.max(0.7, s), s);
+          } else if (type.includes('stair') || type.includes('step') || type.includes('duplex') || type.includes('up') || type.includes('dn') || type.includes('படிக்கட்')) {
+            furnMesh = buildDogLeggedStaircase(fw, fd);
+          } else {
+            const box = new THREE.Mesh(new THREE.BoxGeometry(maxTargetW, 2.0, maxTargetD), getMat('furn_wood'));
+            box.position.y = 1.0;
+            furnMesh = new THREE.Group();
+            furnMesh.add(box);
+          }
+
+          if (furnMesh) {
+            furnMesh.position.set(fCx, 0, fCz);
+            furnMesh.userData = { sourceType: f.type || (type.includes('stair') ? 'staircase' : 'furn'), sourceId: f.id };
+            furnGrp.add(furnMesh);
+            if (parentRoomId) spawnedRoomIds.add(parentRoomId);
+
+            if (state.dbg) {
+              const dbgSp = createTextSprite(f.id || type, '#8b5cf6');
+              dbgSp.position.set(fCx, 3.5, fCz);
+              dbgGrp.add(dbgSp);
+            }
+          }
+        };
+
+        // Collect all explicit furniture lists from top-level and target data (including stairs)
+        const rawFurniture = [
+          ...(data.furniture || []),
+          ...(curData?.furniture || []),
+          ...(curData?.model_data?.furniture || []),
+          ...(data.model_data?.furniture || []),
+          ...(data.floors?.ground?.furniture || []),
+          ...(data.stairs || []),
+          ...(curData?.stairs || []),
+          ...(curData?.model_data?.stairs || []),
+          ...(data.model_data?.stairs || []),
+          ...(data.floors?.ground?.stairs || [])
+        ];
+        const rawVehicles = [
+          ...(data.vehicles || []),
+          ...(curData?.vehicles || []),
+          ...(curData?.model_data?.vehicles || []),
+          ...(data.model_data?.vehicles || []),
+          ...(data.floors?.ground?.vehicles || [])
+        ];
+
+        const furnitureSeen = new Set();
+        const itemsToSpawn = [];
+
+        [...rawFurniture, ...rawVehicles].forEach(item => {
+          if (!item) return;
+          const itemId = item.id || item.source_id || JSON.stringify(item.position || item.polygon || Math.random());
+          if (!furnitureSeen.has(itemId)) {
+            furnitureSeen.add(itemId);
+            itemsToSpawn.push(item);
+          }
+        });
+
+        (data.rooms || []).forEach(r => {
+          if (r.furniture && Array.isArray(r.furniture)) {
+            r.furniture.forEach(item => {
+              const itemId = item.id || item.source_id || JSON.stringify(item.position || Math.random());
+              if (!furnitureSeen.has(itemId)) {
+                furnitureSeen.add(itemId);
+                itemsToSpawn.push(item);
+                if (r.id) spawnedRoomIds.add(r.id);
+              }
+            });
+          }
+        });
+
+        itemsToSpawn.forEach(item => spawnFurnitureItem(item));
+
+        // Fallback: If 2D plan JSON rooms do NOT have explicit furniture objects detected,
+        // automatically generate standard matching 3D furniture strictly inside each room present in the 2D plan!
+        (data.rooms || []).forEach(r => {
+          if (!r.polygon || r.polygon.length < 3) return;
+          if (r.id && spawnedRoomIds.has(r.id)) return; // Skip if room already has explicit furniture
+
+          const rName = String(r.name || r.label || '').toLowerCase();
+
+          // Compute room centroid and bounding box
+          let rMinX = Infinity, rMaxX = -Infinity, rMinZ = Infinity, rMaxZ = -Infinity;
+          let rCx = 0, rCz = 0;
+          r.polygon.forEach(pt => {
+            const px = (isCanonical ? pt.x : pt[0]) - cx;
+            const pz = (isCanonical ? pt.y : pt[1]) - cz;
+            rCx += px; rCz += pz;
+            if (px < rMinX) rMinX = px; if (px > rMaxX) rMaxX = px;
+            if (pz < rMinZ) rMinZ = pz; if (pz > rMaxZ) rMaxZ = pz;
+          });
+          rCx /= r.polygon.length;
+          rCz /= r.polygon.length;
+          const rw = rMaxX - rMinX;
+          const rd = rMaxZ - rMinZ;
+
+          let autoMesh = null;
+
+          if (rName.includes('bedroom') || rName.includes('bed room') || rName.includes('master bed') || rName.includes('bed')) {
+            autoMesh = buildDoubleBed();
+            const targetW = Math.min(5.2, rw * 0.45);
+            const targetD = Math.min(5.8, rd * 0.50);
+            const s = Math.min(targetW / 9.2, targetD / 6.8);
+            if (s > 0.1) autoMesh.scale.set(s, Math.max(0.65, s), s);
+          } else if (rName.includes('living') || rName.includes('hall') || rName.includes('sitting')) {
+            autoMesh = buildLSectionalSofa();
+            const targetW = Math.min(7.0, rw * 0.50);
+            const targetD = Math.min(5.5, rd * 0.50);
+            const s = Math.min(targetW / 11.0, targetD / 9.0);
+            if (s > 0.1) autoMesh.scale.set(s, Math.max(0.65, s), s);
+          } else if (rName.includes('dining') || rName.includes('dinning')) {
+            autoMesh = buildDiningSet();
+            const targetW = Math.min(5.0, rw * 0.45);
+            const targetD = Math.min(4.2, rd * 0.45);
+            const s = Math.min(targetW / 8.5, targetD / 6.0);
+            if (s > 0.1) autoMesh.scale.set(s, Math.max(0.65, s), s);
+          } else if (rName.includes('kitchen')) {
+            autoMesh = buildKitchenCounter();
+            const targetLen = Math.min(5.5, Math.max(rw, rd) * 0.48);
+            const targetDepth = Math.min(1.8, Math.min(rw, rd) * 0.28);
+            const s = Math.min(targetLen / 8.7, targetDepth / 2.4);
+            if (s > 0.1) autoMesh.scale.set(s, Math.max(0.65, s), s);
+          } else if (rName.includes('toilet') || rName.includes('bath') || rName.includes('wc')) {
+            autoMesh = buildBathroomSet();
+            const targetW = Math.min(3.0, rw * 0.40);
+            const targetD = Math.min(3.0, rd * 0.40);
+            const s = Math.min(targetW / 5.7, targetD / 5.7);
+            if (s > 0.1) autoMesh.scale.set(s, Math.max(0.65, s), s);
+          } else if (rName.includes('portico') || rName.includes('porch') || rName.includes('parking') || rName.includes('car')) {
+            autoMesh = buildCar();
+            if (rw > rd) autoMesh.rotation.y = Math.PI / 2;
+            const targetW = Math.min(5.5, Math.min(rw, rd) * 0.60);
+            const targetD = Math.min(11.5, Math.max(rw, rd) * 0.65);
+            const s = Math.min(targetW / 6.5, targetD / 13.5);
+            if (s > 0.1) autoMesh.scale.set(s, Math.max(0.65, s), s);
+          } else if (rName.includes('stair') || rName.includes('step') || rName.includes('duplex') || rName.includes('up') || rName.includes('dn') || rName.includes('படிக்கட்')) {
+            autoMesh = buildDogLeggedStaircase(rw, rd);
+          }
+
+          if (autoMesh) {
+            autoMesh.position.set(rCx, 0, rCz);
+            const isStaircaseRoom = rName.includes('stair') || rName.includes('step') || rName.includes('duplex') || rName.includes('up') || rName.includes('dn') || rName.includes('படிக்கட்');
+            autoMesh.userData = { sourceType: isStaircaseRoom ? 'auto_room_staircase' : 'auto_room_furn', sourceId: r.id };
+            furnGrp.add(autoMesh);
+          }
+        });
+
+        // Universal Fallback: If 2D plan JSON rooms didn't contain "staircase" label,
+        // automatically generate a 3D U-Shaped staircase in the passage/hall/verandah area!
+        let hasStaircase = false;
+        furnGrp.children.forEach(child => {
+          const type = String(child.userData?.sourceType || '').toLowerCase();
+          if (type.includes('stair')) hasStaircase = true;
+        });
+
+        if (!hasStaircase && data.rooms && data.rooms.length > 0) {
+          let bestStairRoom = null;
+          let maxScore = -1;
+
+          (data.rooms || []).forEach(r => {
+            if (!r.polygon || r.polygon.length < 3) return;
+            const rName = String(r.name || r.label || '').toLowerCase();
+            const isToilet = rName.includes('toilet') || rName.includes('bath') || rName.includes('wc');
+            const isBed = rName.includes('bedroom') || rName.includes('bed');
+            const isKitchen = rName.includes('kitchen');
+            const isPooja = rName.includes('pooja') || rName.includes('puja') || rName.includes('mandir');
+
+            // STRICT: Never spawn a staircase in Bedroom, Toilet, Kitchen, or Pooja Room!
+            if (isToilet || isBed || isKitchen || isPooja) return;
+
+            let rMinX = Infinity, rMaxX = -Infinity, rMinZ = Infinity, rMaxZ = -Infinity;
+            let rCx = 0, rCz = 0;
+            r.polygon.forEach(pt => {
+              const px = (isCanonical ? pt.x : pt[0]) - cx;
+              const pz = (isCanonical ? pt.y : pt[1]) - cz;
+              rCx += px; rCz += pz;
+              if (px < rMinX) rMinX = px; if (px > rMaxX) rMaxX = px;
+              if (pz < rMinZ) rMinZ = pz; if (pz > rMaxZ) rMaxZ = pz;
+            });
+            rCx /= r.polygon.length;
+            rCz /= r.polygon.length;
+            const rw = rMaxX - rMinX;
+            const rd = rMaxZ - rMinZ;
+            const area = rw * rd;
+
+            let priority = 0;
+            if (rName.includes('stair') || rName.includes('step') || rName.includes('duplex') || rName.includes('up') || rName.includes('dn') || rName.includes('படிக்கட்')) priority = 100;
+            else if (rName.includes('passage') || rName.includes('corridor') || rName.includes('lobby') || rName.includes('verandah')) priority = 90;
+            else if (rName.includes('portico') || rName.includes('porch')) priority = 80;
+            else if (rName.includes('hall') || rName.includes('living')) priority = 70;
+            else priority = 10;
+
+            const aspect = Math.max(rw / Math.max(0.1, rd), rd / Math.max(0.1, rw));
+            let aspectBonus = (aspect > 1.4 && aspect < 4.0 && area > 20) ? 300 : 0;
+
+            const score = priority * 1000 + aspectBonus + area;
+            if (score > maxScore) {
+              maxScore = score;
+              bestStairRoom = { r, rMinX, rMaxX, rMinZ, rMaxZ, rCx, rCz, rw, rd };
+            }
+          });
+
+          if (bestStairRoom) {
+            const { r, rMinX, rMaxX, rMinZ, rMaxZ, rCx, rCz, rw, rd } = bestStairRoom;
+            const rName = String(r.name || r.label || '').toLowerCase();
+            let stairMesh = buildDogLeggedStaircase(rw, rd);
+            if (stairMesh) {
+              let posX = rCx;
+              let posZ = rCz;
+              // If fallback is placed in Hall/Living Room, align it against a side wall so it doesn't block room center
+              if (rName.includes('hall') || rName.includes('living')) {
+                posX = (rw > rd) ? rMinX + rw * 0.25 : rMinX + rw * 0.3;
+                posZ = (rw > rd) ? rMinZ + rd * 0.3 : rMinZ + rd * 0.25;
+              }
+              stairMesh.position.set(posX, 0, posZ);
+              stairMesh.userData = { sourceType: 'auto_fallback_staircase', sourceId: 'fallback' };
+              furnGrp.add(stairMesh);
+            }
+          }
         }
       }
-      else if (v === 'stacked') {
-        if (fGrp) fGrp.position.y = 10.5;
-        if (window.sGrp) window.sGrp.position.y = 21.0;
+
+      // Update Floor center for camera orbit
+      if (maxX !== -Infinity) {
+        floorCenter.set(0, WALL_HEIGHT / 2, 0);
+        floorSize.set(maxX - minX, WALL_HEIGHT, maxZ - minZ);
+      } else {
+        const bb = new THREE.Box3().setFromObject(archGrp);
+        bb.getCenter(floorCenter); bb.getSize(floorSize);
       }
 
-      let tgt = gGrp;
-      if (v === 'first' && fGrp) tgt = fGrp;
-      if (v === 'second' && window.sGrp) tgt = window.sGrp;
+      if (ld) ld.style.display = 'none';
 
-      const c = new THREE.Box3().setFromObject(tgt).getCenter(new THREE.Vector3());
-      controls.target.lerp(c, .5);
+      // Phase 2.6: Automated Geometry Validation
+      await validateGeometry(data);
+    }
+
+    async function validateGeometry(data) {
+      console.log("=== GEOMETRY VALIDATION REPORT ===");
+      let errors = 0;
+
+      // 1. Validate Walls
+      const jsonWalls = data.walls || [];
+      const meshWalls = archGrp.children.filter(c => c.userData?.sourceType === 'wall');
+      console.log(`Walls: JSON = ${jsonWalls.length}, 3D Meshes = ${meshWalls.length}`);
+      if (jsonWalls.length !== meshWalls.length) {
+        console.error("Mismatch in wall count!");
+        errors++;
+      }
+
+      // 2. Validate Openings
+      const jsonOpenings = data.openings || [];
+      const meshOpenings = archGrp.children.filter(c => c.userData?.sourceType === 'opening');
+      console.log(`Openings: JSON = ${jsonOpenings.length}, 3D Meshes = ${meshOpenings.length}`);
+      if (jsonOpenings.length !== meshOpenings.length) {
+        console.error("Mismatch in opening count!");
+        errors++;
+      }
+
+      // 3. Validate Rooms
+      const jsonRooms = data.rooms || [];
+      const meshRooms = archGrp.children.filter(c => c.userData?.sourceType === 'room');
+      console.log(`Rooms: JSON = ${jsonRooms.length}, 3D Meshes = ${meshRooms.length}`);
+      if (jsonRooms.length !== meshRooms.length) {
+        console.error("Mismatch in room count!");
+        errors++;
+      }
+
+      // 4. Opening Collision Validation
+      console.log("--- OPENING COLLISION TEST ---");
+      meshOpenings.forEach(opMesh => {
+        const opBox = new THREE.Box3().setFromObject(opMesh);
+
+        // Check if any solid wall intersects this opening's logical VOID space
+        // The opening mesh is the lintel (Y=7 to 10). The void is Y=0 to 7.
+        // We create a bounding box for the void:
+        const voidBox = opBox.clone();
+        voidBox.min.y = 0;
+        voidBox.max.y = opBox.min.y - 0.05; // Up to just below the lintel
+
+        // Shrink the void box slightly in X/Z to avoid precision issues at corners
+        const center = new THREE.Vector3();
+        voidBox.getCenter(center);
+        voidBox.expandByScalar(-0.02);
+
+        let collided = false;
+        meshWalls.forEach(wallMesh => {
+          const wallBox = new THREE.Box3().setFromObject(wallMesh);
+          if (wallBox.intersectsBox(voidBox)) {
+            collided = true;
+            console.error(`FAIL: Solid wall (ID: ${wallMesh.userData.sourceId}) passes through opening void (ID: ${opMesh.userData.sourceId})!`);
+            errors++;
+          }
+        });
+
+        if (!collided) {
+          console.log(`PASS: Opening (ID: ${opMesh.userData.sourceId}) has a true geometric void beneath it.`);
+        }
+      });
+
+      if (errors === 0) {
+        console.log("✅ All geometry successfully mapped from Canonical JSON to 3D Scene!");
+        console.log("✅ Actual structural voids confirmed for all doors/windows!");
+      } else {
+        console.error(`❌ Validation failed with ${errors} errors.`);
+      }
+
+      // Phase 3.1: Geometry Lock Check
+      const finalHash = await hashGeometry(data);
+      if (finalHash !== currentGeometryHash) {
+        console.error(`❌ FATAL: Geometry Lock broken! Hash changed from ${currentGeometryHash} to ${finalHash}`);
+        alert("FATAL ERROR: Visual rendering mutated architectural geometry.");
+      } else {
+        console.log("🔒 Geometry Hash MATCH! Architecture preserved.");
+      }
+
+      console.log("==================================");
+    }
+
+    // ─── CAMERA & UI CONTROLS (Phase 3.5) ──────────────────────────────────
+    let isCeilVisible = false;
+    window.toggleCeiling = function (forceState = null) {
+      isCeilVisible = forceState !== null ? forceState : !isCeilVisible;
+      if (ceilGrp) ceilGrp.visible = isCeilVisible;
+      const btnCeil = document.getElementById('btn-ceil');
+      if (btnCeil) btnCeil.innerText = `CEILING: ${isCeilVisible ? 'ON' : 'OFF'}`;
+    };
+
+    window.setCamMode = function (mode) {
+      if (mode === 'top') {
+        const maxDim = Math.max(floorSize.x || 35, floorSize.z || 35);
+        const dist = Math.max(75, maxDim * 2.2);
+        controls.enabled = false;
+        camera.position.set(0, dist, 0);
+        camera.up.set(0, 0, -1);
+        camera.lookAt(0, 0, 0);
+        controls.target.set(0, 0, 0);
+        window.toggleCeiling(false);
+      } else if (mode === 'iso') {
+        controls.enabled = true;
+        camera.position.set(70, 70, 70);
+        camera.up.set(0, 1, 0);
+        controls.target.set(0, 0, 0);
+        controls.enableRotate = true;
+        controls.maxPolarAngle = Math.PI / 3;
+        window.toggleCeiling(false);
+        controls.update();
+      } else if (mode === 'orbit') {
+        controls.enabled = true;
+        camera.position.set(0, 5, 20);
+        camera.up.set(0, 1, 0);
+        controls.target.set(0, 5, 0);
+        controls.enableRotate = true;
+        controls.maxPolarAngle = Math.PI / 1.8;
+        window.toggleCeiling(false);
+        controls.update();
+      }
+    };
+
+    function resetCamera() {
+      setCamMode('iso');
+    }
+
+    // ─── PUBLIC CONTROLLER APIS ────────────────────────────────────────────
+    window.renderProject = async function (data) {
+      curData = data;
+      let targetData = data;
+      if (data.floors && data.floors.ground) targetData = data.floors.ground;
+      else if (data.floors && data.floors.first) targetData = data.floors.first;
+
+      await rebuildAll(targetData);
+      resetCamera();
+    };
+
+    window.setView = async function (viewName) {
+      if (!curData) return;
+      if (curData.floors && curData.floors[viewName]) {
+        await rebuildAll(curData.floors[viewName]);
+      } else {
+        await rebuildAll(curData);
+      }
+      resetCamera();
+    };
+
+    window.setDoorStyle = function (style) {
+      state.doorStyle = style;
+      if (curData) {
+        let targetData = curData;
+        if (curData.floors && curData.floors.ground) targetData = curData.floors.ground;
+        rebuildAll(targetData);
+      }
+    };
+
+    window.setWindowStyle = function (style) {
+      state.windowStyle = style;
+      if (curData) {
+        let targetData = curData;
+        if (curData.floors && curData.floors.ground) targetData = curData.floors.ground;
+        rebuildAll(targetData);
+      }
+    };
+
+    window.captureScreenshot = function (mode) {
+      const targetMode = mode || 'top';
+      const oldPos = camera.position.clone();
+      const oldUp = camera.up.clone();
+      const oldTarget = controls.target.clone();
+      const oldControlsEnabled = controls.enabled;
+
+      if (targetMode === 'top' || targetMode === 'pdf_top') {
+        const maxDim = Math.max(floorSize.x || 35, floorSize.z || 35);
+        const dist = Math.max(75, maxDim * 2.5);
+        controls.enabled = false;
+        camera.position.set(0, dist, 0);
+        camera.up.set(0, 0, -1);
+        camera.lookAt(0, 0, 0);
+        if (ceilGrp) ceilGrp.visible = false;
+      }
+
+      renderer.render(scene, camera);
+      const dataUrl = renderer.domElement.toDataURL('image/png');
+
+      // Restore user's interactive camera position
+      controls.enabled = oldControlsEnabled;
+      camera.position.copy(oldPos);
+      camera.up.copy(oldUp);
+      controls.target.copy(oldTarget);
+      if (controls.enabled) controls.update();
+      renderer.render(scene, camera);
+
+      return dataUrl;
+    };
+
+    window.setFurnitureVisible = function (visible) {
+      state.furn = visible;
+      updateVisibility();
     };
 
     window.addEventListener('message', e => {
       let d = e.data;
       if (typeof d === 'string' && d.startsWith('{')) try { d = JSON.parse(d); } catch (x) { return; }
-      if (d?.type === 'render' && d.data) renderProject(d.data);
-      if (d?.type === 'set_view' && d.view && window.setView) window.setView(d.view);
+      if (d?.type === 'render' && d.data) window.renderProject(d.data);
+      if (d?.type === 'set_view' && d.view) window.setView(d.view);
+      if (d?.type === 'set_cam_mode' && d.mode) window.setCamMode(d.mode);
+      if (d?.type === 'set_door_style' && d.style) window.setDoorStyle(d.style);
+      if (d?.type === 'set_window_style' && d.style) window.setWindowStyle(d.style);
+      if (d?.type === 'set_furniture_visible') window.setFurnitureVisible(d.visible);
       if (d?.type === 'capture_screenshot') {
-        // Force render one frame then capture
-        renderer.render(scene, camera);
-        try {
-          const dataUrl = renderer.domElement.toDataURL('image/png');
-          window.parent.postMessage(JSON.stringify({ type: 'screenshot_result', data: dataUrl }), '*');
-        } catch (err) {
-          window.parent.postMessage(JSON.stringify({ type: 'screenshot_result', data: null, error: err.message }), '*');
-        }
+        const dataUrl = window.captureScreenshot(d.mode || 'top');
+        window.parent.postMessage(JSON.stringify({ type: 'screenshot_result', data: dataUrl }), '*');
       }
     });
-
-    // For mobile WebView - expose capture function
-    window.captureScreenshot = function() {
-      renderer.render(scene, camera);
-      try {
-        return renderer.domElement.toDataURL('image/png');
-      } catch(e) {
-        return null;
-      }
-    };
 
     init();
     window.parent.postMessage('viewer_ready', '*');

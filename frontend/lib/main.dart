@@ -12,7 +12,7 @@ class PlanXApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Kanavu illam – AI Floor Plan Analyzer',
+      title: 'Kanavu illam',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.dark,
@@ -32,30 +32,7 @@ class PlanXApp extends StatelessWidget {
         ),
       ),
       builder: (context, child) => ResponsiveBreakpoints.builder(
-        child: Builder(
-          builder: (context) {
-            return Container(
-              color: const Color(0xFF0D1B2A),
-              child: MaxWidthBox(
-                maxWidth: 1200,
-                child: ResponsiveScaledBox(
-                  width: ResponsiveValue<double>(
-                    context,
-                    defaultValue:
-                        430, // Default to a standard mobile width (iPhone 14 Pro Max size)
-                    conditionalValues: [
-                      Condition.equals(name: MOBILE, value: 430),
-                      Condition.between(start: 451, end: 800, value: 600),
-                      Condition.between(start: 801, end: 1200, value: 800),
-                      Condition.largerThan(name: DESKTOP, value: 1000),
-                    ],
-                  ).value,
-                  child: BouncingScrollWrapper.builder(context, child!),
-                ),
-              ),
-            );
-          },
-        ),
+        child: BouncingScrollWrapper.builder(context, child!),
         breakpoints: [
           const Breakpoint(start: 0, end: 450, name: MOBILE),
           const Breakpoint(start: 451, end: 800, name: TABLET),

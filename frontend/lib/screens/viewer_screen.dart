@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -10,6 +9,7 @@ import 'js_stub.dart' if (dart.library.html) 'dart:js_interop';
 import 'web_stub.dart' if (dart.library.html) 'dart:ui_web' as ui_web;
 
 import 'web_stub.dart' if (dart.library.html) 'package:web/web.dart' as web;
+import '../widgets/door_window_selector_widget.dart';
 
 class ViewerScreen extends StatefulWidget {
   final Map<String, dynamic> projectData;
@@ -40,9 +40,45 @@ class ViewerScreenState extends State<ViewerScreen> {
   web.HTMLIFrameElement? _webIFrame;
 
   bool _isWebViewReady = false;
+  String _doorStyle = 'glass';
+  String _windowStyle = 'wood';
 
   // Completer to receive screenshot from web iframe
   Completer<String?>? _screenshotCompleter;
+
+  void _updateDoorStyle(String style) {
+    setState(() => _doorStyle = style);
+    if (kIsWeb) {
+      final msg = json.encode({'type': 'set_door_style', 'style': style});
+      _webIFrame?.contentWindow?.postMessage(msg.toJS, '*'.toJS);
+    } else {
+      _mobileController
+          .runJavaScript("if(window.setDoorStyle) setDoorStyle('$style');");
+    }
+  }
+
+  void _updateWindowStyle(String style) {
+    setState(() => _windowStyle = style);
+    if (kIsWeb) {
+      final msg = json.encode({'type': 'set_window_style', 'style': style});
+      _webIFrame?.contentWindow?.postMessage(msg.toJS, '*'.toJS);
+    } else {
+      _mobileController.runJavaScript(
+          "if(window.setWindowStyle) setWindowStyle('$style');");
+    }
+  }
+
+  void _showDoorWindowSelector() {
+    showDialog(
+      context: context,
+      builder: (ctx) => DoorWindowSelectorWidget(
+        currentDoorStyle: _doorStyle,
+        currentWindowStyle: _windowStyle,
+        onDoorStyleChanged: _updateDoorStyle,
+        onWindowStyleChanged: _updateWindowStyle,
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -53,6 +89,30 @@ class ViewerScreenState extends State<ViewerScreen> {
     } else {
       _setupMobileView();
     }
+  }
+
+  @override
+  void didUpdateWidget(ViewerScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.projectData != widget.projectData) {
+      _validationFailed = false;
+      if (kIsWeb) {
+        _sendDataToWeb();
+      } else {
+        _injectData();
+      }
+    }
+  }
+
+  bool _isValidV4Data(Map<String, dynamic>? data) {
+    if (data == null || data.isEmpty) return false;
+    // Accept either the new nested 'floors' structure or the flat structure
+    if (data.containsKey('floors') ||
+        data.containsKey('rooms') ||
+        data.containsKey('walls')) {
+      return true;
+    }
+    return false;
   }
 
   void _setupWebView() {
@@ -69,12 +129,19 @@ class ViewerScreenState extends State<ViewerScreen> {
         ..style.display = 'block'
         ..src = url;
 
-      // When the iframe is ready, it will ping us, and we'll send the data
       web.window.addEventListener(
         'message',
         (web.Event event) {
           final message = event as web.MessageEvent;
-          final raw = message.data.toString();
+
+          String raw = '';
+          try {
+            final dartData = message.data?.dartify();
+            raw = dartData?.toString() ?? '';
+          } catch (e) {
+            // Ignore messages that cannot be dartified (e.g. from extensions)
+          }
+
           if (raw == 'viewer_ready') {
             _sendDataToWeb();
           } else if (raw.startsWith('{')) {
@@ -94,16 +161,31 @@ class ViewerScreenState extends State<ViewerScreen> {
 
     Future.microtask(() {
       if (mounted) setState(() => _isWebViewReady = true);
+
+      // Fallback: forcefully send data just in case the message event was missed or blocked
+      Future.delayed(const Duration(milliseconds: 1000), () {
+        if (mounted) _sendDataToWeb();
+      });
+      Future.delayed(const Duration(milliseconds: 3000), () {
+        if (mounted) _sendDataToWeb();
+      });
     });
   }
 
   void _sendDataToWeb() {
-    if (_webIFrame == null || widget.projectData['model_data'] == null) return;
-    final modelData = widget.projectData['model_data'];
+    if (_webIFrame == null) return;
+    final modelData = widget.projectData['model_data'] as Map<String, dynamic>?;
+
+    if (!_isValidV4Data(modelData)) {
+      setState(() {
+        _validationFailed = true;
+      });
+      return;
+    }
+
     final data = json.encode({'type': 'render', 'data': modelData});
     _webIFrame!.contentWindow?.postMessage(data.toJS, '*'.toJS);
 
-    // Auto-capture after Three.js has had time to render (3 seconds)
     if (widget.onScreenshotReady != null) {
       Future.delayed(const Duration(seconds: 3), _autoCapture);
     }
@@ -126,54 +208,76 @@ class ViewerScreenState extends State<ViewerScreen> {
       );
   }
 
+  bool _validationFailed = false;
+
   void _injectData() {
-    // For mobile WebView only — web uses URL-encoded data
     if (kIsWeb) return;
-    final modelData = widget.projectData['model_data'];
-    final dynamic dataToSend =
-        (modelData != null && modelData is Map && modelData.isNotEmpty)
-            ? modelData
-            : _getDemoModel();
-    final jsonData = json.encode(dataToSend);
+    final modelData = widget.projectData['model_data'] as Map<String, dynamic>?;
+
+    if (!_isValidV4Data(modelData)) {
+      setState(() {
+        _validationFailed = true;
+      });
+      return;
+    }
+
+    final jsonData = json.encode(modelData);
     _mobileController.runJavaScript('window.renderProject($jsonData);');
+
     if (widget.isElevation) {
       Future.delayed(const Duration(milliseconds: 400), () {
-        _mobileController.runJavaScript(
-          "if(window.setView) setView('elevation');",
-        );
+        _mobileController
+            .runJavaScript("if(window.setView) setView('elevation');");
       });
     } else if (widget.isStructural) {
       Future.delayed(const Duration(milliseconds: 400), () {
-        _mobileController.runJavaScript(
-          "if(window.setView) setView('structural');",
-        );
+        _mobileController
+            .runJavaScript("if(window.setView) setView('structural');");
       });
     }
 
-    // Auto-capture after Three.js has had time to render (3 seconds)
     if (widget.onScreenshotReady != null) {
       Future.delayed(const Duration(seconds: 3), _autoCapture);
     }
   }
 
-  /// Called automatically after render to capture and store the 3D view
   Future<void> _autoCapture() async {
     if (!mounted) return;
     final bytes = await captureScreenshot();
     if (bytes != null && mounted) {
-      debugPrint('[ViewerScreen] Auto-captured 3D screenshot: ${bytes.length} bytes');
+      debugPrint(
+          '[ViewerScreen] Auto-captured 3D screenshot: ${bytes.length} bytes');
       widget.onScreenshotReady?.call(bytes);
     }
   }
 
-  /// Automatically switches to each floor view, waits, and captures the screenshot.
+  Future<void> setCameraMode(String mode) async {
+    if (!_isWebViewReady) return;
+    try {
+      if (kIsWeb) {
+        final msg = json.encode({'type': 'set_cam_mode', 'mode': mode});
+        _webIFrame?.contentWindow?.postMessage(msg.toJS, '*'.toJS);
+      } else {
+        await _mobileController
+            .runJavaScript("if(window.setCamMode) setCamMode('$mode');");
+      }
+    } catch (e) {
+      debugPrint('[ViewerScreen] setCameraMode error: $e');
+    }
+  }
+
+  /// Automatically switches to 3D Top View for PDF, captures screenshots, and restores view.
   Future<Map<String, Uint8List>> captureAllFloorScreenshots() async {
     if (!_isWebViewReady) return {};
-    
+
     Map<String, Uint8List> result = {};
     final modelData = widget.projectData['model_data'];
     final floors = modelData?['floors'] as Map<String, dynamic>?;
-    
+
+    // Force 3D Top View camera mode for clean PDF export
+    await setCameraMode('top');
+    await Future.delayed(const Duration(milliseconds: 500));
+
     if (floors != null && floors.keys.length > 1) {
       for (var floor in floors.keys) {
         try {
@@ -181,43 +285,49 @@ class ViewerScreenState extends State<ViewerScreen> {
             final msg = json.encode({'type': 'set_view', 'view': floor});
             _webIFrame?.contentWindow?.postMessage(msg.toJS, '*'.toJS);
           } else {
-            await _mobileController.runJavaScript("if(window.setView) setView('$floor');");
+            await _mobileController
+                .runJavaScript("if(window.setView) setView('$floor');");
           }
         } catch (_) {}
-        
-        await Future.delayed(const Duration(milliseconds: 1200));
+
+        await Future.delayed(const Duration(milliseconds: 800));
+        await setCameraMode('top');
+        await Future.delayed(const Duration(milliseconds: 400));
+
         final bytes = await captureScreenshot();
         if (bytes != null) result[floor] = bytes;
       }
-      
+
       // Reset view to stacked after capturing
       try {
         if (kIsWeb) {
           final msg = json.encode({'type': 'set_view', 'view': 'stacked'});
           _webIFrame?.contentWindow?.postMessage(msg.toJS, '*'.toJS);
         } else {
-          await _mobileController.runJavaScript("if(window.setView) setView('stacked');");
+          await _mobileController
+              .runJavaScript("if(window.setView) setView('stacked');");
         }
       } catch (_) {}
-      
     } else {
-      // Single floor
+      // Single floor: capture clean top view
       final bytes = await captureScreenshot();
       if (bytes != null) result['default'] = bytes;
     }
-    
+
+    // Restore interactive camera view (isometric) for user
+    await setCameraMode('iso');
+
     return result;
   }
 
-  /// Captures the current 3D view as PNG bytes.
-  /// Call this from shell_screen to get the 3D screenshot for PDF.
-  Future<Uint8List?> captureScreenshot() async {
+  /// Captures the 3D view as PNG bytes (defaulting to Top View for PDF).
+  Future<Uint8List?> captureScreenshot({String mode = 'top'}) async {
     if (!_isWebViewReady) return null;
     try {
       if (kIsWeb) {
         // Send capture request to iframe, await response via Completer
         _screenshotCompleter = Completer<String?>();
-        final msg = json.encode({'type': 'capture_screenshot'});
+        final msg = json.encode({'type': 'capture_screenshot', 'mode': mode});
         _webIFrame?.contentWindow?.postMessage(msg.toJS, '*'.toJS);
         final dataUrl = await _screenshotCompleter!.future
             .timeout(const Duration(seconds: 5), onTimeout: () => null);
@@ -225,9 +335,9 @@ class ViewerScreenState extends State<ViewerScreen> {
         final base64Str = dataUrl.split(',').last;
         return base64Decode(base64Str);
       } else {
-        // Mobile: call JS captureScreenshot() and decode result
+        // Mobile: call JS captureScreenshot('top') and decode result
         final result = await _mobileController.runJavaScriptReturningResult(
-            'window.captureScreenshot()') as String?;
+            "window.captureScreenshot('$mode')") as String?;
         if (result == null || result == 'null') return null;
         // result may be quoted JSON string like "data:image/png;base64,..."
         String dataUrl = result;
@@ -287,6 +397,34 @@ class ViewerScreenState extends State<ViewerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_validationFailed) {
+      return Container(
+        color: Colors.white,
+        child: const Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.error_outline, color: Colors.red, size: 48),
+              SizedBox(height: 16),
+              Text(
+                'Invalid Architectural Model Data',
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'The geometry layout could not be verified. Please re-run the layout processor.',
+                style: TextStyle(fontSize: 14, color: Colors.black54),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     final modelData = widget.projectData['model_data'] as Map<String, dynamic>?;
     final floors = modelData?['floors'] as Map<String, dynamic>?;
     int roomCount = 0;
@@ -311,77 +449,77 @@ class ViewerScreenState extends State<ViewerScreen> {
           if (!widget.isStructural)
             Padding(
               padding: const EdgeInsets.fromLTRB(28, 28, 28, 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.view_in_ar_rounded,
-                      color: Color.fromARGB(255, 0, 200, 183),
-                      size: 22,
-                    ),
-                    const SizedBox(width: 10),
-                    const Text(
-                      '3D Visualization',
-                      style: TextStyle(
-                        color: Color.fromARGB(255, 0, 0, 0),
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.view_in_ar_rounded,
+                        color: Color.fromARGB(255, 0, 200, 183),
+                        size: 22,
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Wrap(
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  spacing: 12,
-                  runSpacing: 8,
-                  children: [
-                    const Text(
-                      'Professional Isometric Rendering',
-                      style: TextStyle(
-                        color: Color.fromARGB(255, 0, 167, 125),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    if (roomCount > 0)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
+                      const SizedBox(width: 10),
+                      const Text(
+                        '3D Visualization',
+                        style: TextStyle(
+                          color: Color.fromARGB(255, 0, 0, 0),
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
                         ),
-                        decoration: BoxDecoration(
-                          color: const Color.fromARGB(
-                            255,
-                            177,
-                            177,
-                            177,
-                          ).withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 12,
+                    runSpacing: 8,
+                    children: [
+                      const Text(
+                        'Professional Isometric Rendering',
+                        style: TextStyle(
+                          color: Color.fromARGB(255, 0, 167, 125),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      if (roomCount > 0)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
                             color: const Color.fromARGB(
                               255,
-                              0,
-                              180,
-                              135,
-                            ).withValues(alpha: 0.3),
+                              177,
+                              177,
+                              177,
+                            ).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: const Color.fromARGB(
+                                255,
+                                0,
+                                180,
+                                135,
+                              ).withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Text(
+                            '— $roomCount room${roomCount == 1 ? '' : 's'} detected',
+                            style: const TextStyle(
+                              color: Color.fromARGB(255, 0, 0, 0),
+                              fontSize: 12,
+                            ),
                           ),
                         ),
-                        child: Text(
-                          '— $roomCount room${roomCount == 1 ? '' : 's'} detected',
-                          style: const TextStyle(
-                            color: Color.fromARGB(255, 0, 0, 0),
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
 
           // ── 3D WebView ──────────────────────────────────────────────────────────
           Expanded(
@@ -400,7 +538,7 @@ class ViewerScreenState extends State<ViewerScreen> {
                       ),
                     ),
 
-                  // ── Vastu Floating Button ──────────────────────────────────
+
                 ],
               ),
             ),

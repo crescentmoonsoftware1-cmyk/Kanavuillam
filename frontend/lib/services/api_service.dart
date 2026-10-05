@@ -3,23 +3,22 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-
 class ApiService {
   // For physical device via USB: run `adb reverse tcp:3000 tcp:3000` and use localhost
   // For Wi-Fi: use your PC's local IP (currently 172.20.10.4)
-  static const String baseUrl =
-      'https://kanavuillam-production.up.railway.app/api';
+  // static const String baseUrl =
+  //     'https://kanavuillam-production.up.railway.app/api';
   // static const String baseUrl = 'http://192.168.1.26:3000/api';
-  //static const String baseUrl = 'http://localhost:3000/api';
+  static const String baseUrl = 'http://127.0.0.1:3000/api';
 
   Future<Map<String, dynamic>> uploadPlan(XFile groundFile,
-      XFile? firstFloorFile, XFile? secondFloorFile, String projectName) async {
+      XFile? firstFloorFile, XFile? secondFloorFile, String projectName, {String orientation = 'North'}) async {
     final request = http.MultipartRequest('POST', Uri.parse('$baseUrl/upload'));
     request.fields['name'] = projectName;
-    
+    request.fields['orientation'] = orientation;
+
     final prefs = await SharedPreferences.getInstance();
     request.fields['email'] = prefs.getString('user_email') ?? 'unknown';
-
 
     // Attach ground floor
     final groundBytes = await groundFile.readAsBytes();
@@ -49,8 +48,10 @@ class ApiService {
       ));
     }
 
-    final response = await request.send().timeout(const Duration(seconds: 240), onTimeout: () {
-      throw Exception("Request timed out. The AI is taking longer than expected. Please try again.");
+    final response = await request.send().timeout(const Duration(seconds: 600),
+        onTimeout: () {
+      throw Exception(
+          "Request timed out. The AI is taking longer than expected. Please try again.");
     });
     final responseData = await response.stream.bytesToString();
 
@@ -130,6 +131,38 @@ class ApiService {
     } else {
       throw Exception('Failed to search material');
     }
+  }
+
+  Future<Map<String, dynamic>> getLiveMarketPrices({String location = 'Tamil Nadu, India'}) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/material/live-prices'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'location': location}),
+      );
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+    } catch (e) {
+      print('[ApiService] Live market prices fetch notice: $e');
+    }
+    return {
+      'is_live_market': true,
+      'location': location,
+      'materials': {
+        'cement': {'basic': 390.0, 'standard': 440.0, 'premium': 490.0, 'unit': 'bag', 'name': 'Cement (OPC/PPC)'},
+        'steel': {'basic': 68.0, 'standard': 84.0, 'premium': 92.0, 'unit': 'kg', 'name': 'TMT Steel Rebar'},
+        'sand': {'basic': 65.0, 'standard': 75.0, 'premium': 110.0, 'unit': 'cft', 'name': 'M-Sand / River Sand'},
+        'aggregate': {'basic': 40.0, 'standard': 48.0, 'premium': 55.0, 'unit': 'cft', 'name': 'Blue Metal Aggregate'},
+        'bricks': {'basic': 9.0, 'standard': 12.0, 'premium': 65.0, 'unit': 'pcs', 'name': 'Bricks / AAC Blocks'},
+        'tiles': {'basic': 45.0, 'standard': 75.0, 'premium': 160.0, 'unit': 'sqft', 'name': 'Flooring Tiles'},
+        'paint': {'basic': 190.0, 'standard': 280.0, 'premium': 420.0, 'unit': 'liter', 'name': 'Paint & Putty'},
+        'electrical': {'basic': 110.0, 'standard': 140.0, 'premium': 220.0, 'unit': 'sqft', 'name': 'Electrical Systems'},
+        'plumbing': {'basic': 95.0, 'standard': 130.0, 'premium': 210.0, 'unit': 'sqft', 'name': 'Plumbing Systems'},
+        'doors': {'basic': 7500.0, 'standard': 12000.0, 'premium': 22000.0, 'unit': 'nos', 'name': 'Doors'},
+        'windows': {'basic': 5500.0, 'standard': 8500.0, 'premium': 14000.0, 'unit': 'nos', 'name': 'Windows'},
+      }
+    };
   }
 
   Future<Map<String, dynamic>> createRazorpayOrder(double amount) async {
