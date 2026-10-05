@@ -191,15 +191,18 @@ class _SecurePaymentScreenState extends State<SecurePaymentScreen> {
   }
 
   Widget _buildStepper() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _stepItem(1, 'Order', true),
-        _stepDivider(true),
-        _stepItem(2, 'Payment', true),
-        _stepDivider(false),
-        _stepItem(3, 'Review', false),
-      ],
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _stepItem(1, 'Order', true),
+          _stepDivider(true),
+          _stepItem(2, 'Payment', true),
+          _stepDivider(false),
+          _stepItem(3, 'Review', false),
+        ],
+      ),
     );
   }
 
@@ -207,8 +210,8 @@ class _SecurePaymentScreenState extends State<SecurePaymentScreen> {
     return Column(
       children: [
         Container(
-          width: 32,
-          height: 32,
+          width: 28,
+          height: 28,
           decoration: BoxDecoration(
             color: active ? const Color(0xFF2979FF) : const Color(0xFFF1F5F9),
             shape: BoxShape.circle,
@@ -218,18 +221,18 @@ class _SecurePaymentScreenState extends State<SecurePaymentScreen> {
               num.toString(),
               style: TextStyle(
                 color: active ? Colors.white : const Color(0xFF94A3B8),
-                fontSize: 14,
+                fontSize: 13,
                 fontWeight: FontWeight.w600,
               ),
             ),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Text(
           label,
           style: TextStyle(
             color: active ? const Color(0xFF2979FF) : const Color(0xFF64748B),
-            fontSize: 12,
+            fontSize: 11,
             fontWeight: active ? FontWeight.bold : FontWeight.w500,
           ),
         ),
@@ -239,9 +242,9 @@ class _SecurePaymentScreenState extends State<SecurePaymentScreen> {
 
   Widget _stepDivider(bool active) {
     return Container(
-      width: 40,
+      width: 24,
       height: 2,
-      margin: const EdgeInsets.only(bottom: 24, left: 12, right: 12),
+      margin: const EdgeInsets.only(bottom: 20, left: 6, right: 6),
       decoration: BoxDecoration(
         color: active ? const Color(0xFF2979FF) : const Color(0xFFE2E8F0),
         borderRadius: BorderRadius.circular(1),
@@ -251,10 +254,10 @@ class _SecurePaymentScreenState extends State<SecurePaymentScreen> {
 
   Widget _buildOrderSummary() {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.grey.shade100),
         boxShadow: [
           BoxShadow(
@@ -271,65 +274,68 @@ class _SecurePaymentScreenState extends State<SecurePaymentScreen> {
             children: [
               Container(
                 padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEEF2FF),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFEEF2FF),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.receipt_long_rounded,
                     color: Color(0xFF2979FF), size: 18),
               ),
-              const SizedBox(width: 12),
-              const Text(
-                'ORDER SUMMARY',
-                style: TextStyle(
-                  color: Color(0xFF1E293B),
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.5,
+              const SizedBox(width: 10),
+              const Flexible(
+                child: Text(
+                  'ORDER SUMMARY',
+                  style: TextStyle(
+                    color: Color(0xFF1E293B),
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.3,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               Text(
                 '#PXN-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}',
                 style: const TextStyle(
                     color: Color(0xFF94A3B8),
-                    fontSize: 11,
+                    fontSize: 10.5,
                     fontWeight: FontWeight.w500),
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           ...widget.selectedItems.map((item) {
-            String price = '₹299';
-            final id = item.toLowerCase();
-            if (id.contains('3d')) {
-              price = '₹499';
-            } else if (id.contains('vastu'))
-              price = '₹299';
-            else if (id.contains('cost'))
-              price = '₹199';
-            else if (id.contains('structural'))
-              price = '₹999';
-            else if (id.contains('elevation')) price = '₹799';
-
             return Padding(
-              padding: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.only(bottom: 12),
               child: Row(
                 children: [
-                  Text(
-                    item.toUpperCase(),
-                    style: const TextStyle(
-                        color: Color(0xFF475569),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600),
+                  Expanded(
+                    child: Text(
+                      item.toUpperCase(),
+                      style: const TextStyle(
+                          color: Color(0xFF475569),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                  const Spacer(),
-                  Text(
-                    price,
-                    style: const TextStyle(
-                      color: Color(0xFF1E293B),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE8F5E9),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      'INCLUDED ✓',
+                      style: TextStyle(
+                        color: Color(0xFF16A34A),
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
@@ -337,10 +343,10 @@ class _SecurePaymentScreenState extends State<SecurePaymentScreen> {
             );
           }),
           const Padding(
-            padding: EdgeInsets.symmetric(vertical: 8),
+            padding: EdgeInsets.symmetric(vertical: 6),
             child: Divider(color: Color(0xFFF1F5F9), thickness: 1.5),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -348,7 +354,7 @@ class _SecurePaymentScreenState extends State<SecurePaymentScreen> {
                 'TOTAL AMOUNT',
                 style: TextStyle(
                   color: Color(0xFF1E293B),
-                  fontSize: 15,
+                  fontSize: 14,
                   fontWeight: FontWeight.w900,
                 ),
               ),
@@ -356,7 +362,7 @@ class _SecurePaymentScreenState extends State<SecurePaymentScreen> {
                 '₹${widget.amount.toInt()}',
                 style: const TextStyle(
                   color: Color(0xFF2979FF),
-                  fontSize: 28,
+                  fontSize: 26,
                   fontWeight: FontWeight.w900,
                   letterSpacing: -0.5,
                 ),

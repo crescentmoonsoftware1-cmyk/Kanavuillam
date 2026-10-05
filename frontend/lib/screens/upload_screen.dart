@@ -70,19 +70,19 @@ class _UploadScreenState extends State<UploadScreen> {
       barrierColor: Colors.black.withValues(alpha: 0.6),
       builder: (dialogCtx) => PlanXReportPopup(
         onContinue: (selectedIds) {
-          final totalAmount = (selectedIds.contains('3d') ? 499.0 : 0.0) +
-              (selectedIds.contains('vastu') ? 299.0 : 0.0) +
-              (selectedIds.contains('cost') ? 199.0 : 0.0) +
-              (selectedIds.contains('structural') ? 999.0 : 0.0) +
-              (selectedIds.contains('elevation') ? 799.0 : 0.0);
+          const totalAmount = 500.0;
 
           Navigator.push(
             context,
             MaterialPageRoute(
               builder: (_) => SecurePaymentScreen(
                 amount: totalAmount,
-                selectedItems:
-                    selectedIds.map((id) => id.toUpperCase()).toList(),
+                selectedItems: const [
+                  '3D VISUALIZATION',
+                  'VASTU ANALYSIS',
+                  'COST ESTIMATION',
+                  'STRUCTURAL DESIGN'
+                ],
                 onFinish: () {
                   widget.onStartGeneration?.call(
                     _groundFile!,
@@ -836,13 +836,18 @@ class _UploadScreenState extends State<UploadScreen> {
                                   color: Color(0xFF0F172A),
                                   size: 18,
                                 ),
-                                SizedBox(width: 8),
-                                Text(
-                                  'Generate 3D & Project Reports',
-                                  style: TextStyle(
-                                    color: Color(0xFF0F172A),
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold,
+                                SizedBox(width: 6),
+                                Flexible(
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      'Generate 3D & Project Reports',
+                                      style: TextStyle(
+                                        color: Color(0xFF0F172A),
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ],
@@ -926,7 +931,7 @@ class _UploadScreenState extends State<UploadScreen> {
       physics: const NeverScrollableScrollPhysics(),
       crossAxisSpacing: 12,
       mainAxisSpacing: 12,
-      childAspectRatio: 0.61,
+      childAspectRatio: 0.57,
       children: [
         _build3DWalkthroughCard(),
         _buildVastuScoreCard(),

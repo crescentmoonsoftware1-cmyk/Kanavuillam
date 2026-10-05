@@ -32,84 +32,88 @@ class _PlanXReportPopupState extends State<PlanXReportPopup> {
   final List<ReportOption> _options = [
     ReportOption(
       id: '3d',
-      title: '3D View Visualization',
-      description: 'Realistic 3D model of your home',
-      price: 499,
+      title: '3D View Model',
+      description: 'Realistic 3D model visualization',
+      price: 500,
       icon: Icons.view_in_ar_rounded,
       iconColor: const Color(0xFF2979FF),
     ),
     ReportOption(
       id: 'vastu',
       title: 'Vastu Analysis',
-      description: 'AI-powered vastu score & tips',
-      price: 299,
+      description: 'Orientation & alignment check',
+      price: 500,
       icon: Icons.explore_rounded,
       iconColor: Colors.orange,
     ),
     ReportOption(
       id: 'cost',
       title: 'Cost Estimation',
-      description: 'Detailed construction cost estimation',
-      price: 199,
+      description: 'Material & labor cost breakdown',
+      price: 500,
       icon: Icons.calculate_rounded,
       iconColor: Colors.green,
     ),
     ReportOption(
       id: 'structural',
       title: 'Structural Design',
-      description: 'Structural analysis & safety report',
-      price: 999,
+      description: 'Structural safety specs & design',
+      price: 500,
       icon: Icons.architecture_rounded,
       iconColor: Colors.deepPurple,
     ),
   ];
 
-  final Set<String> _selectedIds = {'3d', 'vastu'}; // Default selections
-
-  int get _totalPrice => _options
-      .where((opt) => _selectedIds.contains(opt.id))
-      .fold(0, (sum, opt) => sum + opt.price);
+  final Set<String> _selectedIds = {'3d', 'vastu', 'cost', 'structural', 'elevation'};
+  final int _totalPrice = 500; // Fixed total amount for all projects
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    final dialogWidth = screenSize.width > 500 ? 460.0 : screenSize.width * 0.92;
+
     return BackdropFilter(
       filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
       child: Center(
         child: Container(
-          width: MediaQuery.of(context).size.width * 0.9,
+          width: dialogWidth,
           constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.85,
+            maxHeight: screenSize.height * 0.90,
           ),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(30),
+            borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 40,
-                spreadRadius: 5,
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 30,
+                spreadRadius: 2,
               ),
             ],
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildTopSection(),
-              Flexible(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 36),
-                  child: _buildGrid(),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildTopSection(),
+                Flexible(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: _buildGrid(),
+                  ),
                 ),
-              ),
-              _buildBottomSection(),
-            ],
+                _buildBottomSection(),
+              ],
+            ),
           ),
         )
             .animate()
             .scale(
-              duration: 400.ms,
+              duration: 350.ms,
               curve: Curves.easeOutBack,
-              begin: const Offset(0.8, 0.8),
+              begin: const Offset(0.9, 0.9),
             )
             .fadeIn(),
       ),
@@ -118,11 +122,12 @@ class _PlanXReportPopupState extends State<PlanXReportPopup> {
 
   Widget _buildTopSection() {
     return Padding(
-      padding: const EdgeInsets.only(top: 32.0, left: 24, right: 24, bottom: 16),
+      padding: const EdgeInsets.only(top: 20.0, left: 16, right: 16, bottom: 12),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(10),
             decoration: const BoxDecoration(
               color: Color(0xFFE8F5E9),
               shape: BoxShape.circle,
@@ -130,27 +135,37 @@ class _PlanXReportPopupState extends State<PlanXReportPopup> {
             child: const Icon(
               Icons.check_rounded,
               color: Color(0xFF4ADE80),
-              size: 40,
+              size: 32,
             ),
-          ).animate().scale(duration: 400.ms, curve: Curves.easeOutBack),
-          const SizedBox(height: 16),
+          ).animate().scale(duration: 350.ms, curve: Curves.easeOutBack),
+          const SizedBox(height: 10),
           const Text(
             'Floor Plan Uploaded!',
             style: TextStyle(
               color: Color(0xFF1E293B),
-              fontSize: 22,
+              fontSize: 19,
               fontWeight: FontWeight.bold,
-              letterSpacing: 0.5,
+              letterSpacing: 0.3,
             ),
           ),
-          const SizedBox(height: 8),
-          const Text(
-            'Choose the pages you want to generate.\nPay only for what you select.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Color(0xFF64748B),
-              fontSize: 13,
-              height: 1.4,
+          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEEF2FF),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                '✨ All Reports & Features Automatically Included',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Color(0xFF2979FF),
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ),
         ],
@@ -165,170 +180,156 @@ class _PlanXReportPopupState extends State<PlanXReportPopup> {
       itemCount: _options.length,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 0.72,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+        childAspectRatio: 0.75, // Smaller ratio = taller card height (prevents bottom overflow)
       ),
       itemBuilder: (context, index) {
         final opt = _options[index];
-        final isSelected = _selectedIds.contains(opt.id);
-        return GestureDetector(
-          onTap: () {
-            setState(() {
-              if (isSelected) {
-                if (_selectedIds.length > 1) _selectedIds.remove(opt.id);
-              } else {
-                _selectedIds.add(opt.id);
-              }
-            });
-          },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isSelected ? const Color(0xFFF8FAFC) : Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: isSelected
-                    ? const Color(0xFF2979FF)
-                    : Colors.grey.shade200,
-                width: 1.5,
-              ),
-              boxShadow: isSelected
-                  ? [
-                      BoxShadow(
-                        color: const Color(0xFF2979FF).withValues(alpha: 0.08),
-                        blurRadius: 15,
-                        spreadRadius: -2,
-                      )
-                    ]
-                  : null,
+        return Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: const Color(0xFF2979FF),
+              width: 1.5,
             ),
-            child: Stack(
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: opt.iconColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(opt.icon, color: opt.iconColor, size: 24),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      opt.title,
-                      style: const TextStyle(
-                        color: Color(0xFF1E293B),
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        height: 1.2,
-                        letterSpacing: -0.2,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      opt.description,
-                      style: const TextStyle(
-                        color: Color(0xFF64748B),
-                        fontSize: 10,
-                        height: 1.3,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const Spacer(),
-                    Text(
-                      '₹${opt.price}',
-                      style: TextStyle(
-                        color: opt.id == '3d' ? const Color(0xFF2979FF) : opt.iconColor,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                  ],
-                ),
-                Positioned(
-                  top: 0,
-                  right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF2979FF).withValues(alpha: 0.06),
+                blurRadius: 10,
+                spreadRadius: -2,
+              )
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(7),
                     decoration: BoxDecoration(
-                      color: isSelected
-                          ? const Color(0xFF2979FF)
-                          : Colors.transparent,
+                      color: opt.iconColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(opt.icon, color: opt.iconColor, size: 20),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF2979FF),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(
+                    child: const Icon(
                       Icons.check,
-                      size: 14,
-                      color: isSelected ? Colors.white : Colors.transparent,
+                      size: 12,
+                      color: Colors.white,
                     ),
                   ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                opt.title,
+                style: const TextStyle(
+                  color: Color(0xFF1E293B),
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  height: 1.15,
                 ),
-              ],
-            ),
-          )
-              .animate()
-              .fadeIn(delay: (index * 50).ms, duration: 400.ms)
-              .slideY(begin: 0.1, end: 0),
-        );
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 3),
+              Text(
+                opt.description,
+                style: const TextStyle(
+                  color: Color(0xFF64748B),
+                  fontSize: 9.5,
+                  height: 1.2,
+                  fontWeight: FontWeight.w500,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4ADE80).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text(
+                  'INCLUDED ✓',
+                  style: TextStyle(
+                    color: Color(0xFF16A34A),
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        )
+            .animate()
+            .fadeIn(delay: (index * 40).ms, duration: 300.ms)
+            .slideY(begin: 0.08, end: 0);
       },
     );
   }
 
   Widget _buildBottomSection() {
     return Container(
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(30)),
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            offset: const Offset(0, -5),
+            color: Colors.black.withValues(alpha: 0.04),
+            offset: const Offset(0, -4),
             blurRadius: 10,
           )
         ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Left Box
+              // Left Summary Box
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF8FAFC),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade100),
+                    border: Border.all(color: Colors.grey.shade200),
                   ),
                   child: Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
                           color: const Color(0xFF2979FF).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(Icons.shopping_bag_outlined, color: Color(0xFF2979FF), size: 18),
+                        child: const Icon(Icons.stars_rounded, color: Color(0xFF2979FF), size: 16),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 6),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              '${_selectedIds.length} Services Selected',
-                              style: const TextStyle(
+                            const Text(
+                              'Full Package Deal',
+                              style: TextStyle(
                                 color: Color(0xFF64748B),
-                                fontSize: 11,
+                                fontSize: 10,
                                 fontWeight: FontWeight.w500,
                               ),
                               maxLines: 1,
@@ -341,14 +342,14 @@ class _PlanXReportPopupState extends State<PlanXReportPopup> {
                                 children: [
                                   const Text(
                                     'Total: ',
-                                    style: TextStyle(color: Color(0xFF1E293B), fontSize: 14, fontWeight: FontWeight.bold),
+                                    style: TextStyle(color: Color(0xFF1E293B), fontSize: 12, fontWeight: FontWeight.bold),
                                   ),
                                   Text(
                                     '₹$_totalPrice',
                                     style: const TextStyle(
                                       color: Color(0xFF2979FF),
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.w900,
                                     ),
                                   ),
                                 ],
@@ -361,84 +362,92 @@ class _PlanXReportPopupState extends State<PlanXReportPopup> {
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
-              // Right Box
+              const SizedBox(width: 8),
+              // Right Security Box
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade200),
                   ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.green.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(5),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.security, color: Colors.green, size: 14),
                       ),
-                      child: const Icon(Icons.security, color: Colors.green, size: 16),
-                    ),
-                    const SizedBox(width: 6),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Secure Payment',
-                            style: TextStyle(
-                              color: Color(0xFF64748B),
-                              fontSize: 10,
+                      const SizedBox(width: 6),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Secure Payment',
+                              style: TextStyle(
+                                color: Color(0xFF1E293B),
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          Text(
-                            '100% Protected',
-                            style: TextStyle(
-                              color: Color(0xFF64748B),
-                              fontSize: 10,
+                            Text(
+                              '100% Protected',
+                              style: TextStyle(
+                                color: Color(0xFF64748B),
+                                fontSize: 9,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-               ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 14),
           SizedBox(
             width: double.infinity,
-            height: 56,
+            height: 50,
             child: ElevatedButton(
               onPressed: () => widget.onContinue(_selectedIds),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF2979FF),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    'Continue to Payment',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.5,
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        'Continue to Payment (₹$_totalPrice)',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
                     ),
                   ),
-                  SizedBox(width: 10),
-                  Icon(Icons.arrow_forward_rounded, size: 20),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.arrow_forward_rounded, size: 18),
                 ],
               ),
             ),
