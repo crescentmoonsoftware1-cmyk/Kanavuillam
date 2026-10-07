@@ -1015,13 +1015,31 @@
       // CV (x, y) -> World (X, 0, Z)
       // 1 unit = 1 foot
 
+      function getPtX(pt) {
+        if (!pt) return 0;
+        if (typeof pt.x === 'number') return pt.x;
+        if (Array.isArray(pt) && typeof pt[0] === 'number') return pt[0];
+        if (typeof pt.x === 'string') return parseFloat(pt.x) || 0;
+        if (Array.isArray(pt) && typeof pt[0] === 'string') return parseFloat(pt[0]) || 0;
+        return 0;
+      }
+
+      function getPtY(pt) {
+        if (!pt) return 0;
+        if (typeof pt.y === 'number') return pt.y;
+        if (Array.isArray(pt) && typeof pt[1] === 'number') return pt[1];
+        if (typeof pt.y === 'string') return parseFloat(pt.y) || 0;
+        if (Array.isArray(pt) && typeof pt[1] === 'string') return parseFloat(pt[1]) || 0;
+        return 0;
+      }
+
       let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
-      const isCanonical = data.schema_version === "1.0" || data.schema_version === "2.0";
+      const isCanonical = data.schema_version === "1.0" || data.schema_version === "2.0" || (curData && (curData.schema_version === "1.0" || curData.schema_version === "2.0"));
 
       (data.rooms || []).forEach(r => {
         (r.polygon || []).forEach(pt => {
-          const px = isCanonical ? pt.x : pt[0];
-          const pz = isCanonical ? pt.y : pt[1];
+          const px = getPtX(pt);
+          const pz = getPtY(pt);
           if (px < minX) minX = px; if (px > maxX) maxX = px;
           if (pz < minZ) minZ = pz; if (pz > maxZ) maxZ = pz;
         });
@@ -1040,10 +1058,11 @@
       // Calculate plot outer boundaries and indoor house room bounding box
       let plotMinX = Infinity, plotMaxX = -Infinity, plotMinZ = Infinity, plotMaxZ = -Infinity;
       (data.walls || []).forEach(w => {
-        const sx = (isCanonical ? w.start.x : w.start[0]) - cx;
-        const sz = (isCanonical ? w.start.y : w.start[1]) - cz;
-        const ex = (isCanonical ? w.end.x : w.end[0]) - cx;
-        const ez = (isCanonical ? w.end.y : w.end[1]) - cz;
+        if (!w.start || !w.end) return;
+        const sx = getPtX(w.start) - cx;
+        const sz = getPtY(w.start) - cz;
+        const ex = getPtX(w.end) - cx;
+        const ez = getPtY(w.end) - cz;
         if (sx < plotMinX) plotMinX = sx; if (sx > plotMaxX) plotMaxX = sx;
         if (ex < plotMinX) plotMinX = ex; if (ex > plotMaxX) plotMaxX = ex;
         if (sz < plotMinZ) plotMinZ = sz; if (sz > plotMaxZ) plotMaxZ = sz;
@@ -1064,8 +1083,8 @@
 
         if (isIndoor && !isOutdoor) {
           (r.polygon || []).forEach(pt => {
-            const px = (isCanonical ? pt.x : pt[0]) - cx;
-            const pz = (isCanonical ? pt.y : pt[1]) - cz;
+            const px = getPtX(pt) - cx;
+            const pz = getPtY(pt) - cz;
             if (px < houseMinX) houseMinX = px; if (px > houseMaxX) houseMaxX = px;
             if (pz < houseMinZ) houseMinZ = pz; if (pz > houseMaxZ) houseMaxZ = pz;
           });
@@ -1121,10 +1140,10 @@
           for (let i = 0; i < r.polygon.length; i++) {
             const p1 = r.polygon[i];
             const p2 = r.polygon[(i + 1) % r.polygon.length];
-            const p1x = isCanonical ? p1.x : p1[0];
-            const p1y = isCanonical ? p1.y : p1[1];
-            const p2x = isCanonical ? p2.x : p2[0];
-            const p2y = isCanonical ? p2.y : p2[1];
+            const p1x = getPtX(p1);
+            const p1y = getPtY(p1);
+            const p2x = getPtX(p2);
+            const p2y = getPtY(p2);
             const len = Math.hypot(p2x - p1x, p2y - p1y);
             if (len > maxLen) {
               maxLen = len;
@@ -1157,8 +1176,8 @@
         const category = op.openingCategory || 'window';
 
         if (op.position) {
-          const cx_pos = op.position.x - cx;
-          const cz_pos = op.position.y - cz;
+          const cx_pos = getPtX(op.position) - cx;
+          const cz_pos = getPtY(op.position) - cz;
           len = op.width_ft || op.width || 3.0;
 
           let bestWall = null;
@@ -1169,10 +1188,10 @@
           let bestSnapZ = cz_pos;
 
           (data.walls || []).forEach(w => {
-            const wsx = w.start ? (isCanonical ? w.start.x - cx : w.start[0] - cx) : w.sx;
-            const wsz = w.start ? (isCanonical ? w.start.y - cz : w.start[1] - cz) : w.sz;
-            const wex = w.end ? (isCanonical ? w.end.x - cx : w.end[0] - cx) : w.ex;
-            const wez = w.end ? (isCanonical ? w.end.y - cz : w.end[1] - cz) : w.ez;
+            const wsx = w.start ? (getPtX(w.start) - cx) : (w.sx || 0);
+            const wsz = w.start ? (getPtY(w.start) - cz) : (w.sz || 0);
+            const wex = w.end ? (getPtX(w.end) - cx) : (w.ex || 0);
+            const wez = w.end ? (getPtY(w.end) - cz) : (w.ez || 0);
 
             const wdx = wex - wsx, wdz = wez - wsz;
             const wLenSq = wdx * wdx + wdz * wdz;
@@ -1212,10 +1231,10 @@
             ex = cx_pos + len / 2; ez = cz_pos;
           }
         } else if (op.start && op.end) {
-          sx = (isCanonical ? op.start.x : op.start[0]) - cx;
-          sz = (isCanonical ? op.start.y : op.start[1]) - cz;
-          ex = (isCanonical ? op.end.x : op.end[0]) - cx;
-          ez = (isCanonical ? op.end.y : op.end[1]) - cz;
+          sx = getPtX(op.start) - cx;
+          sz = getPtY(op.start) - cz;
+          ex = getPtX(op.end) - cx;
+          ez = getPtY(op.end) - cz;
           thick = op.thickness || 0.5;
           const dx = ex - sx, dz = ez - sz;
           len = Math.hypot(dx, dz);
@@ -1323,11 +1342,12 @@
 
       // 1A. WALL GENERATION FROM DATA.WALLS
       (data.walls || []).forEach(w => {
-        const sx = (isCanonical ? w.start.x : w.start[0]) - cx;
-        const sz = (isCanonical ? w.start.y : w.start[1]) - cz;
-        const ex = (isCanonical ? w.end.x : w.end[0]) - cx;
-        const ez = (isCanonical ? w.end.y : w.end[1]) - cz;
-        const thick = isCanonical ? (w.thickness_ft || 0.5) : (w.thickness || 0.5);
+        if (!w.start || !w.end) return;
+        const sx = getPtX(w.start) - cx;
+        const sz = getPtY(w.start) - cz;
+        const ex = getPtX(w.end) - cx;
+        const ez = getPtY(w.end) - cz;
+        const thick = w.thickness_ft || w.thickness || 0.5;
 
         const sourceIdStr = String(w.source_id || w.id || w.name || w.type || '').toLowerCase();
         const isCompound = w.is_compound === true ||
@@ -1342,68 +1362,80 @@
         buildWallSegmentWithOpenings(sx, sz, ex, ez, thick, isCompound, w.source_id || w.id);
       });
 
-      // 1B. SYNTHESIZE MISSING WALLS FROM ROOM POLYGON EDGES (Only if data.walls is empty/missing)
-      if (!data.walls || data.walls.length === 0) {
-        (data.rooms || []).forEach(r => {
-          if (!r.polygon || r.polygon.length < 3) return;
-          const pts = r.polygon;
-          const rName = String(r.name || r.label || '').toLowerCase();
-          const isOutdoorRoom = rName.includes('compound') || rName.includes('yard') || rName.includes('boundary') || rName.includes('setback');
+      // 1B. SYNTHESIZE MISSING WALLS FROM ROOM POLYGON EDGES (Only fills uncovered EXTERIOR house boundary gaps)
+      (data.rooms || []).forEach(r => {
+        if (!r.polygon || r.polygon.length < 3) return;
+        const pts = r.polygon;
+        const rName = String(r.name || r.label || '').toLowerCase();
+        const isOpenSpace = rName.includes('portico') || rName.includes('porch') || rName.includes('parking') ||
+          rName.includes('car') || rName.includes('veranda') || rName.includes('balcony') ||
+          rName.includes('terrace') || rName.includes('compound') || rName.includes('yard') ||
+          rName.includes('boundary') || rName.includes('setback') || rName.includes('passage');
 
-          for (let i = 0; i < pts.length; i++) {
-            const p1 = pts[i];
-            const p2 = pts[(i + 1) % pts.length];
-            const p1x = (isCanonical ? p1.x : p1[0]) - cx;
-            const p1z = (isCanonical ? p1.y : p1[1]) - cz;
-            const p2x = (isCanonical ? p2.x : p2[0]) - cx;
-            const p2z = (isCanonical ? p2.y : p2[1]) - cz;
+        // Do not synthesize solid enclosing walls around open or semi-outdoor spaces!
+        if (isOpenSpace) return;
 
-            const dx = p2x - p1x, dz = p2z - p1z;
-            const len = Math.hypot(dx, dz);
-            if (len < 0.5) continue;
+        for (let i = 0; i < pts.length; i++) {
+          const p1 = pts[i];
+          const p2 = pts[(i + 1) % pts.length];
+          const p1x = getPtX(p1) - cx;
+          const p1z = getPtY(p1) - cz;
+          const p2x = getPtX(p2) - cx;
+          const p2z = getPtY(p2) - cz;
 
-            // Check sub-intervals along edge to find uncovered gaps
-            const subStepFt = 1.5;
-            const numSteps = Math.max(1, Math.ceil(len / subStepFt));
-            let missingSegments = [];
-            let currentMissing = null;
+          const dx = p2x - p1x, dz = p2z - p1z;
+          const len = Math.hypot(dx, dz);
+          if (len < 0.5) continue;
 
-            for (let s = 0; s < numSteps; s++) {
-              const tStart = s / numSteps;
-              const tEnd = (s + 1) / numSteps;
-              const tMid = (tStart + tEnd) / 2;
-              const mx_pt = p1x + tMid * dx;
-              const mz_pt = p1z + tMid * dz;
+          // Only synthesize if this edge lies on the EXTERIOR perimeter of the house
+          const midX = (p1x + p2x) / 2.0;
+          const midZ = (p1z + p2z) / 2.0;
+          const isExteriorBoundary = (Math.abs(midX - houseMinX) < 2.0 || Math.abs(midX - houseMaxX) < 2.0 ||
+            Math.abs(midZ - houseMinZ) < 2.0 || Math.abs(midZ - houseMaxZ) < 2.0);
 
-              const isCovered = createdWallBoundingBoxes.some(wb => distToSegment(mx_pt, mz_pt, wb.sx, wb.sz, wb.ex, wb.ez) < 0.9);
-              if (!isCovered) {
-                if (!currentMissing) currentMissing = { tStart: tStart, tEnd: tEnd };
-                else currentMissing.tEnd = tEnd;
-              } else {
-                if (currentMissing) {
-                  missingSegments.push(currentMissing);
-                  currentMissing = null;
-                }
+          if (!isExteriorBoundary) continue;
+
+          // Check sub-intervals along edge to find uncovered gaps
+          const subStepFt = 1.5;
+          const numSteps = Math.max(1, Math.ceil(len / subStepFt));
+          let missingSegments = [];
+          let currentMissing = null;
+
+          for (let s = 0; s < numSteps; s++) {
+            const tStart = s / numSteps;
+            const tEnd = (s + 1) / numSteps;
+            const tMid = (tStart + tEnd) / 2;
+            const mx_pt = p1x + tMid * dx;
+            const mz_pt = p1z + tMid * dz;
+
+            // Coverage check with 2.0ft tolerance to prevent duplicate double walls
+            const isCovered = createdWallBoundingBoxes.some(wb => distToSegment(mx_pt, mz_pt, wb.sx, wb.sz, wb.ex, wb.ez) < 2.0);
+            if (!isCovered) {
+              if (!currentMissing) currentMissing = { tStart: tStart, tEnd: tEnd };
+              else currentMissing.tEnd = tEnd;
+            } else {
+              if (currentMissing) {
+                missingSegments.push(currentMissing);
+                currentMissing = null;
               }
             }
-            if (currentMissing) missingSegments.push(currentMissing);
-
-            missingSegments.forEach(seg => {
-              const segP1x = p1x + seg.tStart * dx;
-              const segP1z = p1z + seg.tStart * dz;
-              const segP2x = p1x + seg.tEnd * dx;
-              const segP2z = p1z + seg.tEnd * dz;
-              const segDx = segP2x - segP1x, segDz = segP2z - segP1z;
-              const segLen = Math.hypot(segDx, segDz);
-              if (segLen < 0.4) return;
-
-              const thick = 0.4;
-              const isComp = isOutdoorRoom;
-              buildWallSegmentWithOpenings(segP1x, segP1z, segP2x, segP2z, thick, isComp, 'syn_' + (r.id || 'r') + '_' + i);
-            });
           }
-        });
-      }
+          if (currentMissing) missingSegments.push(currentMissing);
+
+          missingSegments.forEach(seg => {
+            const segP1x = p1x + seg.tStart * dx;
+            const segP1z = p1z + seg.tStart * dz;
+            const segP2x = p1x + seg.tEnd * dx;
+            const segP2z = p1z + seg.tEnd * dz;
+            const segDx = segP2x - segP1x, segDz = segP2z - segP1z;
+            const segLen = Math.hypot(segDx, segDz);
+            if (segLen < 0.4) return;
+
+            const thick = 0.4;
+            buildWallSegmentWithOpenings(segP1x, segP1z, segP2x, segP2z, thick, false, 'syn_' + (r.id || 'r') + '_' + i);
+          });
+        }
+      });
 
       // 2. RENDER 3D VISUAL DOOR LEAF, WINDOW GLASS & ARCHWAY PASSAGES
       processedOpenings3D.forEach(op => {
@@ -1567,23 +1599,33 @@
       // 3. FLOOR GENERATION
       (data.rooms || []).forEach(r => {
         if (!r.polygon || r.polygon.length < 3) return;
+
+        // Ensure CCW winding order so floor face normal faces UP towards light
+        let polyArea = 0;
+        for (let i = 0; i < r.polygon.length; i++) {
+          const p1 = r.polygon[i];
+          const p2 = r.polygon[(i + 1) % r.polygon.length];
+          polyArea += (getPtX(p1) * getPtY(p2) - getPtX(p2) * getPtY(p1));
+        }
+        const pts = polyArea < 0 ? [...r.polygon].reverse() : r.polygon;
+
         const shape = new THREE.Shape();
-        const pLast = r.polygon[r.polygon.length - 1];
-        shape.moveTo((isCanonical ? pLast.x : pLast[0]) - cx, (isCanonical ? pLast.y : pLast[1]) - cz);
-        for (let i = r.polygon.length - 2; i >= 0; i--) {
-          shape.lineTo((isCanonical ? r.polygon[i].x : r.polygon[i][0]) - cx, (isCanonical ? r.polygon[i].y : r.polygon[i][1]) - cz);
+        const pLast = pts[pts.length - 1];
+        shape.moveTo(getPtX(pLast) - cx, getPtY(pLast) - cz);
+        for (let i = pts.length - 2; i >= 0; i--) {
+          shape.lineTo(getPtX(pts[i]) - cx, getPtY(pts[i]) - cz);
         }
 
         let rCx = 0, rCz = 0;
         let rMinX = Infinity, rMaxX = -Infinity, rMinZ = Infinity, rMaxZ = -Infinity;
-        r.polygon.forEach(p => {
-          const px = isCanonical ? p.x : p[0];
-          const pz = isCanonical ? p.y : p[1];
+        pts.forEach(p => {
+          const px = getPtX(p);
+          const pz = getPtY(p);
           rCx += px - cx; rCz += pz - cz;
           if (px - cx < rMinX) rMinX = px - cx; if (px - cx > rMaxX) rMaxX = px - cx;
           if (pz - cz < rMinZ) rMinZ = pz - cz; if (pz - cz > rMaxZ) rMaxZ = pz - cz;
         });
-        rCx /= r.polygon.length; rCz /= r.polygon.length;
+        rCx /= pts.length; rCz /= pts.length;
         const rw = rMaxX - rMinX;
         const rd = rMaxZ - rMinZ;
         const effectiveLabel = r.name || r.label || 'Unknown';
@@ -1636,9 +1678,9 @@
         if (!r.polygon || r.polygon.length < 3) return;
         const shape = new THREE.Shape();
         const pLast = r.polygon[r.polygon.length - 1];
-        shape.moveTo((isCanonical ? pLast.x : pLast[0]) - cx, (isCanonical ? pLast.y : pLast[1]) - cz);
+        shape.moveTo(getPtX(pLast) - cx, getPtY(pLast) - cz);
         for (let i = r.polygon.length - 2; i >= 0; i--) {
-          shape.lineTo((isCanonical ? r.polygon[i].x : r.polygon[i][0]) - cx, (isCanonical ? r.polygon[i].y : r.polygon[i][1]) - cz);
+          shape.lineTo(getPtX(r.polygon[i]) - cx, getPtY(r.polygon[i]) - cz);
         }
 
         const effectiveLabel = r.name || r.label || 'Unknown';
@@ -1657,8 +1699,8 @@
         if (!r.polygon || r.polygon.length < 3) return;
         let rCx = 0, rCz = 0;
         r.polygon.forEach(pt => {
-          const px = (isCanonical ? pt.x : pt[0]) - cx;
-          const pz = (isCanonical ? pt.y : pt[1]) - cz;
+          const px = getPtX(pt) - cx;
+          const pz = getPtY(pt) - cz;
           rCx += px; rCz += pz;
         });
         rCx /= r.polygon.length;

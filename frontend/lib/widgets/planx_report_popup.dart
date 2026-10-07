@@ -32,48 +32,55 @@ class _PlanXReportPopupState extends State<PlanXReportPopup> {
   final List<ReportOption> _options = [
     ReportOption(
       id: '3d',
-      title: '3D Walkthrough & View',
-      description: 'Realistic 3D model visualization & 360° orbit',
+      title: '3D View Model',
+      description: 'Realistic 3D model visualization',
       price: 500,
       icon: Icons.view_in_ar_rounded,
-      iconColor: const Color(0xFF38BDF8), // Cyan
+      iconColor: const Color(0xFF2979FF),
     ),
     ReportOption(
       id: 'vastu',
-      title: 'Vastu Shastra Score',
-      description: 'Directional balance & cosmic energy alignment',
+      title: 'Vastu Analysis',
+      description: 'Orientation & alignment check',
       price: 500,
       icon: Icons.explore_rounded,
-      iconColor: const Color(0xFFF59E0B), // Amber Gold
+      iconColor: Colors.orange,
     ),
     ReportOption(
       id: 'cost',
-      title: 'Cost Estimation & BOQ',
-      description: 'Material quantities & labor cost breakdown',
+      title: 'Cost Estimation',
+      description: 'Material & labor cost breakdown',
       price: 500,
       icon: Icons.calculate_rounded,
-      iconColor: const Color(0xFF34D399), // Emerald
+      iconColor: Colors.green,
     ),
     ReportOption(
       id: 'structural',
-      title: 'Structural Safety Specs',
-      description: 'Beam, column & foundation load specs',
+      title: 'Structural Design',
+      description: 'Structural safety specs & design',
       price: 500,
       icon: Icons.architecture_rounded,
-      iconColor: const Color(0xFFA855F7), // Purple
+      iconColor: Colors.deepPurple,
     ),
   ];
 
-  final Set<String> _selectedIds = {'3d', 'vastu', 'cost', 'structural', 'elevation'};
+  final Set<String> _selectedIds = {
+    '3d',
+    'vastu',
+    'cost',
+    'structural',
+    'elevation'
+  };
   final int _totalPrice = 500; // Fixed total amount for all projects
 
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
-    final dialogWidth = screenSize.width > 500 ? 460.0 : screenSize.width * 0.92;
+    final dialogWidth =
+        screenSize.width > 500 ? 460.0 : screenSize.width * 0.92;
 
     return BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
       child: Center(
         child: Container(
           width: dialogWidth,
@@ -81,163 +88,91 @@ class _PlanXReportPopupState extends State<PlanXReportPopup> {
             maxHeight: screenSize.height * 0.90,
           ),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.35),
-              width: 1.2,
-            ),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                const Color(0xFF0F172A).withValues(alpha: 0.96),
-                const Color(0xFF1E1B4B).withValues(alpha: 0.96),
-                const Color(0xFF090D16).withValues(alpha: 0.98),
-              ],
-            ),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFFFBBF24).withValues(alpha: 0.20),
-                blurRadius: 32,
-                spreadRadius: 2,
-              ),
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.5),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 30,
-                offset: const Offset(0, 12),
+                spreadRadius: 2,
               ),
             ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(28),
-            child: Stack(
+            borderRadius: BorderRadius.circular(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // Top Right Warm Ambient Glow
-                Positioned(
-                  top: -30,
-                  right: -30,
-                  child: Container(
-                    width: 160,
-                    height: 160,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: const Color(0xFFF59E0B).withValues(alpha: 0.18),
-                    ),
+                _buildTopSection(),
+                Flexible(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: _buildGrid(),
                   ),
                 ),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildTopHeader(),
-                    Flexible(
-                      child: SingleChildScrollView(
-                        physics: const BouncingScrollPhysics(),
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: _buildGrid(),
-                      ),
-                    ),
-                    _buildBottomActionSection(),
-                  ],
-                ),
+                _buildBottomSection(),
               ],
             ),
           ),
         )
             .animate()
             .scale(
-              duration: 400.ms,
+              duration: 350.ms,
               curve: Curves.easeOutBack,
-              begin: const Offset(0.88, 0.88),
+              begin: const Offset(0.9, 0.9),
             )
-            .fadeIn(duration: 300.ms),
+            .fadeIn(),
       ),
     );
   }
 
-  Widget _buildTopHeader() {
+  Widget _buildTopSection() {
     return Padding(
-      padding: const EdgeInsets.only(top: 22.0, left: 16, right: 16, bottom: 10),
+      padding:
+          const EdgeInsets.only(top: 20.0, left: 16, right: 16, bottom: 12),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Animated Gold Badge Icon
           Container(
-            width: 52,
-            height: 52,
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  const Color(0xFFFCD34D).withValues(alpha: 0.3),
-                  const Color(0xFFF59E0B).withValues(alpha: 0.15),
-                ],
-              ),
+            padding: const EdgeInsets.all(10),
+            decoration: const BoxDecoration(
+              color: Color(0xFFE8F5E9),
               shape: BoxShape.circle,
-              border: Border.all(
-                color: const Color(0xFFFCD34D).withValues(alpha: 0.5),
-                width: 1.5,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFFFCD34D).withValues(alpha: 0.3),
-                  blurRadius: 16,
-                ),
-              ],
             ),
             child: const Icon(
-              Icons.task_alt_rounded,
-              color: Color(0xFFFCD34D),
-              size: 28,
+              Icons.check_rounded,
+              color: Color(0xFF4ADE80),
+              size: 32,
             ),
-          )
-              .animate(onPlay: (c) => c.repeat(reverse: true))
-              .scaleXY(begin: 0.95, end: 1.05, duration: 2000.ms),
+          ).animate().scale(duration: 350.ms, curve: Curves.easeOutBack),
           const SizedBox(height: 10),
-
           const Text(
-            'Blueprint Uploaded!',
+            'Floor Plan Uploaded!',
             style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
+              color: Color(0xFF1E293B),
+              fontSize: 19,
               fontWeight: FontWeight.bold,
               letterSpacing: 0.3,
-              shadows: [
-                Shadow(color: Colors.black54, blurRadius: 6),
-              ],
             ),
           ),
           const SizedBox(height: 6),
-
-          // All-inclusive Badge Pill
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
             decoration: BoxDecoration(
-              color: const Color(0xFFFBBF24).withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: const Color(0xFFFCD34D).withValues(alpha: 0.35),
-                width: 1,
-              ),
+              color: const Color(0xFFEEF2FF),
+              borderRadius: BorderRadius.circular(16),
             ),
             child: const FittedBox(
               fit: BoxFit.scaleDown,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.stars_rounded, color: Color(0xFFFCD34D), size: 14),
-                  SizedBox(width: 5),
-                  Text(
-                    'ALL 4 REPORTS AUTOMATICALLY INCLUDED',
-                    style: TextStyle(
-                      color: Color(0xFFFCD34D),
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ],
+              child: Text(
+                '✨ All Reports & Features Automatically Included',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Color(0xFF2979FF),
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
@@ -255,24 +190,24 @@ class _PlanXReportPopupState extends State<PlanXReportPopup> {
         crossAxisCount: 2,
         crossAxisSpacing: 10,
         mainAxisSpacing: 10,
-        childAspectRatio: 0.76, // Taller cards to ensure zero bottom overflow
+        childAspectRatio:
+            0.75, // Smaller ratio = taller card height (prevents bottom overflow)
       ),
       itemBuilder: (context, index) {
         final opt = _options[index];
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
+        return Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.07),
-            borderRadius: BorderRadius.circular(18),
+            color: const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: opt.iconColor.withValues(alpha: 0.45),
-              width: 1.2,
+              color: const Color(0xFF2979FF),
+              width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: opt.iconColor.withValues(alpha: 0.12),
-                blurRadius: 12,
+                color: const Color(0xFF2979FF).withValues(alpha: 0.06),
+                blurRadius: 10,
                 spreadRadius: -2,
               )
             ],
@@ -286,24 +221,21 @@ class _PlanXReportPopupState extends State<PlanXReportPopup> {
                   Container(
                     padding: const EdgeInsets.all(7),
                     decoration: BoxDecoration(
-                      color: opt.iconColor.withValues(alpha: 0.18),
+                      color: opt.iconColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: opt.iconColor.withValues(alpha: 0.3),
-                      ),
                     ),
                     child: Icon(opt.icon, color: opt.iconColor, size: 20),
                   ),
                   Container(
-                    padding: const EdgeInsets.all(3),
+                    padding: const EdgeInsets.all(2),
                     decoration: const BoxDecoration(
-                      color: Color(0xFF34D399),
+                      color: Color(0xFF2979FF),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
-                      Icons.check_rounded,
-                      size: 11,
-                      color: Color(0xFF0F172A),
+                      Icons.check,
+                      size: 12,
+                      color: Colors.white,
                     ),
                   ),
                 ],
@@ -312,7 +244,7 @@ class _PlanXReportPopupState extends State<PlanXReportPopup> {
               Text(
                 opt.title,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: Color(0xFF1E293B),
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                   height: 1.15,
@@ -323,11 +255,11 @@ class _PlanXReportPopupState extends State<PlanXReportPopup> {
               const SizedBox(height: 3),
               Text(
                 opt.description,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.75),
+                style: const TextStyle(
+                  color: Color(0xFF64748B),
                   fontSize: 9.5,
-                  height: 1.25,
-                  fontWeight: FontWeight.w400,
+                  height: 1.2,
+                  fontWeight: FontWeight.w500,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -336,16 +268,13 @@ class _PlanXReportPopupState extends State<PlanXReportPopup> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF34D399).withValues(alpha: 0.18),
+                  color: const Color(0xFF4ADE80).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(
-                    color: const Color(0xFF34D399).withValues(alpha: 0.4),
-                  ),
                 ),
                 child: const Text(
-                  'FULL ACCESS ✓',
+                  'INCLUDED ✓',
                   style: TextStyle(
-                    color: Color(0xFF34D399),
+                    color: Color(0xFF16A34A),
                     fontSize: 9.5,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 0.3,
@@ -356,50 +285,51 @@ class _PlanXReportPopupState extends State<PlanXReportPopup> {
           ),
         )
             .animate()
-            .fadeIn(delay: (index * 45).ms, duration: 300.ms)
+            .fadeIn(delay: (index * 40).ms, duration: 300.ms)
             .slideY(begin: 0.08, end: 0);
       },
     );
   }
 
-  Widget _buildBottomActionSection() {
+  Widget _buildBottomSection() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
       decoration: BoxDecoration(
-        color: const Color(0xFF0F172A).withValues(alpha: 0.95),
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
-        border: Border(
-          top: BorderSide(
-            color: Colors.white.withValues(alpha: 0.1),
-          ),
-        ),
+        color: Colors.white,
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            offset: const Offset(0, -4),
+            blurRadius: 10,
+          )
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             children: [
-              // Left Total Budget Box
+              // Left Summary Box
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.06),
+                    color: const Color(0xFFF8FAFC),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.15),
-                    ),
+                    border: Border.all(color: Colors.grey.shade200),
                   ),
                   child: Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(5),
+                        padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFCD34D).withValues(alpha: 0.15),
-                          shape: BoxShape.circle,
+                          color: const Color(0xFF2979FF).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(Icons.workspace_premium,
-                            color: Color(0xFFFCD34D), size: 16),
+                        child: const Icon(Icons.stars_rounded,
+                            color: Color(0xFF2979FF), size: 16),
                       ),
                       const SizedBox(width: 6),
                       Expanded(
@@ -407,10 +337,10 @@ class _PlanXReportPopupState extends State<PlanXReportPopup> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              'Complete Package',
+                              'Full Package Deal',
                               style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 9.5,
+                                color: Color(0xFF64748B),
+                                fontSize: 10,
                                 fontWeight: FontWeight.w500,
                               ),
                               maxLines: 1,
@@ -424,16 +354,15 @@ class _PlanXReportPopupState extends State<PlanXReportPopup> {
                                   const Text(
                                     'Total: ',
                                     style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                        color: Color(0xFF1E293B),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold),
                                   ),
                                   Text(
                                     '₹$_totalPrice',
                                     style: const TextStyle(
-                                      color: Color(0xFFFCD34D),
-                                      fontSize: 14,
+                                      color: Color(0xFF2979FF),
+                                      fontSize: 13.5,
                                       fontWeight: FontWeight.w900,
                                     ),
                                   ),
@@ -448,28 +377,26 @@ class _PlanXReportPopupState extends State<PlanXReportPopup> {
                 ),
               ),
               const SizedBox(width: 8),
-
-              // Right Security Notice Box
+              // Right Security Box
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.06),
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.15),
-                    ),
+                    border: Border.all(color: Colors.grey.shade200),
                   ),
                   child: Row(
                     children: [
                       Container(
                         padding: const EdgeInsets.all(5),
-                        decoration: const BoxDecoration(
-                          color: Color(0x2034D399),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.shield_rounded,
-                            color: Color(0xFF34D399), size: 15),
+                        child: const Icon(Icons.security,
+                            color: Colors.green, size: 14),
                       ),
                       const SizedBox(width: 6),
                       const Expanded(
@@ -477,10 +404,10 @@ class _PlanXReportPopupState extends State<PlanXReportPopup> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Instant Unlock',
+                              'Secure Payment',
                               style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 9.5,
+                                color: Color(0xFF1E293B),
+                                fontSize: 10,
                                 fontWeight: FontWeight.bold,
                               ),
                               maxLines: 1,
@@ -489,8 +416,8 @@ class _PlanXReportPopupState extends State<PlanXReportPopup> {
                             Text(
                               '100% Protected',
                               style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 8.5,
+                                color: Color(0xFF64748B),
+                                fontSize: 9,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -505,30 +432,19 @@ class _PlanXReportPopupState extends State<PlanXReportPopup> {
             ],
           ),
           const SizedBox(height: 14),
-
-          // Main Glowing Action Button
-          GestureDetector(
-            onTap: () => widget.onContinue(_selectedIds),
-            child: Container(
-              width: double.infinity,
-              height: 50,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [
-                    Color(0xFFFCD34D),
-                    Color(0xFFF59E0B),
-                    Color(0xFFD97706),
-                  ],
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: ElevatedButton(
+              onPressed: () => widget.onContinue(_selectedIds),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF2979FF),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFF59E0B).withValues(alpha: 0.45),
-                    blurRadius: 18,
-                    spreadRadius: 1,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -537,29 +453,17 @@ class _PlanXReportPopupState extends State<PlanXReportPopup> {
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
                       child: Text(
-                        'Unlock All Reports & Continue (₹$_totalPrice)',
+                        'Continue to Payment (₹$_totalPrice)',
                         style: const TextStyle(
-                          color: Color(0xFF0F172A),
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.w900,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
                           letterSpacing: 0.3,
                         ),
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.all(3),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF0F172A),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.arrow_forward_rounded,
-                      color: Color(0xFFFCD34D),
-                      size: 15,
-                    ),
-                  ),
+                  const Icon(Icons.arrow_forward_rounded, size: 18),
                 ],
               ),
             ),

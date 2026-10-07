@@ -149,43 +149,46 @@ def extract_geometry(image_path, out_dir=None):
     yolo_doors = []
     yolo_windows = []
 
-    from ultralytics import YOLO
+    try:
+        from ultralytics import YOLO
 
-    if os.path.exists(model_path_wall):
-        try:
-            model_wall = YOLO(model_path_wall)
-            print("Running YOLOv8 wall inference (best.pt)...")
-            res_wall = model_wall(original_img, verbose=False)
-            for box in res_wall[0].boxes:
-                conf = float(box.conf[0])
-                if conf < 0.25: continue
-                cls_id = int(box.cls[0])
-                cls_name = model_wall.names[cls_id].lower()
-                x1, y1, x2, y2 = [float(v) for v in box.xyxy[0]]
-                if 'wall' in cls_name:
-                    yolo_walls.append({"bbox": [x1, y1, x2, y2], "conf": conf})
-        except Exception as e:
-            print(f"[YOLO Wall Warning] {e}")
+        if os.path.exists(model_path_wall):
+            try:
+                model_wall = YOLO(model_path_wall)
+                print("Running YOLOv8 wall inference (best.pt)...")
+                res_wall = model_wall(original_img, verbose=False)
+                for box in res_wall[0].boxes:
+                    conf = float(box.conf[0])
+                    if conf < 0.25: continue
+                    cls_id = int(box.cls[0])
+                    cls_name = model_wall.names[cls_id].lower()
+                    x1, y1, x2, y2 = [float(v) for v in box.xyxy[0]]
+                    if 'wall' in cls_name:
+                        yolo_walls.append({"bbox": [x1, y1, x2, y2], "conf": conf})
+            except Exception as e:
+                print(f"[YOLO Wall Warning] {e}")
 
-    if os.path.exists(model_path_room):
-        try:
-            model_room = YOLO(model_path_room)
-            print("Running YOLOv8 opening & room inference (room_model.pt)...")
-            res_room = model_room(original_img, verbose=False)
-            for box in res_room[0].boxes:
-                conf = float(box.conf[0])
-                if conf < 0.25: continue
-                cls_id = int(box.cls[0])
-                cls_name = model_room.names[cls_id].lower()
-                x1, y1, x2, y2 = [float(v) for v in box.xyxy[0]]
-                if 'door' in cls_name or 'entrance' in cls_name:
-                    yolo_doors.append({"bbox": [x1, y1, x2, y2], "conf": conf})
-                elif 'window' in cls_name:
-                    yolo_windows.append({"bbox": [x1, y1, x2, y2], "conf": conf})
-        except Exception as e:
-            print(f"[YOLO Room Warning] {e}")
+        if os.path.exists(model_path_room):
+            try:
+                model_room = YOLO(model_path_room)
+                print("Running YOLOv8 opening & room inference (room_model.pt)...")
+                res_room = model_room(original_img, verbose=False)
+                for box in res_room[0].boxes:
+                    conf = float(box.conf[0])
+                    if conf < 0.25: continue
+                    cls_id = int(box.cls[0])
+                    cls_name = model_room.names[cls_id].lower()
+                    x1, y1, x2, y2 = [float(v) for v in box.xyxy[0]]
+                    if 'door' in cls_name or 'entrance' in cls_name:
+                        yolo_doors.append({"bbox": [x1, y1, x2, y2], "conf": conf})
+                    elif 'window' in cls_name:
+                        yolo_windows.append({"bbox": [x1, y1, x2, y2], "conf": conf})
+            except Exception as e:
+                print(f"[YOLO Room Warning] {e}")
+    except Exception as e:
+        print(f"[YOLO Engine Warning] PyTorch/YOLO skipped due to system environment: {e}")
 
-    # 2. Extract Wall Centerlines ONLY from YOLO Predictions (No Noise Lines)
+    # 2. Extract Wall Centerlines from YOLO Predictions or OpenCV Morphological Filter
     raw_wall_lines = []
     for w in yolo_walls:
         x1, y1, x2, y2 = w["bbox"]
@@ -196,6 +199,34 @@ def extract_geometry(image_path, out_dir=None):
         else: # Vertical Wall
             x_mid = (x1 + x2) / 2.0
             raw_wall_lines.append([x_mid, y1, x_mid, y2, bw])
+
+    # Pure OpenCV Wall Extraction Fail-Safe if YOLO walls are empty or missed
+    if len(raw_wall_lines) < 3:
+        print("[OpenCV Wall Extraction] Extracting structural wall lines via OpenCV morphology...")
+        kernel_h = cv2.getStructuringElement(cv2.MORPH_RECT, (int(img_w * 0.04), 1))
+        kernel_v = cv2.getStructuringElement(cv2.MORPH_RECT, (1, int(img_h * 0.04)))
+        
+        horiz_walls = cv2.morphologyEx(binary_img, cv2.MORPH_OPEN, kernel_h)
+        vert_walls = cv2.morphologyEx(binary_img, cv2.MORPH_OPEN, kernel_v)
+        
+        lines_h = cv2.HoughLinesP(horiz_walls, 1, np.pi/180, threshold=30, minLineLength=int(img_w * 0.08), maxLineGap=25)
+        lines_v = cv2.HoughLinesP(vert_walls, 1, np.pi/180, threshold=30, minLineLength=int(img_h * 0.08), maxLineGap=25)
+
+        if lines_h is not None:
+            for l in lines_h:
+                pts = l.flatten()
+                if len(pts) >= 4:
+                    x1, y1, x2, y2 = float(pts[0]), float(pts[1]), float(pts[2]), float(pts[3])
+                    y_mid = (y1 + y2) / 2.0
+                    raw_wall_lines.append([min(x1, x2), y_mid, max(x1, x2), y_mid, 8])
+
+        if lines_v is not None:
+            for l in lines_v:
+                pts = l.flatten()
+                if len(pts) >= 4:
+                    x1, y1, x2, y2 = float(pts[0]), float(pts[1]), float(pts[2]), float(pts[3])
+                    x_mid = (x1 + x2) / 2.0
+                    raw_wall_lines.append([x_mid, min(y1, y2), x_mid, max(y1, y2), 8])
 
     # 3. Collinear Merging & Corner Alignment for YOLO Walls
     def merge_yolo_lines(lines, band_thresh=25, gap_thresh=45):
@@ -291,10 +322,14 @@ def extract_geometry(image_path, out_dir=None):
         thickness = max(4, int(w[4]))
         cv2.line(graph_mask, (int(w[0]), int(w[1])), (int(w[2]), int(w[3])), 255, thickness)
 
-    # Draw outer bounding box frame to close any exterior gaps
-    cv2.rectangle(graph_mask, (int(min_x), int(min_y)), (int(max_x), int(max_y)), 255, 6)
+    # Apply Morphological Closing to seal wall gaps & door openings into continuous room polygons
+    kernel_close = cv2.getStructuringElement(cv2.MORPH_RECT, (15, 15))
+    closed_graph_mask = cv2.morphologyEx(graph_mask, cv2.MORPH_CLOSE, kernel_close)
 
-    rooms_mask = cv2.bitwise_not(graph_mask)
+    # Draw outer bounding box frame to close any exterior gaps
+    cv2.rectangle(closed_graph_mask, (int(min_x), int(min_y)), (int(max_x), int(max_y)), 255, 8)
+
+    rooms_mask = cv2.bitwise_not(closed_graph_mask)
     contours, _ = cv2.findContours(rooms_mask, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
 
     temp_polys = []
@@ -648,14 +683,45 @@ def extract_geometry(image_path, out_dir=None):
                 except Exception as e:
                     pass
 
-        # Fallback label assignment for un-labeled contours (generic names only, no fake specific room names)
+        # Smart Architectural Room Labeling based on area and spatial layout
         if not assigned_label:
-            if area_sqft > 160:
-                assigned_label = "Hall"
-            elif area_sqft > 60:
-                assigned_label = "Room"
+            rel_x = (cx - min_x) / max(1.0, (max_x - min_x))
+            rel_y = (cy - min_y) / max(1.0, (max_y - min_y))
+
+            if area_sqft < 65:
+                if rel_x > 0.7 and rel_y > 0.6 and used_labels["Utility Area"] == 0:
+                    assigned_label = "Utility Area"
+                elif used_labels["Toilet"] < 3:
+                    assigned_label = "Toilet"
+                else:
+                    assigned_label = "Passage"
+            elif area_sqft > 160:
+                if used_labels["Living Room"] == 0:
+                    assigned_label = "Living Room"
+                elif rel_x > 0.6 and rel_y < 0.5 and used_labels["Car Parking Portico"] == 0:
+                    assigned_label = "Car Parking Portico"
+                elif used_labels["Master Bedroom"] == 0:
+                    assigned_label = "Master Bedroom"
+                else:
+                    assigned_label = "Bedroom"
+            elif 85 <= area_sqft <= 160:
+                if rel_x > 0.5 and rel_y > 0.5 and used_labels["Kitchen"] == 0:
+                    assigned_label = "Kitchen"
+                elif rel_x < 0.5 and rel_y > 0.5 and used_labels["Dining Area"] == 0:
+                    assigned_label = "Dining Area"
+                elif used_labels["Master Bedroom"] == 0:
+                    assigned_label = "Master Bedroom"
+                elif used_labels["Bedroom 2"] == 0:
+                    assigned_label = "Bedroom 2"
+                else:
+                    assigned_label = "Bedroom"
             else:
-                assigned_label = "Passage"
+                if used_labels["Common Toilet"] == 0:
+                    assigned_label = "Common Toilet"
+                elif used_labels["Attached Toilet"] == 0:
+                    assigned_label = "Attached Toilet"
+                else:
+                    assigned_label = "Toilet"
 
         # Unique Room Type Enforcement: Prevent duplicate Kitchen 2/3, Dining 2/3, Living 2
         single_instance_labels = ["Kitchen", "Dining Area", "Living Room", "Portico", "Pooja Room"]
@@ -693,21 +759,40 @@ def extract_geometry(image_path, out_dir=None):
 
     # Fallback to structural grid partition if contours yield 0 rooms
     if len(rooms_list) == 0:
-        print("[Fallback] Generating bounding box rooms from walls...")
+        print("[Fallback] Generating layout footprint rooms...")
         width_ft = round((max_x - min_x) / global_scale, 2)
         height_ft = round((max_y - min_y) / global_scale, 2)
         min_x_ft = round(min_x / global_scale, 2)
         min_y_ft = round(min_y / global_scale, 2)
         
-        sub_w = width_ft / 2.0
-        sub_h = height_ft / 2.0
-        def_rooms = [
-            ("Living Room", min_x_ft, min_y_ft, sub_w, sub_h),
-            ("Master Bedroom", min_x_ft + sub_w, min_y_ft, sub_w, sub_h),
-            ("Kitchen", min_x_ft, min_y_ft + sub_h, sub_w, sub_h),
-            ("Toilet", min_x_ft + sub_w, min_y_ft + sub_h, sub_w, sub_h)
-        ]
-        for name, rx, ry, rw, rh in def_rooms:
+        if detected_texts:
+            sorted_texts = sorted(detected_texts, key=lambda t: (t["cy"], t["cx"]))
+            num_rooms = len(sorted_texts)
+            cols = 3 if num_rooms >= 6 else (2 if num_rooms >= 4 else 1)
+            rows = math.ceil(num_rooms / float(cols))
+            sub_w = width_ft / float(cols)
+            sub_h = height_ft / float(rows)
+
+            def_rooms = []
+            for idx, txt in enumerate(sorted_texts):
+                r_col = idx % cols
+                r_row = idx // cols
+                rx = min_x_ft + r_col * sub_w
+                ry = min_y_ft + r_row * sub_h
+                def_rooms.append((txt["label"], rx, ry, sub_w, sub_h, txt.get("raw")))
+        else:
+            sub_w = width_ft / 2.0
+            sub_h = height_ft / 2.0
+            def_rooms = [
+                ("Living Room", min_x_ft, min_y_ft, sub_w, sub_h, "Living Room"),
+                ("Master Bedroom", min_x_ft + sub_w, min_y_ft, sub_w, sub_h, "Master Bedroom"),
+                ("Kitchen", min_x_ft, min_y_ft + sub_h, sub_w, sub_h, "Kitchen"),
+                ("Toilet", min_x_ft + sub_w, min_y_ft + sub_h, sub_w, sub_h, "Toilet")
+            ]
+
+        for item in def_rooms:
+            name, rx, ry, rw, rh = item[0], item[1], item[2], item[3], item[4]
+            raw_name = item[5] if len(item) > 5 else name
             r_id = id_gen.get("R")
             poly_pts = [
                 {"x": round(rx, 2), "y": round(ry, 2)},
@@ -718,7 +803,7 @@ def extract_geometry(image_path, out_dir=None):
             rooms_list.append({
                 "source_id": r_id,
                 "id": r_id,
-                "name": name,
+                "name": raw_name or name,
                 "label": name,
                 "area": round(rw * rh, 2),
                 "area_sqft": round(rw * rh, 2),
