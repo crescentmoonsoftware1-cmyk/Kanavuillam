@@ -1038,7 +1038,7 @@ def extract_geometry(image_path, out_dir=None):
 
         cv2.imwrite(os.path.join(out_dir, "Z_architectural_reconstruction.png"), out_img)
 
-    print(f"Geometry Extraction Complete: {len(walls_list)} walls, {len(rooms_list)} rooms, {len(doors_list)} doors, {len(windows_list)} windows.")
+    print(f"Geometry Extraction Complete: {len(walls_list)} walls, {len(rooms_list)} rooms, {len(doors_list)} doors, {len(windows_list)} windows.", file=sys.stderr)
     return canonical_json
 
 if __name__ == "__main__":
