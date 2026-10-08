@@ -2,6 +2,15 @@ FROM nikolaik/python-nodejs:python3.10-nodejs20-slim
 
 WORKDIR /app
 
+# Install Linux system dependencies for OpenCV (libGL.so.1) & PyTorch
+RUN apt-get update && apt-get install -y \
+    libgl1 \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 # Install Python dependencies directly
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
