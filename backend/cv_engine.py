@@ -413,9 +413,10 @@ def extract_geometry(image_path, out_dir=None):
         thickness = max(4, int(w[4]))
         cv2.line(graph_mask, (int(w[0]), int(w[1])), (int(w[2]), int(w[3])), 255, thickness)
 
-    # Apply Morphological Closing to seal wall gaps & door openings into continuous room polygons
-    kernel_close = cv2.getStructuringElement(cv2.MORPH_RECT, (15, 15))
+    # Apply Morphological Closing & Dilation to seal wall door gaps into continuous room polygons
+    kernel_close = cv2.getStructuringElement(cv2.MORPH_RECT, (35, 35))
     closed_graph_mask = cv2.morphologyEx(graph_mask, cv2.MORPH_CLOSE, kernel_close)
+    closed_graph_mask = cv2.dilate(closed_graph_mask, cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7)), iterations=1)
 
     # Draw outer bounding box frame to close any exterior gaps
     cv2.rectangle(closed_graph_mask, (int(min_x), int(min_y)), (int(max_x), int(max_y)), 255, 8)
@@ -427,7 +428,7 @@ def extract_geometry(image_path, out_dir=None):
     house_area = (max_x - min_x) * (max_y - min_y)
     for cnt in contours:
         area = cv2.contourArea(cnt)
-        if area > (house_area * 0.012) and area < (house_area * 0.85):
+        if area > (house_area * 0.003) and area < (house_area * 0.85):
             epsilon = 0.01 * cv2.arcLength(cnt, True)
             approx = cv2.approxPolyDP(cnt, epsilon, True)
             if len(approx) >= 4:
