@@ -188,6 +188,93 @@ def extract_geometry(image_path, out_dir=None):
     except Exception as e:
         print(f"[YOLO Engine Warning] PyTorch/YOLO skipped due to system environment: {e}")
 
+    # 1.5 Early EasyOCR Text & Room Label Extraction
+    ocr_reader = get_ocr_reader()
+    detected_texts = []
+    ocr_dimensions = []
+    detected_openings_ocr = []
+    ocr_bboxes = []
+
+    if ocr_reader:
+        try:
+            clahe = cv2.createCLAHE(clipLimit=2.5, tileGridSize=(8, 8))
+            enhanced_gray = clahe.apply(gray_img)
+            enhanced_img = cv2.cvtColor(enhanced_gray, cv2.COLOR_GRAY2BGR)
+
+            results = ocr_reader.readtext(enhanced_img, mag_ratio=2.0)
+            for bbox, text, prob in results:
+                t_clean = text.strip()
+                t_upper = t_clean.upper().replace(' ', '')
+                min_prob = 0.03 if len(t_upper) <= 3 else 0.12
+                if prob < min_prob: continue
+
+                tl, tr, br, bl = bbox
+                cx = (tl[0] + br[0]) / 2.0
+                cy = (tl[1] + br[1]) / 2.0
+                ocr_bboxes.append((tl, tr, br, bl))
+
+                # Check for dimension text e.g. 12'x14' or 12x14 or 30'0"x40'0"
+                m = re.search(r'(\d+(?:\.\d+)?)(?:\'|ft)?(?:\d+\")?x(\d+(?:\.\d+)?)(?:\'|ft)?(?:\d+\")?', t_clean.lower().replace(' ', ''))
+                if m:
+                    ocr_dimensions.append({
+                        "w": float(m.group(1)),
+                        "h": float(m.group(2)),
+                        "cx": cx, "cy": cy
+                    })
+
+                norm_label = normalize_room_label(t_clean)
+                if norm_label:
+                    detected_texts.append({"label": norm_label, "cx": cx, "cy": cy, "raw": t_clean})
+
+                if re.match(r'^(W\d*|WIN|WINDOW)$', t_upper):
+                    detected_openings_ocr.append({"type": "WINDOW", "label": t_upper, "cx": cx, "cy": cy})
+                elif re.match(r'^(V\d*|VENT|VENTILATOR)$', t_upper):
+                    detected_openings_ocr.append({"type": "WINDOW", "label": t_upper, "cx": cx, "cy": cy, "is_ventilator": True})
+                elif re.match(r'^(MD|MAINDOOR|MAIN_DOOR|D\d*|PD|SD|DOOR)$', t_upper):
+                    detected_openings_ocr.append({"type": "DOOR", "label": t_upper, "cx": cx, "cy": cy})
+                elif re.match(r'^(O|0|OPEN|ARCH|ARCHWAY)$', t_upper):
+                    detected_openings_ocr.append({"type": "OPENING", "label": "O", "cx": cx, "cy": cy})
+                elif re.match(r'^(MG|MAINGATE|MAIN_GATE|GATE)$', t_upper):
+                    detected_openings_ocr.append({"type": "MAIN_GATE", "label": "MG", "cx": cx, "cy": cy})
+        except Exception as e:
+            print(f"[OCR Execution Error] {e}")
+
+    # Calculate Main House Region from Room Texts (to exclude outer blueprint dimension border box)
+    house_roi_min_x = 0
+    house_roi_max_x = img_w
+    house_roi_min_y = 0
+    house_roi_max_y = img_h
+
+    if detected_texts:
+        txs = [t["cx"] for t in detected_texts]
+        tys = [t["cy"] for t in detected_texts]
+        margin_x = max(int(img_w * 0.18), 120)
+        margin_y = max(int(img_h * 0.18), 120)
+        house_roi_min_x = max(0, int(min(txs) - margin_x))
+        house_roi_max_x = min(img_w, int(max(txs) + margin_x))
+        house_roi_min_y = max(0, int(min(tys) - margin_y))
+        house_roi_max_y = min(img_h, int(max(tys) + margin_y))
+
+    # Erase OCR Text Bounding Boxes & Outer Blueprint Frame Lines from Binary Mask
+    clean_binary = binary_img.copy()
+    for (tl, tr, br, bl) in ocr_bboxes:
+        x_min = max(0, int(min(tl[0], bl[0]) - 8))
+        x_max = min(img_w, int(max(tr[0], br[0]) + 8))
+        y_min = max(0, int(min(tl[1], tr[1]) - 8))
+        y_max = min(img_h, int(max(bl[1], br[1]) + 8))
+        cv2.rectangle(clean_binary, (x_min, y_min), (x_max, y_max), 0, -1)
+
+    # Wipe out outer blueprint border box lines lying outside house_roi
+    margin_outer = 20
+    clean_binary[:max(0, house_roi_min_y - margin_outer), :] = 0
+    clean_binary[min(img_h, house_roi_max_y + margin_outer):, :] = 0
+    clean_binary[:, :max(0, house_roi_min_x - margin_outer)] = 0
+    clean_binary[:, min(img_w, house_roi_max_x + margin_outer):] = 0
+
+    # Filter out 1-2px thin line noise (staircase treads, furniture outlines, dimension ticks)
+    kernel_thin = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+    clean_structural_binary = cv2.morphologyEx(clean_binary, cv2.MORPH_OPEN, kernel_thin)
+
     # 2. Extract Wall Centerlines from YOLO Predictions or OpenCV Morphological Filter
     raw_wall_lines = []
     for w in yolo_walls:
@@ -206,8 +293,8 @@ def extract_geometry(image_path, out_dir=None):
         kernel_h = cv2.getStructuringElement(cv2.MORPH_RECT, (int(img_w * 0.04), 1))
         kernel_v = cv2.getStructuringElement(cv2.MORPH_RECT, (1, int(img_h * 0.04)))
         
-        horiz_walls = cv2.morphologyEx(binary_img, cv2.MORPH_OPEN, kernel_h)
-        vert_walls = cv2.morphologyEx(binary_img, cv2.MORPH_OPEN, kernel_v)
+        horiz_walls = cv2.morphologyEx(clean_structural_binary, cv2.MORPH_OPEN, kernel_h)
+        vert_walls = cv2.morphologyEx(clean_structural_binary, cv2.MORPH_OPEN, kernel_v)
         
         lines_h = cv2.HoughLinesP(horiz_walls, 1, np.pi/180, threshold=30, minLineLength=int(img_w * 0.08), maxLineGap=25)
         lines_v = cv2.HoughLinesP(vert_walls, 1, np.pi/180, threshold=30, minLineLength=int(img_h * 0.08), maxLineGap=25)
@@ -217,16 +304,20 @@ def extract_geometry(image_path, out_dir=None):
                 pts = l.flatten()
                 if len(pts) >= 4:
                     x1, y1, x2, y2 = float(pts[0]), float(pts[1]), float(pts[2]), float(pts[3])
-                    y_mid = (y1 + y2) / 2.0
-                    raw_wall_lines.append([min(x1, x2), y_mid, max(x1, x2), y_mid, 8])
+                    # Strict Orthogonal Filter: Ignore diagonal lines (like 'X' hatch lines)
+                    if abs(y2 - y1) < 15:
+                        y_mid = (y1 + y2) / 2.0
+                        raw_wall_lines.append([min(x1, x2), y_mid, max(x1, x2), y_mid, 8])
 
         if lines_v is not None:
             for l in lines_v:
                 pts = l.flatten()
                 if len(pts) >= 4:
                     x1, y1, x2, y2 = float(pts[0]), float(pts[1]), float(pts[2]), float(pts[3])
-                    x_mid = (x1 + x2) / 2.0
-                    raw_wall_lines.append([x_mid, min(y1, y2), x_mid, max(y1, y2), 8])
+                    # Strict Orthogonal Filter: Ignore diagonal lines (like 'X' hatch lines)
+                    if abs(x2 - x1) < 15:
+                        x_mid = (x1 + x2) / 2.0
+                        raw_wall_lines.append([x_mid, min(y1, y2), x_mid, max(y1, y2), 8])
 
     # 3. Collinear Merging & Corner Alignment for YOLO Walls
     def merge_yolo_lines(lines, band_thresh=25, gap_thresh=45):
@@ -313,8 +404,8 @@ def extract_geometry(image_path, out_dir=None):
         min_x, max_x = min(all_x), max(all_x)
         min_y, max_y = min(all_y), max(all_y)
     else:
-        min_x, max_x = img_w * 0.1, img_w * 0.9
-        min_y, max_y = img_h * 0.1, img_h * 0.9
+        min_x, max_x = house_roi_min_x, house_roi_max_x
+        min_y, max_y = house_roi_min_y, house_roi_max_y
 
     # 4. Extract Room Polygons from Structural Wall Mask
     graph_mask = np.zeros((img_h, img_w), dtype=np.uint8)
@@ -336,7 +427,7 @@ def extract_geometry(image_path, out_dir=None):
     house_area = (max_x - min_x) * (max_y - min_y)
     for cnt in contours:
         area = cv2.contourArea(cnt)
-        if area > (house_area * 0.002) and area < (house_area * 0.85):
+        if area > (house_area * 0.012) and area < (house_area * 0.85):
             epsilon = 0.01 * cv2.arcLength(cnt, True)
             approx = cv2.approxPolyDP(cnt, epsilon, True)
             if len(approx) >= 4:
@@ -683,7 +774,10 @@ def extract_geometry(image_path, out_dir=None):
                 except Exception as e:
                     pass
 
-        # Smart Architectural Room Labeling based on area and spatial layout
+        # Ignore tiny unlabelled noise fragments (< 25 sqft)
+        if area_sqft < 25.0 and not assigned_label and best_text_idx == -1:
+            continue
+
         if not assigned_label:
             rel_x = (cx - min_x) / max(1.0, (max_x - min_x))
             rel_y = (cy - min_y) / max(1.0, (max_y - min_y))
@@ -691,10 +785,13 @@ def extract_geometry(image_path, out_dir=None):
             if area_sqft < 65:
                 if rel_x > 0.7 and rel_y > 0.6 and used_labels["Utility Area"] == 0:
                     assigned_label = "Utility Area"
-                elif used_labels["Toilet"] < 3:
+                elif used_labels["Toilet"] < 2 and area_sqft >= 35:
                     assigned_label = "Toilet"
-                else:
+                elif used_labels["Passage"] == 0 and area_sqft >= 30:
                     assigned_label = "Passage"
+                else:
+                    # Skip tiny unassigned fragments rather than creating 20+ duplicate passages
+                    continue
             elif area_sqft > 160:
                 if used_labels["Living Room"] == 0:
                     assigned_label = "Living Room"
