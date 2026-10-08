@@ -284,15 +284,13 @@ function runPython(imagePath) {
     proc.on('close', code => {
       let data = null;
       try {
-        const lines = output.trim().split('\n');
-        let jsonStr = lines[lines.length - 1];
-        if (!jsonStr.startsWith('{')) {
-          const startIdx = output.lastIndexOf('{"schema_version"');
-          if (startIdx >= 0) jsonStr = output.substring(startIdx);
-          else {
-            const firstBrace = output.indexOf('{');
-            if (firstBrace >= 0) jsonStr = output.substring(firstBrace);
-          }
+        let jsonStr = '';
+        const firstBrace = output.indexOf('{');
+        const lastBrace = output.lastIndexOf('}');
+        if (firstBrace >= 0 && lastBrace > firstBrace) {
+          jsonStr = output.substring(firstBrace, lastBrace + 1);
+        } else {
+          jsonStr = output.trim();
         }
         data = JSON.parse(jsonStr);
       } catch (e) {
