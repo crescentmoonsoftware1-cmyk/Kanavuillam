@@ -25,7 +25,20 @@ def get_ocr_reader():
         except Exception as e:
             print(f"[OCR Warning] EasyOCR initialization skipped: {e}")
             _easyocr_reader = False
-    return _easyocr_reader if _easyocr_reader is not False else None
+_torch_safe = None
+def is_torch_safe():
+    global _torch_safe
+    if _torch_safe is not None:
+        return _torch_safe
+    try:
+        import torch
+        _ = getattr(torch, "__name__", None)
+        _torch_safe = True
+        return True
+    except BaseException as e:
+        print(f"[Torch Warning] PyTorch DLL blocked or unavailable: {e}", file=sys.stderr)
+        _torch_safe = False
+        return False
 
 ARCH_VOCAB = {
     "Master Bedroom": ["master bed", "master bedroom", "m.bed", "m bed", "bed room 1", "bedroom 1", "master", "master bdrm", "king"],
@@ -149,44 +162,52 @@ def extract_geometry(image_path, out_dir=None):
     yolo_doors = []
     yolo_windows = []
 
-    try:
-        from ultralytics import YOLO
+    # Check if environment allows PyTorch/YOLO loading (suppress AppLocker DLL crashes)
+    enable_yolo = os.environ.get("DISABLE_YOLO", "0") != "1"
+    if enable_yolo and is_torch_safe():
+        try:
+            import importlib.util
+            torch_spec = importlib.util.find_spec("torch")
+            yolo_spec = importlib.util.find_spec("ultralytics")
+            
+            if torch_spec is not None and yolo_spec is not None:
+                from ultralytics import YOLO
 
-        if os.path.exists(model_path_wall):
-            try:
-                model_wall = YOLO(model_path_wall)
-                print("Running YOLOv8 wall inference (best.pt)...")
-                res_wall = model_wall(original_img, verbose=False)
-                for box in res_wall[0].boxes:
-                    conf = float(box.conf[0])
-                    if conf < 0.25: continue
-                    cls_id = int(box.cls[0])
-                    cls_name = model_wall.names[cls_id].lower()
-                    x1, y1, x2, y2 = [float(v) for v in box.xyxy[0]]
-                    if 'wall' in cls_name:
-                        yolo_walls.append({"bbox": [x1, y1, x2, y2], "conf": conf})
-            except Exception as e:
-                print(f"[YOLO Wall Warning] {e}")
+                if os.path.exists(model_path_wall):
+                    try:
+                        model_wall = YOLO(model_path_wall)
+                        print("Running YOLOv8 wall inference (best.pt)...", file=sys.stderr)
+                        res_wall = model_wall(original_img, verbose=False)
+                        for box in res_wall[0].boxes:
+                            conf = float(box.conf[0])
+                            if conf < 0.25: continue
+                            cls_id = int(box.cls[0])
+                            cls_name = model_wall.names[cls_id].lower()
+                            x1, y1, x2, y2 = [float(v) for v in box.xyxy[0]]
+                            if 'wall' in cls_name:
+                                yolo_walls.append({"bbox": [x1, y1, x2, y2], "conf": conf})
+                    except BaseException as e:
+                        print(f"[YOLO Wall Warning] {e}", file=sys.stderr)
 
-        if os.path.exists(model_path_room):
-            try:
-                model_room = YOLO(model_path_room)
-                print("Running YOLOv8 opening & room inference (room_model.pt)...")
-                res_room = model_room(original_img, verbose=False)
-                for box in res_room[0].boxes:
-                    conf = float(box.conf[0])
-                    if conf < 0.25: continue
-                    cls_id = int(box.cls[0])
-                    cls_name = model_room.names[cls_id].lower()
-                    x1, y1, x2, y2 = [float(v) for v in box.xyxy[0]]
-                    if 'door' in cls_name or 'entrance' in cls_name:
-                        yolo_doors.append({"bbox": [x1, y1, x2, y2], "conf": conf})
-                    elif 'window' in cls_name:
-                        yolo_windows.append({"bbox": [x1, y1, x2, y2], "conf": conf})
-            except Exception as e:
-                print(f"[YOLO Room Warning] {e}")
-    except (Exception, BaseException) as e:
-        print(f"[YOLO Engine Warning] PyTorch/YOLO skipped due to system environment: {e}")
+                if os.path.exists(model_path_room):
+                    try:
+                        model_room = YOLO(model_path_room)
+                        print("Running YOLOv8 opening & room inference (room_model.pt)...", file=sys.stderr)
+                        res_room = model_room(original_img, verbose=False)
+                        for box in res_room[0].boxes:
+                            conf = float(box.conf[0])
+                            if conf < 0.25: continue
+                            cls_id = int(box.cls[0])
+                            cls_name = model_room.names[cls_id].lower()
+                            x1, y1, x2, y2 = [float(v) for v in box.xyxy[0]]
+                            if 'door' in cls_name or 'entrance' in cls_name:
+                                yolo_doors.append({"bbox": [x1, y1, x2, y2], "conf": conf})
+                            elif 'window' in cls_name:
+                                yolo_windows.append({"bbox": [x1, y1, x2, y2], "conf": conf})
+                    except BaseException as e:
+                        print(f"[YOLO Room Warning] {e}", file=sys.stderr)
+        except BaseException as e:
+            print(f"[YOLO Engine Warning] PyTorch/YOLO skipped due to system environment: {e}", file=sys.stderr)
 
     # 1.5 Early EasyOCR Text & Room Label Extraction
     ocr_reader = get_ocr_reader()
