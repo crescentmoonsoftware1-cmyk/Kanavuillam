@@ -185,7 +185,7 @@ def extract_geometry(image_path, out_dir=None):
                         yolo_windows.append({"bbox": [x1, y1, x2, y2], "conf": conf})
             except Exception as e:
                 print(f"[YOLO Room Warning] {e}")
-    except Exception as e:
+    except (Exception, BaseException) as e:
         print(f"[YOLO Engine Warning] PyTorch/YOLO skipped due to system environment: {e}")
 
     # 1.5 Early EasyOCR Text & Room Label Extraction
