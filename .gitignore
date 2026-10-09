@@ -58,3 +58,4 @@ temp*.txt
 test*.jpg
 test*.html
 dummy*.jpg
+backend/cv_debug_output/
