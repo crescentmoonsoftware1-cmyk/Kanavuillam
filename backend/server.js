@@ -48,13 +48,13 @@ app.get('/api/proxy-image', async (req, res) => {
   try {
     const imageUrl = req.query.url;
     if (!imageUrl) return res.status(400).send('URL required');
-    
+
     const response = await fetch(imageUrl);
     if (!response.ok) throw new Error(`Failed to fetch image: ${response.status}`);
-    
+
     const arrayBuffer = await response.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    
+
     res.set('Content-Type', response.headers.get('content-type') || 'image/jpeg');
     res.set('Cache-Control', 'public, max-age=31536000');
     res.set('Access-Control-Allow-Origin', '*');
@@ -102,64 +102,64 @@ function cleanUploadsFolder(dir, maxFiles = 20) {
 
 function validateModelData(data) {
   if (!data || typeof data !== 'object') return null;
-    if (data.error === "STRICT_VALIDATION_FAILED") {
-      console.warn("Geometry Validation Failed but proceeding anyway to prevent pipeline crash:", JSON.stringify(data.error_details));
+  if (data.error === "STRICT_VALIDATION_FAILED") {
+    console.warn("Geometry Validation Failed but proceeding anyway to prevent pipeline crash:", JSON.stringify(data.error_details));
+  }
+  // If this is the new deterministic Canonical JSON, pass it through unchanged
+  if (data.schema_version === "1.0") {
+    if (data.building && !data.project) {
+      data.project = {
+        width: data.building.width_ft,
+        height: data.building.length_ft,
+        floors: 1
+      };
     }
-    // If this is the new deterministic Canonical JSON, pass it through unchanged
-    if (data.schema_version === "1.0") {
-      if (data.building && !data.project) {
-        data.project = {
-          width: data.building.width_ft,
-          height: data.building.length_ft,
-          floors: 1
-        };
-      }
-      if (data.rooms) {
-        data.rooms.forEach(r => {
-          if (r.polygon && r.polygon.length > 0 && r.dimensions) {
-            const xs = r.polygon.map(p => p.x !== undefined ? p.x : p[0]);
-            const ys = r.polygon.map(p => p.y !== undefined ? p.y : p[1]);
-            r.x = Math.min(...xs);
-            r.y = Math.min(...ys);
-            r.width = r.dimensions.width_ft || (Math.max(...xs) - r.x);
-            r.height = r.dimensions.length_ft || (Math.max(...ys) - r.y);
-          } else if (r.bounding_box) {
-            r.x = r.bounding_box.x;
-            r.y = r.bounding_box.y;
-            r.width = r.bounding_box.w;
-            r.height = r.bounding_box.h;
-          }
-        });
-      }
-      if (data.doors) {
-        data.doors.forEach(d => {
-          if (d.start && d.end && d.x === undefined) {
-            d.x = (d.start.x + d.end.x) / 2;
-            d.y = (d.start.y + d.end.y) / 2;
-            d.width = d.width_ft || Math.hypot(d.start.x - d.end.x, d.start.y - d.end.y);
-          } else if (d.position) {
-            d.x = d.position.x;
-            d.y = d.position.y;
-          }
-        });
-      }
-      if (data.windows) {
-        data.windows.forEach(w => {
-          if (w.start && w.end && w.x === undefined) {
-            w.x = (w.start.x + w.end.x) / 2;
-            w.y = (w.start.y + w.end.y) / 2;
-            w.width = w.width_ft || Math.hypot(w.start.x - w.end.x, w.start.y - w.end.y);
-          } else if (w.position) {
-            w.x = w.position.x;
-            w.y = w.position.y;
-          }
-        });
-      }
-      return data;
+    if (data.rooms) {
+      data.rooms.forEach(r => {
+        if (r.polygon && r.polygon.length > 0 && r.dimensions) {
+          const xs = r.polygon.map(p => p.x !== undefined ? p.x : p[0]);
+          const ys = r.polygon.map(p => p.y !== undefined ? p.y : p[1]);
+          r.x = Math.min(...xs);
+          r.y = Math.min(...ys);
+          r.width = r.dimensions.width_ft || (Math.max(...xs) - r.x);
+          r.height = r.dimensions.length_ft || (Math.max(...ys) - r.y);
+        } else if (r.bounding_box) {
+          r.x = r.bounding_box.x;
+          r.y = r.bounding_box.y;
+          r.width = r.bounding_box.w;
+          r.height = r.bounding_box.h;
+        }
+      });
     }
+    if (data.doors) {
+      data.doors.forEach(d => {
+        if (d.start && d.end && d.x === undefined) {
+          d.x = (d.start.x + d.end.x) / 2;
+          d.y = (d.start.y + d.end.y) / 2;
+          d.width = d.width_ft || Math.hypot(d.start.x - d.end.x, d.start.y - d.end.y);
+        } else if (d.position) {
+          d.x = d.position.x;
+          d.y = d.position.y;
+        }
+      });
+    }
+    if (data.windows) {
+      data.windows.forEach(w => {
+        if (w.start && w.end && w.x === undefined) {
+          w.x = (w.start.x + w.end.x) / 2;
+          w.y = (w.start.y + w.end.y) / 2;
+          w.width = w.width_ft || Math.hypot(w.start.x - w.end.x, w.start.y - w.end.y);
+        } else if (w.position) {
+          w.x = w.position.x;
+          w.y = w.position.y;
+        }
+      });
+    }
+    return data;
+  }
 
   if (!data.project) data.project = { name: 'Floor Plan' };
-  
+
   // V4 -> V3 Polyfill for downstream estimators (add rooms array, does not mutate existing walls)
   if (data.semantic) {
     const allRooms = [...(data.semantic.assigned || []), ...(data.semantic.ambiguous || []), ...(data.semantic.unassigned || [])];
@@ -183,7 +183,7 @@ function validateModelData(data) {
   ['rooms', 'walls', 'doors', 'windows', 'furnitures', 'stairs', 'voids', 'columns'].forEach(k => {
     if (!Array.isArray(data[k])) data[k] = [];
   });
-  
+
   // If processor provided walls, use them; otherwise regenerate walls from all rooms & stairs
   if (!data.walls || data.walls.length === 0) {
     if (data.rooms.length > 0) {
@@ -200,10 +200,10 @@ function validateModelData(data) {
       const ry = r.y || (r.bounds ? r.bounds.y : 0);
       const rw = r.width || (r.bounds ? r.bounds.w : 10);
       const rh = r.height || (r.bounds ? r.bounds.h : 10);
-      
+
       const isMain = rName.includes('living') || rName.includes('hall') || rName.includes('portico');
       const isToilet = rName.includes('toilet') || rName.includes('bath') || rName.includes('wc');
-      
+
       data.doors.push({
         id: `D_auto_${dIdx++}`,
         source_id: `D_auto_${dIdx}`,
@@ -302,16 +302,16 @@ function runPython(imagePath) {
           return reject(new Error("Invalid JSON from python pipeline"));
         }
       }
-      
+
       if (data.error && data.error !== "STRICT_VALIDATION_FAILED") {
         return reject(new Error(data.error));
       }
-      
+
       if (code !== 0) {
-         console.error(`[Python Error Output] ${output}`);
-         return reject(new Error(`Python process exited with code ${code}`));
+        console.error(`[Python Error Output] ${output}`);
+        return reject(new Error(`Python process exited with code ${code}`));
       }
-      
+
       resolve(data);
     });
   });
@@ -414,7 +414,7 @@ async function runVastuAnalysis(modelData, lang = 'English', orientation = 'Nort
   // Auto-deduce plot orientation if default or not explicitly provided by user
   if (!orientation || orientation === 'North' || orientation === 'Auto') {
     let autoOrientation = null;
-    
+
     // Priority 1: Spatial Geometry Deduction using Puja / Prayer Room & Kitchen positions (Vastu Anchors)
     if (roomsForOri.length > 0) {
       const pRoom = roomsForOri.find(r => (r.name || '').toLowerCase().match(/puja|pooja|prayer|temple/));
@@ -474,25 +474,25 @@ async function runVastuAnalysis(modelData, lang = 'English', orientation = 'Nort
   else k = 0;
 
   const analysis = {
-    mainEntrance: isTamil 
+    mainEntrance: isTamil
       ? `வாஸ்து நிபுணர் அறிக்கை: உங்கள் ${normOrientation} மனை வடிவமைப்பில் தலைவாசல் கதவானது ${['North', 'North-East', 'East'].includes(normOrientation) ? normOrientation : 'வடக்கு அல்லது கிழக்கு'} திசையில் (உச்ச பகுதி) அமைக்கப்படுவது 100% சுபிட்சமான அமைப்பாகும். இது வீட்டிற்குள் லட்சுமி கடாட்சத்தையும், மன அமைதியையும், தொடர் நிதி வளர்ச்சியையும் கொண்டு வரும். தலைவாசல் கதவு எப்போதும் உட்புறமாக கடிகார திசையில் திறக்குமாறு இருக்க வேண்டும்.`
       : `Expert Vastu Report: For this ${normOrientation}-facing plot, the Main Entrance should ideally be positioned in the exalted ${['North', 'North-East', 'East'].includes(normOrientation) ? normOrientation : 'North or East'} zone. An entrance in North, East, or North-East attracts Lord Kubera's wealth energy and protects the family from negative aura. Ensure the door opens inwards clockwise.`,
-    kitchen: isTamil 
+    kitchen: isTamil
       ? `வாஸ்து நிபுணர் அறிக்கை: சமையலறையானது தென்கிழக்கு திசையில் 'அக்னி மூலை'யில் (Zone of Fire) அமைக்கப்பட வேண்டும். சமையல் செய்பவர் கிழக்கு நோக்கி நின்று சமைக்க வேண்டும். இது பஞ்சபூதங்களில் அக்னி தத்துவத்தை நிலைநிறுத்தி, குடும்பத்தினருக்குச் சிறந்த ஆரோக்கியத்தையும், செழிப்பையும், அன்னபூரணி தேவியின் அருளையும் வழங்கும்.`
       : `Expert Vastu Report: The Kitchen must be constructed in the South-East corner ('Agni Moolai' - Zone of Fire). The cooking stove should face East to harness positive solar rays, ensuring digestive health, physical vitality, and family financial abundance.`,
-    masterBedroom: isTamil 
+    masterBedroom: isTamil
       ? `வாஸ்து நிபுணர் அறிக்கை: முதன்மைப் படுக்கையறை வீட்டின் தென்மேற்கு திசையில் 'நிருதி மூலை'யில் (நில தத்துவம்) அமைக்கப்பட வேண்டும். நில தத்துவத்தைக் கொண்ட நிருதி மூலை குடும்பத் தலைவருக்குத் தலைமைப் பண்பையும், மன உறுதியையும், நிதி நிலைத்தன்மையையும் அளிக்கும். தலை தெற்கு அல்லது மேற்கு நோக்கி வைத்து தூங்குவது ஆழ்ந்த உறக்கத்தையும் ஆரோக்கியத்தையும் தரும்.`
       : `Expert Vastu Report: The Master Bedroom should ideally be positioned in the South-West corner ('Niruthi Moolai' - Earth Element). This anchors grounding stability, health, and financial authority for the house owner. Sleep with head pointing South or West for restorative rest.`,
-    bathroom: isTamil 
+    bathroom: isTamil
       ? `வாஸ்து நிபுணர் அறிக்கை: கழிவறை மற்றும் குளியலறையை வீட்டின் வடமேற்கு 'வாயு மூலை' அல்லது மேற்கு/தெற்கு பகுதிகளில் அமைக்க வேண்டும். வடகிழக்கு (ஈசான்யம்), தென்மேற்கு (நிருதி) மற்றும் வீட்டின் மையப்பகுதி (பிரம்மஸ்தானம்) ஆகியவற்றில் கழிவறை கட்டுவதை முற்றிலும் தவிர்க்க வேண்டும். கழிவறைக் கோப்பை வடக்கு-தெற்கு அச்சில் அமைய வேண்டும்.`
       : `Expert Vastu Report: Bathrooms and Toilets should be positioned safely in the North-West ('Vayu Moolai'), West, or South zones. Strictly avoid building toilets in the sacred North-East (Eesanyam), South-West (Niruthi), or plot Center (Brahmasthan) to prevent spiritual and financial drain. Align commode North-South.`,
-    staircase: isTamil 
+    staircase: isTamil
       ? `வாஸ்து நிபுணர் அறிக்கை: மாடிப்படி வீட்டின் தெற்கு, மேற்கு அல்லது தென்மேற்குப் பகுதியில் அமைவது சிறந்தது. தெற்கு/மேற்கில் பளு இருப்பது வீட்டின் நிதி நிலையையும் பாதுகாப்பையும் வலுப்படுத்தும். படியானது கடிகார திசையில் (Clockwise) சுழன்று மேலேறுமாறு அமைக்கப்பட வேண்டும். வடகிழக்கில் மாடிப்படி அமைப்பதைத் தவிர்க்கவும்.`
       : `Expert Vastu Report: Construct the staircase along the South, West, or South-West perimeter. Placing heavy load in South/West anchors wealth security. Ensure steps turn in a clockwise direction as you ascend, and keep the space under the stairs clutter-free.`,
-    poojaRoom: isTamil 
+    poojaRoom: isTamil
       ? `வாஸ்து நிபுணர் அறிக்கை: பூஜை அறையை வடகிழக்கு 'ஈசான்ய மூலை'யில் (இறைவனின் திசை) அமைக்க வேண்டும். சுவாமி படங்கள் கிழக்கு அல்லது வடக்கு நோக்கி இருக்க வேண்டும். இது வீட்டிற்குள் இறைவனின் அருளையும், மன அமைதியையும், தொடர் நேர்மறை அதிர்வுகளையும் நிரப்பும். தியானம் மற்றும் கூட்டுப் பிரார்த்தனைக்கு இது மிகச் சிறந்த இடமாகும்.`
       : `Expert Vastu Report: Locate the Pooja / Prayer room in the North-East corner ('Eesanyam Moolai'). Idols should face East or North so devotees face East while praying. This invites divine cosmic vibrations, wisdom, and emotional harmony across the household.`,
-    livingRoom: isTamil 
+    livingRoom: isTamil
       ? `வாஸ்து நிபுணர் அறிக்கை: வரவேற்பு அறையானது (Living Hall) வடக்கு, கிழக்கு அல்லது வடகிழக்கு திசையில் அமைய வேண்டும். இது வீட்டிற்கு வரும் விருந்தினர்களுக்கு இதமான உணர்வைத் தருவதோடு, குடும்பத்தில் எப்போதும் மகிழ்ச்சியையும் அதிக வெளிச்சத்தையும் காற்றோட்டத்தையும் பராமரிக்கும்.`
       : `Expert Vastu Report: The Living Room or Main Hall should be situated in the North, East, or North-East zones. This maximizes natural lighting, magnetic solar radiation, fresh airflow, and welcoming energy for all family members and visitors.`,
   };
@@ -504,7 +504,7 @@ async function runVastuAnalysis(modelData, lang = 'English', orientation = 'Nort
   ];
 
   const rooms = modelData.rooms || [];
-  
+
   if (rooms.length === 0) {
     score = 70;
     violations.push(isTamil ? "அறைகள் எதுவும் 2D வரைபடத்தில் சரியாகக் கண்டறியப்படவில்லை." : "No specific rooms detected in the 2D layout to perform deep room placement audit.");
@@ -516,7 +516,7 @@ async function runVastuAnalysis(modelData, lang = 'English', orientation = 'Nort
   rooms.forEach(room => {
     const rawName = (room.name || '').trim();
     const name = rawName.toLowerCase();
-    
+
     let cx = 0, cy = 0;
     if (room.polygon_pts && Array.isArray(room.polygon_pts) && room.polygon_pts.length > 0) {
       let sumX = 0, sumY = 0;
@@ -564,38 +564,38 @@ async function runVastuAnalysis(modelData, lang = 'English', orientation = 'Nort
 
     if (name.includes('kitchen') || name.includes('cook')) {
       if (zone === 'South-East') {
-        roomVastuText = isTamil 
+        roomVastuText = isTamil
           ? `100% வாஸ்து சுபிட்சமான அமைப்பு! சமையலறையானது தென்கிழக்கு 'அக்னி மூலை'யில் அமைந்துள்ளது.`
           : `100% Ideal Vastu Placement! Kitchen is located in South-East ('Agni Moolai').`;
         if (!processedTypes.has('kitchen')) {
-          strengths.push(isTamil 
+          strengths.push(isTamil
             ? `1. சமையலறை மனை வடிவமைப்பின் தென்கிழக்கு 'அக்னி மூலை'யில் (Agni Zone) 100% சரியாக அமைந்துள்ளது.\n2. பஞ்சபூதங்களில் அக்னி தத்துவத்தைக் கொண்ட இத்திசையில் சமையலறை அமைப்பது வீட்டின் ஆரோக்கியத்தை மேம்படுத்தும்.\n3. சமையல் செய்பவர் கிழக்கு நோக்கி நின்று சமைக்கும் வகையில் மேடை அமைப்பது சூரியனின் நேர்மறை கதிர்களை ஈர்க்கும்.\n4. இதனால் குடும்ப உறுப்பினர்களுக்குச் செரிமானக் குறைபாடுகள் இன்றி நல்ல உடல் ஆரோக்கியம் கிடைக்கும்.\n5. மேலும் அன்னபூரணி தேவியின் அருளால் வீட்டில் உணவு மற்றும் செல்வ வளம் தொடர்ந்து பெருகும்.`
             : `1. The Kitchen is accurately positioned in the South-East corner ('Agni Moolai' - Zone of Fire) of your floor plan.\n2. Placing the culinary area in this fire element sector creates an ideal elemental balance in your home.\n3. Designing the cooking counter so the cook faces East harnesses healthy morning solar radiation.\n4. This placement optimizes digestive health, physical energy, and emotional vitality for all residents.\n5. It attracts financial prosperity and ensures a continuous abundance of nourishment for the household.`);
           analysis.kitchen = roomVastuText;
         }
       } else if (zone === 'North-West') {
         score -= 5;
-        roomVastuText = isTamil 
+        roomVastuText = isTamil
           ? `2-வது சிறந்த வாஸ்து அமைப்பு. சமையலறை வடமேற்கு 'வாயு மூலை'யில் அமைந்துள்ளது.`
           : `Secondary Preferred Vastu Placement. Kitchen in North-West ('Vayu Moolai').`;
         if (!processedTypes.has('kitchen')) analysis.kitchen = roomVastuText;
       } else if (zone === 'North-East') {
         score -= 20;
-        roomVastuText = isTamil 
+        roomVastuText = isTamil
           ? `கடுமையான வாஸ்து தோஷம்! சமையலறை வடகிழக்கு 'ஈசான்ய மூலை'யில் அமைந்திருப்பது நீர்-நெருப்பு மோதலை உண்டாக்கும்.`
           : `Severe Vastu Defect! Kitchen in North-East ('Eesanyam Moolai') creates a Water-Fire elemental clash.`;
         if (!processedTypes.has('kitchen')) {
-          violations.push(isTamil 
+          violations.push(isTamil
             ? `1. சமையலறை வடகிழக்கு 'ஈசான்ய மூலை'யில் அமைந்திருப்பது மிகக் கடுமையான நீர்-நெருப்பு வாஸ்து தோஷமாகும்.\n2. ஈசான்ய மூலை நீர் மற்றும் இறை தத்துவத்தைக் கொண்டதால் அங்கு அக்னியை வைப்பது குடும்ப அமைதியைக் கெடுக்கும்.\n3. இது வீட்டிலுள்ள உறுப்பினர்களுக்கு தேவையற்ற மருத்துவச் செலவுகளையும் மன அழுத்தத்தையும் ஏற்படுத்தும்.\n4. இதனால் நிதி நிலைமையில் எதிர்பாராத தடங்கல்களும் தொழில் நஷ்டங்களும் ஏற்பட வாய்ப்புள்ளது.\n5. இந்த வாஸ்து குறைபாடு காரணமாக உங்கள் வாஸ்து புள்ளியில் இருந்து -20 புள்ளிகள் குறைக்கப்பட்டுள்ளது.`
             : `1. Constructing the Kitchen in the sacred North-East ('Eesanyam Moolai') zone is a major elemental clash.\n2. North-East represents the Water and Divine element; introducing Fire here destroys cosmic harmony.\n3. This severe conflict causes sudden medical expenses, family disputes, and chronic stress for residents.\n4. It leads to unexpected financial drain and blocks career growth opportunities.\n5. Due to this major elemental contradiction, 20 points have been deducted from your Vastu score.`);
-          suggestions.push(isTamil 
+          suggestions.push(isTamil
             ? `1. சமையலறையை கூடிய விரைவில் தென்கிழக்கு (அக்னி மூலை) அல்லது வடமேற்கு (வாயு மூலை) திசைக்கு மாற்றவும்.\n2. உடனடியாக மாற்ற இயலவில்லை எனில், சமையல் மேடையின் தென்கிழக்கு மூலையில் ஒரு சிறிய வாஸ்து பிரமிடு வைக்கவும்.\n3. சமையல் அடுப்பை எப்போதும் கிழக்கு நோக்கி நின்று சமைக்குமாறு திசையை மாற்றியமைக்கவும்.\n4. சமையலறை சுவர்களுக்கு இளம் மஞ்சள் அல்லது ஆரஞ்சு வர்ணம் பூசுவது அக்னி ஆற்றலை சமன்படுத்தும்.\n5. சிங்க் (Sink) மற்றும் அடுப்புக்கு இடையே குறைந்தபட்சம் 3 அடி இடைவெளி பராமரிப்பது நீர்-நெருப்பு மோதலைத் தவிர்க்கும்.`
             : `1. Plan to relocate the kitchen space to the South-East ('Agni Moolai') or North-West zone when possible.\n2. If structural relocation is delayed, place a specialized Vastu Pyramid in the South-East corner of the kitchen.\n3. Ensure the cook faces East while preparing meals to receive beneficial morning solar energy.\n4. Paint kitchen walls in warm pastel shades like yellow or light orange to balance fire energy.\n5. Maintain at least 3 feet distance between the water sink and cooking stove to minimize elemental clash.`);
           analysis.kitchen = roomVastuText;
         }
       } else {
         score -= 15;
-        roomVastuText = isTamil 
+        roomVastuText = isTamil
           ? `வாஸ்து குறைபாடு! சமையலறை ${zone} திசையில் அமைந்துள்ளது. தென்கிழக்கு அல்லது வடமேற்கு சிறந்ததாகும்.`
           : `Vastu Defect! Kitchen is situated in ${zone} zone. South-East or North-West is ideal.`;
         if (!processedTypes.has('kitchen')) analysis.kitchen = roomVastuText;
@@ -603,50 +603,50 @@ async function runVastuAnalysis(modelData, lang = 'English', orientation = 'Nort
       processedTypes.add('kitchen');
     } else if (name.includes('master') || (name.includes('bed') && !name.includes('guest'))) {
       if (zone === 'South-West') {
-        roomVastuText = isTamil 
+        roomVastuText = isTamil
           ? `100% வாஸ்து சுபிட்சமான அமைப்பு! முதன்மைப் படுக்கையறை தென்மேற்கு 'நிருதி மூலை'யில் அமைந்துள்ளது.`
           : `100% Perfect Vastu Placement! Master Bedroom is located in South-West ('Niruthi Moolai').`;
         if (!processedTypes.has('bedroom')) {
-          strengths.push(isTamil 
+          strengths.push(isTamil
             ? `1. முதன்மைப் படுக்கையறை வீட்டின் தென்மேற்கு 'நிருதி மூலை'யில் (Earth Element) மிக நேர்த்தியாக அமைந்துள்ளது.\n2. நில தத்துவத்தைக் கொண்ட இத்திசை குடும்பத் தலைவருக்கு தலைமைப் பண்பையும் மன உறுதியையும் வழங்கும்.\n3. தென்மேற்கில் படுக்கையறை அமைவது நிதி நிலைத்தன்மையையும் குடும்பப் பாதுகாப்பையும் பலப்படுத்தும்.\n4. கட்டிலை தெற்கு அல்லது மேற்கு நோக்கிய தலைப்பகுதியுடன் அமைப்பது ஆழ்ந்த உறக்கத்தைத் தரும்.\n5. இது தம்பதியரிடையே பரஸ்பர அன்பையும் குடும்ப அமைதியையும் நீண்ட காலம் பராமரிக்க உதவும்.`
             : `1. The Master Bedroom is impeccably located in the South-West corner ('Niruthi Moolai' - Earth Element).\n2. The Earth element zone provides grounding energy, mental authority, and emotional stability to the breadwinner.\n3. Occupying this corner secures long-term financial prosperity and shields the family from external risks.\n4. Sleeping with the head pointing towards South or West promotes deep restorative sleep and physical health.\n5. It fosters deep mutual understanding, domestic peace, and overall family wellbeing.`);
           analysis.masterBedroom = roomVastuText;
         }
       } else if (zone === 'North-East') {
         score -= 20;
-        roomVastuText = isTamil 
+        roomVastuText = isTamil
           ? `கடுமையான வாஸ்து தோஷம்! வடகிழக்கில் படுக்கையறை அமைப்பது மன அழுத்ததைத் தரும்.`
           : `Severe Vastu Defect! Bedroom in North-East causes mental anxiety and sleep disorders.`;
         if (!processedTypes.has('bedroom')) {
-          violations.push(isTamil 
+          violations.push(isTamil
             ? `1. படுக்கையறை வடகிழக்கு 'ஈசான்ய மூலை'யில் அமைந்திருப்பது கடுமையான வாஸ்து குறைபாடாகும்.\n2. ஈசான்யம் லேசான இறை மண்டலம் என்பதால் அங்கு படுக்கையறை வைப்பது மனக் கலக்கத்தை உண்டாக்கும்.\n3. இது குடும்பத் தலைவருக்குத் தேவையான நிதி ஆதிக்கத்தையும் முடிவெடுக்கும் திறனையும் பலவீனப்படுத்தும்.\n4. தூக்கத்தில் தொடர் இடையூறுகள் மற்றும் தலைவலி போன்ற உடல்நலக் குறைபாடுகள் ஏற்பட வாய்ப்புள்ளது.\n5. இக்குறைபாட்டின் காரணமாக வாஸ்து மதிப்பெண்ணில் இருந்து -20 புள்ளிகள் குறைக்கப்பட்டுள்ளது.`
             : `1. Constructing the Master Bedroom in the North-East ('Eesanyam Moolai') zone is a severe Vastu violation.\n2. North-East is a light, divine spiritual quadrant; heavy sleeping furniture here causes mental anxiety.\n3. It weakens the house owner's decision-making power, financial dominance, and leadership authority.\n4. Residents may experience chronic sleep disturbances, headaches, and persistent restlessness.\n5. Due to this structural mismatch, 20 points have been deducted from your overall Vastu score.`);
-          suggestions.push(isTamil 
+          suggestions.push(isTamil
             ? `1. வடகிழக்கு அறையை தியானம், படிப்பு அல்லது பூஜை அறையாக மாற்றவும்.\n2. கட்டிலை தெற்கு அல்லது மேற்கு திசைக்கு தலை வைத்து தூங்குமாறு உடனடியாக மாற்றியமைக்கவும்.\n3. அறையின் தென்மேற்கு மூலையில் ஒரு சிறிய வாஸ்து படிகாரம் வைக்கவும்.\n4. அறைக்கு லேசான நீலம் அல்லது வெள்ளை வர்ணம் பூசுவது மன அமைதியைத் தரும்.\n5. வடகிழக்கு மூலையில் கனமான மர அலமாரிகள் வைப்பதைத் தவிர்க்கவும்.`
             : `1. Convert the North-East room into a prayer, meditation, or quiet study space.\n2. Reposition the bed frame so head points South or West while sleeping.\n3. Place a small Vastu sea salt crystal bowl in the South-West corner of the bedroom.\n4. Paint bedroom walls with calming white or soft sky-blue colors for tranquil energy.\n5. Avoid placing heavy wardrobes or storage safes in the North-East corner of this room.`);
           analysis.masterBedroom = roomVastuText;
         }
       } else if (zone === 'North-West') {
-        roomVastuText = isTamil 
+        roomVastuText = isTamil
           ? `நடுத்தரமான வாஸ்து அமைப்பு. வடமேற்கு 'வாயு மூலை'யில் படுக்கையறை உள்ளது.`
           : `Acceptable Secondary Placement. Bedroom is in North-West ('Vayu Moolai').`;
         if (!processedTypes.has('bedroom')) analysis.masterBedroom = roomVastuText;
       } else if (zone === 'South-East') {
         score -= 10;
-        roomVastuText = isTamil 
+        roomVastuText = isTamil
           ? `வாஸ்து குறைபாடு! தென்கிழக்கு 'அக்னி மூலை'யில் படுக்கையறை இருப்பது தூக்கத்தில் எரிச்சலைத் தரும்.`
           : `Vastu Caution! South-East bedroom introduces excess elemental heat.`;
         if (!processedTypes.has('bedroom')) {
-          violations.push(isTamil 
+          violations.push(isTamil
             ? `1. படுக்கையறை தென்கிழக்கு 'அக்னி மூலை'யில் அமைந்திருப்பது வெப்ப ஆற்றலை அதிகப்படுத்தும்.\n2. அக்னி மண்டலத்தில் உறங்குவது உடலின் தட்பவெப்ப நிலையை உயர்த்தி கோபத்தையும் எரிச்சலையும் தரும்.\n3. இது தம்பதியரிடையே தேவையற்ற மனக்கசப்புகளையும் தூக்கமின்மையையும் உண்டாக்கலாம்.\n4. இரத்த அழுத்தம் மற்றும் செரிமானப் பிரச்சினைகள் ஏற்பட வாய்ப்புள்ளது.\n5. இதன் காரணமாக வாஸ்து மதிப்பெண்ணில் இருந்து -10 புள்ளிகள் குறைக்கப்பட்டுள்ளது.`
             : `1. Positioning the bedroom in South-East ('Agni Moolai') introduces excess elemental heat.\n2. Sleeping in the fire zone increases physical body temperature and emotional irritability.\n3. It can cause frequent arguments among couples and restless sleeping patterns.\n4. Residents may experience blood pressure fluctuations and digestive discomforts.\n5. Due to this elemental mismatch, 10 points have been deducted from your Vastu score.`);
-          suggestions.push(isTamil 
+          suggestions.push(isTamil
             ? `1. கட்டிலை அறையின் தென்மேற்கு மூலையில் போட்டு தெற்கு நோக்கி தலைவைத்து தூங்கவும்.\n2. அறைக்கு குளிர்ச்சியான வெளிர் நீலம் அல்லது பச்சை நிற பெயிண்ட் பூசவும்.\n3. அறையின் வடகிழக்கு மூலையில் எப்போதும் ஒரு பாத்திரத்தில் சுத்தமான நீர் வைக்கலாம்.\n4. தென்கிழக்கு மூலையில் மின்சாதனப் பொருட்களை அதிகமாக வைப்பதைத் தவிர்க்கவும்.\n5. இரவில் தூங்கும் போது அறை வெப்பநிலையைக் குளிர்ச்சியாகப் பராமரிக்கவும்.`
             : `1. Shift bed placement strictly towards the South-West corner of the room facing South.\n2. Paint the walls with cool pastel shades of blue or light green to neutralize fire heat.\n3. Keep a bowl of clean water in the North-East corner of the bedroom.\n4. Minimize electronic appliances and heavy electrical equipment in the South-East corner.\n5. Ensure good ventilation and maintain cool ambient room temperatures at night.`);
           analysis.masterBedroom = roomVastuText;
         }
       } else {
-        roomVastuText = isTamil 
+        roomVastuText = isTamil
           ? `படுக்கையறை ${zone} திசையில் அமைந்துள்ளது.`
           : `Bedroom is placed in ${zone} zone. Head resting towards South or West is recommended.`;
         if (!processedTypes.has('bedroom')) analysis.masterBedroom = roomVastuText;
@@ -654,44 +654,44 @@ async function runVastuAnalysis(modelData, lang = 'English', orientation = 'Nort
       processedTypes.add('bedroom');
     } else if (name.includes('guest')) {
       if (zone === 'North-West' || zone === 'West' || zone === 'South') {
-        roomVastuText = isTamil 
+        roomVastuText = isTamil
           ? `100% சிறந்த வாஸ்து அமைப்பு! விருந்தினர் அறை ${zone} திசையில் அமைந்துள்ளது.`
           : `100% Ideal Placement! Guest room is located in ${zone} zone.`;
-        strengths.push(isTamil 
+        strengths.push(isTamil
           ? `1. விருந்தினர் அறை ${zone} திசையில் வாஸ்து விதிகளின்படி நேர்த்தியாக அமைந்துள்ளது.\n2. இத்திசையில் விருந்தினர்கள் தங்குவது வீட்டிற்கு நல்வரவையும் நேர்மறை அதிர்வுகளையும் தரும்.\n3. விருந்தினர்களுக்கு மன நிம்மதியும் நல் ஆரோக்கியமும் கிடைக்க இவடிவமைப்பு உதவும்.\n4. வீட்டின் முதன்மை நிருதி மூலையைப் பாதிக்காமல் விருந்தினர் அறை தனியாக அமைக்கப்பட்டுள்ளது.\n5. இது குடும்பத்தின் விருந்தோம்பல் பண்பையும் சமூக மரியாதையும் உயர்த்தும்.`
           : `1. Guest room is positioned in ${zone} zone in strict accordance with architectural Vastu.\n2. Placing guest quarters in this sector brings welcoming energy and positive hospitality vibes.\n3. It ensures visitors feel comfortable, peaceful, and refreshed during their stay.\n4. It preserves the Master Bedroom's privacy and South-West authority intact.\n5. It enhances social goodwill, family harmony, and prestigious guest relations.`);
       } else {
-        roomVastuText = isTamil 
+        roomVastuText = isTamil
           ? `விருந்தினர் அறை ${zone} திசையில் அமைந்துள்ளது.`
           : `Guest room is placed in ${zone} zone.`;
       }
     } else if (name.includes('bath') || name.includes('toilet') || name.includes('wc') || name.includes('wash')) {
       if (zone === 'North-West' || zone === 'West' || zone === 'South') {
-        roomVastuText = isTamil 
+        roomVastuText = isTamil
           ? `100% சரியான வாஸ்து அமைப்பு! கழிவறை பாதுகாப்பான ${zone} திசையில் அமைந்துள்ளது.`
           : `100% Correct Vastu Alignment! Bathroom/toilet is safely positioned in ${zone} zone.`;
         if (!processedTypes.has('bathroom')) {
-          strengths.push(isTamil 
+          strengths.push(isTamil
             ? `1. கழிவறை மற்றும் குளியலறை வடமேற்கு 'வாயு மூலை'யில் (Zone of Air) பாதுகாப்பாக அமைக்கப்பட்டுள்ளது.\n2. வாயு மூலையானது கழிவுகளை வெளியேற்றுவதற்கு வாஸ்து விதிகளின்படி 100% உகந்த திசையாகும்.\n3. வடகிழக்கு மற்றும் தென்மேற்கு ஆகிய புனித திசைகளில் கழிவறை வராமல் தடுத்திருப்பது மிகப்பெரிய பலமாகும்.\n4. கழிவறைக் கோப்பை வடக்கு-தெற்கு அச்சில் அமைப்பது உடலியல் ஆரோக்கியத்திற்கு ஏற்றதாகும்.\n5. இது வீட்டின் தெய்வீக ஆற்றலையும் நிதி நிலைமையையும் பாதிக்காமல் பாதுகாக்கும்.`
             : `1. Bathrooms and Toilets are safely located in the North-West sector ('Vayu Moolai' - Air Element).\n2. Air element zone naturally dispels waste and negative energies without contaminating house aura.\n3. Keeping the sacred North-East and South-West zones free of toilets is a major architectural strength.\n4. Aligning the commode in a North-South orientation adheres strictly to traditional Vastu principles.\n5. This protects your family's health, spiritual purity, and prevents unnecessary financial leaks.`);
           analysis.bathroom = roomVastuText;
         }
       } else if (zone === 'North-East' || zone === 'South-West' || zone === 'Center-Center') {
         score -= 25;
-        roomVastuText = isTamil 
+        roomVastuText = isTamil
           ? `மிகக் கடுமையான வாஸ்து பேரழிவு! கழிவறை ${zone} திசையில் அமைந்துள்ளது.`
           : `Catastrophic Vastu Defect! Toilet is improperly located in sacred ${zone} zone.`;
         if (!processedTypes.has('bathroom')) {
-          violations.push(isTamil 
+          violations.push(isTamil
             ? `1. கழிவறை ${zone} போன்ற புனித வாஸ்து மண்டலத்தில் அமைந்திருப்பது கடுமையான தோஷமாகும்.\n2. ஈசான்யம் அல்லது நிருதி மூலையில் கழிவறை அமைப்பது வீட்டின் தெய்வீக அதிர்வுகளை முழுமையாக சிதைக்கும்.\n3. இது குடும்ப உறுப்பினர்களுக்கு தொடர் பண இழப்பு மற்றும் குணப்படுத்த முடியாத உடல்நலக் கோளாறுகளைத் தரும்.\n4. குடும்ப அமைதி சீர்குலைந்து உறுப்பினரிடையே தேவையற்ற மனக்கசப்புகளும் பிணக்குகளும் ஏற்படும்.\n5. இக்கடுமையான வாஸ்து குறைபாட்டின் காரணமாக உங்கள் மதிப்பெண்ணில் இருந்து -25 புள்ளிகள் குறைக்கப்பட்டுள்ளது.`
             : `1. Positioning the toilet in sacred zones like ${zone} is a major Vastu violation.\n2. Building a restroom in Eesanyam or Niruthi severely pollutes the home's spiritual magnetic field.\n3. It causes persistent financial drains, unexpected debts, and chronic health ailments for residents.\n4. It disturbs household tranquility, creating emotional stress and misunderstandings among family members.\n5. Due to this severe structural defect, 25 points have been deducted from your Vastu score.`);
-          suggestions.push(isTamil 
+          suggestions.push(isTamil
             ? `1. கழிவறையை முடிந்தவரை வடமேற்கு (வாயு மூலை) அல்லது மேற்கு எல்லைப் பகுதிக்கு மாற்ற முயற்சி செய்யவும்.\n2. மாற்ற இயலாத பட்சத்தில், கழிவறையின் கதவை எப்போதும் மூடியே வைத்து உட்புறம் தூய்மையாகப் பராமரிக்கவும்.\n3. கழிவறைக்குள் ஒரு சிறிய கண்ணாடி கிண்ணத்தில் கடல் உப்பு வைத்து வாரத்திற்கு ஒருமுறை மாற்றவும்.\n4. கழிவறையின் வெளிப்புறச் சுவரில் ஒரு வாஸ்து நிவர்த்தி கிரிஸ்டல் அல்லது துளசி செடி வைக்கலாம்.\n5. கழிவறைக்குள் எப்போதும் நல்ல காற்றோட்டம் மற்றும் துர்நாற்றம் வராதவாறு எக்சாஸ்ட் ஃபேன் பயன்படுத்தவும்.`
             : `1. Plan to relocate the restroom to the North-West ('Vayu Moolai') or West perimeter in future renovations.\n2. Keep the toilet door strictly closed at all times to prevent negative energy from entering living spaces.\n3. Place a bowl of unrefined sea salt inside the restroom and refresh it once every week to absorb negativity.\n4. Install an exhaust fan to ensure continuous air circulation and keep the restroom dry and fresh.\n5. Position a small Vastu crystal or remedy strip on the outer wall of the restroom for energetic protection.`);
           analysis.bathroom = roomVastuText;
         }
       } else {
-        roomVastuText = isTamil 
+        roomVastuText = isTamil
           ? `கழிவறை ${zone} திசையில் அமைந்துள்ளது.`
           : `Bathroom is situated in ${zone} zone. Keep door closed and use exhaust fan.`;
         if (!processedTypes.has('bathroom')) analysis.bathroom = roomVastuText;
@@ -699,30 +699,30 @@ async function runVastuAnalysis(modelData, lang = 'English', orientation = 'Nort
       processedTypes.add('bathroom');
     } else if (name.includes('pooja') || name.includes('puja') || name.includes('prayer') || name.includes('temple')) {
       if (zone === 'North-East') {
-        roomVastuText = isTamil 
+        roomVastuText = isTamil
           ? `100% சிறந்த தெய்வீக வாஸ்து அமைப்பு! பூஜை அறை வடகிழக்கு ஈசான்ய மூலையில் அமைந்துள்ளது.`
           : `100% Perfect Divine Vastu Placement! Pooja room is in North-East ('Eesanyam Moolai').`;
         if (!processedTypes.has('pooja')) {
-          strengths.push(isTamil 
+          strengths.push(isTamil
             ? `1. பூஜை அறை வடகிழக்கு 'ஈசான்ய மூலை'யில் (Divine Gateway) 100% தூய்மையாக அமைந்துள்ளது.\n2. ஈசான்ய மூலை இறைவனின் வீடாகக் கருதப்படுவதால் அங்கு இறை வழிபாடு செய்வது தெய்வீக ஆற்றலைத் தரும்.\n3. சுவாமி உருவங்களை கிழக்கு அல்லது வடக்கு நோக்கி வைப்பது வழிபாட்டின் போது நேர்மறை அதிர்வுகளை உயர்த்தும்.\n4. இது வீட்டில் உள்ள உறுப்பினர்களுக்கு தெளிவான சிந்தனை, ஞானம் மற்றும் மன அமைதியை அளிக்கும்.\n5. வீட்டில் எப்போதும் லக்ஷ்மி கடாட்சமும் நேர்மறை ஆற்றலும் நிறைந்திருக்க இத்தூய அமைப்பு வழிவகுக்கும்.`
             : `1. The Pooja Room is positioned in the sacred North-East corner ('Eesanyam Moolai' - Divine Gateway).\n2. As North-East holds highest spiritual vibrations, praying here connects residents directly to divine aura.\n3. Placing idols facing East or North allows devotees to face East during daily prayers.\n4. This enhances mental clarity, spiritual wisdom, concentration, and harmony across all family members.\n5. It attracts auspicious opportunities and maintains a serene, uplifting environment throughout the house.`);
           analysis.poojaRoom = roomVastuText;
         }
       } else if (zone.includes('North') || zone.includes('East')) {
-        roomVastuText = isTamil 
+        roomVastuText = isTamil
           ? `மிகச் சிறந்த வாஸ்து அமைப்பு. பூஜை அறை ${zone} திசையில் அமைந்துள்ளது.`
           : `Highly Auspicious Placement. Pooja room is located in ${zone} zone.`;
         if (!processedTypes.has('pooja')) analysis.poojaRoom = roomVastuText;
       } else {
         score -= 10;
-        roomVastuText = isTamil 
+        roomVastuText = isTamil
           ? `பூஜை அறை ${zone} திசையில் அமைந்துள்ளது. வடகிழக்கு அல்லது கிழக்கு சிறந்ததாகும்.`
           : `Suboptimal Placement. Pooja room is in ${zone} zone. Relocate to North-East.`;
         if (!processedTypes.has('pooja')) {
-          violations.push(isTamil 
+          violations.push(isTamil
             ? `1. பூஜை அறை ${zone} திசையில் அமைந்திருப்பது போதுமான தெய்வீக அதிர்வுகளைத் தராது.\n2. தெற்கு அல்லது மேற்கு திசைகளில் பூஜை அறை வைப்பது ஆன்மீக ஆற்றலைக் குறைக்கும்.\n3. இது பிரார்த்தனையின் போது கவனச்சிதறலையும் குடும்பத்தில் சிறு சலசலப்புகளையும் ஏற்படுத்தலாம்.\n4. வடகிழக்கு ஈசான்ய மூலையை காலியாக விட்டு பூஜையை ${zone}-ல் வைப்பது சுபிட்சத்தைக் குறைக்கும்.\n5. இக்குறைபாட்டின் காரணமாக வாஸ்து புள்ளியில் இருந்து -10 புள்ளிகள் குறைக்கப்பட்டுள்ளது.`
             : `1. Placing the Pooja Room in ${zone} zone provides suboptimal spiritual vibrations.\n2. Orienting prayer altars towards South or West reduces divine cosmic reception.\n3. It may lead to lack of concentration during prayers and minor family frictions.\n4. Leaving North-East unutilized while keeping Pooja in ${zone} weakens domestic peace.\n5. Due to this placement mismatch, 10 points have been deducted from your Vastu score.`);
-          suggestions.push(isTamil 
+          suggestions.push(isTamil
             ? `1. பூஜை அறையை வடகிழக்கு (ஈசான்யம்) அல்லது கிழக்கு திசைக்கு மாற்ற முயற்சி செய்யவும்.\n2. சுவாமி படங்களை எப்போதும் கிழக்கு அல்லது வடக்கு நோக்கி முகம் பார்க்குமாறு வைக்கவும்.\n3. பூஜை அறையின் கதவுகள் இரட்டைப் பலகைகளாக (Double shutter) இருப்பது சிறப்பு.\n4. பூஜை அறையில் எப்போதும் ஒரு நெய் தீபம் அல்லது நல்லெண்ணெய் தீபம் ஏற்றி வைக்கவும்.\n5. பூஜை அறைக்கு மேல் அல்லது கீழே கழிவறை வராதவாறு பார்த்துக் கொள்ளவும்.`
             : `1. Relocate prayer altar towards North-East ('Eesanyam') or East sector when feasible.\n2. Ensure deity idols face East or North so worshippers face East during prayers.\n3. Design two-shutter wooden doors for the Pooja altar for traditional sanctity.\n4. Keep a small brass oil lamp lit during morning and evening prayer sessions.\n5. Ensure toilets or staircases are not located directly above or below the Pooja unit.`);
           analysis.poojaRoom = roomVastuText;
@@ -731,22 +731,22 @@ async function runVastuAnalysis(modelData, lang = 'English', orientation = 'Nort
       processedTypes.add('pooja');
     } else if (name.includes('living') || name.includes('hall') || name.includes('drawing')) {
       if (zone.includes('North') || zone.includes('East') || zone.includes('North-East')) {
-        roomVastuText = isTamil 
+        roomVastuText = isTamil
           ? `100% சிறந்த வாஸ்து அமைப்பு! வரவேற்பு அறை ${zone} திசையில் அமைந்துள்ளது.`
           : `100% Excellent Vastu Alignment! Living Room is situated in ${zone} zone.`;
         if (!processedTypes.has('living')) {
-          strengths.push(isTamil 
+          strengths.push(isTamil
             ? `1. வரவேற்பு அறை (Living Hall) ${zone} திசையில் மிகச் சிறப்பாக அமைந்துள்ளது.\n2. வடகிழக்கு மற்றும் கிழக்குத் திசைகளில் இருந்து வரும் இயல்பான சூரிய ஒளி மற்றும் காற்றோட்டம் வீட்டை நிரப்பும்.\n3. இது வீட்டிற்கு வரும் விருந்தினர்களுக்கு இதமான உணர்வைத் தருவதோடு குடும்பத்தில் மகிழ்ச்சியைப் பெருக்கும்.\n4. பிரம்மஸ்தானத்தில் அதிக பளு இல்லாத வகையில் திறந்தவெளி வரவேற்பறையாக அமைப்பது ஆற்றல் ஓட்டத்தை உயர்த்தும்.\n5. குடும்ப உறுப்பினர்களிடையே பரஸ்பர உறவையும் தொடர்பையும் பலப்படுத்த இவடிவமைப்பு உதவும்.`
             : `1. The Living Hall is positioned excellently across ${zone} quadrant.\n2. This orientation welcomes abundant morning solar light, magnetic energy, and natural ventilation.\n3. It provides a warm, welcoming ambience for guests and fosters harmonious family gatherings.\n4. Keeping the central Brahmasthan open and clutter-free optimizes cosmic energy circulation.\n5. It strengthens social connections, household vitality, and positive mental wellbeing for all.`);
           analysis.livingRoom = roomVastuText;
         }
       } else if (zone === 'Center-Center') {
-        roomVastuText = isTamil 
+        roomVastuText = isTamil
           ? `மிகச் சிறந்த அமைப்பு! வரவேற்பு அறை பிரம்மஸ்தானத்தில் அமைந்துள்ளது.`
           : `Auspicious Placement! Main living area spans across plot center (Brahmasthan).`;
         if (!processedTypes.has('living')) analysis.livingRoom = roomVastuText;
       } else {
-        roomVastuText = isTamil 
+        roomVastuText = isTamil
           ? `வரவேற்பு அறை ${zone} திசையில் அமைந்துள்ளது.`
           : `Living Room is situated in ${zone} zone. Position heavy furniture in South or West.`;
         if (!processedTypes.has('living')) analysis.livingRoom = roomVastuText;
@@ -754,31 +754,31 @@ async function runVastuAnalysis(modelData, lang = 'English', orientation = 'Nort
       processedTypes.add('living');
     } else if (name.includes('stair') || name.includes('step')) {
       if (zone.includes('South') || zone.includes('West')) {
-        roomVastuText = isTamil 
+        roomVastuText = isTamil
           ? `100% சிறந்த வாஸ்து அமைப்பு! மாடிப்படி ${zone} திசையில் அமைந்துள்ளது.`
           : `100% Ideal Vastu Placement! Staircase is built in ${zone} zone.`;
         if (!processedTypes.has('stair')) {
-          strengths.push(isTamil 
+          strengths.push(isTamil
             ? `1. மாடிப்படி வீட்டின் ${zone} பகுதியில் வாஸ்து விதிகளின்படி அமைந்துள்ளது.\n2. தெற்கு மற்றும் மேற்குத் திசைகளில் மாடிப்படியின் கனமான எடையைக் கொடுப்பது வீட்டின் நிதிப் பாதுகாப்பை உறுதியாக்கும்.\n3. படியானது கடிகார திசையில் (Clockwise direction) சுழன்று மேலேறுமாறு அமைக்கப்படுவது நன்மைகளைத் தரும்.\n4. வடகிழக்கு (ஈசான்ய) மூலையில் மாடிப்படி அமைப்பதைத் தவிர்த்திருப்பது மிகப்பெரிய வாஸ்து பலமாகும்.\n5. இது குடும்பத் தலைவரின் தொழில் வளர்ச்சிக்கும் பண இருப்புக்கும் வலுவான அடித்தளமாக அமையும்.`
             : `1. The Staircase is constructed in ${zone} zone in compliance with Vastu rules.\n2. Adding structural weight in the South/West perimeter anchors financial security and household authority.\n3. Designing steps to climb in a clockwise direction aligns perfectly with positive vortex energy.\n4. Avoiding heavy staircase placement in the North-East cosmic gateway is a key architectural asset.\n5. It supports steady professional growth, capital stability, and physical safety for all occupants.`);
           analysis.staircase = roomVastuText;
         }
       } else if (zone === 'North-East' || zone === 'Center-Center') {
         score -= 15;
-        roomVastuText = isTamil 
+        roomVastuText = isTamil
           ? `கடுமையான வாஸ்து குறைபாடு! மாடிப்படி ${zone} திசையில் அமைந்துள்ளது.`
           : `Severe Vastu Defect! Heavy staircase in ${zone} zone blocks energy flow.`;
         if (!processedTypes.has('stair')) {
-          violations.push(isTamil 
+          violations.push(isTamil
             ? `1. மாடிப்படி ${zone} போன்ற புனித மண்டலத்தில் அமைவது பெரிய வாஸ்து தோஷமாகும்.\n2. வடகிழக்கு அல்லது மையப் பகுதியில் கனமான மாடிப்படி அமைப்பது இறை ஆற்றலின் நுழைவாயிலை அடைத்துவிடும்.\n3. இது குடும்பத்தினருக்குத் தொழில் தடைகள், தொடர் கடன் சுமை மற்றும் மன உளைச்சலை உண்டாக்கும்.\n4. பிரம்மஸ்தானத்தில் படி அமைப்பது வீட்டின் அமைதியைக் கெடுத்து நிம்மதியற்ற சூழலை உருவாக்கும்.\n5. இக்கடுமையான வாஸ்து குறைபாட்டின் காரணமாக உங்கள் மதிப்பெண்ணில் இருந்து -15 புள்ளிகள் குறைக்கப்பட்டுள்ளது.`
             : `1. Building the staircase in ${zone} is a critical Vastu defect.\n2. Placing heavy concrete steps in the North-East or Center blocks the cosmic energy gateway entering your house.\n3. It leads to persistent business obstacles, accumulating debts, and severe mental stress for occupants.\n4. A central staircase creates internal turmoil and destabilizes overall household harmony.\n5. Due to this severe structural obstruction, 15 points have been deducted from your Vastu score.`);
-          suggestions.push(isTamil 
+          suggestions.push(isTamil
             ? `1. மாடிப்படியை தெற்கு அல்லது மேற்கு எல்லைப் பகுதிக்கு மாற்றி அமைப்பது மிகச் சிறந்த தீர்வாகும்.\n2. படிக்கட்டுகளின் எண்ணிக்கை எப்போதும் ஒற்றைப்படையில் (15, 17, 21 steps) வருமாறு அமைக்கவும்.\n3. படிக்கட்டுகளுக்குக் கீழே கழிவறை, சமையலறை அல்லது பூஜை அறை அமைப்பதை முற்றிலும் தவிர்க்கவும்.\n4. படி ஏறும் போது எப்போதும் கடிகார திசையில் (Clockwise) சுழன்று ஏறுமாறு வடிவமைக்கவும்.\n5. மாடிப்படி அடியில் பொருட்கள் தேங்காமல் எப்போதும் தூய்மையாக வைத்திருக்கவும்.`
             : `1. Plan to position the staircase along the South or West boundary walls in structural execution.\n2. Ensure total step count is an odd number (e.g. 15, 17, 19, or 21 steps).\n3. Strictly avoid placing restrooms, kitchens, or prayer units under the staircase space.\n4. Ensure the staircase turns clockwise as you ascend to match natural positive vortexes.\n5. Keep the storage under the staircase clean, clutter-free, and well-lit at all times.`);
           analysis.staircase = roomVastuText;
         }
       } else {
-        roomVastuText = isTamil 
+        roomVastuText = isTamil
           ? `மாடிப்படி ${zone} திசையில் அமைந்துள்ளது.`
           : `Staircase is positioned in ${zone} zone. Ensure steps climb clockwise.`;
         if (!processedTypes.has('stair')) analysis.staircase = roomVastuText;
@@ -786,27 +786,27 @@ async function runVastuAnalysis(modelData, lang = 'English', orientation = 'Nort
       processedTypes.add('stair');
     } else if (name.includes('dining')) {
       if (zone === 'West' || zone === 'East' || zone === 'South-East') {
-        roomVastuText = isTamil 
+        roomVastuText = isTamil
           ? `100% சிறந்த வாஸ்து அமைப்பு! உணவருந்தும் அறை ${zone} திசையில் அமைந்துள்ளது.`
           : `100% Ideal Placement! Dining hall is situated in ${zone} zone.`;
         strengths.push(isTamil ? `உணவருந்தும் அறை ${zone} திசையில் உள்ளது.` : `Dining area in ${zone} promotes health and appetite.`);
       } else {
-        roomVastuText = isTamil 
+        roomVastuText = isTamil
           ? `உணவருந்தும் அறை ${zone} திசையில் அமைந்துள்ளது.`
           : `Dining area is placed in ${zone} zone. Facing East or North while eating is recommended.`;
       }
     } else if (name.includes('utility') || name.includes('store')) {
       if (zone === 'North-West' || zone === 'West' || zone === 'South') {
-        roomVastuText = isTamil 
+        roomVastuText = isTamil
           ? `பாதுகாப்பான வாஸ்து அமைப்பு. ஸ்டோர் / யூட்டிலிட்டி ${zone} திசையில் உள்ளது.`
           : `Safe Placement. Utility / Store room is located in ${zone} zone.`;
       } else {
-        roomVastuText = isTamil 
+        roomVastuText = isTamil
           ? `ஸ்டோர் / யூட்டிலிட்டி ${zone} திசையில் அமைந்துள்ளது.`
           : `Utility / Store room is placed in ${zone} zone. Keep it clean and uncluttered.`;
       }
     } else {
-      roomVastuText = isTamil 
+      roomVastuText = isTamil
         ? `${rawName || 'அறை'} ${zone} திசையில் அமைந்துள்ளது.`
         : `${rawName || 'Room'} is positioned in ${zone} zone.`;
     }
@@ -823,15 +823,15 @@ async function runVastuAnalysis(modelData, lang = 'English', orientation = 'Nort
 
   // Ensure score stays within bounds
   score = Math.max(20, Math.min(100, score));
-  
+
   if (fixedScore !== null) score = fixedScore;
-  
+
   let grade = 'B';
   if (score >= 90) grade = 'A+';
   else if (score >= 75) grade = 'A';
   else if (score >= 50) grade = 'B';
   else grade = 'C';
-  
+
   if (fixedGrade !== null) grade = fixedGrade;
 
   // Helper to flatten multiline string arrays into clean single-line bullet strings
@@ -1020,7 +1020,7 @@ function runCostEstimation(modelData, customLiveRates = null) {
   const doors = modelData.doors || [];
   const windows = modelData.windows || [];
   const project = modelData.project || {};
-  
+
   const width = parseFloat(project?.overall_dimensions?.width_ft || project?.width); const height = parseFloat(project?.overall_dimensions?.length_ft || project?.height); if (!width || !height || isNaN(width) || isNaN(height)) throw new Error('SCALE_CALIBRATION_FAILED: Missing physical scale for Cost Estimation.');
   const floors = parseInt(project.floors || 1);
   const floorArea = width * height;
@@ -1033,20 +1033,20 @@ function runCostEstimation(modelData, customLiveRates = null) {
       const s = w.start || (w.coordinates_ft ? w.coordinates_ft.start : null);
       const e = w.end || (w.coordinates_ft ? w.coordinates_ft.end : null);
       if (s && e) {
-         const sx = typeof s === 'object' ? (s.x ?? s[0]) : s[0];
-         const sy = typeof s === 'object' ? (s.y ?? s[1]) : s[1];
-         const ex = typeof e === 'object' ? (e.x ?? e[0]) : e[0];
-         const ey = typeof e === 'object' ? (e.y ?? e[1]) : e[1];
-         const dx = ex - sx;
-         const dy = ey - sy;
-         totalWallLength += Math.sqrt(dx*dx + dy*dy);
+        const sx = typeof s === 'object' ? (s.x ?? s[0]) : s[0];
+        const sy = typeof s === 'object' ? (s.y ?? s[1]) : s[1];
+        const ex = typeof e === 'object' ? (e.x ?? e[0]) : e[0];
+        const ey = typeof e === 'object' ? (e.y ?? e[1]) : e[1];
+        const dx = ex - sx;
+        const dy = ey - sy;
+        totalWallLength += Math.sqrt(dx * dx + dy * dy);
       }
     });
   }
   if (!totalWallLength || totalWallLength === 0) {
     totalWallLength = (width + height) * 2 * 1.5; // fallback
   }
-  totalWallLength *= floors; 
+  totalWallLength *= floors;
 
   const wallHeight = 10;
   let grossWallArea = totalWallLength * wallHeight;
@@ -1058,12 +1058,12 @@ function runCostEstimation(modelData, customLiveRates = null) {
   const doorArea = doorCount * 21; // 7x3 ft standard door
   const windowArea = windowCount * 16; // 4x4 ft standard window
   const netWallArea = Math.max(0, grossWallArea - doorArea - windowArea);
-  
+
   // 3. True Bill of Quantities (BOQ) Constants (per 100 sqft or 100 cft)
   const BRICKS_PER_SQFT = 8.5; // For 9-inch wall
   const CEMENT_PER_100SQFT_WALL = 1.5; // bags
   const SAND_PER_100SQFT_WALL = 15; // cft
-  
+
   const PLASTER_AREA = netWallArea * 2; // both sides
   const CEMENT_PER_100SQFT_PLASTER = 0.5;
   const SAND_PER_100SQFT_PLASTER = 5;
@@ -1073,7 +1073,7 @@ function runCostEstimation(modelData, customLiveRates = null) {
   const SAND_PER_100CFT_RCC = 42;
   const AGGREGATE_PER_100CFT_RCC = 84;
   const STEEL_PER_SQFT = 3.5; // kg
-  
+
   const PAINT_AREA = PLASTER_AREA + totalArea; // Walls + ceiling
   const PAINT_COVERAGE = 50; // sqft per liter (2 coats)
 
@@ -1123,18 +1123,18 @@ function runCostEstimation(modelData, customLiveRates = null) {
   const baseTotal = totalMaterialCost + laborCost;
 
   // Breakdown for UI
-  const structureCost = (materials.cement.quantity * materials.cement.price) + 
-                        (materials.steel.quantity * materials.steel.price) +
-                        (materials.sand.quantity * materials.sand.price) +
-                        (materials.aggregate.quantity * materials.aggregate.price) +
-                        (materials.bricks.quantity * materials.bricks.price) +
-                        (laborCost * 0.5); 
-  
+  const structureCost = (materials.cement.quantity * materials.cement.price) +
+    (materials.steel.quantity * materials.steel.price) +
+    (materials.sand.quantity * materials.sand.price) +
+    (materials.aggregate.quantity * materials.aggregate.price) +
+    (materials.bricks.quantity * materials.bricks.price) +
+    (laborCost * 0.5);
+
   const finishingCost = (materials.paint.quantity * materials.paint.price) + (laborCost * 0.2);
   const flooringCost = (materials.tiles.quantity * materials.tiles.price) + (laborCost * 0.15);
   const doorsWindowsCost = (materials.doors.quantity * materials.doors.price) + (materials.windows.quantity * materials.windows.price) + (laborCost * 0.05);
   const elecPlumbingCost = (materials.electrical.quantity * materials.electrical.price) + (materials.plumbing.quantity * materials.plumbing.price) + (laborCost * 0.1);
-  const contingency = Math.round(baseTotal * 0.05); 
+  const contingency = Math.round(baseTotal * 0.05);
 
   // Room breakdown removed as requested by user
   const roomBreakdown = [];
@@ -1804,19 +1804,19 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
           } catch (e) {
             console.log('[Step 8] Replicate ControlNet failed, falling back to DALL-E:', e.message);
             try {
-               modernImageUrl = await fetchOpenAIDalle(dynamicPrompt, dalleSize);
+              modernImageUrl = await fetchOpenAIDalle(dynamicPrompt, dalleSize);
             } catch (e2) {
-               console.log('[Step 8] DALL-E fallback also failed:', e2.message);
+              console.log('[Step 8] DALL-E fallback also failed:', e2.message);
             }
           }
-          
+
           try {
-             isometricImageUrl = await fetchReplicate(isometricPrompt); // Text-to-image for isometric
-             console.log('[Step 8] ✓ Replicate Isometric Successful!');
+            isometricImageUrl = await fetchReplicate(isometricPrompt); // Text-to-image for isometric
+            console.log('[Step 8] ✓ Replicate Isometric Successful!');
           } catch (e) {
-             try {
-                isometricImageUrl = await fetchOpenAIDalle(isometricPrompt, "1024x1024");
-             } catch(e2) {}
+            try {
+              isometricImageUrl = await fetchOpenAIDalle(isometricPrompt, "1024x1024");
+            } catch (e2) { }
           }
         } else {
           const [elevationImg, isometricImg] = await Promise.allSettled([
@@ -1829,14 +1829,14 @@ Based on all these rules and your deep analysis of this specific floor plan, wri
               throw e;
             })
           ]);
-  
+
           if (elevationImg.status === 'fulfilled') {
             console.log('[Step 8] ✓ Elevation Successful!');
             modernImageUrl = elevationImg.value;
           } else {
             console.log(`[Step 8] Elevation Error: ${elevationImg.reason.message}`);
           }
-  
+
           if (isometricImg.status === 'fulfilled') {
             console.log('[Step 8] ✓ Isometric Successful!');
             isometricImageUrl = isometricImg.value;
@@ -2037,11 +2037,11 @@ app.get('/api/cost/:id', async (req, res) => {
 app.get('/api/projects', async (req, res) => {
   const { email } = req.query;
   let query = supabase.from('projects').select('*').order('created_at', { ascending: false });
-  
+
   if (email && email !== 'unknown') {
     query = query.eq('user_email', email);
   }
-  
+
   const { data, error } = await query;
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);

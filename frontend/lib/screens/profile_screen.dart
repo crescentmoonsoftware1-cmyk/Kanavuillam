@@ -351,7 +351,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFBBF24).withValues(alpha: 0.20),
+                          color:
+                              const Color(0xFFFBBF24).withValues(alpha: 0.20),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(
@@ -422,7 +423,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF34D399).withValues(alpha: 0.20),
+                          color:
+                              const Color(0xFF34D399).withValues(alpha: 0.20),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(
@@ -527,7 +529,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ],
                 ),
                 const SizedBox(height: 18),
-
                 _buildGlassItem(
                   icon: Icons.person_outline_rounded,
                   title: 'Full Name',
@@ -542,7 +543,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ).animate().fadeIn(delay: 450.ms).slideY(begin: 0.1),
-
                 _buildGlassItem(
                   icon: Icons.phone_outlined,
                   title: 'Phone Number',
@@ -557,7 +557,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.1),
-
                 _buildGlassItem(
                   icon: Icons.email_outlined,
                   title: 'Email Address',
@@ -572,7 +571,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ).animate().fadeIn(delay: 550.ms).slideY(begin: 0.1),
-
                 _buildGlassItem(
                   icon: Icons.location_on_outlined,
                   title: 'Site Location',
@@ -587,7 +585,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.1),
-
                 _buildGlassItem(
                   icon: Icons.history_rounded,
                   title: 'Payment & Project History',

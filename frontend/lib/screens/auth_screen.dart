@@ -117,8 +117,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
       final googleUser = await googleSignIn.authenticate();
 
-      final GoogleSignInAuthentication googleAuth =
-          googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
       final String? idToken = googleAuth.idToken;
 
       if (idToken == null) {
@@ -397,7 +396,8 @@ class _AuthScreenState extends State<AuthScreen> {
                       'https://lh3.googleusercontent.com/aida-public/AB6AXuDbdKPAYD3ZGh7eXLnPY3hqTzoPD4M6FXa0CNiZcZLAwDoTbwxfO4Punj0-mvvh3ktPnO1X5J0CsFv5QzvNBpHoZvlIobPYVOVKoxaOV3FWJFIZzSYOecfyxtCDF-SIcZw0HEQlm9MzZDz0fRuPmta_mpDiBi0YPvfgayaPZf2Kx_sK1q2cgCvUJRL8VuZH-3mFqzN56erEcYl5UXyYCfwUXxkNED3vklF9djIyGb12oA26T44_V-Nmhg',
                       fit: BoxFit.cover,
                       alignment: Alignment.topCenter,
-                      errorBuilder: (_, __, ___) => Container(color: const Color(0xFFE8DDA8)),
+                      errorBuilder: (_, __, ___) =>
+                          Container(color: const Color(0xFFE8DDA8)),
                     );
                   },
                 ),
@@ -429,10 +429,10 @@ class _AuthScreenState extends State<AuthScreen> {
                         'assets/images/logo.png',
                         height: isCompact ? 80 : 95,
                         fit: BoxFit.contain,
-                      )
-                          .animate()
-                          .fadeIn(duration: 500.ms)
-                          .scale(begin: const Offset(0.9, 0.9), end: const Offset(1.0, 1.0), duration: 500.ms),
+                      ).animate().fadeIn(duration: 500.ms).scale(
+                          begin: const Offset(0.9, 0.9),
+                          end: const Offset(1.0, 1.0),
+                          duration: 500.ms),
                     ),
                   ),
                 ),
@@ -462,11 +462,13 @@ class _AuthScreenState extends State<AuthScreen> {
                 ],
               ),
               child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(32)),
                 child: SafeArea(
                   top: false,
                   child: Padding(
-                    padding: EdgeInsets.fromLTRB(24, isCompact ? 14 : 20, 24, 14),
+                    padding:
+                        EdgeInsets.fromLTRB(24, isCompact ? 14 : 20, 24, 14),
                     child: LayoutBuilder(
                       builder: (context, constraints) {
                         return SingleChildScrollView(
@@ -479,17 +481,21 @@ class _AuthScreenState extends State<AuthScreen> {
                             ),
                             child: IntrinsicHeight(
                               child: Column(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   // Main Form Content Group
                                   Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       // Sheet Title: Welcome back / Create account
                                       Text(
-                                        _isLogin ? 'Welcome back' : 'Create account',
+                                        _isLogin
+                                            ? 'Welcome back'
+                                            : 'Create account',
                                         style: const TextStyle(
                                           fontFamily: 'Syne',
                                           fontSize: 20,
@@ -513,16 +519,21 @@ class _AuthScreenState extends State<AuthScreen> {
                                               prefixIcon: Icons.badge_outlined,
                                               keyboardType: TextInputType.name,
                                             ),
-                                            SizedBox(height: isCompact ? 8 : 10),
+                                            SizedBox(
+                                                height: isCompact ? 8 : 10),
                                           ],
 
                                           // Email Address Field
                                           _buildCustomInputField(
                                             controller: _emailController,
                                             focusNode: _emailFocusNode,
-                                            hintText: _isLogin ? 'alex.morgan@gmail.com' : 'Email address',
-                                            prefixIcon: Icons.mail_outline_rounded,
-                                            keyboardType: TextInputType.emailAddress,
+                                            hintText: _isLogin
+                                                ? 'alex.morgan@gmail.com'
+                                                : 'Email address',
+                                            prefixIcon:
+                                                Icons.mail_outline_rounded,
+                                            keyboardType:
+                                                TextInputType.emailAddress,
                                           ),
 
                                           SizedBox(height: isCompact ? 8 : 10),
@@ -532,7 +543,8 @@ class _AuthScreenState extends State<AuthScreen> {
                                             controller: _passwordController,
                                             focusNode: _passwordFocusNode,
                                             hintText: 'Password',
-                                            prefixIcon: Icons.lock_outline_rounded,
+                                            prefixIcon:
+                                                Icons.lock_outline_rounded,
                                             isPassword: true,
                                           ),
                                         ],
@@ -545,10 +557,13 @@ class _AuthScreenState extends State<AuthScreen> {
                                           alignment: Alignment.centerRight,
                                           child: InkWell(
                                             onTap: () {
-                                              ScaffoldMessenger.of(context).showSnackBar(
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
                                                 const SnackBar(
-                                                  content: Text('Password reset instructions sent to your email.'),
-                                                  behavior: SnackBarBehavior.floating,
+                                                  content: Text(
+                                                      'Password reset instructions sent to your email.'),
+                                                  behavior:
+                                                      SnackBarBehavior.floating,
                                                 ),
                                               );
                                             },
@@ -559,7 +574,8 @@ class _AuthScreenState extends State<AuthScreen> {
                                                 fontSize: 13,
                                                 fontWeight: FontWeight.w400,
                                                 color: Color(0xFF1F2A21),
-                                                decoration: TextDecoration.underline,
+                                                decoration:
+                                                    TextDecoration.underline,
                                               ),
                                             ),
                                           ),
@@ -570,17 +586,23 @@ class _AuthScreenState extends State<AuthScreen> {
                                         Row(
                                           children: [
                                             GestureDetector(
-                                              onTap: () => setState(() => _agreedToLegal = !_agreedToLegal),
+                                              onTap: () => setState(() =>
+                                                  _agreedToLegal =
+                                                      !_agreedToLegal),
                                               child: Container(
                                                 width: 20,
                                                 height: 20,
                                                 decoration: BoxDecoration(
-                                                  color: const Color(0xFFFBF8EA),
-                                                  borderRadius: BorderRadius.circular(6),
+                                                  color:
+                                                      const Color(0xFFFBF8EA),
+                                                  borderRadius:
+                                                      BorderRadius.circular(6),
                                                   border: Border.all(
                                                     color: _agreedToLegal
-                                                        ? const Color(0xFF1F2A21)
-                                                        : const Color(0xFFD9D2B0),
+                                                        ? const Color(
+                                                            0xFF1F2A21)
+                                                        : const Color(
+                                                            0xFFD9D2B0),
                                                     width: 1.5,
                                                   ),
                                                 ),
@@ -588,7 +610,8 @@ class _AuthScreenState extends State<AuthScreen> {
                                                     ? const Icon(
                                                         Icons.check_rounded,
                                                         size: 14,
-                                                        color: Color(0xFF1F2A21),
+                                                        color:
+                                                            Color(0xFF1F2A21),
                                                       )
                                                     : null,
                                               ),
@@ -596,7 +619,8 @@ class _AuthScreenState extends State<AuthScreen> {
                                             const SizedBox(width: 10),
                                             Expanded(
                                               child: Wrap(
-                                                crossAxisAlignment: WrapCrossAlignment.center,
+                                                crossAxisAlignment:
+                                                    WrapCrossAlignment.center,
                                                 children: [
                                                   const Text(
                                                     'I agree to ',
@@ -607,16 +631,23 @@ class _AuthScreenState extends State<AuthScreen> {
                                                     ),
                                                   ),
                                                   InkWell(
-                                                    onTap: () => _showLegalBottomSheet(
-                                                        'Terms of Service', LegalTexts.termsAndConditions),
+                                                    onTap: () =>
+                                                        _showLegalBottomSheet(
+                                                            'Terms of Service',
+                                                            LegalTexts
+                                                                .termsAndConditions),
                                                     child: const Text(
                                                       'Terms',
                                                       style: TextStyle(
                                                         fontFamily: 'Inter',
                                                         fontSize: 13,
-                                                        fontWeight: FontWeight.w600,
-                                                        color: Color(0xFF1B211C),
-                                                        decoration: TextDecoration.underline,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                        color:
+                                                            Color(0xFF1B211C),
+                                                        decoration:
+                                                            TextDecoration
+                                                                .underline,
                                                       ),
                                                     ),
                                                   ),
@@ -633,22 +664,29 @@ class _AuthScreenState extends State<AuthScreen> {
                                         width: double.infinity,
                                         height: isCompact ? 48 : 52,
                                         child: ElevatedButton(
-                                          onPressed: _isLoading ? null : _submit,
+                                          onPressed:
+                                              _isLoading ? null : _submit,
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: const Color(0xFF1F2A21),
-                                            foregroundColor: const Color(0xFFF6F1DC),
+                                            backgroundColor:
+                                                const Color(0xFF1F2A21),
+                                            foregroundColor:
+                                                const Color(0xFFF6F1DC),
                                             elevation: 4,
-                                            shadowColor: const Color(0x2E1F2A21),
+                                            shadowColor:
+                                                const Color(0x2E1F2A21),
                                             shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(26),
+                                              borderRadius:
+                                                  BorderRadius.circular(26),
                                             ),
-                                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 16),
                                           ),
                                           child: _isLoading
                                               ? const SizedBox(
                                                   width: 24,
                                                   height: 24,
-                                                  child: CircularProgressIndicator(
+                                                  child:
+                                                      CircularProgressIndicator(
                                                     color: Color(0xFFF6F1DC),
                                                     strokeWidth: 2.5,
                                                   ),
@@ -657,27 +695,37 @@ class _AuthScreenState extends State<AuthScreen> {
                                                   alignment: Alignment.center,
                                                   children: [
                                                     Text(
-                                                      _isLogin ? 'Sign in' : 'Register',
+                                                      _isLogin
+                                                          ? 'Sign in'
+                                                          : 'Register',
                                                       style: const TextStyle(
                                                         fontFamily: 'Inter',
                                                         fontSize: 16,
-                                                        fontWeight: FontWeight.w600,
-                                                        color: Color(0xFFF6F1DC),
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                        color:
+                                                            Color(0xFFF6F1DC),
                                                       ),
                                                     ),
                                                     Align(
-                                                      alignment: Alignment.centerRight,
+                                                      alignment:
+                                                          Alignment.centerRight,
                                                       child: Container(
                                                         width: 30,
                                                         height: 30,
-                                                        decoration: const BoxDecoration(
-                                                          color: Color(0xFFF6F1DC),
-                                                          shape: BoxShape.circle,
+                                                        decoration:
+                                                            const BoxDecoration(
+                                                          color:
+                                                              Color(0xFFF6F1DC),
+                                                          shape:
+                                                              BoxShape.circle,
                                                         ),
                                                         child: const Icon(
-                                                          Icons.arrow_forward_rounded,
+                                                          Icons
+                                                              .arrow_forward_rounded,
                                                           size: 17,
-                                                          color: Color(0xFF1F2A21),
+                                                          color:
+                                                              Color(0xFF1F2A21),
                                                         ),
                                                       ),
                                                     ),
@@ -692,10 +740,13 @@ class _AuthScreenState extends State<AuthScreen> {
                                       Row(
                                         children: const [
                                           Expanded(
-                                            child: Divider(color: Color(0xFFD9D2B0), height: 1),
+                                            child: Divider(
+                                                color: Color(0xFFD9D2B0),
+                                                height: 1),
                                           ),
                                           Padding(
-                                            padding: EdgeInsets.symmetric(horizontal: 12),
+                                            padding: EdgeInsets.symmetric(
+                                                horizontal: 12),
                                             child: Text(
                                               'or',
                                               style: TextStyle(
@@ -706,7 +757,9 @@ class _AuthScreenState extends State<AuthScreen> {
                                             ),
                                           ),
                                           Expanded(
-                                            child: Divider(color: Color(0xFFD9D2B0), height: 1),
+                                            child: Divider(
+                                                color: Color(0xFFD9D2B0),
+                                                height: 1),
                                           ),
                                         ],
                                       ),
@@ -718,16 +771,23 @@ class _AuthScreenState extends State<AuthScreen> {
                                         width: double.infinity,
                                         height: isCompact ? 46 : 48,
                                         child: OutlinedButton(
-                                          onPressed: _isLoading ? null : _signInWithGoogle,
+                                          onPressed: _isLoading
+                                              ? null
+                                              : _signInWithGoogle,
                                           style: OutlinedButton.styleFrom(
-                                            backgroundColor: const Color(0xFFFBF8EA),
-                                            side: const BorderSide(color: Color(0xFFD9D2B0), width: 1.0),
+                                            backgroundColor:
+                                                const Color(0xFFFBF8EA),
+                                            side: const BorderSide(
+                                                color: Color(0xFFD9D2B0),
+                                                width: 1.0),
                                             shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(24),
+                                              borderRadius:
+                                                  BorderRadius.circular(24),
                                             ),
                                           ),
                                           child: Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
                                             children: const [
                                               CustomPaint(
                                                 size: Size(20, 20),
@@ -752,13 +812,17 @@ class _AuthScreenState extends State<AuthScreen> {
 
                                   // Footer Toggle Link (Anchored cleanly at bottom of page)
                                   Padding(
-                                    padding: const EdgeInsets.only(top: 8, bottom: 4),
+                                    padding: const EdgeInsets.only(
+                                        top: 8, bottom: 4),
                                     child: Center(
                                       child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
                                         children: [
                                           Text(
-                                            _isLogin ? 'New here?' : 'Have an account?',
+                                            _isLogin
+                                                ? 'New here?'
+                                                : 'Have an account?',
                                             style: const TextStyle(
                                               fontFamily: 'Inter',
                                               fontSize: 14,
@@ -779,7 +843,8 @@ class _AuthScreenState extends State<AuthScreen> {
                                                 fontSize: 14,
                                                 fontWeight: FontWeight.w600,
                                                 color: Color(0xFF1F2A21),
-                                                decoration: TextDecoration.underline,
+                                                decoration:
+                                                    TextDecoration.underline,
                                               ),
                                             ),
                                           ),
@@ -819,14 +884,17 @@ class GoogleGLogoPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
     final bluePath = Path();
     bluePath.moveTo(22.56 * scale, 12.25 * scale);
-    bluePath.cubicTo(22.56 * scale, 11.47 * scale, 22.49 * scale, 10.72 * scale, 22.36 * scale, 10.0 * scale);
+    bluePath.cubicTo(22.56 * scale, 11.47 * scale, 22.49 * scale, 10.72 * scale,
+        22.36 * scale, 10.0 * scale);
     bluePath.lineTo(12.0 * scale, 10.0 * scale);
     bluePath.lineTo(12.0 * scale, 14.26 * scale);
     bluePath.lineTo(17.92 * scale, 14.26 * scale);
-    bluePath.cubicTo(17.66 * scale, 15.63 * scale, 16.88 * scale, 16.79 * scale, 15.71 * scale, 17.57 * scale);
+    bluePath.cubicTo(17.66 * scale, 15.63 * scale, 16.88 * scale, 16.79 * scale,
+        15.71 * scale, 17.57 * scale);
     bluePath.lineTo(15.71 * scale, 20.34 * scale);
     bluePath.lineTo(19.28 * scale, 20.34 * scale);
-    bluePath.cubicTo(21.36 * scale, 18.42 * scale, 22.56 * scale, 15.60 * scale, 22.56 * scale, 12.25 * scale);
+    bluePath.cubicTo(21.36 * scale, 18.42 * scale, 22.56 * scale, 15.60 * scale,
+        22.56 * scale, 12.25 * scale);
     canvas.drawPath(bluePath, bluePaint);
 
     // Green Path
@@ -835,13 +903,17 @@ class GoogleGLogoPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
     final greenPath = Path();
     greenPath.moveTo(12.0 * scale, 23.0 * scale);
-    greenPath.cubicTo(14.97 * scale, 23.0 * scale, 17.46 * scale, 22.02 * scale, 19.28 * scale, 20.34 * scale);
+    greenPath.cubicTo(14.97 * scale, 23.0 * scale, 17.46 * scale, 22.02 * scale,
+        19.28 * scale, 20.34 * scale);
     greenPath.lineTo(15.71 * scale, 17.57 * scale);
-    greenPath.cubicTo(14.73 * scale, 18.23 * scale, 13.48 * scale, 18.63 * scale, 12.0 * scale, 18.63 * scale);
-    greenPath.cubicTo(9.14 * scale, 18.63 * scale, 6.71 * scale, 16.70 * scale, 5.84 * scale, 14.10 * scale);
+    greenPath.cubicTo(14.73 * scale, 18.23 * scale, 13.48 * scale,
+        18.63 * scale, 12.0 * scale, 18.63 * scale);
+    greenPath.cubicTo(9.14 * scale, 18.63 * scale, 6.71 * scale, 16.70 * scale,
+        5.84 * scale, 14.10 * scale);
     greenPath.lineTo(2.18 * scale, 14.10 * scale);
     greenPath.lineTo(2.18 * scale, 16.94 * scale);
-    greenPath.cubicTo(3.99 * scale, 20.53 * scale, 7.70 * scale, 23.0 * scale, 12.0 * scale, 23.0 * scale);
+    greenPath.cubicTo(3.99 * scale, 20.53 * scale, 7.70 * scale, 23.0 * scale,
+        12.0 * scale, 23.0 * scale);
     canvas.drawPath(greenPath, greenPaint);
 
     // Yellow Path
@@ -850,12 +922,16 @@ class GoogleGLogoPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
     final yellowPath = Path();
     yellowPath.moveTo(5.84 * scale, 14.10 * scale);
-    yellowPath.cubicTo(5.62 * scale, 13.44 * scale, 5.49 * scale, 12.74 * scale, 5.49 * scale, 12.0 * scale);
-    yellowPath.cubicTo(5.49 * scale, 11.26 * scale, 5.62 * scale, 10.56 * scale, 5.84 * scale, 9.90 * scale);
+    yellowPath.cubicTo(5.62 * scale, 13.44 * scale, 5.49 * scale, 12.74 * scale,
+        5.49 * scale, 12.0 * scale);
+    yellowPath.cubicTo(5.49 * scale, 11.26 * scale, 5.62 * scale, 10.56 * scale,
+        5.84 * scale, 9.90 * scale);
     yellowPath.lineTo(5.84 * scale, 7.06 * scale);
     yellowPath.lineTo(2.18 * scale, 7.06 * scale);
-    yellowPath.cubicTo(1.43 * scale, 8.55 * scale, 1.0 * scale, 10.22 * scale, 1.0 * scale, 12.0 * scale);
-    yellowPath.cubicTo(1.0 * scale, 13.78 * scale, 1.43 * scale, 15.45 * scale, 2.18 * scale, 16.94 * scale);
+    yellowPath.cubicTo(1.43 * scale, 8.55 * scale, 1.0 * scale, 10.22 * scale,
+        1.0 * scale, 12.0 * scale);
+    yellowPath.cubicTo(1.0 * scale, 13.78 * scale, 1.43 * scale, 15.45 * scale,
+        2.18 * scale, 16.94 * scale);
     yellowPath.lineTo(5.84 * scale, 14.10 * scale);
     canvas.drawPath(yellowPath, yellowPaint);
 
@@ -865,12 +941,16 @@ class GoogleGLogoPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
     final redPath = Path();
     redPath.moveTo(12.0 * scale, 5.38 * scale);
-    redPath.cubicTo(13.62 * scale, 5.38 * scale, 15.06 * scale, 5.94 * scale, 16.21 * scale, 7.02 * scale);
+    redPath.cubicTo(13.62 * scale, 5.38 * scale, 15.06 * scale, 5.94 * scale,
+        16.21 * scale, 7.02 * scale);
     redPath.lineTo(19.36 * scale, 3.87 * scale);
-    redPath.cubicTo(17.45 * scale, 2.09 * scale, 14.97 * scale, 1.0 * scale, 12.0 * scale, 1.0 * scale);
-    redPath.cubicTo(7.70 * scale, 1.0 * scale, 3.99 * scale, 3.47 * scale, 2.18 * scale, 7.06 * scale);
+    redPath.cubicTo(17.45 * scale, 2.09 * scale, 14.97 * scale, 1.0 * scale,
+        12.0 * scale, 1.0 * scale);
+    redPath.cubicTo(7.70 * scale, 1.0 * scale, 3.99 * scale, 3.47 * scale,
+        2.18 * scale, 7.06 * scale);
     redPath.lineTo(5.84 * scale, 9.90 * scale);
-    redPath.cubicTo(6.71 * scale, 7.30 * scale, 9.14 * scale, 5.38 * scale, 12.0 * scale, 5.38 * scale);
+    redPath.cubicTo(6.71 * scale, 7.30 * scale, 9.14 * scale, 5.38 * scale,
+        12.0 * scale, 5.38 * scale);
     canvas.drawPath(redPath, redPaint);
   }
 
