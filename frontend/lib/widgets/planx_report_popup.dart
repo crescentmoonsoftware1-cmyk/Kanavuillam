@@ -68,8 +68,7 @@ class _PlanXReportPopupState extends State<PlanXReportPopup> {
     '3d',
     'vastu',
     'cost',
-    'structural',
-    'elevation'
+    'structural'
   };
   final int _totalPrice = 500; // Fixed total amount for all projects
 

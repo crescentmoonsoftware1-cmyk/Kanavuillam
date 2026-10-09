@@ -249,8 +249,6 @@ class DownloadScreen extends StatelessWidget {
                                     names.add('Cost Estimation');
                                   if (selectedReportIds.contains('structural'))
                                     names.add('Structural');
-                                  if (selectedReportIds.contains('elevation'))
-                                    names.add('Elevation');
                                   if (selectedReportIds.contains('plan'))
                                     names.add('2D Plan');
 
@@ -324,13 +322,6 @@ class DownloadScreen extends StatelessWidget {
                               icon: Icons.foundation_outlined,
                               title: 'Structural\nReport',
                               color: Color(0xFF8B5CF6)));
-                        }
-                        if (selectedReportIds.contains('elevation') ||
-                            selectedReportIds.isEmpty) {
-                          boxes.add(const _FeatureBox(
-                              icon: Icons.house_outlined,
-                              title: 'Elevation\nDesign',
-                              color: Color(0xFFEF4444)));
                         }
                         if (selectedReportIds.contains('plan') ||
                             selectedReportIds.isEmpty) {
