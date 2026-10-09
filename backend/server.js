@@ -105,8 +105,8 @@ function validateModelData(data) {
   if (data.error === "STRICT_VALIDATION_FAILED") {
     console.warn("Geometry Validation Failed but proceeding anyway to prevent pipeline crash:", JSON.stringify(data.error_details));
   }
-  // If this is the new deterministic Canonical JSON, pass it through unchanged
-  if (data.schema_version === "1.0") {
+  // If this is the new deterministic Canonical JSON (schema 1.0 or 2.0), pass it through unchanged & normalize room bounds
+  if (data.schema_version === "1.0" || data.schema_version === "2.0") {
     if (data.building && !data.project) {
       data.project = {
         width: data.building.width_ft,
@@ -116,18 +116,23 @@ function validateModelData(data) {
     }
     if (data.rooms) {
       data.rooms.forEach(r => {
-        if (r.polygon && r.polygon.length > 0 && r.dimensions) {
-          const xs = r.polygon.map(p => p.x !== undefined ? p.x : p[0]);
-          const ys = r.polygon.map(p => p.y !== undefined ? p.y : p[1]);
-          r.x = Math.min(...xs);
-          r.y = Math.min(...ys);
-          r.width = r.dimensions.width_ft || (Math.max(...xs) - r.x);
-          r.height = r.dimensions.length_ft || (Math.max(...ys) - r.y);
+        if (r.bounds) {
+          r.x = r.bounds.x;
+          r.y = r.bounds.y;
+          r.width = r.bounds.w;
+          r.height = r.bounds.h;
         } else if (r.bounding_box) {
           r.x = r.bounding_box.x;
           r.y = r.bounding_box.y;
           r.width = r.bounding_box.w;
           r.height = r.bounding_box.h;
+        } else if (r.polygon && r.polygon.length > 0 && r.dimensions) {
+          const xs = r.polygon.map(p => p.x !== undefined ? p.x : (Array.isArray(p) ? p[0] : 0));
+          const ys = r.polygon.map(p => p.y !== undefined ? p.y : (Array.isArray(p) ? p[1] : 0));
+          r.x = Math.min(...xs);
+          r.y = Math.min(...ys);
+          r.width = r.dimensions.width_ft || (Math.max(...xs) - r.x);
+          r.height = r.dimensions.length_ft || (Math.max(...ys) - r.y);
         }
       });
     }
@@ -278,7 +283,8 @@ function generateWallsFromRooms(rooms, project, stairs = []) {
 function runPython(imagePath) {
   return new Promise((resolve, reject) => {
     let output = '';
-    const proc = spawn('python', ['processor.py', imagePath], { env: { ...process.env } });
+    const pythonCmd = process.env.PYTHON_PATH || (process.platform === 'win32' ? 'python' : 'python3');
+    const proc = spawn(pythonCmd, ['processor.py', imagePath], { env: { ...process.env }, cwd: __dirname });
     proc.stdout.on('data', d => { output += d.toString(); });
     proc.stderr.on('data', d => console.error(`[Python] ${d.toString().trim()}`));
     proc.on('close', code => {
