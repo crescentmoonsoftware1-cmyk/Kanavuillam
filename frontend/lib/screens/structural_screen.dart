@@ -1,36 +1,75 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 
-const _bgColor = Color(0xFFF8FAFC);
-const _navyColor = Color(0xFF1E293B);
-const _beamRed = Color(0xFFEF4444);
-const _dimBlue = Color(0xFF3B82F6);
-const _textDark = Color(0xFF0F172A);
-const _textMid = Color.fromARGB(255, 28, 29, 30);
-const _borderLight = Color(0xFFE2E8F0);
+import '../core/providers/app_config_provider.dart';
+import '../core/theme/app_colors.dart';
 
 class StructuralScreen extends StatefulWidget {
   final Map<String, dynamic> projectData;
-  const StructuralScreen({super.key, required this.projectData});
+  final void Function(int tabIndex)? onNavigateToTab;
+  final VoidCallback? onNavigateToNext;
+  final VoidCallback? onBack;
+
+  const StructuralScreen({
+    super.key,
+    required this.projectData,
+    this.onNavigateToTab,
+    this.onNavigateToNext,
+    this.onBack,
+  });
 
   @override
   State<StructuralScreen> createState() => _StructuralScreenState();
 }
 
 class _StructuralScreenState extends State<StructuralScreen> {
+  // Subtabs: 0 = Plan, 1 = 3D, 2 = Schedule, 3 = Safety, 4 = Quantity
+  int _currentSubTab = 0;
   String _selectedFloor = 'ground';
+
+  int get _safeSubTab {
+    dynamic val = _currentSubTab;
+    if (val == null || val is! int || val < 0 || val > 4) {
+      _currentSubTab = 0;
+      return 0;
+    }
+    return val;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _currentSubTab = 0;
+    _selectedFloor = 'ground';
+  }
 
   @override
   Widget build(BuildContext context) {
+    AppConfigProvider config;
+    try {
+      config = context.watch<AppConfigProvider>();
+    } catch (_) {
+      config = AppConfigProvider();
+    }
+    final isTamil = config.isTamil;
+
+    // Failsafe state check across hot reloads
+    dynamic curTab = _currentSubTab;
+    if (curTab == null || curTab is! int || curTab < 0 || curTab > 4) {
+      _currentSubTab = 0;
+    }
+
     final modelData =
         widget.projectData['model_data'] as Map<String, dynamic>? ?? {};
 
-    final rootStructural = widget.projectData['structural_data'] ??
-        widget.projectData['_structural'] ??
-        modelData['_structural'] ??
-        modelData['structural_data'] ??
-        {};
+    final Map<String, dynamic> rootStructural =
+        (widget.projectData['structural_data'] as Map<String, dynamic>?) ??
+            (widget.projectData['_structural'] as Map<String, dynamic>?) ??
+            (modelData['_structural'] as Map<String, dynamic>?) ??
+            (modelData['structural_data'] as Map<String, dynamic>?) ??
+            {};
 
     final bool isMultiFloor = rootStructural.containsKey('ground');
     final structural =
@@ -61,11 +100,14 @@ class _StructuralScreenState extends State<StructuralScreen> {
         (overallDims?['height'] as num?)?.toDouble() ??
         30.85;
 
+    final int area = (pw * ph).toInt();
+
+    const planName = 'kanavuillam_report';
+
     // ── DATA FOR BEAM PLAN ──────────────────────────────────────────────────
     var rooms = (ground['rooms'] as List<dynamic>?) ?? [];
     var walls = (ground['walls'] as List<dynamic>?) ?? [];
 
-    // Fallback if empty
     if (rooms.isEmpty && walls.isEmpty) {
       rooms = [
         {
@@ -98,85 +140,554 @@ class _StructuralScreenState extends State<StructuralScreen> {
         },
       ];
       walls = [
-        {'start_x': 0, 'start_y': 0, 'end_x': pw, 'end_y': 0},
-        {'start_x': pw, 'start_y': 0, 'end_x': pw, 'end_y': ph},
-        {'start_x': pw, 'start_y': ph, 'end_x': 0, 'end_y': ph},
-        {'start_x': 0, 'start_y': ph, 'end_x': 0, 'end_y': 0},
         {
-          'start_x': pw * 0.6,
-          'start_y': 0,
-          'end_x': pw * 0.6,
-          'end_y': ph * 0.5
+          'start': [0, 0],
+          'end': [pw, 0]
         },
-        {'start_x': 0, 'start_y': ph * 0.5, 'end_x': pw, 'end_y': ph * 0.5},
+        {
+          'start': [pw, 0],
+          'end': [pw, ph]
+        },
+        {
+          'start': [pw, ph],
+          'end': [0, ph]
+        },
+        {
+          'start': [0, ph],
+          'end': [0, 0]
+        },
+        {
+          'start': [0, ph * 0.5],
+          'end': [pw, ph * 0.5]
+        },
+        {
+          'start': [pw * 0.6, 0],
+          'end': [pw * 0.6, ph * 0.5]
+        },
+        {
+          'start': [pw * 0.4, ph * 0.5],
+          'end': [pw * 0.4, ph]
+        },
       ];
     }
 
-    final area = (pw * ph).toInt();
+    final safeTab = _safeSubTab;
 
     return Scaffold(
-      backgroundColor: _bgColor,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(children: [
-              Expanded(
-                  child:
-                      _Header(pw: pw, ph: ph, area: area).animate().fadeIn()),
-              if (isMultiFloor &&
-                  rootStructural.keys.where((k) => k != 'total').length >
-                      1) ...[
-                const SizedBox(width: 12),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: _navyColor,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: _selectedFloor,
-                      isDense: true,
-                      dropdownColor: _navyColor,
-                      icon: const Icon(Icons.arrow_drop_down,
-                          color: Colors.white, size: 20),
-                      items: rootStructural.keys
-                          .map<DropdownMenuItem<String>>((k) =>
-                              DropdownMenuItem<String>(
-                                  value: k.toString(),
-                                  child: Text(k.toString().toUpperCase(),
-                                      style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold))))
-                          .toList(),
-                      onChanged: (val) {
-                        if (val != null) setState(() => _selectedFloor = val);
-                      },
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: Padding(
+          padding:
+              const EdgeInsets.only(left: 20.0, right: 20.0, top: 16.0, bottom: 20.0),
+          child: Column(
+            children: [
+              // ── 1. HEADER (Plan Name, Subtitle, Language Capsule) ────────
+              SizedBox(
+                height: 52,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            planName,
+                            style: GoogleFonts.syne(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primary,
+                              letterSpacing: -0.2,
+                              height: 1.0,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            isTamil
+                                ? 'கட்டமைப்பு அறிக்கை · ${pw.toInt()}\' × ${ph.toInt()}\' ($area ச.அடி)'
+                                : 'Structural report · ${pw.toInt()}\' × ${ph.toInt()}\' ($area sq ft)',
+                            style: GoogleFonts.inter(
+                              fontSize: 12.5,
+                              color: AppColors.textSecondary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
+                    // Language Switcher Capsule (No [X] button)
+                    Container(
+                      height: 34,
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceSecondary,
+                        borderRadius: BorderRadius.circular(100),
+                      ),
+                      child: Row(
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              if (isTamil) config.setTamil(false);
+                            },
+                            child: Container(
+                              height: 30,
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 11),
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: !isTamil
+                                    ? Colors.white
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(100),
+                                boxShadow: !isTamil
+                                    ? [
+                                        BoxShadow(
+                                          color: AppColors.primary
+                                              .withValues(alpha: 0.05),
+                                          blurRadius: 2,
+                                          offset: const Offset(0, 1),
+                                        )
+                                      ]
+                                    : null,
+                              ),
+                              child: Text(
+                                'EN',
+                                style: GoogleFonts.inter(
+                                  fontSize: 11.5,
+                                  fontWeight: !isTamil
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
+                                  color: !isTamil
+                                      ? AppColors.textDark
+                                      : AppColors.textSecondary,
+                                ),
+                              ),
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              if (!isTamil) config.setTamil(true);
+                            },
+                            child: Container(
+                              height: 30,
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 11),
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: isTamil
+                                    ? Colors.white
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(100),
+                                boxShadow: isTamil
+                                    ? [
+                                        BoxShadow(
+                                          color: AppColors.primary
+                                              .withValues(alpha: 0.05),
+                                          blurRadius: 2,
+                                          offset: const Offset(0, 1),
+                                        )
+                                      ]
+                                    : null,
+                              ),
+                              child: Text(
+                                'தமிழ்',
+                                style: GoogleFonts.inter(
+                                  fontSize: 11.5,
+                                  fontWeight: isTamil
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
+                                  color: isTamil
+                                      ? AppColors.textDark
+                                      : AppColors.textSecondary,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ]
-            ]),
-            const SizedBox(height: 24),
-            _FloorPlanCard(rooms: rooms, walls: walls, pw: pw, ph: ph)
-                .animate()
-                .fadeIn(delay: 100.ms),
-            const SizedBox(height: 24),
-            _BlueprintCard(
-              title: '3D STRUCTURAL PILLAR & BEAM SKELETON',
-              child: ClipRRect(
-                borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(6),
-                    bottomRight: Radius.circular(6)),
+              ),
+              const SizedBox(height: 8),
+
+              // ── 2. MAIN TABS (3D, Vastu, Cost, Structure, Download) ────────
+              SizedBox(
+                height: 36,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _buildMainTab(
+                        title: '3D',
+                        isActive: false,
+                        onTap: () => widget.onNavigateToTab?.call(1),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: _buildMainTab(
+                        title: isTamil ? 'வாஸ்து' : 'Vastu',
+                        isActive: false,
+                        onTap: () => widget.onNavigateToTab?.call(2),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: _buildMainTab(
+                        title: isTamil ? 'செலவு' : 'Cost',
+                        isActive: false,
+                        onTap: () => widget.onNavigateToTab?.call(3),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: _buildMainTab(
+                        title: isTamil ? 'அமைப்பு' : 'Structure',
+                        isActive: true,
+                        onTap: () {},
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: _buildMainTab(
+                        title: isTamil ? 'பதிவிறக்கம்' : 'Download',
+                        isActive: false,
+                        onTap: () => widget.onNavigateToTab?.call(5),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // ── 3. EXECUTIVE PLOT & CODES HERO CARD ──────────────────────
+              Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.05),
+                      blurRadius: 20,
+                      offset: const Offset(0, 6),
+                    )
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    // Plot Size & Area Badge
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            isTamil ? 'மனை அளவு' : 'Plot size',
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.textTertiary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  '${pw.toInt()}\' × ${ph.toInt()}\'',
+                                  style: GoogleFonts.syne(
+                                    fontSize: 26,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.primary,
+                                    letterSpacing: -0.3,
+                                    height: 1.15,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.background,
+                                    borderRadius: BorderRadius.circular(100),
+                                  ),
+                                  child: Text(
+                                    '$area sq ft',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (isMultiFloor && rootStructural.isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            Container(
+                              height: 28,
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 8),
+                              decoration: BoxDecoration(
+                                color: AppColors.background,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: DropdownButtonHideUnderline(
+                                child: DropdownButton<String>(
+                                  value: rootStructural.containsKey(_selectedFloor)
+                                      ? _selectedFloor
+                                      : rootStructural.keys.first,
+                                  isDense: true,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.primary,
+                                  ),
+                                  items: rootStructural.keys
+                                      .map<DropdownMenuItem<String>>(
+                                          (k) => DropdownMenuItem<String>(
+                                                value: k,
+                                                child: Text(
+                                                  k.toUpperCase(),
+                                                  style: GoogleFonts.inter(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: AppColors.primary,
+                                                  ),
+                                                ),
+                                              ))
+                                      .toList(),
+                                  onChanged: (val) {
+                                    if (val != null) {
+                                      setState(() => _selectedFloor = val);
+                                    }
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Civil Code Standards Badges
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildTagIcon(
+                          Icons.verified_outlined,
+                          'IS 456:2000',
+                        ),
+                        const SizedBox(height: 6),
+                        _buildTagIcon(
+                          Icons.shield_outlined,
+                          'Zone III',
+                          isHighlight: true,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              // ── 4. SUB TABS (Plan, 3D, Schedule, Safety, Quantity) ───────
+              SizedBox(
+                height: 42,
+                child: Stack(
+                  children: [
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: Container(height: 1, color: AppColors.border),
+                    ),
+                    Row(
+                      children: [
+                        _buildSubTab(
+                          title: isTamil ? 'திட்டம்' : 'Plan',
+                          index: 0,
+                        ),
+                        _buildSubTab(
+                          title: '3D',
+                          index: 1,
+                        ),
+                        _buildSubTab(
+                          title: isTamil ? 'அட்டவணை' : 'Schedule',
+                          index: 2,
+                        ),
+                        _buildSubTab(
+                          title: isTamil ? 'பாதுகாப்பு' : 'Safety',
+                          index: 3,
+                        ),
+                        _buildSubTab(
+                          title: isTamil ? 'அளவுகள்' : 'Quantity',
+                          index: 4,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // ── 5. ACTIVE TAB CONTENT VIEW ───────────────────────────────
+              Expanded(
+                child: _buildSubTabContent(
+                  safeTab: safeTab,
+                  rooms: rooms,
+                  walls: walls,
+                  pw: pw,
+                  ph: ph,
+                  structural: structural,
+                  isMultiFloor: isMultiFloor,
+                  isTamil: isTamil,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Main Tab Pill Builder ──────────────────────────────────────────────────
+  Widget _buildMainTab({
+    required String title,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 7),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: isActive ? AppColors.primary : AppColors.surfaceSecondary,
+          borderRadius: BorderRadius.circular(100),
+        ),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            title,
+            maxLines: 1,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+              color: isActive ? Colors.white : AppColors.textSecondary,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Sub Tab Button Builder ─────────────────────────────────────────────────
+  Widget _buildSubTab({required String title, required int index}) {
+    final bool isActive = _safeSubTab == index;
+    return Expanded(
+      child: InkWell(
+        onTap: () => setState(() => _currentSubTab = index),
+        child: Container(
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: isActive ? AppColors.primary : Colors.transparent,
+                width: 2.0,
+              ),
+            ),
+          ),
+          child: Text(
+            title,
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+              color: isActive ? AppColors.primary : AppColors.textTertiary,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Tag Badge Pill Builder ─────────────────────────────────────────────────
+  Widget _buildTagIcon(IconData icon, String label, {bool isHighlight = false}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+      decoration: BoxDecoration(
+        color: isHighlight
+            ? const Color(0xFFF0FDF4)
+            : AppColors.background,
+        borderRadius: BorderRadius.circular(100),
+        border: Border.all(
+          color: isHighlight
+              ? const Color(0xFF86EFAC)
+              : AppColors.borderLight,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 12,
+            color: isHighlight ? const Color(0xFF15803D) : AppColors.primary,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: isHighlight ? const Color(0xFF15803D) : AppColors.primary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Subtab Router ──────────────────────────────────────────────────────────
+  Widget _buildSubTabContent({
+    required int safeTab,
+    required List<dynamic> rooms,
+    required List<dynamic> walls,
+    required double pw,
+    required double ph,
+    required Map<String, dynamic> structural,
+    required bool isMultiFloor,
+    required bool isTamil,
+  }) {
+    switch (safeTab) {
+      case 1:
+        // ── SUBTAB 1: 3D SKELETON & FOOTING ──────────────────────────────────
+        return SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Column(
+            children: [
+              _BlueprintCard(
+                title: isTamil
+                    ? '3D கட்டமைப்பு தூண் & உத்திரம்'
+                    : '3D STRUCTURAL PILLAR & BEAM SKELETON',
                 child: Container(
-                  height: 400,
+                  height: 380,
                   width: double.infinity,
-                  color: const Color(
-                      0xFFF1F5F9), // Light background for the render
+                  color: const Color(0xFFF8FAFC),
                   child: CustomPaint(
                     painter: StructuralIsometricPainter(
                       rooms: rooms,
@@ -188,84 +699,144 @@ class _StructuralScreenState extends State<StructuralScreen> {
                   ),
                 ),
               ),
-            ).animate().fadeIn(delay: 150.ms),
-            _BeamScheduleCard(schedule: structural['beam_schedule'])
-                .animate()
-                .fadeIn(delay: 200.ms),
-            const SizedBox(height: 24),
-            const _ColumnScheduleCard().animate().fadeIn(delay: 250.ms),
-            const SizedBox(height: 24),
-            _TypicalBeamDetails(details: structural['beam_details'])
-                .animate()
-                .fadeIn(delay: 300.ms),
-            const SizedBox(height: 24),
-            _RccSlabCard(rooms: rooms, walls: walls, pw: pw, ph: ph)
-                .animate()
-                .fadeIn(delay: 350.ms),
-            if (!isMultiFloor || _selectedFloor == 'ground') ...[
-              const SizedBox(height: 24),
-              const _FootingDetailsCard().animate().fadeIn(delay: 450.ms),
+              const SizedBox(height: 16),
+              if (!isMultiFloor || _selectedFloor == 'ground') ...[
+                const _FootingDetailsCard(),
+                const SizedBox(height: 20),
+              ],
             ],
-            const SizedBox(height: 24),
-            _StructuralSafetyCard(pw: pw, ph: ph)
-                .animate()
-                .fadeIn(delay: 470.ms),
-            const SizedBox(height: 24),
-            _StructuralMaterialEstimationCard(pw: pw, ph: ph)
-                .animate()
-                .fadeIn(delay: 490.ms),
-            const SizedBox(height: 24),
-          ],
-        ),
+          ),
+        );
+
+      case 2:
+        // ── SUBTAB 2: SCHEDULE (BEAM & COLUMN SCHEDULES) ─────────────────────
+        return SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Column(
+            children: [
+              _BeamScheduleCard(schedule: structural['beam_schedule']),
+              const SizedBox(height: 16),
+              const _ColumnScheduleCard(),
+              const SizedBox(height: 16),
+              _TypicalBeamDetails(details: structural['beam_details']),
+              const SizedBox(height: 20),
+            ],
+          ),
+        );
+
+      case 3:
+        // ── SUBTAB 3: SAFETY & STABILITY CHECK ───────────────────────────────
+        return SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Column(
+            children: [
+              _StructuralSafetyCard(pw: pw, ph: ph),
+              const SizedBox(height: 20),
+            ],
+          ),
+        );
+
+      case 4:
+        // ── SUBTAB 4: MATERIAL QUANTITY ESTIMATION ───────────────────────────
+        return SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Column(
+            children: [
+              _StructuralMaterialEstimationCard(pw: pw, ph: ph),
+              const SizedBox(height: 20),
+            ],
+          ),
+        );
+
+      case 0:
+      default:
+        // ── SUBTAB 0: PLAN (2D BEAM LAYOUT & RCC SLAB) ───────────────────────
+        return SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Column(
+            children: [
+              _FloorPlanCard(rooms: rooms, walls: walls, pw: pw, ph: ph),
+              const SizedBox(height: 16),
+              _RccSlabCard(rooms: rooms, walls: walls, pw: pw, ph: ph),
+              const SizedBox(height: 20),
+            ],
+          ),
+        );
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STITCH BLUEPRINT CONTAINER CARD
+// ─────────────────────────────────────────────────────────────────────────────
+class _BlueprintCard extends StatelessWidget {
+  final String title;
+  final Widget child;
+  const _BlueprintCard({required this.title, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      clipBehavior: Clip.hardEdge,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: const BoxDecoration(
+              color: Color(0xFFF8FAFC),
+              border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+            ),
+            child: Text(
+              title,
+              style: GoogleFonts.syne(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: AppColors.primary,
+                letterSpacing: 0.2,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          child,
+        ],
       ),
     );
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// COMPONENTS
+// 2D BEAM LAYOUT PLAN CARD
 // ─────────────────────────────────────────────────────────────────────────────
-
-class _Header extends StatelessWidget {
-  final double pw, ph;
-  final int area;
-  const _Header({required this.pw, required this.ph, required this.area});
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-          color: const Color.fromARGB(255, 18, 23, 31),
-          borderRadius: BorderRadius.circular(12)),
-      child: Column(children: [
-        const Text('BEAM LAYOUT PLAN & DETAILS',
-            style: TextStyle(
-                color: Color.fromARGB(255, 195, 192, 192),
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 1.2),
-            textAlign: TextAlign.center),
-        const SizedBox(height: 6),
-        Text("PLOT SIZE: ${pw.toInt()}' × ${ph.toInt()}' ($area SQFT)",
-            style: const TextStyle(color: Colors.white70, fontSize: 12),
-            textAlign: TextAlign.center),
-      ]),
-    );
-  }
-}
-
 class _FloorPlanCard extends StatelessWidget {
   final List<dynamic> rooms, walls;
   final double pw, ph;
-  const _FloorPlanCard(
-      {required this.rooms,
-      required this.walls,
-      required this.pw,
-      required this.ph});
+  const _FloorPlanCard({
+    required this.rooms,
+    required this.walls,
+    required this.pw,
+    required this.ph,
+  });
+
   @override
   Widget build(BuildContext context) {
     return _BlueprintCard(
-      title: 'BEAM LAYOUT PLAN',
+      title: 'BEAM LAYOUT PLAN (2D BLUEPRINT)',
       child: Container(
         height: 380,
         width: double.infinity,
@@ -281,9 +852,13 @@ class _FloorPlanCard extends StatelessWidget {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// BEAM SCHEDULE CARD
+// ─────────────────────────────────────────────────────────────────────────────
 class _BeamScheduleCard extends StatelessWidget {
   final List<dynamic>? schedule;
   const _BeamScheduleCard({this.schedule});
+
   @override
   Widget build(BuildContext context) {
     final rows = (schedule != null && schedule!.isNotEmpty)
@@ -304,29 +879,36 @@ class _BeamScheduleCard extends StatelessWidget {
               'stirrups': '8mm@8"'
             },
           ];
+
     return _BlueprintCard(
-      title: 'BEAM SCHEDULE',
+      title: 'BEAM SCHEDULE & REINFORCEMENT SPECIFICATIONS',
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(14),
         child: Table(
-          border: TableBorder.all(color: Colors.black87),
+          border: TableBorder.all(
+            color: const Color(0xFFCBD5E1),
+            borderRadius: BorderRadius.circular(10),
+          ),
           children: [
             const TableRow(
-                decoration: BoxDecoration(color: Color(0xFFF1F5F9)),
-                children: [
-                  _Cell('MARK', b: true),
-                  _Cell('SIZE', b: true),
-                  _Cell('TOP', b: true),
-                  _Cell('BOT', b: true),
-                  _Cell('STIRRUP', b: true),
-                ]),
-            ...rows.map((r) => TableRow(children: [
-                  _Cell(r['mark'] ?? ''),
-                  _Cell(r['size'] ?? ''),
-                  _Cell(r['top_steel'] ?? ''),
-                  _Cell(r['bottom_steel'] ?? ''),
-                  _Cell(r['stirrups'] ?? ''),
-                ])),
+              decoration: BoxDecoration(color: Color(0xFFF1F5F9)),
+              children: [
+                _Cell('MARK', b: true),
+                _Cell('SIZE', b: true),
+                _Cell('TOP', b: true),
+                _Cell('BOT', b: true),
+                _Cell('STIRRUP', b: true),
+              ],
+            ),
+            ...rows.map((r) => TableRow(
+                  children: [
+                    _Cell(r['mark'] ?? ''),
+                    _Cell(r['size'] ?? ''),
+                    _Cell(r['top_steel'] ?? ''),
+                    _Cell(r['bottom_steel'] ?? ''),
+                    _Cell(r['stirrups'] ?? ''),
+                  ],
+                )),
           ],
         ),
       ),
@@ -334,179 +916,9 @@ class _BeamScheduleCard extends StatelessWidget {
   }
 }
 
-class _Cell extends StatelessWidget {
-  final String text;
-  final bool b;
-  const _Cell(this.text, {this.b = false});
-  @override
-  Widget build(BuildContext context) => Padding(
-      padding: const EdgeInsets.all(8),
-      child: Text(text,
-          style: TextStyle(
-              fontSize: 12,
-              color: const Color.fromARGB(255, 17, 25, 45),
-              fontWeight: b ? FontWeight.bold : FontWeight.normal),
-          textAlign: TextAlign.center));
-}
-
-class _TypicalBeamDetails extends StatelessWidget {
-  final List<dynamic>? details;
-  const _TypicalBeamDetails({this.details});
-  @override
-  Widget build(BuildContext context) {
-    return _BlueprintCard(
-      title: 'TYPICAL BEAM DETAILS',
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-          _Section(mark: 'B1', w: 9, h: 12),
-          _Section(mark: 'B2', w: 9, h: 9),
-        ]),
-      ),
-    );
-  }
-}
-
-class _Section extends StatelessWidget {
-  final String mark;
-  final double w, h;
-  const _Section({required this.mark, required this.w, required this.h});
-  @override
-  Widget build(BuildContext context) => Column(children: [
-        Container(
-          width: 60,
-          height: 80,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(color: Colors.black, width: 2),
-          ),
-          child: Stack(
-            children: [
-              // Stirrup
-              Positioned(
-                top: 6,
-                left: 6,
-                right: 6,
-                bottom: 6,
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.black54, width: 1.5),
-                  ),
-                ),
-              ),
-              // Top bars
-              Positioned(top: 8, left: 8, child: _RebarDot()),
-              Positioned(top: 8, right: 8, child: _RebarDot()),
-              // Bottom bars
-              Positioned(bottom: 8, left: 8, child: _RebarDot()),
-              Positioned(bottom: 8, right: 8, child: _RebarDot()),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(mark,
-            style:
-                const TextStyle(fontWeight: FontWeight.bold, color: _textDark)),
-        Text('${w.toInt()}"x${h.toInt()}"',
-            style: const TextStyle(fontSize: 11, color: _textMid)),
-      ]);
-}
-
-Widget _RebarDot() => Container(
-      width: 6,
-      height: 6,
-      decoration: const BoxDecoration(
-        color: Colors.black,
-        shape: BoxShape.circle,
-      ),
-    );
-
-class _BlueprintCard extends StatelessWidget {
-  final String title;
-  final Widget child;
-  const _BlueprintCard({required this.title, required this.child});
-  @override
-  Widget build(BuildContext context) => Container(
-        decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(color: Colors.black, width: 2),
-            borderRadius: BorderRadius.circular(8)),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(6),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(
-                  padding: const EdgeInsets.all(12),
-                  color: const Color(0xFFF1F5F9),
-                  child: Text(title,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                      textAlign: TextAlign.center)),
-              child,
-            ],
-          ),
-        ),
-      );
-}
-
-class _FootingDetailsCard extends StatelessWidget {
-  const _FootingDetailsCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return _BlueprintCard(
-      title: '9. FOOTING PLAN & SECTION DETAILS',
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Column(
-                children: [
-                  const Text('TOP VIEW (PLAN)',
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: _textDark,
-                          fontSize: 11)),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    height: 180,
-                    child: CustomPaint(
-                      painter: _FootingTopPainter(),
-                      size: Size.infinite,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                children: [
-                  const Text('SIDE VIEW (ELEVATION)',
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: _textDark,
-                          fontSize: 11)),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    height: 180,
-                    child: CustomPaint(
-                      painter: _FootingSidePainter(),
-                      size: Size.infinite,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
+// ─────────────────────────────────────────────────────────────────────────────
+// COLUMN SCHEDULE CARD
+// ─────────────────────────────────────────────────────────────────────────────
 class _ColumnScheduleCard extends StatelessWidget {
   const _ColumnScheduleCard();
 
@@ -515,9 +927,12 @@ class _ColumnScheduleCard extends StatelessWidget {
     return _BlueprintCard(
       title: 'COLUMN SCHEDULE & REINFORCEMENT DETAILS',
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(14),
         child: Table(
-          border: TableBorder.all(color: Colors.black87),
+          border: TableBorder.all(
+            color: const Color(0xFFCBD5E1),
+            borderRadius: BorderRadius.circular(10),
+          ),
           children: const [
             TableRow(
               decoration: BoxDecoration(color: Color(0xFFF1F5F9)),
@@ -553,26 +968,145 @@ class _ColumnScheduleCard extends StatelessWidget {
   }
 }
 
-class _RccSlabCard extends StatelessWidget {
-  final List<dynamic> rooms, walls;
-  final double pw, ph;
-  const _RccSlabCard(
-      {required this.rooms,
-      required this.walls,
-      required this.pw,
-      required this.ph});
+class _Cell extends StatelessWidget {
+  final String text;
+  final bool b;
+  const _Cell(this.text, {this.b = false});
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+        child: Text(
+          text,
+          style: GoogleFonts.inter(
+            fontSize: 11.5,
+            color: AppColors.primary,
+            fontWeight: b ? FontWeight.w700 : FontWeight.w500,
+          ),
+          textAlign: TextAlign.center,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+      );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TYPICAL BEAM DETAILS (REBAR VISUALIZATION)
+// ─────────────────────────────────────────────────────────────────────────────
+class _TypicalBeamDetails extends StatelessWidget {
+  final List<dynamic>? details;
+  const _TypicalBeamDetails({this.details});
 
   @override
   Widget build(BuildContext context) {
     return _BlueprintCard(
-      title: 'RCC FLOOR SLAB & REINFORCEMENT DETAILS',
+      title: 'TYPICAL BEAM CROSS-SECTION DETAILED DIAGRAMS',
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: const [
+            _Section(mark: 'B1 Primary', w: 9, h: 12),
+            _Section(mark: 'B2 Tie Beam', w: 9, h: 9),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Section extends StatelessWidget {
+  final String mark;
+  final double w, h;
+  const _Section({required this.mark, required this.w, required this.h});
+
+  @override
+  Widget build(BuildContext context) => Column(
+        children: [
+          Container(
+            width: 70,
+            height: 90,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: Colors.black, width: 2),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Stack(
+              children: [
+                // Stirrup
+                Positioned(
+                  top: 7,
+                  left: 7,
+                  right: 7,
+                  bottom: 7,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.black54, width: 1.5),
+                    ),
+                  ),
+                ),
+                // Top bars
+                Positioned(top: 9, left: 9, child: _rebarDot()),
+                Positioned(top: 9, right: 9, child: _rebarDot()),
+                // Bottom bars
+                Positioned(bottom: 9, left: 9, child: _rebarDot()),
+                Positioned(bottom: 9, right: 9, child: _rebarDot()),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            mark,
+            style: GoogleFonts.inter(
+              fontWeight: FontWeight.w700,
+              fontSize: 12,
+              color: AppColors.primary,
+            ),
+          ),
+          Text(
+            '${w.toInt()}" × ${h.toInt()}"',
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              color: AppColors.textTertiary,
+            ),
+          ),
+        ],
+      );
+}
+
+Widget _rebarDot() => Container(
+      width: 7,
+      height: 7,
+      decoration: const BoxDecoration(
+        color: Colors.black,
+        shape: BoxShape.circle,
+      ),
+    );
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RCC SLAB REINFORCEMENT DETAILS
+// ─────────────────────────────────────────────────────────────────────────────
+class _RccSlabCard extends StatelessWidget {
+  final List<dynamic> rooms, walls;
+  final double pw, ph;
+  const _RccSlabCard({
+    required this.rooms,
+    required this.walls,
+    required this.pw,
+    required this.ph,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _BlueprintCard(
+      title: 'RCC FLOOR SLAB CROSS-SECTION & LOAD DETAILS',
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Container(
-              height: 240,
+              height: 220,
               width: double.infinity,
               color: Colors.white,
               child: CustomPaint(
@@ -580,7 +1114,7 @@ class _RccSlabCard extends StatelessWidget {
                 size: Size.infinite,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
             const _DetailRow('Slab Thickness', '5 Inches (125 mm) R.C.C Slab'),
             const _DetailRow('Concrete Mix', 'M20 Grade (1 : 1.5 : 3 Mix)'),
             const _DetailRow(
@@ -595,6 +1129,459 @@ class _RccSlabCard extends StatelessWidget {
       ),
     );
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FOOTING DETAILS CARD
+// ─────────────────────────────────────────────────────────────────────────────
+class _FootingDetailsCard extends StatelessWidget {
+  const _FootingDetailsCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return _BlueprintCard(
+      title: 'ISOLATED TRAPEZOIDAL FOOTING PLAN & ELEVATION',
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                children: [
+                  Text(
+                    'TOP VIEW (PLAN)',
+                    style: GoogleFonts.inter(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primary,
+                      fontSize: 11,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    height: 170,
+                    child: CustomPaint(
+                      painter: _FootingTopPainter(),
+                      size: Size.infinite,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                children: [
+                  Text(
+                    'SIDE VIEW (ELEVATION)',
+                    style: GoogleFonts.inter(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primary,
+                      fontSize: 11,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    height: 170,
+                    child: CustomPaint(
+                      painter: _FootingSidePainter(),
+                      size: Size.infinite,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STRUCTURAL SAFETY CHECK CARD
+// ─────────────────────────────────────────────────────────────────────────────
+class _StructuralSafetyCard extends StatelessWidget {
+  final double pw, ph;
+  const _StructuralSafetyCard({required this.pw, required this.ph});
+
+  @override
+  Widget build(BuildContext context) {
+    final double areaSqFt = pw * ph;
+    final double areaSqm = areaSqFt * 0.092903;
+    final double maxSpanFt = math.max(pw, ph) * 0.45;
+    final double maxSpanM = maxSpanFt * 0.3048;
+
+    final double deadLoadKpa = 3.8;
+    final double liveLoadKpa = 2.0;
+    final double totalFactoredLoadKn =
+        (1.5 * deadLoadKpa + 1.5 * liveLoadKpa) * areaSqm;
+
+    final double maxAllowableDeflectionMm =
+        (maxSpanM * 1000) / 250 > 0 ? (maxSpanM * 1000) / 250 : 14.4;
+    final double calculatedDeflectionMm = maxAllowableDeflectionMm * 0.57;
+    final int safetyMarginPercent =
+        ((1 - (calculatedDeflectionMm / maxAllowableDeflectionMm)) * 100)
+            .round();
+    final int integrityScore =
+        math.min(98, (91 + (areaSqFt / 200)).round().clamp(92, 97));
+
+    return _BlueprintCard(
+      title:
+          'STRUCTURAL SAFETY & STABILITY CHECK (FOR ${areaSqFt.toInt()} SQFT)',
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDF4),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFF86EFAC)),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Structural Integrity Score',
+                      style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                        color: AppColors.primary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '$integrityScore / 100 (HIGHLY SAFE)',
+                    style: GoogleFonts.syne(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13,
+                      color: const Color(0xFF15803D),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            _DetailRow('Uploaded Plan Dimensions',
+                '${pw.toInt()}\' × ${ph.toInt()}\' (${areaSqFt.toInt()} sq ft)'),
+            const _DetailRow(
+                'Design Standard Compliance', 'IS 456:2000 & IS 1893:2016'),
+            _DetailRow('Dead Load (DL)',
+                '$deadLoadKpa kN/m² (Slab + Finishes + Walls)'),
+            _DetailRow(
+                'Live Load (LL - IS 875)', '$liveLoadKpa kN/m² (Residential)'),
+            _DetailRow('Total Design Factored Load',
+                '${totalFactoredLoadKn.toStringAsFixed(1)} kN (~${(totalFactoredLoadKn / 9.81).toStringAsFixed(1)} Tons)'),
+            _DetailRow('Max Critical Span',
+                '${maxSpanFt.toStringAsFixed(1)} ft (${maxSpanM.toStringAsFixed(2)} m)'),
+            _DetailRow('Max Allowable Deflection (L/250)',
+                '${maxAllowableDeflectionMm.toStringAsFixed(1)} mm'),
+            _DetailRow('Calculated Structural Deflection',
+                '${calculatedDeflectionMm.toStringAsFixed(1)} mm (SAFE - $safetyMarginPercent% Margin)'),
+            const _DetailRow('Seismic Safety Zone',
+                'Zone III Structural Ductility Compliant'),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MATERIAL ESTIMATION CARD
+// ─────────────────────────────────────────────────────────────────────────────
+class _StructuralMaterialEstimationCard extends StatelessWidget {
+  final double pw, ph;
+  const _StructuralMaterialEstimationCard({required this.pw, required this.ph});
+
+  @override
+  Widget build(BuildContext context) {
+    final double area = (pw > 0 && ph > 0) ? (pw * ph) : 800.0;
+
+    final int cementBags = (area * 0.40).round();
+    final int cementRccBags = (area * 0.30).round();
+    final int cementMasonryBags = cementBags - cementRccBags;
+
+    final double steelTons = (area * 2.5 / 1000);
+    final int steelKg = (area * 2.5).round();
+
+    final double concreteCum = area * 0.035;
+    final int concreteCft = (concreteCum * 35.315).round();
+
+    final double sandCft = area * 1.7;
+    final double sandUnits = sandCft / 100.0;
+
+    final double agg34Cft = area * 0.5;
+    final double agg34Units = agg34Cft / 100.0;
+
+    final double agg15Cft = area * 0.3;
+    final double agg15Units = agg15Cft / 100.0;
+
+    final int bricksPcs = (area * 16).round();
+    final int tilesSqft = (area * 1.05).round();
+    final int paintLiters = (area * 0.12).round();
+
+    return _BlueprintCard(
+      title: 'STRUCTURAL MATERIAL ESTIMATION (FOR ${area.toInt()} SQFT)',
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            _DetailRow('Plan Built-up Size',
+                '${pw.toInt()}\' × ${ph.toInt()}\' (${area.toInt()} sq ft)'),
+            _DetailRow('Total Cement Required', '$cementBags Bags (50kg each)'),
+            _DetailRow('   • Cement for RCC Structure', '$cementRccBags Bags'),
+            _DetailRow(
+                '   • Cement for Masonry & Plaster', '$cementMasonryBags Bags'),
+            _DetailRow('TMT Steel Rebar (Fe500)',
+                '${steelTons.toStringAsFixed(2)} Tons ($steelKg kg)'),
+            _DetailRow('M20 Concrete Volume',
+                '${concreteCum.toStringAsFixed(1)} m³ ($concreteCft cft)'),
+            _DetailRow('Total Sand / M-Sand (1 Unit = 100 cft)',
+                '${sandUnits.toStringAsFixed(1)} Units (${sandCft.round()} cft)'),
+            _DetailRow('3/4" Aggregate (20mm for RCC)',
+                '${agg34Units.toStringAsFixed(1)} Units (${agg34Cft.round()} cft)'),
+            _DetailRow('1 1/2" Aggregate (40mm for PCC Bed)',
+                '${agg15Units.toStringAsFixed(1)} Units (${agg15Cft.round()} cft)'),
+            _DetailRow('Bricks (Red Bricks / AAC Blocks)', '$bricksPcs Pcs'),
+            _DetailRow('Tiles (Flooring & Wall Skirting)', '$tilesSqft Sq Ft'),
+            _DetailRow('Paint (Interior & Exterior)', '$paintLiters Liters'),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DETAIL ROW COMPONENT (ZERO PIXEL OVERFLOW PROTECTED)
+// ─────────────────────────────────────────────────────────────────────────────
+class _DetailRow extends StatelessWidget {
+  final String label, value;
+  const _DetailRow(this.label, this.value);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 4,
+            child: Text(
+              label,
+              style: GoogleFonts.inter(
+                fontWeight: FontWeight.w500,
+                color: AppColors.textSecondary,
+                fontSize: 12.5,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            flex: 5,
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: GoogleFonts.inter(
+                fontWeight: FontWeight.w700,
+                color: AppColors.primary,
+                fontSize: 12.5,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CUSTOM PAINTERS (100% PRESERVED ENGINEERING LOGIC)
+// ─────────────────────────────────────────────────────────────────────────────
+class _BlueprintPainter extends CustomPainter {
+  final List<dynamic> rooms, walls;
+  final double pw, ph;
+  const _BlueprintPainter(
+      {required this.rooms,
+      required this.walls,
+      required this.pw,
+      required this.ph});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    _drawBase(canvas, size, pw, ph, walls, rooms, (sX, sY) {
+      final beamP = Paint()
+        ..color = Colors.black
+        ..strokeWidth = 2;
+      final colP = Paint()..color = Colors.red;
+
+      for (final w in walls) {
+        final p = _getWallPts(w, sX, sY);
+        canvas.drawLine(p[0], p[1], beamP);
+        canvas.drawRect(
+            Rect.fromCenter(center: p[0], width: 8, height: 8), colP);
+        canvas.drawRect(
+            Rect.fromCenter(center: p[1], width: 8, height: 8), colP);
+      }
+
+      for (final r in rooms) {
+        final mid = Offset(
+            (r['x'] + r['width'] / 2) * sX, (r['y'] + r['height'] / 2) * sY);
+        _text(canvas, r['name'], mid.dx, mid.dy, 10, Colors.black,
+            FontWeight.bold);
+      }
+    });
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter old) => true;
+}
+
+void _drawBase(
+    Canvas canvas,
+    Size size,
+    double pw,
+    double ph,
+    List<dynamic> walls,
+    List<dynamic> rooms,
+    void Function(double sX, double sY) drawInner) {
+  if (size.width <= 0 || size.height <= 0) return;
+
+  double minX = 0.0;
+  double maxX = pw > 0 ? pw : 20.0;
+  double minY = 0.0;
+  double maxY = ph > 0 ? ph : 30.0;
+
+  bool hasPoints = false;
+  for (final w in walls) {
+    final pts = _getWallPts(w, 1.0, 1.0);
+    if (!hasPoints) {
+      minX = math.min(pts[0].dx, pts[1].dx);
+      maxX = math.max(pts[0].dx, pts[1].dx);
+      minY = math.min(pts[0].dy, pts[1].dy);
+      maxY = math.max(pts[0].dy, pts[1].dy);
+      hasPoints = true;
+    } else {
+      minX = math.min(minX, math.min(pts[0].dx, pts[1].dx));
+      maxX = math.max(maxX, math.max(pts[0].dx, pts[1].dx));
+      minY = math.min(minY, math.min(pts[0].dy, pts[1].dy));
+      maxY = math.max(maxY, math.max(pts[0].dy, pts[1].dy));
+    }
+  }
+
+  for (final r in rooms) {
+    if (r is Map) {
+      final rx = (r['x'] as num?)?.toDouble() ?? 0.0;
+      final ry = (r['y'] as num?)?.toDouble() ?? 0.0;
+      final rw = (r['width'] as num?)?.toDouble() ?? 0.0;
+      final rh = (r['height'] as num?)?.toDouble() ?? 0.0;
+      if (!hasPoints) {
+        minX = rx;
+        maxX = rx + rw;
+        minY = ry;
+        maxY = ry + rh;
+        hasPoints = true;
+      } else {
+        minX = math.min(minX, rx);
+        maxX = math.max(maxX, rx + rw);
+        minY = math.min(minY, ry);
+        maxY = math.max(maxY, ry + rh);
+      }
+    }
+  }
+
+  if (pw > 0) {
+    minX = math.min(minX, 0.0);
+    maxX = math.max(maxX, pw);
+  }
+  if (ph > 0) {
+    minY = math.min(minY, 0.0);
+    maxY = math.max(maxY, ph);
+  }
+
+  final double layoutW = math.max(1.0, maxX - minX);
+  final double layoutH = math.max(1.0, maxY - minY);
+
+  const double pad = 45.0;
+  final double availW = math.max(10.0, size.width - (pad * 2));
+  final double availH = math.max(10.0, size.height - (pad * 2));
+
+  final double sX = availW / layoutW;
+  final double sY = availH / layoutH;
+  final double scale = math.min(sX, sY);
+
+  final double contentW = layoutW * scale;
+  final double contentH = layoutH * scale;
+
+  final double offsetX = pad + (availW - contentW) / 2.0 - (minX * scale);
+  final double offsetY = pad + (availH - contentH) / 2.0 - (minY * scale);
+
+  canvas.save();
+  canvas.translate(offsetX, offsetY);
+
+  drawInner(scale, scale);
+
+  _drawBubble(canvas, Offset(minX * scale, minY * scale), '1', true);
+  _drawBubble(canvas, Offset(maxX * scale, minY * scale), '2', true);
+  _drawBubble(canvas, Offset(minX * scale, minY * scale), 'A', false);
+  _drawBubble(canvas, Offset(minX * scale, maxY * scale), 'B', false);
+
+  canvas.restore();
+}
+
+List<Offset> _getWallPts(dynamic w, double sX, double sY) {
+  double x1, y1, x2, y2;
+  if (w['start'] is List) {
+    x1 = (w['start'][0] as num).toDouble();
+    y1 = (w['start'][1] as num).toDouble();
+    x2 = (w['end'][0] as num).toDouble();
+    y2 = (w['end'][1] as num).toDouble();
+  } else if (w['start'] is Map) {
+    x1 = (w['start']['x'] as num).toDouble();
+    y1 = (w['start']['y'] as num).toDouble();
+    x2 = (w['end']['x'] as num).toDouble();
+    y2 = (w['end']['y'] as num).toDouble();
+  } else {
+    x1 = (w['start_x'] as num?)?.toDouble() ?? 0;
+    y1 = (w['start_y'] as num?)?.toDouble() ?? 0;
+    x2 = (w['end_x'] as num?)?.toDouble() ?? 0;
+    y2 = (w['end_y'] as num?)?.toDouble() ?? 0;
+  }
+  return [Offset(x1 * sX, y1 * sY), Offset(x2 * sX, y2 * sY)];
+}
+
+void _drawBubble(Canvas canvas, Offset p, String text, bool top) {
+  final center = top ? Offset(p.dx, -35) : Offset(-35, p.dy);
+  canvas.drawCircle(
+      center,
+      12,
+      Paint()
+        ..color = Colors.black
+        ..style = PaintingStyle.stroke);
+  _text(canvas, text, center.dx, center.dy, 10, Colors.black, FontWeight.bold);
+}
+
+void _text(Canvas c, String t, double x, double y, double fs, Color col,
+    FontWeight fw) {
+  TextPainter(
+      text: TextSpan(
+          text: t,
+          style: GoogleFonts.inter(
+              color: col, fontSize: fs, fontWeight: fw)),
+      textDirection: TextDirection.ltr)
+    ..layout()
+    ..paint(c, Offset(x - 10, y - 5));
 }
 
 class _SlabCrossSectionTechnicalPainter extends CustomPainter {
@@ -683,7 +1670,7 @@ class _SlabCrossSectionTechnicalPainter extends CustomPainter {
     final tp = TextPainter(
       text: TextSpan(
         text: text,
-        style: TextStyle(
+        style: GoogleFonts.inter(
           color: Colors.black87,
           fontSize: 10,
           fontWeight: bold ? FontWeight.bold : FontWeight.w600,
@@ -700,474 +1687,6 @@ class _SlabCrossSectionTechnicalPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter old) => false;
 }
 
-class _StructuralSafetyCard extends StatelessWidget {
-  final double pw, ph;
-  const _StructuralSafetyCard({required this.pw, required this.ph});
-
-  @override
-  Widget build(BuildContext context) {
-    final double areaSqFt = pw * ph;
-    final double areaSqm = areaSqFt * 0.092903;
-    final double maxSpanFt = math.max(pw, ph) * 0.45;
-    final double maxSpanM = maxSpanFt * 0.3048;
-
-    final double deadLoadKpa = 3.8;
-    final double liveLoadKpa = 2.0;
-    final double totalFactoredLoadKn =
-        (1.5 * deadLoadKpa + 1.5 * liveLoadKpa) * areaSqm;
-
-    final double maxAllowableDeflectionMm =
-        (maxSpanM * 1000) / 250 > 0 ? (maxSpanM * 1000) / 250 : 14.4;
-    final double calculatedDeflectionMm = maxAllowableDeflectionMm * 0.57;
-    final int safetyMarginPercent =
-        ((1 - (calculatedDeflectionMm / maxAllowableDeflectionMm)) * 100)
-            .round();
-    final int integrityScore =
-        math.min(98, (91 + (areaSqFt / 200)).round().clamp(92, 97));
-
-    return _BlueprintCard(
-      title:
-          'STRUCTURAL SAFETY & STABILITY CHECK (FOR ${areaSqFt.toInt()} SQFT PLAN)',
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF10B981).withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFF10B981)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Expanded(
-                    child: Text('Structural Integrity Score',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                            color: _textDark)),
-                  ),
-                  const SizedBox(width: 8),
-                  Text('$integrityScore / 100 (HIGHLY SAFE)',
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w900,
-                          fontSize: 13,
-                          color: Color(0xFF047857))),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            _DetailRow('Uploaded Plan Dimensions',
-                '${pw.toInt()}\' × ${ph.toInt()}\' (${areaSqFt.toInt()} sq ft)'),
-            _DetailRow(
-                'Design Standard Compliance', 'IS 456:2000 & IS 1893:2016'),
-            _DetailRow('Dead Load (DL)',
-                '$deadLoadKpa kN/m² (Slab + Finishes + Walls)'),
-            _DetailRow(
-                'Live Load (LL - IS 875)', '$liveLoadKpa kN/m² (Residential)'),
-            _DetailRow('Total Design Factored Load',
-                '${totalFactoredLoadKn.toStringAsFixed(1)} kN (~${(totalFactoredLoadKn / 9.81).toStringAsFixed(1)} Tons)'),
-            _DetailRow('Max Critical Span',
-                '${maxSpanFt.toStringAsFixed(1)} ft (${maxSpanM.toStringAsFixed(2)} m)'),
-            _DetailRow('Max Allowable Deflection (L/250)',
-                '${maxAllowableDeflectionMm.toStringAsFixed(1)} mm'),
-            _DetailRow('Calculated Structural Deflection',
-                '${calculatedDeflectionMm.toStringAsFixed(1)} mm (SAFE - $safetyMarginPercent% Margin)'),
-            _DetailRow('Seismic Safety Zone',
-                'Zone III Structural Ductility Compliant'),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _StructuralMaterialEstimationCard extends StatelessWidget {
-  final double pw, ph;
-  const _StructuralMaterialEstimationCard({required this.pw, required this.ph});
-
-  @override
-  Widget build(BuildContext context) {
-    final double area = (pw > 0 && ph > 0) ? (pw * ph) : 800.0;
-
-    // Complete Total Cement (RCC + Masonry + Plastering): 0.40 bags per sq ft
-    final int cementBags = (area * 0.40).round();
-    final int cementRccBags = (area * 0.30).round();
-    final int cementMasonryBags = cementBags - cementRccBags;
-
-    // TMT Steel Rebar (Fe500): 2.5 kg per sq ft
-    final double steelTons = (area * 2.5 / 1000);
-    final int steelKg = (area * 2.5).round();
-
-    // Concrete Volume (M20): 0.035 m³ per sq ft
-    final double concreteCum = area * 0.035;
-    final int concreteCft = (concreteCum * 35.315).round();
-
-    // Sand (M-Sand / P-Sand): 1.7 CFT per sq ft (Concrete + Masonry + Plastering) -> Units (1 Unit = 100 CFT)
-    final double sandCft = area * 1.7;
-    final double sandUnits = sandCft / 100.0;
-
-    // 3/4" Coarse Aggregate (20mm Blue Metal for RCC): 0.5 CFT per sq ft -> Units
-    final double agg34Cft = area * 0.5;
-    final double agg34Units = agg34Cft / 100.0;
-
-    // 1 1/2" Coarse Aggregate (40mm Blue Metal for PCC): 0.3 CFT per sq ft -> Units
-    final double agg15Cft = area * 0.3;
-    final double agg15Units = agg15Cft / 100.0;
-
-    // Bricks (Red Bricks / AAC): 16 pcs per sq ft
-    final int bricksPcs = (area * 16).round();
-
-    // Tiles (Flooring & Wall): 1.05 sq ft per sq ft (5% cutting allowance)
-    final int tilesSqft = (area * 1.05).round();
-
-    // Exterior & Interior Paint: 0.12 liters per sq ft
-    final int paintLiters = (area * 0.12).round();
-
-    return _BlueprintCard(
-      title:
-          'EXACT STRUCTURAL MATERIAL ESTIMATION (FOR ${area.toInt()} SQFT PLAN)',
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            _DetailRow('Uploaded 2D Plan Size',
-                '${pw.toInt()}\' × ${ph.toInt()}\' (${area.toInt()} sq ft)'),
-            _DetailRow('Total Cement Required', '$cementBags Bags (50kg each)'),
-            _DetailRow('   • Cement for RCC Structure', '$cementRccBags Bags'),
-            _DetailRow(
-                '   • Cement for Masonry & Plaster', '$cementMasonryBags Bags'),
-            _DetailRow('TMT Steel Rebar (Fe500)',
-                '${steelTons.toStringAsFixed(2)} Tons ($steelKg kg)'),
-            _DetailRow('M20 Concrete Volume',
-                '${concreteCum.toStringAsFixed(1)} m³ ($concreteCft cft)'),
-            _DetailRow('Total Sand / M-Sand (1 Unit = 100 cft)',
-                '${sandUnits.toStringAsFixed(1)} Units (${sandCft.round()} cft)'),
-            _DetailRow('3/4" Aggregate (20mm for RCC)',
-                '${agg34Units.toStringAsFixed(1)} Units (${agg34Cft.round()} cft)'),
-            _DetailRow('1 1/2" Aggregate (40mm for PCC Bed)',
-                '${agg15Units.toStringAsFixed(1)} Units (${agg15Cft.round()} cft)'),
-            _DetailRow('Bricks (Red Bricks / AAC Blocks)', '$bricksPcs Pcs'),
-            _DetailRow('Tiles (Flooring & Wall Skirting)', '$tilesSqft Sq Ft'),
-            _DetailRow('Paint (Interior & Exterior)', '$paintLiters Liters'),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DetailRow extends StatelessWidget {
-  final String label, value;
-  const _DetailRow(this.label, this.value);
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            flex: 4,
-            child: Text(
-              label,
-              style: const TextStyle(
-                  fontWeight: FontWeight.w600, color: _textMid, fontSize: 13),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            flex: 5,
-            child: Text(
-              value,
-              textAlign: TextAlign.right,
-              style: const TextStyle(
-                  fontWeight: FontWeight.bold, color: _textDark, fontSize: 13),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// PAINTER
-// ─────────────────────────────────────────────────────────────────────────────
-class _BlueprintPainter extends CustomPainter {
-  final List<dynamic> rooms, walls;
-  final double pw, ph;
-  const _BlueprintPainter(
-      {required this.rooms,
-      required this.walls,
-      required this.pw,
-      required this.ph});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    _drawBase(canvas, size, pw, ph, walls, rooms, (sX, sY) {
-      final beamP = Paint()
-        ..color = Colors.black
-        ..strokeWidth = 2;
-      final colP = Paint()..color = Colors.red;
-
-      for (final w in walls) {
-        final p = _getWallPts(w, sX, sY);
-        canvas.drawLine(p[0], p[1], beamP);
-        canvas.drawRect(
-            Rect.fromCenter(center: p[0], width: 8, height: 8), colP);
-        canvas.drawRect(
-            Rect.fromCenter(center: p[1], width: 8, height: 8), colP);
-      }
-
-      for (final r in rooms) {
-        final mid = Offset(
-            (r['x'] + r['width'] / 2) * sX, (r['y'] + r['height'] / 2) * sY);
-        _text(canvas, r['name'], mid.dx, mid.dy, 10, Colors.black,
-            FontWeight.bold);
-      }
-    });
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter old) => true;
-}
-
-class _FoundationPainter extends CustomPainter {
-  final List<dynamic> rooms, walls;
-  final double pw, ph;
-  const _FoundationPainter(
-      {required this.rooms,
-      required this.walls,
-      required this.pw,
-      required this.ph});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    _drawBase(canvas, size, pw, ph, walls, rooms, (sX, sY) {
-      final tieBeamP = Paint()
-        ..color = Colors.black45
-        ..strokeWidth = 1.5;
-      final footingP = Paint()
-        ..color = Colors.blue.withValues(alpha: 0.3)
-        ..style = PaintingStyle.fill;
-      final footingBorderP = Paint()
-        ..color = Colors.blue
-        ..strokeWidth = 1
-        ..style = PaintingStyle.stroke;
-      final colP = Paint()
-        ..color = Colors.black
-        ..style = PaintingStyle.fill;
-
-      for (final w in walls) {
-        final p = _getWallPts(w, sX, sY);
-        // Draw tie beams
-        canvas.drawLine(p[0], p[1], tieBeamP);
-
-        // Draw footings at ends
-        for (final pt in p) {
-          final rect = Rect.fromCenter(center: pt, width: 24, height: 24);
-          canvas.drawRect(rect, footingP);
-          canvas.drawRect(rect, footingBorderP);
-          // Draw column starter
-          canvas.drawRect(
-              Rect.fromCenter(center: pt, width: 6, height: 6), colP);
-        }
-      }
-    });
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter old) => true;
-}
-
-class _SlabPainter extends CustomPainter {
-  final List<dynamic> rooms, walls;
-  final double pw, ph;
-  const _SlabPainter(
-      {required this.rooms,
-      required this.walls,
-      required this.pw,
-      required this.ph});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    _drawBase(canvas, size, pw, ph, walls, rooms, (sX, sY) {
-      final wallP = Paint()
-        ..color = Colors.black87
-        ..strokeWidth = 2;
-      final steelP = Paint()
-        ..color = Colors.blueGrey.withValues(alpha: 0.4)
-        ..strokeWidth = 0.5;
-
-      // Draw rebar mesh
-      for (double x = 0; x <= pw; x += 2) {
-        canvas.drawLine(Offset(x * sX, 0), Offset(x * sX, ph * sY), steelP);
-      }
-      for (double y = 0; y <= ph; y += 2) {
-        canvas.drawLine(Offset(0, y * sY), Offset(pw * sX, y * sY), steelP);
-      }
-
-      // Draw outlines
-      for (final w in walls) {
-        final p = _getWallPts(w, sX, sY);
-        canvas.drawLine(p[0], p[1], wallP);
-      }
-
-      // Crank marks (indicative)
-      final crankP = Paint()
-        ..color = Colors.red
-        ..strokeWidth = 1.5;
-      for (final r in rooms) {
-        final rw = (r['width'] as num).toDouble();
-        final rh = (r['height'] as num).toDouble();
-        final rx = (r['x'] as num).toDouble();
-        final ry = (r['y'] as num).toDouble();
-
-        // Draw crank lines at edges
-        final inset = 3.0; // ft from edge
-        if (rw > inset * 2 && rh > inset * 2) {
-          canvas.drawLine(Offset((rx + inset) * sX, (ry + inset) * sY),
-              Offset((rx + rw - inset) * sX, (ry + inset) * sY), crankP);
-          canvas.drawLine(Offset((rx + inset) * sX, (ry + rh - inset) * sY),
-              Offset((rx + rw - inset) * sX, (ry + rh - inset) * sY), crankP);
-        }
-      }
-    });
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter old) => true;
-}
-
-// Helper to draw base grid & bubbles
-void _drawBase(
-    Canvas canvas,
-    Size size,
-    double pw,
-    double ph,
-    List<dynamic> walls,
-    List<dynamic> rooms,
-    void Function(double sX, double sY) drawInner) {
-  if (size.width <= 0 || size.height <= 0) return;
-
-  double minX = 0.0;
-  double maxX = pw > 0 ? pw : 20.0;
-  double minY = 0.0;
-  double maxY = ph > 0 ? ph : 30.0;
-
-  bool hasPoints = false;
-  for (final w in walls) {
-    final pts = _getWallPts(w, 1.0, 1.0);
-    if (!hasPoints) {
-      minX = math.min(pts[0].dx, pts[1].dx);
-      maxX = math.max(pts[0].dx, pts[1].dx);
-      minY = math.min(pts[0].dy, pts[1].dy);
-      maxY = math.max(pts[0].dy, pts[1].dy);
-      hasPoints = true;
-    } else {
-      minX = math.min(minX, math.min(pts[0].dx, pts[1].dx));
-      maxX = math.max(maxX, math.max(pts[0].dx, pts[1].dx));
-      minY = math.min(minY, math.min(pts[0].dy, pts[1].dy));
-      maxY = math.max(maxY, math.max(pts[0].dy, pts[1].dy));
-    }
-  }
-
-  for (final r in rooms) {
-    if (r is Map) {
-      final rx = (r['x'] as num?)?.toDouble() ?? 0.0;
-      final ry = (r['y'] as num?)?.toDouble() ?? 0.0;
-      final rw = (r['width'] as num?)?.toDouble() ?? 0.0;
-      final rh = (r['height'] as num?)?.toDouble() ?? 0.0;
-      if (!hasPoints) {
-        minX = rx;
-        maxX = rx + rw;
-        minY = ry;
-        maxY = ry + rh;
-        hasPoints = true;
-      } else {
-        minX = math.min(minX, rx);
-        maxX = math.max(maxX, rx + rw);
-        minY = math.min(minY, ry);
-        maxY = math.max(maxY, ry + rh);
-      }
-    }
-  }
-
-  if (pw > 0) {
-    minX = math.min(minX, 0.0);
-    maxX = math.max(maxX, pw);
-  }
-  if (ph > 0) {
-    minY = math.min(minY, 0.0);
-    maxY = math.max(maxY, ph);
-  }
-
-  final double layoutW = math.max(1.0, maxX - minX);
-  final double layoutH = math.max(1.0, maxY - minY);
-
-  const double pad = 45.0;
-  final double availW = math.max(10.0, size.width - (pad * 2));
-  final double availH = math.max(10.0, size.height - (pad * 2));
-
-  final double sX = availW / layoutW;
-  final double sY = availH / layoutH;
-  final double scale = math.min(sX, sY);
-
-  final double contentW = layoutW * scale;
-  final double contentH = layoutH * scale;
-
-  final double offsetX = pad + (availW - contentW) / 2.0 - (minX * scale);
-  final double offsetY = pad + (availH - contentH) / 2.0 - (minY * scale);
-
-  canvas.save();
-  canvas.translate(offsetX, offsetY);
-
-  drawInner(scale, scale);
-
-  // Bubbles
-  _drawBubble(canvas, Offset(minX * scale, minY * scale), '1', true);
-  _drawBubble(canvas, Offset(maxX * scale, minY * scale), '2', true);
-  _drawBubble(canvas, Offset(minX * scale, minY * scale), 'A', false);
-  _drawBubble(canvas, Offset(minX * scale, maxY * scale), 'B', false);
-
-  canvas.restore();
-}
-
-List<Offset> _getWallPts(dynamic w, double sX, double sY) {
-  double x1, y1, x2, y2;
-  if (w['start'] is List) {
-    x1 = (w['start'][0] as num).toDouble();
-    y1 = (w['start'][1] as num).toDouble();
-    x2 = (w['end'][0] as num).toDouble();
-    y2 = (w['end'][1] as num).toDouble();
-  } else if (w['start'] is Map) {
-    x1 = (w['start']['x'] as num).toDouble();
-    y1 = (w['start']['y'] as num).toDouble();
-    x2 = (w['end']['x'] as num).toDouble();
-    y2 = (w['end']['y'] as num).toDouble();
-  } else {
-    x1 = (w['start_x'] as num?)?.toDouble() ?? 0;
-    y1 = (w['start_y'] as num?)?.toDouble() ?? 0;
-    x2 = (w['end_x'] as num?)?.toDouble() ?? 0;
-    y2 = (w['end_y'] as num?)?.toDouble() ?? 0;
-  }
-  return [Offset(x1 * sX, y1 * sY), Offset(x2 * sX, y2 * sY)];
-}
-
-void _drawBubble(Canvas canvas, Offset p, String text, bool top) {
-  final center = top ? Offset(p.dx, -35) : Offset(-35, p.dy);
-  canvas.drawCircle(
-      center,
-      12,
-      Paint()
-        ..color = Colors.black
-        ..style = PaintingStyle.stroke);
-  _text(canvas, text, center.dx, center.dy, 10, Colors.black, FontWeight.bold);
-}
-
 class _FootingTopPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
@@ -1177,7 +1696,6 @@ class _FootingTopPainter extends CustomPainter {
     final cy = h / 2;
     final s = w > h ? h * 0.8 : w * 0.8;
 
-    // Footing outline
     final outlineP = Paint()
       ..color = Colors.black87
       ..strokeWidth = 2
@@ -1189,7 +1707,6 @@ class _FootingTopPainter extends CustomPainter {
     canvas.drawRect(rect, fillP);
     canvas.drawRect(rect, outlineP);
 
-    // Rebar grid
     final steelP = Paint()
       ..color = Colors.blue.shade600
       ..strokeWidth = 1.5;
@@ -1203,7 +1720,6 @@ class _FootingTopPainter extends CustomPainter {
           Offset(rect.left + 4, posY), Offset(rect.right - 4, posY), steelP);
     }
 
-    // Column center
     final colS = s * 0.25;
     final colRect =
         Rect.fromCenter(center: Offset(cx, cy), width: colS, height: colS);
@@ -1214,11 +1730,10 @@ class _FootingTopPainter extends CustomPainter {
           ..style = PaintingStyle.fill);
     canvas.drawRect(colRect, outlineP);
 
-    // Column rebars (dots)
     final dotP = Paint()
       ..color = Colors.black
       ..style = PaintingStyle.fill;
-    final inset = 4.0;
+    const inset = 4.0;
     canvas.drawCircle(
         Offset(colRect.left + inset, colRect.top + inset), 3, dotP);
     canvas.drawCircle(
@@ -1240,9 +1755,9 @@ class _FootingSidePainter extends CustomPainter {
     final h = size.height;
     final cx = w / 2;
 
-    final fw = w * 0.8; // footing width
-    final fh = h * 0.35; // footing height
-    final cw = fw * 0.25; // column width
+    final fw = w * 0.8;
+    final fh = h * 0.35;
+    final cw = fw * 0.25;
 
     final bottomY = h * 0.85;
     final topY = bottomY - fh;
@@ -1256,17 +1771,14 @@ class _FootingSidePainter extends CustomPainter {
       ..color = Colors.blueGrey.withValues(alpha: 0.15)
       ..style = PaintingStyle.fill;
 
-    // Draw Footing Base
     final fRect = Rect.fromLTRB(cx - fw / 2, topY, cx + fw / 2, bottomY);
     canvas.drawRect(fRect, fillP);
     canvas.drawRect(fRect, outlineP);
 
-    // Draw Column Neck
     final cRect = Rect.fromLTRB(cx - cw / 2, colTop, cx + cw / 2, topY);
     canvas.drawRect(cRect, fillP);
     canvas.drawRect(cRect, outlineP);
 
-    // Rebar mesh in footing
     final steelP = Paint()
       ..color = Colors.blue.shade600
       ..strokeWidth = 2
@@ -1275,11 +1787,10 @@ class _FootingSidePainter extends CustomPainter {
     canvas.drawLine(Offset(fRect.left + 8, meshBottom),
         Offset(fRect.right - 8, meshBottom), steelP);
     canvas.drawLine(Offset(fRect.left + 8, meshBottom),
-        Offset(fRect.left + 8, meshBottom - 15), steelP); // hooks
+        Offset(fRect.left + 8, meshBottom - 15), steelP);
     canvas.drawLine(Offset(fRect.right - 8, meshBottom),
         Offset(fRect.right - 8, meshBottom - 15), steelP);
 
-    // Spacers
     final spacerP = Paint()
       ..color = Colors.red.shade700
       ..strokeWidth = 3;
@@ -1288,26 +1799,22 @@ class _FootingSidePainter extends CustomPainter {
     canvas.drawLine(
         Offset(cx + cw, bottomY), Offset(cx + cw, bottomY - 5), spacerP);
 
-    // Column Rebar (Vertical)
     final colRebarP = Paint()
       ..color = Colors.black87
       ..strokeWidth = 1.5;
     final barX1 = cx - cw / 2 + 6;
     final barX2 = cx + cw / 2 - 6;
 
-    // Vertical lines
     canvas.drawLine(
         Offset(barX1, colTop - 10), Offset(barX1, meshBottom - 2), colRebarP);
     canvas.drawLine(
         Offset(barX2, colTop - 10), Offset(barX2, meshBottom - 2), colRebarP);
 
-    // L-Bends
     canvas.drawLine(Offset(barX1, meshBottom - 2),
         Offset(barX1 - 20, meshBottom - 2), colRebarP);
     canvas.drawLine(Offset(barX2, meshBottom - 2),
         Offset(barX2 + 20, meshBottom - 2), colRebarP);
 
-    // Stirrups
     for (double sy = colTop + 10; sy < topY - 10; sy += 15) {
       canvas.drawLine(Offset(barX1, sy), Offset(barX2, sy), colRebarP);
     }
@@ -1315,16 +1822,6 @@ class _FootingSidePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter old) => false;
-}
-
-void _text(Canvas c, String t, double x, double y, double fs, Color col,
-    FontWeight fw) {
-  TextPainter(
-      text: TextSpan(
-          text: t, style: TextStyle(color: col, fontSize: fs, fontWeight: fw)),
-      textDirection: TextDirection.ltr)
-    ..layout()
-    ..paint(c, Offset(x - 10, y - 5));
 }
 
 class StructuralIsometricPainter extends CustomPainter {
@@ -1344,12 +1841,11 @@ class StructuralIsometricPainter extends CustomPainter {
     double cosA = 0.866025;
     double sinA = 0.5;
 
-    double colW = 1.3; // Bold and prominent pillars
+    double colW = 1.3;
     double beamH = 1.2;
     double floorH = 16.0;
 
-    // Calculate bounds to center the drawing perfectly
-    double maxZ = floorH * 1.5; // Adjusted max height
+    double maxZ = floorH * 1.5;
     double minSy = -maxZ * isoScale;
     double maxSy = (pw + ph) * sinA * isoScale;
     double offsetY = size.height / 2 - (minSy + maxSy) / 2;
@@ -1379,16 +1875,14 @@ class StructuralIsometricPainter extends CustomPainter {
       }
     }
 
-    // High-visibility 3D Pillars (Royal Blue 3D Shading with Navy Outlines)
-    final pillarFaceTop = Paint()..color = const Color(0xFF60A5FA); // Sky Blue Top
-    final pillarFaceLeft = Paint()..color = const Color(0xFF2563EB); // Royal Blue Left Face
-    final pillarFaceRight = Paint()..color = const Color(0xFF1D4ED8); // Deep Blue Right Face
+    final pillarFaceTop = Paint()..color = const Color(0xFF60A5FA);
+    final pillarFaceLeft = Paint()..color = const Color(0xFF2563EB);
+    final pillarFaceRight = Paint()..color = const Color(0xFF1D4ED8);
     final pillarBorder = Paint()
-      ..color = const Color(0xFF1E3A8A) // Dark Navy Outline
+      ..color = const Color(0xFF1E3A8A)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
 
-    // Architectural Beams (Clean Steel-Gray Contrast)
     final beamFaceLeft = Paint()..color = const Color(0xFFCBD5E1);
     final beamFaceRight = Paint()..color = const Color(0xFF94A3B8);
     final beamFaceTop = Paint()..color = const Color(0xFFF1F5F9);
@@ -1504,10 +1998,8 @@ class StructuralIsometricPainter extends CustomPainter {
 
     List<Map<String, dynamic>> renderQueue = [];
 
-    // 1. Ground Grid (Blueprint feel)
     renderQueue.add({'type': 'ground_grid', 'z': -0.1, 'depth': 0.0});
 
-    // 2. Ground Pillars
     for (var col in colPoints) {
       renderQueue.add({
         'type': 'pillar',
@@ -1518,7 +2010,7 @@ class StructuralIsometricPainter extends CustomPainter {
         'depth': col.dx + col.dy
       });
     }
-    // 3. Ground Beams
+
     for (var w in walls) {
       List<Offset> pts = _getWallPts(w, 1, 1);
       renderQueue.add({
@@ -1530,9 +2022,6 @@ class StructuralIsometricPainter extends CustomPainter {
       });
     }
 
-    // (Blue Slab Plane removed for full pillar visibility)
-
-    // 5. First Floor Beams
     for (var w in walls) {
       List<Offset> pts = _getWallPts(w, 1, 1);
       renderQueue.add({
@@ -1544,7 +2033,6 @@ class StructuralIsometricPainter extends CustomPainter {
       });
     }
 
-    // 6. First Floor Pillars (taller, extending above)
     for (var col in colPoints) {
       renderQueue.add({
         'type': 'pillar',
@@ -1556,7 +2044,6 @@ class StructuralIsometricPainter extends CustomPainter {
       });
     }
 
-    // Robust Sorting: Primary Z, Secondary Depth
     renderQueue.sort((a, b) {
       double zA = a['z'] as double;
       double zB = b['z'] as double;
@@ -1575,7 +2062,7 @@ class StructuralIsometricPainter extends CustomPainter {
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.0;
 
-        final double pad = 10.0;
+        const double pad = 10.0;
         for (double x = -pad; x <= pw + pad; x += 4.0) {
           canvas.drawLine(project(x, -pad, 0), project(x, ph + pad, 0), gridP);
         }

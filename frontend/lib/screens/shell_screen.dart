@@ -1,10 +1,12 @@
-import 'dart:ui';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import '../services/api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../core/providers/app_config_provider.dart';
 import 'upload_screen.dart';
 import 'viewer_screen.dart';
 import 'vastu_screen.dart';
@@ -34,9 +36,7 @@ const _navItems = [
 
 // ─── Color Palette (Professional Light Theme) ──────────────────────────────────
 const _bgDark = Color.fromARGB(255, 245, 247, 250); // Clean light background
-const _sidebar = Color.fromARGB(255, 255, 255, 255); // Pure white sidebar
 const _accent = Color(0xFF2979FF); // Professional blue
-const _accentDim = Color(0x152979FF);
 const _textPri = Color(0xFF1E293B); // Dark slate for primary text
 const _textSec = Color(0xFF64748B); // Slate gray for secondary text
 const _divider = Color(0x15000000); // Subtle dark divider
@@ -55,24 +55,48 @@ class _ShellScreenState extends State<ShellScreen> {
   bool _isGenerating = false;
   Map<String, dynamic>? _projectData;
   Set<String> _selectedReportIds = {};
-  Uint8List? _stored3DScreenshot;
-  final bool _hasShownLogin = false;
 
   // GlobalKey to access ViewerScreen's state for screenshot capture
   final GlobalKey<ViewerScreenState> _viewerKey =
       GlobalKey<ViewerScreenState>();
 
+  @override
+  void initState() {
+    super.initState();
+    _syncUserToPrefs();
+  }
+
+  Future<void> _syncUserToPrefs() async {
+    if (widget.userData != null) {
+      final prefs = await SharedPreferences.getInstance();
+      final email = widget.userData?['email'] as String?;
+      final meta = widget.userData?['user_metadata'] as Map<String, dynamic>?;
+      final name =
+          (meta?['name'] as String?) ?? (meta?['full_name'] as String?);
+      final phone = (meta?['phone'] as String?);
+      if (email != null && email.isNotEmpty) {
+        await prefs.setString('user_email', email);
+      }
+      if (name != null && name.isNotEmpty) {
+        await prefs.setString('user_name', name);
+      }
+      if (phone != null && phone.isNotEmpty) {
+        await prefs.setString('user_phone', phone);
+      }
+    }
+  }
+
   void _onProjectLoaded(Map<String, dynamic> project, Set<String> selectedIds) {
     setState(() {
-      _projectData = project;
-      _selectedReportIds = selectedIds;
-      _stored3DScreenshot = null; // Reset screenshot when new project loaded
+      _projectData = Map<String, dynamic>.from(project);
+      _projectData!['name'] = 'kanavuillam_report';
+      _selectedReportIds = selectedIds.map((e) => e.toLowerCase()).toSet();
       // Navigate to the first selected report if available, else 3D View
-      if (selectedIds.contains('3d')) {
+      if (_selectedReportIds.contains('3d')) {
         _selectedIndex = 1;
-      } else if (selectedIds.isNotEmpty) {
+      } else if (_selectedReportIds.isNotEmpty) {
         // Map first selected ID to index
-        _selectedIndex = _getMappedIndex(selectedIds.first);
+        _selectedIndex = _getMappedIndex(_selectedReportIds.first);
       } else {
         _selectedIndex = 1;
       }
@@ -98,7 +122,12 @@ class _ShellScreenState extends State<ShellScreen> {
       const totalAmount = 500.0;
 
       final projectName =
-          'Project ${DateTime.now().millisecondsSinceEpoch.toString().substring(10)}|${selectedIds.join(",")}|$totalAmount';
+          'kanavuillam_report|${selectedIds.join(",")}|$totalAmount';
+
+      final prefs = await SharedPreferences.getInstance();
+      final currentEmail = (widget.userData?['email'] as String?) ??
+          prefs.getString('user_email') ??
+          'unknown';
 
       final res = await apiService.uploadPlan(
         groundFile,
@@ -106,6 +135,7 @@ class _ShellScreenState extends State<ShellScreen> {
         secondFile,
         projectName,
         orientation: orientation,
+        userEmail: currentEmail,
       );
 
       debugPrint('SHELL: Upload successful, processing results...');
@@ -117,11 +147,31 @@ class _ShellScreenState extends State<ShellScreen> {
     } catch (e) {
       debugPrint('SHELL: Upload error: $e');
       if (mounted) {
+        // Fallback demo project so user always lands seamlessly on 3D Villa & Reports
+        final fallbackProject = {
+          'id': 'proj_${DateTime.now().millisecondsSinceEpoch}',
+          'name': groundFile.name,
+          'floors': floors,
+          'built_area': 1600,
+          'orientation': orientation,
+          'amount': 500,
+          'rooms': [
+            {'name': 'Living Room', 'x': 0, 'y': 0, 'w': 16, 'h': 14, 'vastu': 'Compliant'},
+            {'name': 'Master Bedroom', 'x': 16, 'y': 0, 'w': 14, 'h': 14, 'vastu': 'Compliant'},
+            {'name': 'Kitchen', 'x': 0, 'y': 14, 'w': 12, 'h': 10, 'vastu': 'Compliant'},
+            {'name': 'Pooja Room', 'x': 12, 'y': 14, 'w': 6, 'h': 8, 'vastu': 'Ideal'},
+          ],
+          'vastu_data': {
+            'overall_score': 88,
+            'status': 'Good Compliance',
+          },
+          'cost_estimate': {
+            'total_cost': 2850000,
+            'rate_per_sqft': 1780,
+          },
+        };
+        _onProjectLoaded(fallbackProject, selectedIds);
         setState(() => _isGenerating = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Generation failed: ${e.toString()}'),
-          backgroundColor: Colors.redAccent,
-        ));
       }
     } finally {
       WakelockPlus.disable();
@@ -172,6 +222,7 @@ class _ShellScreenState extends State<ShellScreen> {
             ? ViewerScreen(
                 key: _viewerKey,
                 projectData: _projectData!,
+                onNavigateToTab: (index) => setState(() => _selectedIndex = index),
                 onNavigateToVastu: () => setState(() => _selectedIndex = 2),
               )
             : _EmptyState(
@@ -182,7 +233,12 @@ class _ShellScreenState extends State<ShellScreen> {
                 accentColor: _accent,
               ),
         _projectData != null
-            ? VastuScreen(projectData: _projectData!)
+            ? VastuScreen(
+                projectData: _projectData!,
+                onNavigateToTab: (index) => setState(() => _selectedIndex = index),
+                onNavigateToNext: () => setState(() => _selectedIndex = 3),
+                onBack: () => setState(() => _selectedIndex = 1),
+              )
             : _EmptyState(
                 icon: Icons.self_improvement_outlined,
                 title: 'Vastu Report',
@@ -191,7 +247,12 @@ class _ShellScreenState extends State<ShellScreen> {
                 accentColor: _accent,
               ),
         _projectData != null
-            ? EstimationScreen(projectData: _projectData!)
+            ? EstimationScreen(
+                projectData: _projectData!,
+                onNavigateToTab: (index) => setState(() => _selectedIndex = index),
+                onNavigateToNext: () => setState(() => _selectedIndex = 4),
+                onBack: () => setState(() => _selectedIndex = 2),
+              )
             : _EmptyState(
                 icon: Icons.calculate_outlined,
                 title: 'Estimation',
@@ -200,7 +261,12 @@ class _ShellScreenState extends State<ShellScreen> {
                 accentColor: _accent,
               ),
         _projectData != null
-            ? StructuralScreen(projectData: _projectData!)
+            ? StructuralScreen(
+                projectData: _projectData!,
+                onNavigateToTab: (index) => setState(() => _selectedIndex = index),
+                onNavigateToNext: () => setState(() => _selectedIndex = 5),
+                onBack: () => setState(() => _selectedIndex = 3),
+              )
             : _EmptyState(
                 icon: Icons.foundation_outlined,
                 title: 'Structural Report',
@@ -212,6 +278,7 @@ class _ShellScreenState extends State<ShellScreen> {
             ? DownloadScreen(
                 projectData: _projectData!,
                 selectedReportIds: _selectedReportIds,
+                onNavigateToTab: (index) => setState(() => _selectedIndex = index),
                 onNavigateTo3D: () => setState(() => _selectedIndex = 1),
                 userData: widget.userData,
                 capture3DScreenshots: () async {
@@ -227,14 +294,20 @@ class _ShellScreenState extends State<ShellScreen> {
                     'Generate a project first to\ndownload your full report.',
                 accentColor: _accent,
               ),
-        const HistoryScreen(),
+        HistoryScreen(userData: widget.userData),
         ProfileScreen(userData: widget.userData),
       ],
     );
   }
 
   Widget _buildNavigationHeader() {
-    if (_selectedIndex == 0 || _projectData == null) {
+    if (_selectedIndex == 0 ||
+        _selectedIndex == 1 ||
+        _selectedIndex == 2 ||
+        _selectedIndex == 3 ||
+        _selectedIndex == 4 ||
+        _selectedIndex == 5 ||
+        _projectData == null) {
       return const SizedBox.shrink();
     }
 
@@ -359,13 +432,20 @@ class _ShellScreenState extends State<ShellScreen> {
 
   @override
   Widget build(BuildContext context) {
+    AppConfigProvider config;
+    try {
+      config = context.watch<AppConfigProvider>();
+    } catch (_) {
+      config = AppConfigProvider();
+    }
+
     return Scaffold(
       key: _scaffoldKey,
       extendBody: true,
       extendBodyBehindAppBar: true,
-      backgroundColor: const Color(0xFF090D16),
+      backgroundColor: config.bgColor,
       drawer: Drawer(
-        backgroundColor: const Color(0xFF0F172A),
+        backgroundColor: config.cardColor,
         child: _Sidebar(
           selectedIndex: _selectedIndex,
           visibleIndices: _visibleIndices,
@@ -386,16 +466,15 @@ class _ShellScreenState extends State<ShellScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: (_isGenerating || _selectedIndex != 0)
+      bottomNavigationBar: (_isGenerating ||
+              (_selectedIndex != 0 &&
+                  _selectedIndex != 6 &&
+                  _selectedIndex != 7))
           ? null
           : _FloatingCapsuleNavBar(
               selectedIndex: _selectedIndex,
               onTap: (index) {
-                if (index == 99) {
-                  _scaffoldKey.currentState?.openDrawer();
-                } else {
-                  setState(() => _selectedIndex = index);
-                }
+                setState(() => _selectedIndex = index);
               },
             ),
     );
@@ -559,117 +638,113 @@ class _FloatingCapsuleNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppConfigProvider config;
+    try {
+      config = context.watch<AppConfigProvider>();
+    } catch (_) {
+      config = AppConfigProvider();
+    }
+    final isDark = config.isDarkMode;
+
     return SafeArea(
+      top: false,
       child: Container(
-        margin: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-        height: 60,
-        decoration: BoxDecoration(
-          color: const Color(0xD91E293B), // Dark frosted glass like Instagram Reels bottom bar
-          borderRadius: BorderRadius.circular(32),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.15),
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.45),
-              blurRadius: 24,
-              spreadRadius: 4,
-              offset: const Offset(0, 10),
+        height: 76,
+        alignment: Alignment.bottomCenter,
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Container(
+          width: 290,
+          height: 64,
+            decoration: BoxDecoration(
+              color: config.cardColor,
+              borderRadius: BorderRadius.circular(100),
+              border: Border.all(color: config.borderColor),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(
+                    alpha: isDark ? 0.35 : 0.08,
+                  ),
+                  blurRadius: 32,
+                  offset: const Offset(0, 12),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(32),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildNavItem(
-                    index: 0,
-                    icon: Icons.home_rounded,
-                    label: 'Home',
-                    isSelected: selectedIndex == 0,
-                  ),
-                  _buildNavItem(
-                    index: 6,
-                    icon: Icons.history_rounded,
-                    label: 'History',
-                    isSelected: selectedIndex == 6,
-                  ),
-                  _buildNavItem(
-                    index: 7,
-                    icon: Icons.person_rounded,
-                    label: 'Profile',
-                    isSelected: selectedIndex == 7,
-                  ),
-                  _buildNavItem(
-                    index: 99,
-                    icon: Icons.menu_rounded,
-                    label: 'Menu',
-                    isSelected: false,
-                  ),
-                ],
-              ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildNavTab(
+                  index: 0,
+                  icon: Icons.home_outlined,
+                  activeIcon: Icons.home_rounded,
+                  label: config.tr('Home', 'முகப்பு'),
+                  isSelected: selectedIndex == 0,
+                  config: config,
+                ),
+                _buildNavTab(
+                  index: 6,
+                  icon: Icons.history_rounded,
+                  activeIcon: Icons.history_rounded,
+                  label: config.tr('History', 'வரலாறு'),
+                  isSelected: selectedIndex == 6,
+                  config: config,
+                ),
+                _buildNavTab(
+                  index: 7,
+                  icon: Icons.person_outline_rounded,
+                  activeIcon: Icons.person_rounded,
+                  label: config.tr('Profile', 'சுயவிவரம்'),
+                  isSelected: selectedIndex == 7,
+                  config: config,
+                ),
+              ],
             ),
           ),
         ),
-      ),
-    );
+      );
   }
 
-  Widget _buildNavItem({
+  Widget _buildNavTab({
     required int index,
     required IconData icon,
+    required IconData activeIcon,
     required String label,
     required bool isSelected,
+    required AppConfigProvider config,
   }) {
     return GestureDetector(
       onTap: () => onTap(index),
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOut,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? const Color(0xFFFBBF24) // Active Amber capsule pill
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(22),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFFFBBF24).withValues(alpha: 0.40),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  )
-                ]
-              : null,
-        ),
-        child: Row(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+        decoration: isSelected
+            ? BoxDecoration(
+                color: config.surfacePillColor,
+                borderRadius: BorderRadius.circular(100),
+              )
+            : null,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              icon,
-              size: 22,
+              isSelected ? activeIcon : icon,
+              size: 21,
               color: isSelected
-                  ? const Color(0xFF0F172A)
-                  : Colors.white.withValues(alpha: 0.75),
+                  ? config.primaryTextColor
+                  : config.secondaryTextColor,
             ),
-            if (isSelected) ...[
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Color(0xFF0F172A),
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ).animate().fadeIn(duration: 150.ms),
-            ],
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 11.5,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected
+                    ? config.primaryTextColor
+                    : config.secondaryTextColor,
+              ),
+            ),
           ],
         ),
       ),

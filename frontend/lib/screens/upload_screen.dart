@@ -1,15 +1,26 @@
+import 'dart:async';
+import 'dart:typed_data';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import '../widgets/planx_report_popup.dart';
+import 'package:provider/provider.dart';
+
+import '../core/providers/app_config_provider.dart';
+import '../core/theme/app_colors.dart';
 import 'secure_payment_screen.dart';
 
 class UploadScreen extends StatefulWidget {
   final void Function(Map<String, dynamic> project, Set<String> selectedIds)?
       onProjectLoaded;
-  final Function(XFile ground, XFile? first, XFile? second, int floors,
-      Set<String> selectedIds, String orientation)? onStartGeneration;
+  final Function(
+    XFile ground,
+    XFile? first,
+    XFile? second,
+    int floors,
+    Set<String> selectedIds,
+    String orientation,
+  )? onStartGeneration;
   final bool isExternalLoading;
 
   const UploadScreen({
@@ -23,1882 +34,1613 @@ class UploadScreen extends StatefulWidget {
   State<UploadScreen> createState() => _UploadScreenState();
 }
 
+class _WorkflowStepItem {
+  final String titleEn;
+  final String titleTa;
+  final String subtitleEn;
+  final String subtitleTa;
+  final IconData icon;
+  final String image;
+  final int step;
+
+  const _WorkflowStepItem({
+    required this.titleEn,
+    required this.titleTa,
+    required this.subtitleEn,
+    required this.subtitleTa,
+    required this.icon,
+    required this.image,
+    required this.step,
+  });
+}
+
 class _UploadScreenState extends State<UploadScreen> {
-  final int _selectedFloors = 0;
+  static const int _initialVirtualPage = 1000;
+  int _virtualPage = _initialVirtualPage;
+  late PageController _pageController;
+  Timer? _autoPlayTimer;
+
   XFile? _groundFile;
+  Uint8List? _groundFileBytes;
+  int? _groundFileSizeBytes;
   XFile? _firstFloorFile;
   XFile? _secondFloorFile;
+  final int _selectedFloors = 0;
+  final String _selectedOrientation = 'Auto';
 
-  final ScrollController _scrollController = ScrollController();
+  static const List<_WorkflowStepItem> _workflowSteps = [
+    _WorkflowStepItem(
+      titleEn: 'Upload',
+      titleTa: 'பதிவேற்றம்',
+      subtitleEn: 'Add your 2D plan',
+      subtitleTa: 'உங்கள் 2D வரைபடத்தைச் சேர்க்கவும்',
+      icon: Icons.cloud_upload_outlined,
+      image:
+          'https://lh3.googleusercontent.com/aida/AEtjO1WYGjukOPEQxqtFhkC5Xfc-Eg30vHHUYMINIpN63AjZbfsXww0X4nASqL7eEc_UttXAr3LEIRTtWrqZBApLpmpY14pcjo4VLww5d1kjolUfXZZ1Ax2u75K28HB-aQMvS572UXM6L-6Etq-WG_N8yIaP4VItn-4cGr2CrZMQMa3vXZG3B6UzZ4FXbMh7S-yKW_ghohWFIemD9yWijKxmwVdKx-myJxZj_RAgwlJSpeNIw25e62WCTt08Oyi0',
+      step: 1,
+    ),
+    _WorkflowStepItem(
+      titleEn: 'Pay',
+      titleTa: 'கட்டணம்',
+      subtitleEn: 'Secure UPI or card',
+      subtitleTa: 'பாதுகாப்பான UPI அல்லது அட்டை',
+      icon: Icons.payments_outlined,
+      image:
+          'https://lh3.googleusercontent.com/aida-public/AB6AXuDfXeQxxzTIZ8DFO2EYUVVqVwVuTbPnEQ-DzDUJaLl4PgXIXLBveyUABMuoj3LXQTftZLdLuSxn6gkgo-lYhfXrWDUie62H0m1epsZXqUgAABQeieDZ3yCso9x11zInyv6yseg7NDr2e0hDvl6QXa2wnkfu3g7nHMx_xiUVcgWncO2jc_9Ikmi0Vkqy9XuyaE4GK8HauWsqBIhT45GRn9u3_Zsky53lO-fYg-aNS-UTLNxva_qs_JVHjA',
+      step: 2,
+    ),
+    _WorkflowStepItem(
+      titleEn: 'Reports',
+      titleTa: 'அறிக்கைகள்',
+      subtitleEn: '3D, Vastu, Cost',
+      subtitleTa: '3D, வாஸ்து, மதிப்பீடு',
+      icon: Icons.view_in_ar_outlined,
+      image:
+          'https://lh3.googleusercontent.com/aida-public/AB6AXuDLZOt4b6n3vSFu-cqlLntqLK8xMzSSMNhif3OdN5cjhMmHuBMmzbjZ6Gjk2F_Y0MbeDU4mL2wH8uehp4QZmNaL51l1dBFD-FDtHoEqPWH1MC6ai18SDw-5B_YG5BCPfn0x2IRDr96w_GiJ1VVQe4Z8rn_4quax_DSq01r9nuChe0U0MK3ir-ZDzvKt9SUrGnQHEEJYox_E9stG68cACMvErpg8E5iPKU-VaqyNAfYW6aHQcXci8gDhDA',
+      step: 3,
+    ),
+    _WorkflowStepItem(
+      titleEn: 'Download',
+      titleTa: 'பதிவிறக்கு',
+      subtitleEn: 'One PDF report',
+      subtitleTa: 'முழு PDF அறிக்கை',
+      icon: Icons.file_download_outlined,
+      image:
+          'https://lh3.googleusercontent.com/aida-public/AB6AXuA0JpbkGD46RLWXoDmuaUXe91EE0-TXpT83W2ffvQhIZg-7FL7TGdfhS4bP0x_vLWPziR0nm7jDPdMzYoO_TlO3FgimeO9OJ0NI1HKFuRrmTngM2vxjHInQFACJpnajt-r-QfnJJjxDJtgis03eg6Qdm41CywLOtyWDt08w29mGw5fI56e1xq64LQsQTkDzJqGjABPJ64W11X4NAiHG7lLHa-BF8PxAByiweWfig65fhrgtvGmaMis6PA',
+      step: 4,
+    ),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(
+      viewportFraction: 0.82,
+      initialPage: _initialVirtualPage,
+    );
+    _startAutoPlay();
+  }
+
+  void _startAutoPlay() {
+    _autoPlayTimer?.cancel();
+    _autoPlayTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (_pageController.hasClients) {
+        final current = _pageController.page?.round() ?? _virtualPage;
+        _pageController.animateToPage(
+          current + 1,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOutCubic,
+        );
+      }
+    });
+  }
 
   @override
   void dispose() {
-    _scrollController.dispose();
+    _autoPlayTimer?.cancel();
+    _pageController.dispose();
     super.dispose();
   }
 
-  Future<void> _pick(int floorIndex) async {
-    final f = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (f != null) {
-      setState(() {
-        if (floorIndex == 0) {
-          _groundFile = f;
-        } else if (floorIndex == 1) {
-          _firstFloorFile = f;
-        } else if (floorIndex == 2) {
-          _secondFloorFile = f;
-        }
-      });
-
-      if (_canProceed) {
-        _generate();
-      }
-    }
-  }
-
-  bool get _canProceed {
-    return _groundFile != null;
-  }
-
-  Future<void> _generate() async {
-    if (!_canProceed) return;
-    const selectedOrientation = 'Auto';
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      barrierColor: Colors.black.withValues(alpha: 0.6),
-      builder: (dialogCtx) => PlanXReportPopup(
-        onContinue: (selectedIds) {
-          const totalAmount = 500.0;
-
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => SecurePaymentScreen(
-                amount: totalAmount,
-                selectedItems: const [
-                  '3D VISUALIZATION',
-                  'VASTU ANALYSIS',
-                  'COST ESTIMATION',
-                  'STRUCTURAL DESIGN'
-                ],
-                onFinish: () {
-                  widget.onStartGeneration?.call(
-                    _groundFile!,
-                    _firstFloorFile,
-                    _secondFloorFile,
-                    _selectedFloors,
-                    selectedIds,
-                    selectedOrientation,
-                  );
-                },
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  void _onCardTapped(String featureTitle) {
-    if (_canProceed) {
-      _generate();
-    } else {
-      _showUploadPromptPopup(featureTitle);
-    }
-  }
-
-  void _showUploadPromptPopup(String featureTitle) {
-    bool isDismissed = false;
-
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      barrierColor: Colors.black.withValues(alpha: 0.25),
-      builder: (dialogContext) {
-        Future.delayed(const Duration(seconds: 2), () {
-          if (!isDismissed &&
-              dialogContext.mounted &&
-              Navigator.canPop(dialogContext)) {
-            isDismissed = true;
-            Navigator.pop(dialogContext);
-          }
+  Future<void> _pickBlueprint(ImageSource source) async {
+    try {
+      final img = await ImagePicker().pickImage(
+        source: source,
+        maxWidth: 4096,
+        maxHeight: 4096,
+        imageQuality: 100,
+      );
+      if (img != null) {
+        final bytes = await img.readAsBytes();
+        if (!mounted) return;
+        setState(() {
+          _groundFile = img;
+          _groundFileBytes = bytes;
+          _groundFileSizeBytes = bytes.length;
         });
+        _navigateToReviewAndPay();
+      }
+    } catch (e) {
+      debugPrint('Error picking image: $e');
+    }
+  }
 
-        return GestureDetector(
-          onTap: () {
-            if (!isDismissed &&
-                dialogContext.mounted &&
-                Navigator.canPop(dialogContext)) {
-              isDismissed = true;
-              Navigator.pop(dialogContext);
-            }
-          },
-          child: Dialog(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            insetPadding:
-                const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+  void _showPickSourceModal(AppConfigProvider config) {
+    final cardColor = config.cardColor;
+    final primaryTextColor = config.primaryTextColor;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 38,
+                  height: 4,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.35),
-                      width: 1.2,
-                    ),
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Colors.white.withValues(alpha: 0.25),
-                        Colors.white.withValues(alpha: 0.12),
-                        const Color(0xFFF59E0B).withValues(alpha: 0.20),
-                      ],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFFFBBF24).withValues(alpha: 0.30),
-                        blurRadius: 24,
-                        spreadRadius: 1,
-                      ),
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.45),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // App Logo - Clean & Larger Without Orange Tint
-                      Container(
-                        width: 48,
-                        height: 48,
-                        padding: const EdgeInsets.all(2),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white.withValues(alpha: 0.12),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.35),
-                            width: 1.2,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.35),
-                              blurRadius: 10,
-                            ),
-                          ],
-                        ),
-                        child: ClipOval(
-                          child: Image.asset(
-                            'assets/images/logo.png',
-                            fit: BoxFit.contain,
-                            errorBuilder: (ctx, err, st) {
-                              return const Icon(
-                                Icons.architecture_rounded,
-                                color: Color(0xFFFCD34D),
-                                size: 24,
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-
-                      // Notice Content
-                      Expanded(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  width: 6,
-                                  height: 6,
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFFFCD34D),
-                                    shape: BoxShape.circle,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Color(0xFFFCD34D),
-                                        blurRadius: 4,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                const Text(
-                                  'KANAVU ILLAM',
-                                  style: TextStyle(
-                                    color: Color(0xFFFCD34D),
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 1.0,
-                                    shadows: [
-                                      Shadow(
-                                        color: Colors.black54,
-                                        blurRadius: 4,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 3),
-                            const Text(
-                              'Please upload user plan to view all the feature',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w600,
-                                height: 1.25,
-                                shadows: [
-                                  Shadow(
-                                    color: Colors.black87,
-                                    blurRadius: 6,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                    color: config.borderColor,
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-              ),
+                const SizedBox(height: 16),
+                Text(
+                  config.tr(
+                      'Choose 2D Plan Source', 'வரைபடத்தைத் தேர்ந்தெடுக்கவும்'),
+                  style: GoogleFonts.syne(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: primaryTextColor,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildSourceOption(
+                        icon: Icons.photo_library_outlined,
+                        title: config.tr('Gallery', 'கேலரி'),
+                        subtitle: config.tr('Photos & Scans', 'புகைப்படங்கள்'),
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          _pickBlueprint(ImageSource.gallery);
+                        },
+                        config: config,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: _buildSourceOption(
+                        icon: Icons.camera_alt_outlined,
+                        title: config.tr('Camera', 'கேமரா'),
+                        subtitle: config.tr('Take photo of plan', 'நேரடி படம்'),
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          _pickBlueprint(ImageSource.camera);
+                        },
+                        config: config,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+              ],
             ),
-          )
-              .animate()
-              .scale(
-                duration: 250.ms,
-                curve: Curves.easeOutBack,
-                begin: const Offset(0.90, 0.90),
-                end: const Offset(1.0, 1.0),
-              )
-              .fadeIn(duration: 200.ms),
+          ),
         );
       },
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF090D16),
-      body: Stack(
-        children: [
-          // 1. Luxury Architectural Background
-          Positioned.fill(
-            child: Image.asset(
-              'assets/images/luxury_villa_bg.png',
-              fit: BoxFit.cover,
-              alignment: Alignment.topCenter,
-              errorBuilder: (context, error, stackTrace) {
-                return Image.asset(
-                  'assets/images/architectural_bg.jpg',
-                  fit: BoxFit.cover,
-                  alignment: Alignment.topCenter,
-                );
-              },
-            ),
-          ),
+  Widget _buildFormatPill(String text, AppConfigProvider config,
+      {bool isHighlight = false}) {
+    final isDark = config.isDarkMode;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: isHighlight
+            ? (isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0))
+            : (isDark ? const Color(0xFF181F2A) : const Color(0xFFF1F5F9)),
+        borderRadius: BorderRadius.circular(100),
+        border: Border.all(
+          color: isHighlight
+              ? (isDark ? const Color(0xFF38BDF8) : AppColors.primary)
+                  .withValues(alpha: 0.5)
+              : config.borderColor,
+          width: 1,
+        ),
+      ),
+      child: Text(
+        text,
+        style: GoogleFonts.inter(
+          fontSize: 10.5,
+          fontWeight: isHighlight ? FontWeight.w700 : FontWeight.w600,
+          color: isHighlight
+              ? (isDark ? const Color(0xFF38BDF8) : AppColors.primary)
+              : config.secondaryTextColor,
+          letterSpacing: 0.4,
+        ),
+      ),
+    );
+  }
 
-          // 2. Dark Scrim & Gradient Overlay
-          Positioned.fill(
-            child: Container(
+  Widget _buildSourceOption({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+    required AppConfigProvider config,
+  }) {
+    final isDark = config.isDarkMode;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 14),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF181F2A) : const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: config.borderColor),
+        ),
+        child: Column(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.35),
-                    Colors.black.withValues(alpha: 0.65),
-                    const Color(0xFF090D16).withValues(alpha: 0.96),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          // 3. Ambient Amber Warm Glow
-          Positioned(
-            top: -40,
-            left: -40,
-            child: Container(
-              width: 220,
-              height: 220,
-              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF242E3E) : Colors.white,
                 shape: BoxShape.circle,
-                color: const Color(0xFFF59E0B).withValues(alpha: 0.18),
+                border: Border.all(color: config.borderColor),
+              ),
+              child: Icon(icon, size: 24, color: config.primaryTextColor),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: GoogleFonts.syne(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: config.primaryTextColor,
               ),
             ),
-          ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: GoogleFonts.inter(
+                fontSize: 11,
+                color: config.secondaryTextColor,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-          // 4. Main Scrollable Content
-          Positioned.fill(
-            child: SafeArea(
-              child: SingleChildScrollView(
-                controller: _scrollController,
-                physics: const BouncingScrollPhysics(),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+  void _navigateToReviewAndPay() {
+    if (_groundFile == null) return;
+
+    const totalAmount = 500.0;
+    const selectedItemsDisplay = [
+      '3D VISUALIZATION',
+      'VASTU ANALYSIS',
+      'COST ESTIMATION',
+      'STRUCTURAL DESIGN',
+    ];
+    final selectedIdsSet = {'3d', 'vastu', 'cost', 'structural'};
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SecurePaymentScreen(
+          amount: totalAmount,
+          selectedItems: selectedItemsDisplay,
+          file: _groundFile,
+          fileName: _groundFile?.name,
+          onFinish: () {
+            widget.onStartGeneration?.call(
+              _groundFile!,
+              _firstFloorFile,
+              _secondFloorFile,
+              _selectedFloors,
+              selectedIdsSet,
+              _selectedOrientation,
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCarouselCard({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required String image,
+    required int step,
+    required int pageIndex,
+    required AppConfigProvider config,
+  }) {
+    return GestureDetector(
+      onTap: () {
+        _pageController.animateToPage(
+          pageIndex,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 8.0),
+        decoration: BoxDecoration(
+          color: config.cardColor,
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(color: config.borderColor),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black
+                  .withValues(alpha: config.isDarkMode ? 0.35 : 0.06),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            // Text Content
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16.0,
+                  vertical: 12.0,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _buildAppHeader(),
-                    const SizedBox(height: 18),
-                    _buildUploadCard(),
-                    const SizedBox(height: 14),
-                    _buildTrustChip(),
-                    const SizedBox(height: 18),
-                    _buildCoreFeaturesGrid(),
-                    const SizedBox(height: 24),
+                    Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.syne(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: config.primaryTextColor,
+                        letterSpacing: -0.22,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: config.secondaryTextColor,
+                      ),
+                    ),
                   ],
                 ),
               ),
             ),
-          ),
-
-          // 5. External Loading Overlay
-          if (widget.isExternalLoading) _loadingOverlay(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAppHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Dream Home with AI Pill Badge
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFBBF24).withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.30),
+            // Image Content with Rich Graphic Fallback
+            SizedBox(
+              width: 120,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topRight: Radius.circular(28),
+                  bottomRight: Radius.circular(28),
                 ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFFBBF24),
-                      shape: BoxShape.circle,
-                    ),
-                  )
-                      .animate(onPlay: (c) => c.repeat(reverse: true))
-                      .scaleXY(begin: 0.8, end: 1.3, duration: 1500.ms),
-                  const SizedBox(width: 6),
-                  const Text(
-                    'DREAM HOME',
-                    style: TextStyle(
-                      color: Color(0xFFFCD34D),
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Kanavu Illam',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 27,
-                fontWeight: FontWeight.bold,
-                letterSpacing: -0.5,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              'Turn your 2D plan into 3D living',
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.75),
-                fontSize: 12,
-                fontWeight: FontWeight.w300,
-                letterSpacing: 0.2,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildUploadCard() {
-    final hasFile = _groundFile != null;
-
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(26),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.35),
-          width: 1.2,
-        ),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white.withValues(alpha: 0.22),
-            Colors.white.withValues(alpha: 0.08),
-            const Color(0xFFF59E0B).withValues(alpha: 0.18),
-          ],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFFBBF24).withValues(alpha: 0.22),
-            blurRadius: 24,
-            spreadRadius: 1,
-          ),
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.35),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(26),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(
-            padding: const EdgeInsets.all(22),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(26),
-            ),
-            child: Column(
-              children: [
-                // Radial Spotlight Light Effect & Badge Icon
-                Stack(
-                  alignment: Alignment.topCenter,
+                child: Stack(
+                  fit: StackFit.expand,
                   children: [
-                    Container(
-                      width: 150,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: RadialGradient(
-                          colors: [
-                            const Color(0xFFFBBF24).withValues(alpha: 0.35),
-                            const Color(0xFFF59E0B).withValues(alpha: 0.08),
-                            Colors.transparent,
-                          ],
+                    Image.network(
+                      image,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        color: config.surfacePillColor.withValues(alpha: 0.6),
+                        child: Center(
+                          child: Icon(
+                            icon,
+                            size: 44,
+                            color: config.secondaryTextColor
+                                .withValues(alpha: 0.8),
+                          ),
                         ),
                       ),
                     ),
-                    Column(
-                      children: [
-                        // App Logo Badge with Gold Glow
-                        Container(
-                          width: 58,
-                          height: 58,
-                          padding: const EdgeInsets.all(5),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                Colors.white.withValues(alpha: 0.30),
-                                Colors.white.withValues(alpha: 0.12),
-                              ],
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            config.cardColor,
+                            config.cardColor.withValues(alpha: 0.85),
+                            config.cardColor.withValues(alpha: 0.0),
+                          ],
+                          stops: const [0.0, 0.25, 0.65],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: 12,
+                      right: 12,
+                      child: Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: config.cardColor,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: config.borderColor),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Colors.black12,
+                              blurRadius: 4,
+                              offset: Offset(0, 2),
                             ),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.35),
-                              width: 1.2,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFFFCD34D)
-                                    .withValues(alpha: 0.25),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
+                          ],
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          '$step',
+                          style: GoogleFonts.syne(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: config.primaryTextColor,
                           ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Image.asset(
-                              'assets/images/logo.png',
-                              fit: BoxFit.contain,
-                              errorBuilder: (ctx, err, st) {
-                                return const Icon(
-                                  Icons.architecture_rounded,
-                                  color: Color(0xFFFCD34D),
-                                  size: 28,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    AppConfigProvider config;
+    try {
+      config = context.watch<AppConfigProvider>();
+    } catch (_) {
+      config = AppConfigProvider();
+    }
+    final isDark = config.isDarkMode;
+    final bgColor = config.bgColor;
+    final cardColor = config.cardColor;
+    final primaryTextColor = config.primaryTextColor;
+    final secondaryTextColor = config.secondaryTextColor;
+    final borderColor = config.borderColor;
+
+    return Scaffold(
+      backgroundColor: bgColor,
+      body: Stack(
+        children: [
+          // Background Compass Art Overlay
+          Positioned(
+            top: 28,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                width: 300,
+                height: 250,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      isDark ? Colors.white10 : Colors.white,
+                      isDark
+                          ? Colors.transparent
+                          : Colors.white.withValues(alpha: 0.0),
+                    ],
+                    stops: const [0.0, 0.7],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Positioned.fill(
+            child: Opacity(
+              opacity: isDark ? 0.08 : 0.05,
+              child: CustomPaint(
+                painter: _CompassPainter(color: primaryTextColor),
+              ),
+            ),
+          ),
+
+          Positioned.fill(
+            child: SafeArea(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 440),
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.only(
+                      left: 16.0,
+                      right: 16.0,
+                      top: 16.0,
+                      bottom: 110.0,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // TOP BRAND EMBLEM HEADER
+                        Column(
+                          children: [
+                            const SizedBox(height: 4),
+                            SizedBox(
+                              width: 80,
+                              height: 80,
+                              child: CustomPaint(
+                                painter:
+                                    _LargeLogoPainter(color: primaryTextColor),
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Kanavu Illam',
+                              style: GoogleFonts.syne(
+                                fontSize: 26,
+                                fontWeight: FontWeight.w600,
+                                color: primaryTextColor,
+                                letterSpacing: -0.3,
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // WORKFLOW STEP CAROUSEL
+                        SizedBox(
+                          height: 154,
+                          child: ScrollConfiguration(
+                            behavior: ScrollConfiguration.of(context).copyWith(
+                              dragDevices: {
+                                PointerDeviceKind.touch,
+                                PointerDeviceKind.mouse,
+                                PointerDeviceKind.trackpad,
+                              },
+                            ),
+                            child: PageView.builder(
+                              controller: _pageController,
+                              physics: const BouncingScrollPhysics(),
+                              onPageChanged: (index) {
+                                setState(() {
+                                  _virtualPage = index;
+                                });
+                              },
+                              itemBuilder: (context, index) {
+                                final stepIndex = index % _workflowSteps.length;
+                                final item = _workflowSteps[stepIndex];
+                                return _buildCarouselCard(
+                                  title: config.tr(item.titleEn, item.titleTa),
+                                  subtitle: config.tr(
+                                    item.subtitleEn,
+                                    item.subtitleTa,
+                                  ),
+                                  icon: item.icon,
+                                  image: item.image,
+                                  step: item.step,
+                                  pageIndex: index,
+                                  config: config,
                                 );
                               },
                             ),
                           ),
-                        )
-                            .animate(onPlay: (c) => c.repeat(reverse: true))
-                            .scaleXY(
-                                begin: 0.95, end: 1.05, duration: 2500.ms),
-                        const SizedBox(height: 14),
-                        const Text(
-                          'Upload Floor Plan',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.3,
-                            shadows: [
-                              Shadow(
-                                color: Colors.black54,
-                                blurRadius: 6,
+                        ),
+
+                        // CAROUSEL DOT INDICATORS
+                        Padding(
+                          padding:
+                              const EdgeInsets.only(top: 12.0, bottom: 20.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: List.generate(4, (index) {
+                              final currentStep = _virtualPage % 4;
+                              final bool isActive = currentStep == index;
+                              return GestureDetector(
+                                onTap: () {
+                                  final current =
+                                      _pageController.page?.round() ??
+                                          _virtualPage;
+                                  final activeStep = current % 4;
+                                  int diff = index - activeStep;
+                                  if (diff > 2) diff -= 4;
+                                  if (diff < -2) diff += 4;
+                                  _pageController.animateToPage(
+                                    current + diff,
+                                    duration: const Duration(milliseconds: 400),
+                                    curve: Curves.easeInOut,
+                                  );
+                                },
+                                child: Container(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 6.0),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 300),
+                                    margin: const EdgeInsets.symmetric(
+                                      horizontal: 4.0,
+                                    ),
+                                    height: 8.0,
+                                    width: isActive ? 24.0 : 8.0,
+                                    decoration: BoxDecoration(
+                                      color: isActive
+                                          ? primaryTextColor
+                                          : borderColor,
+                                      borderRadius: BorderRadius.circular(4.0),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }),
+                          ),
+                        ),
+
+                        // 2D PLAN BLUEPRINT DROPZONE & PREVIEW CARD
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16.0,
+                            vertical: 14.0,
+                          ),
+                          decoration: BoxDecoration(
+                            color: cardColor,
+                            borderRadius: BorderRadius.circular(28),
+                            border: Border.all(color: borderColor),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(
+                                  alpha: isDark ? 0.35 : 0.06,
+                                ),
+                                blurRadius: 24,
+                                offset: const Offset(0, 8),
                               ),
                             ],
                           ),
-                        ),
-                        const SizedBox(height: 5),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'PDF, DWG, PNG or JPG ',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.85),
-                                fontSize: 11.5,
-                              ),
-                            ),
-                            const Text(
-                              '• ',
-                              style: TextStyle(
-                                color: Color(0xFFFBBF24),
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              'Up to 50MB',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.85),
-                                fontSize: 11.5,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
+                          child: _groundFile == null
+                              ? Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    // Blueprint Dropzone with architectural border
+                                    InkWell(
+                                      onTap: () => _showPickSourceModal(config),
+                                      borderRadius: BorderRadius.circular(20),
+                                      child: Container(
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 18,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: isDark
+                                              ? const Color(0xFF141820)
+                                              : const Color(0xFFFBFBFB),
+                                          borderRadius:
+                                              BorderRadius.circular(20),
+                                          border: Border.all(
+                                            color: isDark
+                                                ? const Color(0xFF2E3846)
+                                                : const Color(0xFFD4D4D8),
+                                            width: 1.5,
+                                          ),
+                                        ),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            // Hero Animated Upload Icon with pulse waves & floating upload motion
+                                            _AnimatedUploadIcon(
+                                              isDark: isDark,
+                                              primaryColor: primaryTextColor,
+                                              borderColor: borderColor,
+                                            ),
+                                            const SizedBox(height: 10),
 
-                if (!hasFile) ...[
-                  // Main CTA Button
-                  GestureDetector(
-                    onTap: () => _pick(0),
-                    child: Container(
-                      width: double.infinity,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [
-                            Color(0xFFFCD34D),
-                            Color(0xFFF59E0B),
-                            Color(0xFFD97706),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(30),
-                        boxShadow: [
-                          BoxShadow(
-                            color:
-                                const Color(0xFFF59E0B).withValues(alpha: 0.45),
-                            blurRadius: 18,
-                            spreadRadius: 1,
-                            offset: const Offset(0, 5),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF0F172A),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.add_rounded,
-                              color: Color(0xFFFCD34D),
-                              size: 18,
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          const Text(
-                            'Browse or Drop Blueprint',
-                            style: TextStyle(
-                              color: Color(0xFF0F172A),
-                              fontSize: 13.5,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 0.2,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        width: 6,
-                        height: 6,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF34D399), // Emerald 400
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Color(0xFF34D399),
-                              blurRadius: 4,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Instant Architectural Reconstruction',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.75),
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ] else ...[
-                  // Uploaded File Card State
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(
-                        color: const Color(0xFF34D399).withValues(alpha: 0.5),
-                        width: 1.5,
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        const Icon(
-                          Icons.check_circle_rounded,
-                          color: Color(0xFF34D399),
-                          size: 38,
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          '2D Plan Uploaded ✓',
-                          style: TextStyle(
-                            color: Color(0xFF34D399),
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _groundFile!.name,
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.90),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: () => _pick(0),
-                                icon:
-                                    const Icon(Icons.refresh_rounded, size: 16),
-                                label: const Text('Change Plan'),
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: const Color(0xFFFCD34D),
-                                  side: const BorderSide(
-                                      color: Color(0xFFFBBF24)),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 10),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: ElevatedButton.icon(
-                                onPressed: () {
-                                  setState(() {
-                                    _groundFile = null;
-                                  });
-                                  ScaffoldMessenger.of(context)
-                                      .hideCurrentSnackBar();
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: const Row(
+                                            // Headline
+                                            Text(
+                                              config.tr(
+                                                'Upload 2D Floor Plan',
+                                                '2D வரைபடத்தைப் பதிவேற்றவும்',
+                                              ),
+                                              style: GoogleFonts.syne(
+                                                fontSize: 17,
+                                                fontWeight: FontWeight.w700,
+                                                color: primaryTextColor,
+                                                letterSpacing: -0.2,
+                                              ),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                            const SizedBox(height: 6),
+
+                                            // Subtitle
+                                            Text(
+                                              config.tr(
+                                                'Tap here to browse blueprint from Gallery or Camera',
+                                                'கேலரி அல்லது கேமராவிலிருந்து வரைபடத்தைத் தேர்ந்தெடுக்கவும்',
+                                              ),
+                                              style: GoogleFonts.inter(
+                                                fontSize: 12,
+                                                color: secondaryTextColor,
+                                                height: 1.35,
+                                              ),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                            const SizedBox(height: 16),
+
+                                            // Format Badges
+                                            Wrap(
+                                              spacing: 8,
+                                              runSpacing: 6,
+                                              alignment: WrapAlignment.center,
+                                              children: [
+                                                _buildFormatPill('JPG', config),
+                                                _buildFormatPill('PNG', config),
+                                                _buildFormatPill('PDF', config),
+                                                _buildFormatPill(
+                                                  'MAX 25MB',
+                                                  config,
+                                                  isHighlight: true,
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 20),
+
+                                            // Select Plan Button
+                                            Container(
+                                              height: 44,
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 22,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: isDark
+                                                    ? Colors.white
+                                                    : AppColors.primary,
+                                                borderRadius:
+                                                    BorderRadius.circular(100),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color:
+                                                        Colors.black.withValues(
+                                                      alpha:
+                                                          isDark ? 0.35 : 0.12,
+                                                    ),
+                                                    blurRadius: 12,
+                                                    offset: const Offset(0, 4),
+                                                  ),
+                                                ],
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(
+                                                    Icons
+                                                        .add_photo_alternate_outlined,
+                                                    size: 18,
+                                                    color: isDark
+                                                        ? Colors.black
+                                                        : Colors.white,
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  Text(
+                                                    config.tr(
+                                                      'Select Floor Plan',
+                                                      'வரைபடம் தேர்வு செய்க',
+                                                    ),
+                                                    style: GoogleFonts.inter(
+                                                      fontSize: 13.5,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: isDark
+                                                          ? Colors.black
+                                                          : Colors.white,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Blueprint Real Image Preview Canvas
+                                    Container(
+                                      width: double.infinity,
+                                      height: 170,
+                                      decoration: BoxDecoration(
+                                        color: isDark
+                                            ? const Color(0xFF0F1218)
+                                            : const Color(0xFFF1F5F9),
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(color: borderColor),
+                                      ),
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(20),
+                                        child: Stack(
+                                          children: [
+                                            // Blueprint Grid pattern
+                                            Positioned.fill(
+                                              child: Opacity(
+                                                opacity: 0.18,
+                                                child: CustomPaint(
+                                                  painter:
+                                                      _BlueprintCardGridPainter(
+                                                    color: primaryTextColor,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+
+                                            // Actual Image Thumbnail
+                                            if (_groundFileBytes != null)
+                                              Positioned.fill(
+                                                child: Padding(
+                                                  padding:
+                                                      const EdgeInsets.all(8.0),
+                                                  child: ClipRRect(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            14),
+                                                    child: Image.memory(
+                                                      _groundFileBytes!,
+                                                      fit: BoxFit.contain,
+                                                    ),
+                                                  ),
+                                                ),
+                                              )
+                                            else
+                                              Center(
+                                                child: Icon(
+                                                  Icons
+                                                      .insert_drive_file_outlined,
+                                                  size: 56,
+                                                  color: primaryTextColor,
+                                                ),
+                                              ),
+
+                                            // Top-Left Status Badge
+                                            Positioned(
+                                              top: 12,
+                                              left: 12,
+                                              child: Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                  horizontal: 10,
+                                                  vertical: 4,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: (isDark
+                                                          ? Colors.black
+                                                          : Colors.white)
+                                                      .withValues(alpha: 0.88),
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                  border: Border.all(
+                                                    color: borderColor
+                                                        .withValues(alpha: 0.6),
+                                                  ),
+                                                ),
+                                                child: Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    Container(
+                                                      width: 6,
+                                                      height: 6,
+                                                      decoration:
+                                                          const BoxDecoration(
+                                                        color:
+                                                            Color(0xFF10B981),
+                                                        shape: BoxShape.circle,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 6),
+                                                    Text(
+                                                      'PLAN READY',
+                                                      style: GoogleFonts.inter(
+                                                        fontSize: 10.5,
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                        letterSpacing: 0.5,
+                                                        color: primaryTextColor,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+
+                                            // Top-Right Change & Remove Actions
+                                            Positioned(
+                                              top: 10,
+                                              right: 10,
+                                              child: Row(
+                                                children: [
+                                                  InkWell(
+                                                    onTap: () =>
+                                                        _showPickSourceModal(
+                                                            config),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            100),
+                                                    child: Container(
+                                                      width: 32,
+                                                      height: 32,
+                                                      decoration: BoxDecoration(
+                                                        color: (isDark
+                                                                ? Colors.black
+                                                                : Colors.white)
+                                                            .withValues(
+                                                                alpha: 0.88),
+                                                        shape: BoxShape.circle,
+                                                        border: Border.all(
+                                                          color: borderColor,
+                                                        ),
+                                                      ),
+                                                      child: Icon(
+                                                        Icons.refresh_rounded,
+                                                        size: 16,
+                                                        color: primaryTextColor,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 6),
+                                                  InkWell(
+                                                    onTap: () {
+                                                      setState(() {
+                                                        _groundFile = null;
+                                                        _groundFileBytes = null;
+                                                        _groundFileSizeBytes =
+                                                            null;
+                                                      });
+                                                    },
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            100),
+                                                    child: Container(
+                                                      width: 32,
+                                                      height: 32,
+                                                      decoration: BoxDecoration(
+                                                        color: (isDark
+                                                                ? Colors.black
+                                                                : Colors.white)
+                                                            .withValues(
+                                                                alpha: 0.88),
+                                                        shape: BoxShape.circle,
+                                                        border: Border.all(
+                                                          color: borderColor,
+                                                        ),
+                                                      ),
+                                                      child: const Icon(
+                                                        Icons.close_rounded,
+                                                        size: 16,
+                                                        color:
+                                                            Color(0xFFEF4444),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+
+                                    const SizedBox(height: 14),
+
+                                    // File Detail Strip
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 14,
+                                        vertical: 10,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: isDark
+                                            ? const Color(0xFF1A202C)
+                                            : const Color(0xFFF8FAFC),
+                                        borderRadius: BorderRadius.circular(14),
+                                        border: Border.all(
+                                          color: borderColor.withValues(
+                                              alpha: 0.8),
+                                        ),
+                                      ),
+                                      child: Row(
                                         children: [
-                                          Icon(Icons.delete_sweep_rounded,
-                                              color: Colors.white, size: 20),
-                                          SizedBox(width: 8),
-                                          Text(
-                                            '2D Plan deleted! (பிளான் நீக்கப்பட்டது)',
-                                            style: TextStyle(
+                                          Icon(
+                                            Icons.insert_drive_file_outlined,
+                                            size: 20,
+                                            color: secondaryTextColor,
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  _groundFile!.name,
+                                                  style: GoogleFonts.inter(
+                                                    fontSize: 13,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: primaryTextColor,
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                                if (_groundFileSizeBytes !=
+                                                    null)
+                                                  Text(
+                                                    '${(_groundFileSizeBytes! / 1024).toStringAsFixed(1)} KB • Ready for processing',
+                                                    style: GoogleFonts.inter(
+                                                      fontSize: 11,
+                                                      color: secondaryTextColor,
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
+                                          ),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 3,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFF10B981)
+                                                  .withValues(alpha: 0.12),
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
+                                            ),
+                                            child: Text(
+                                              'VALID',
+                                              style: GoogleFonts.inter(
+                                                fontSize: 10,
                                                 fontWeight: FontWeight.bold,
-                                                fontSize: 12),
+                                                color: const Color(0xFF10B981),
+                                              ),
+                                            ),
                                           ),
                                         ],
                                       ),
-                                      backgroundColor: Colors.red.shade700,
-                                      behavior: SnackBarBehavior.floating,
-                                      margin: const EdgeInsets.all(16),
-                                      shape: RoundedRectangleBorder(
+                                    ),
+
+                                    const SizedBox(height: 14),
+
+                                    // Auto Vastu & Direction Analysis Notice
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.auto_awesome_rounded,
+                                          size: 14,
+                                          color: isDark
+                                              ? const Color(0xFF38BDF8)
+                                              : AppColors.primary,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          config.tr(
+                                            'Auto Vastu & Entrance Analysis Enabled',
+                                            'தானியங்கி வாஸ்து & வாசல் திசை பகுப்பாய்வு இயக்கப்பட்டது',
+                                          ),
+                                          style: GoogleFonts.inter(
+                                            fontSize: 11.5,
+                                            fontWeight: FontWeight.w500,
+                                            color: secondaryTextColor,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+
+                                    const SizedBox(height: 14),
+
+                                    // Proceed CTA Button
+                                    InkWell(
+                                      onTap: _navigateToReviewAndPay,
+                                      borderRadius: BorderRadius.circular(100),
+                                      child: Container(
+                                        width: double.infinity,
+                                        height: 52,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 20,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: isDark
+                                              ? Colors.white
+                                              : AppColors.primary,
                                           borderRadius:
-                                              BorderRadius.circular(10)),
-                                      duration: const Duration(seconds: 2),
-                                    ),
-                                  );
-                                },
-                                icon: const Icon(Icons.delete_outline_rounded,
-                                    size: 16),
-                                label: const Text('Delete Plan'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red.shade600
-                                      .withValues(alpha: 0.85),
-                                  foregroundColor: Colors.white,
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 10),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        GestureDetector(
-                          onTap: _generate,
-                          child: Container(
-                            width: double.infinity,
-                            height: 46,
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [
-                                  Color(0xFFFBBF24),
-                                  Color(0xFFF59E0B),
-                                  Color(0xFFD97706),
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(30),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFFF59E0B)
-                                      .withValues(alpha: 0.40),
-                                  blurRadius: 16,
-                                  spreadRadius: 1,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: const [
-                                Icon(
-                                  Icons.auto_awesome_rounded,
-                                  color: Color(0xFF0F172A),
-                                  size: 18,
-                                ),
-                                SizedBox(width: 6),
-                                Flexible(
-                                  child: FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    child: Text(
-                                      'Generate 3D & Project Reports',
-                                      style: TextStyle(
-                                        color: Color(0xFF0F172A),
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.bold,
+                                              BorderRadius.circular(100),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withValues(
+                                                alpha: isDark ? 0.35 : 0.15,
+                                              ),
+                                              blurRadius: 16,
+                                              offset: const Offset(0, 4),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const SizedBox(width: 28),
+                                            Text(
+                                              config.tr(
+                                                'Proceed to Generate',
+                                                'உருவாக்க தொடர்க',
+                                              ),
+                                              style: GoogleFonts.inter(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.bold,
+                                                color: isDark
+                                                    ? Colors.black
+                                                    : Colors.white,
+                                              ),
+                                            ),
+                                            Container(
+                                              width: 32,
+                                              height: 32,
+                                              decoration: BoxDecoration(
+                                                color: isDark
+                                                    ? Colors.black
+                                                    : Colors.white,
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: Icon(
+                                                Icons.arrow_forward,
+                                                size: 18,
+                                                color: isDark
+                                                    ? Colors.white
+                                                    : Colors.black,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
-                                  ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                          ),
                         ),
                       ],
                     ),
                   ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTrustChip() {
-    return Center(
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.10),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.20),
+                ),
               ),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.star_rounded,
-                  color: Color(0xFFFBBF24),
-                  size: 14,
-                ),
-                const SizedBox(width: 4),
-                const Text(
-                  '4.9/5',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 6),
-                  child: Text(
-                    '•',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.40),
-                      fontSize: 10,
-                    ),
-                  ),
-                ),
-                Text(
-                  '12.4k+ plans generated',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.75),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ],
-            ),
           ),
-        ),
-      ),
-    );
-  }
 
-  Widget _buildCoreFeaturesGrid() {
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 12,
-      mainAxisSpacing: 12,
-      childAspectRatio: 0.57,
-      children: [
-        _build3DWalkthroughCard(),
-        _buildVastuScoreCard(),
-        _buildCostEstimatorCard(),
-        _buildStructuralLoadCard(),
-      ],
-    );
-  }
-
-  Widget _buildGlassCardWrapper({
-    required Widget child,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.35),
-            width: 1.2,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.25),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              color: Colors.white.withValues(alpha: 0.10),
-              child: child,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _build3DWalkthroughCard() {
-    return _buildGlassCardWrapper(
-      onTap: () => _onCardTapped('3D Walkthrough'),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
+          // External Processing / Loading Indicator Overlay
+          if (widget.isExternalLoading)
+            Positioned.fill(
+              child: Container(
+                color: Colors.black.withValues(alpha: 0.65),
+                child: Center(
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 32),
+                    padding: const EdgeInsets.all(28),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFBBF24).withValues(alpha: 0.20),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.25),
-                      ),
-                    ),
-                    child: const Icon(
-                      Icons.view_in_ar_rounded,
-                      color: Color(0xFFFCD34D),
-                      size: 18,
-                    ),
-                  ),
-                  Flexible(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFBBF24).withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color:
-                              const Color(0xFFFBBF24).withValues(alpha: 0.35),
-                        ),
-                      ),
-                      child: const FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          '4K PHOTOREAL',
-                          style: TextStyle(
-                            color: Color(0xFFFCD34D),
-                            fontSize: 8.5,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Container(
-                height: 64,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.20),
-                  ),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: Image.asset(
-                          'assets/images/3d_isometric_preview.png',
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Image.asset(
-                              'assets/images/image.png',
-                              fit: BoxFit.cover,
-                            );
-                          },
-                        ),
-                      ),
-                      Positioned.fill(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.transparent,
-                                Colors.black.withValues(alpha: 0.75),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        left: 8,
-                        bottom: 6,
-                        right: 8,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 6,
-                                    height: 6,
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFF34D399),
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  const Flexible(
-                                    child: Text(
-                                      'Orbit 360°',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 9,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Text(
-                              '60 FPS',
-                              style: TextStyle(
-                                color: Color(0xFFFCD34D),
-                                fontSize: 8.5,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                '3D Walkthrough',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                'Photorealistic isometric & exact 3d generation.',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.75),
-                  fontSize: 9.5,
-                  height: 1.3,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-          Column(
-            children: [
-              const Divider(color: Colors.white12, thickness: 1, height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  Text(
-                    'Generate plan',
-                    style: TextStyle(
-                      color: Color(0xFFFCD34D),
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildVastuScoreCard() {
-    return _buildGlassCardWrapper(
-      onTap: () => _onCardTapped('Vastu Score'),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFBBF24).withValues(alpha: 0.20),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: const Color(0xFFFCD34D).withValues(alpha: 0.35),
-                      ),
-                    ),
-                    child: const Icon(
-                      Icons.explore_outlined,
-                      color: Color(0xFFFCD34D),
-                      size: 18,
-                    ),
-                  ),
-                  Flexible(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF34D399).withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color:
-                              const Color(0xFF34D399).withValues(alpha: 0.35),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 5,
-                            height: 5,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF34D399),
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          const Flexible(
-                            child: Text(
-                              'NE Eshanya',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: Color(0xFF34D399),
-                                fontSize: 8.5,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Container(
-                height: 64,
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.55),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.15),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    _buildRotatingCompassDial(),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              '98.4%',
-                              style: TextStyle(
-                                color: Color(0xFFFCD34D),
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                                height: 1,
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 2),
-                          Text(
-                            'Cosmic Energy',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 8.5,
-                            ),
-                          ),
-                          Text(
-                            '8 Zones Aligned',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Color(0xFF34D399),
-                              fontSize: 8,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                'Vastu Score',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                'Directional balance & cosmic energy alignment.',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.75),
-                  fontSize: 9.5,
-                  height: 1.3,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-          Column(
-            children: [
-              const Divider(color: Colors.white12, thickness: 1, height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  Text(
-                    'View Energy Map',
-                    style: TextStyle(
-                      color: Color(0xFFFCD34D),
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCostEstimatorCard() {
-    return _buildGlassCardWrapper(
-      onTap: () => _onCardTapped('Cost Estimator'),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFBBF24).withValues(alpha: 0.20),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: const Color(0xFFFCD34D).withValues(alpha: 0.35),
-                      ),
-                    ),
-                    child: const Icon(
-                      Icons.payments_outlined,
-                      color: Color(0xFFFCD34D),
-                      size: 18,
-                    ),
-                  ),
-                  Flexible(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFBBF24).withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color:
-                              const Color(0xFFFBBF24).withValues(alpha: 0.35),
-                        ),
-                      ),
-                      child: const FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          'Live BOQ',
-                          style: TextStyle(
-                            color: Color(0xFFFCD34D),
-                            fontSize: 8.5,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Container(
-                height: 64,
-                width: double.infinity,
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.55),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.15),
-                  ),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
-                        Expanded(
-                          child: Text(
-                            'Est. Budget',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 8.5,
-                            ),
-                          ),
-                        ),
-                        FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            '₹48.5L - 54L',
-                            style: TextStyle(
-                              color: Color(0xFFFCD34D),
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                      color: cardColor,
+                      borderRadius: BorderRadius.circular(28),
+                      border: Border.all(color: config.borderColor),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black38,
+                          blurRadius: 30,
+                          offset: Offset(0, 10),
                         ),
                       ],
                     ),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: Container(
-                        height: 6,
-                        width: double.infinity,
-                        color: Colors.white10,
-                        child: Row(
-                          children: [
-                            Expanded(
-                              flex: 55,
-                              child: Container(color: const Color(0xFFFBBF24)),
-                            ),
-                            Expanded(
-                              flex: 28,
-                              child: Container(color: const Color(0xFFF59E0B)),
-                            ),
-                            Expanded(
-                              flex: 17,
-                              child: Container(color: const Color(0xFFFEF3C7)),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
-                        Expanded(
-                          child: Text(
-                            'Mat 55%',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style:
-                                TextStyle(color: Colors.white70, fontSize: 7.5),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 48,
+                          height: 48,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 3,
+                            color: primaryTextColor,
                           ),
                         ),
-                        Expanded(
-                          child: Text(
-                            'Lab 28%',
-                            textAlign: TextAlign.center,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style:
-                                TextStyle(color: Colors.white70, fontSize: 7.5),
+                        const SizedBox(height: 20),
+                        Text(
+                          config.tr(
+                            'Generating 3D Villa & Reports...',
+                            '3D வில்லா & அறிக்கைகள் உருவாகிறது...',
                           ),
+                          style: GoogleFonts.syne(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: primaryTextColor,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
-                        Expanded(
-                          child: Text(
-                            'Fin 17%',
-                            textAlign: TextAlign.end,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style:
-                                TextStyle(color: Colors.white70, fontSize: 7.5),
+                        const SizedBox(height: 8),
+                        Text(
+                          config.tr(
+                            'Analyzing Vastu, Structure & Estimates',
+                            'வாஸ்து, கட்டமைப்பு மற்றும் செலவு கணக்கீடு',
                           ),
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            color: secondaryTextColor,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                'Cost Estimator',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                'Accurate BOQ & construction budget forecasts.',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.75),
-                  fontSize: 9.5,
-                  height: 1.3,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-          Column(
-            children: [
-              const Divider(color: Colors.white12, thickness: 1, height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  Text(
-                    'Local Rates',
-                    style: TextStyle(
-                      color: Color(0xFFFCD34D),
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStructuralLoadCard() {
-    return _buildGlassCardWrapper(
-      onTap: () => _onCardTapped('Structural Load'),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFBBF24).withValues(alpha: 0.20),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: const Color(0xFFFCD34D).withValues(alpha: 0.35),
-                      ),
-                    ),
-                    child: const Icon(
-                      Icons.domain_rounded,
-                      color: Color(0xFFFCD34D),
-                      size: 18,
-                    ),
-                  ),
-                  Flexible(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF34D399).withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color:
-                              const Color(0xFF34D399).withValues(alpha: 0.35),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 5,
-                            height: 5,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF34D399),
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          const Flexible(
-                            child: Text(
-                              'Zone III Safe',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: Color(0xFF34D399),
-                                fontSize: 8.5,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Container(
-                height: 64,
-                width: double.infinity,
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.55),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.15),
                   ),
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
-                        Expanded(
-                          child: Text(
-                            'Shear Stress',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 8.5,
-                            ),
-                          ),
-                        ),
-                        FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            '0.42 σ (Norm)',
-                            style: TextStyle(
-                              color: Color(0xFF34D399),
-                              fontSize: 8.5,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: Container(
-                        height: 6,
-                        width: double.infinity,
-                        color: Colors.white10,
-                        child: FractionallySizedBox(
-                          alignment: Alignment.centerLeft,
-                          widthFactor: 0.42,
-                          child: Container(color: const Color(0xFF34D399)),
-                        ),
-                      ),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
-                        Expanded(
-                          child: Text(
-                            '18 Columns',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Color(0xFFFCD34D),
-                              fontSize: 7.5,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            'IS 456-2000 Compliant',
-                            textAlign: TextAlign.end,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Colors.white60,
-                              fontSize: 7.5,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                'Structural Load',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                'Beam, column & shear load validation.',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.75),
-                  fontSize: 9.5,
-                  height: 1.3,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-          Column(
-            children: [
-              const Divider(color: Colors.white12, thickness: 1, height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  Text(
-                    'Check Safety',
-                    style: TextStyle(
-                      color: Color(0xFFFCD34D),
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _loadingOverlay() {
-    return Positioned.fill(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: Container(
-          color: const Color(0xFF090D16).withValues(alpha: 0.85),
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFBBF24).withValues(alpha: 0.15),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: const Color(0xFFFBBF24).withValues(alpha: 0.35),
-                    ),
-                  ),
-                  child: const Icon(
-                    Icons.architecture_rounded,
-                    size: 60,
-                    color: Color(0xFFFCD34D),
-                  ),
-                )
-                    .animate(onPlay: (c) => c.repeat(reverse: true))
-                    .scaleXY(begin: 0.9, end: 1.1, duration: 800.ms),
-                const SizedBox(height: 24),
-                const Text(
-                  'Analyzing your Blueprint...',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Architectural Reconstruction in Progress',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.70),
-                    fontSize: 12,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                const CircularProgressIndicator(
-                  color: Color(0xFFFBBF24),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRotatingCompassDial() {
-    return Container(
-      width: 36,
-      height: 36,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.black.withValues(alpha: 0.7),
-        border: Border.all(
-          color: const Color(0xFFFBBF24).withValues(alpha: 0.6),
-          width: 1.2,
-        ),
-      ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          CustomPaint(
-            size: const Size(34, 34),
-            painter: _DashedCirclePainter(
-              color: const Color(0xFFFCD34D).withValues(alpha: 0.7),
-              strokeWidth: 1.2,
-              dashes: 10,
-            ),
-          )
-              .animate(onPlay: (c) => c.repeat())
-              .rotate(duration: 10.seconds, curve: Curves.linear),
-          Positioned(
-            top: 2,
-            child: Container(
-              width: 5,
-              height: 5,
-              decoration: const BoxDecoration(
-                color: Color(0xFFFBBF24),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Color(0xFFFCD34D),
-                    blurRadius: 4,
-                  ),
-                ],
               ),
             ),
-          )
-              .animate(onPlay: (c) => c.repeat())
-              .rotate(duration: 10.seconds, curve: Curves.linear),
-          const Text(
-            'N 08°',
-            style: TextStyle(
-              color: Color(0xFFFCD34D),
-              fontSize: 7.5,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
         ],
       ),
     );
   }
 }
 
-class _DashedCirclePainter extends CustomPainter {
+// 80x80 Logo Emblem CustomPainter
+class _LargeLogoPainter extends CustomPainter {
   final Color color;
-  final double strokeWidth;
-  final int dashes;
-
-  _DashedCirclePainter({
-    required this.color,
-    this.strokeWidth = 1.0,
-    this.dashes = 10,
-  });
+  _LargeLogoPainter({this.color = AppColors.primary});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final Paint paint = Paint()
+    final paint = Paint()
       ..color = color
-      ..strokeWidth = strokeWidth
+      ..strokeWidth = 2.5
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    final path1 = Path()
+      ..moveTo(16, 36)
+      ..lineTo(40, 16)
+      ..lineTo(64, 36)
+      ..lineTo(64, 66)
+      ..lineTo(16, 66)
+      ..close();
+
+    final path2 = Path()
+      ..moveTo(29, 29)
+      ..lineTo(29, 55);
+
+    final path3 = Path()
+      ..moveTo(43, 32)
+      ..lineTo(32, 42.5)
+      ..lineTo(43, 53);
+
+    final path4 = Path()
+      ..moveTo(51, 32)
+      ..lineTo(51, 55);
+
+    canvas.save();
+    canvas.scale(size.width / 80, size.height / 80);
+    canvas.drawPath(path1, paint);
+    canvas.drawPath(path2, paint);
+    canvas.drawPath(path3, paint);
+    canvas.drawPath(path4, paint);
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant _LargeLogoPainter oldDelegate) =>
+      oldDelegate.color != color;
+}
+
+// Compass Painter for Background Art
+class _CompassPainter extends CustomPainter {
+  final Color color;
+  _CompassPainter({this.color = AppColors.primary});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;
 
-    final double radius = (size.width / 2) - 1;
-    final Offset center = Offset(size.width / 2, size.height / 2);
-    final double dashAngle = (2 * 3.141592653589793) / (dashes * 2);
+    final cx = size.width / 2;
+    const cy = 124.0;
 
-    for (int i = 0; i < dashes; i++) {
-      canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius),
-        i * 2 * dashAngle,
-        dashAngle,
-        false,
-        paint,
-      );
+    canvas.drawCircle(Offset(cx, cy), 140, paint);
+
+    final dashPaint = Paint()
+      ..color = color
+      ..strokeWidth = 1.2
+      ..style = PaintingStyle.stroke;
+
+    const double dashWidth = 3;
+    const double dashSpace = 3;
+    final Path rectPath = Path()
+      ..addRect(Rect.fromLTWH(cx - 65, cy - 56, 130, 112));
+
+    for (PathMetric measurePath in rectPath.computeMetrics()) {
+      double distance = 0.0;
+      while (distance < measurePath.length) {
+        Path extractPath =
+            measurePath.extractPath(distance, distance + dashWidth);
+        canvas.drawPath(extractPath, dashPaint);
+        distance += dashWidth + dashSpace;
+      }
+    }
+
+    canvas.drawLine(Offset(cx - 65, cy), Offset(cx + 65, cy), paint);
+    canvas.drawLine(Offset(cx, cy - 56), Offset(cx, cy + 56), paint);
+    canvas.drawRect(Rect.fromLTWH(cx - 49, cy - 42, 36, 30), paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _CompassPainter oldDelegate) =>
+      oldDelegate.color != color;
+}
+
+// Background Architectural CAD Grid for Hero Card
+class _BlueprintCardGridPainter extends CustomPainter {
+  final Color color;
+  _BlueprintCardGridPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 0.7
+      ..style = PaintingStyle.stroke;
+
+    const double step = 22.0;
+    for (double x = 0; x < size.width; x += step) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+    for (double y = 0; y < size.height; y += step) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
     }
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _BlueprintCardGridPainter oldDelegate) =>
+      oldDelegate.color != color;
+}
+
+// Animated Upload Action Icon with Pulsing Waves & Ascending Arrow
+class _AnimatedUploadIcon extends StatefulWidget {
+  final bool isDark;
+  final Color primaryColor;
+  final Color borderColor;
+
+  const _AnimatedUploadIcon({
+    required this.isDark,
+    required this.primaryColor,
+    required this.borderColor,
+  });
+
+  @override
+  State<_AnimatedUploadIcon> createState() => _AnimatedUploadIconState();
+}
+
+class _AnimatedUploadIconState extends State<_AnimatedUploadIcon>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2000),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final accentColor =
+        widget.isDark ? const Color(0xFF38BDF8) : AppColors.primary;
+
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        final t = _controller.value;
+
+        // Wave ripple 1 (0.0 -> 1.0)
+        final ripple1Scale = 1.0 + (t * 0.42);
+        final ripple1Opacity = ((1.0 - t) * 0.45).clamp(0.0, 1.0);
+
+        // Wave ripple 2 (offset by 0.5)
+        final t2 = (t + 0.5) % 1.0;
+        final ripple2Scale = 1.0 + (t2 * 0.42);
+        final ripple2Opacity = ((1.0 - t2) * 0.35).clamp(0.0, 1.0);
+
+        // Upload Arrow: continuous upward glide from bottom (+9) to top (-11)
+        final arrowY = 9.0 - (20.0 * t);
+        final double arrowOpacity;
+        if (t < 0.2) {
+          arrowOpacity = t / 0.2;
+        } else if (t < 0.72) {
+          arrowOpacity = 1.0;
+        } else {
+          arrowOpacity = (1.0 - t) / 0.28;
+        }
+
+        // Particle trail dot: follows behind
+        final tDot = (t + 0.68) % 1.0;
+        final dotY = 12.0 - (22.0 * tDot);
+        final double dotOpacity;
+        if (tDot < 0.2) {
+          dotOpacity = tDot / 0.2;
+        } else if (tDot < 0.72) {
+          dotOpacity = 0.75;
+        } else {
+          dotOpacity = (1.0 - tDot) / 0.28;
+        }
+
+        return SizedBox(
+          width: 72,
+          height: 72,
+          child: Stack(
+            alignment: Alignment.center,
+            clipBehavior: Clip.none,
+            children: [
+              // Outer Expanding Wave Ring 1
+              Transform.scale(
+                scale: ripple1Scale,
+                child: Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: accentColor.withValues(alpha: ripple1Opacity),
+                      width: 1.5,
+                    ),
+                  ),
+                ),
+              ),
+
+              // Outer Expanding Wave Ring 2
+              Transform.scale(
+                scale: ripple2Scale,
+                child: Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: accentColor.withValues(alpha: ripple2Opacity),
+                      width: 1.2,
+                    ),
+                  ),
+                ),
+              ),
+
+              // Central Floating Glowing Orb
+              Container(
+                width: 54,
+                height: 54,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: widget.isDark
+                        ? [
+                            const Color(0xFF1E2838),
+                            const Color(0xFF131923),
+                          ]
+                        : [
+                            const Color(0xFFFFFFFF),
+                            const Color(0xFFF1F5F9),
+                          ],
+                  ),
+                  border: Border.all(
+                    color: widget.isDark
+                        ? const Color(0xFF38BDF8).withValues(alpha: 0.4)
+                        : const Color(0xFFCBD5E1),
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: accentColor.withValues(
+                        alpha: widget.isDark ? 0.25 : 0.12,
+                      ),
+                      blurRadius: 14,
+                      spreadRadius: 1,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(27),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      // Blueprint Grid Texture inside Orb
+                      Opacity(
+                        opacity: widget.isDark ? 0.18 : 0.08,
+                        child: CustomPaint(
+                          size: const Size(54, 54),
+                          painter: _BlueprintCardGridPainter(
+                            color: widget.primaryColor,
+                          ),
+                        ),
+                      ),
+
+                      // Cloud / Base Horizon Tray
+                      Positioned(
+                        bottom: 9,
+                        child: Icon(
+                          Icons.cloud_outlined,
+                          size: 28,
+                          color: (widget.isDark
+                                  ? const Color(0xFF64748B)
+                                  : const Color(0xFF94A3B8))
+                              .withValues(alpha: 0.7),
+                        ),
+                      ),
+
+                      // Trailing upload particle dot
+                      Positioned(
+                        child: Transform.translate(
+                          offset: Offset(0, dotY),
+                          child: Opacity(
+                            opacity: dotOpacity.clamp(0.0, 1.0),
+                            child: Container(
+                              width: 3.5,
+                              height: 3.5,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: accentColor,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // Rising Upload Arrow
+                      Positioned(
+                        child: Transform.translate(
+                          offset: Offset(0, arrowY),
+                          child: Opacity(
+                            opacity: arrowOpacity.clamp(0.0, 1.0),
+                            child: Icon(
+                              Icons.arrow_upward_rounded,
+                              size: 20,
+                              color: accentColor,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 }

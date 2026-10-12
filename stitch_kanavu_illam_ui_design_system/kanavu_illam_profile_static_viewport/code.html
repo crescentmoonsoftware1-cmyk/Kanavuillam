@@ -1,0 +1,271 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport">
+<meta content="mobile_tab" name="shell-type">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700&amp;family=Noto+Sans+Tamil:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+    @layer base {
+      html, body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        background-color: #F4F4F4;
+        overflow: hidden;
+      }
+      body {
+        overscroll-behavior: none;
+      }
+    }
+    ::-webkit-scrollbar {
+      display: none;
+    }
+  </style>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "on-surface": "#0a0a0a",
+            "background": "#F4F4F4",
+            "surface": "#F4F4F4"
+          },
+          fontFamily: {
+            sans: ["Inter", "sans-serif"]
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="bg-[#F4F4F4] font-sans text-[#0a0a0a] antialiased h-screen h-[844px] max-h-[844px] w-full max-w-[430px] mx-auto overflow-hidden relative select-none flex flex-col justify-between">
+<!-- Main Scroll-Free Screen Container (exact 844px budget) -->
+<div class="w-full h-full flex flex-col justify-between px-5 pt-2 pb-[92px] box-border relative"><!-- 1. HEADER (44px) -->
+<header class="h-11 w-full flex items-center justify-center shrink-0">
+  <h1 class="text-[20px] font-medium text-[#0A0A0A] tracking-tight" style="font-family: 'Syne', sans-serif;">Profile</h1>
+</header>
+
+<!-- 2. AVATAR BLOCK (80px avatar with 28px edit badge) -->
+<div class="flex flex-col items-center shrink-0 -mt-1">
+  <div class="relative w-[80px] h-[80px]">
+    <div class="w-[80px] h-[80px] rounded-full overflow-hidden shadow-sm bg-white border border-[#DADADA]">
+      <img alt="Thomas portrait" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBQE79hf27BQqM1IUioTymtLWxiJrvh3OKuBJMNqbxYRhThrzWLQeImUCh_o0tcrjBod22h4Tc3T7QB0cgDBZDnt5ycVZpVE8gXHkUsrYBSbID77mGSSSzVPS1G-szF_Tk6VsCvTn04Bi399VkfZigP3uHk6z0DDLSpSDuW3omg7PE4f-wq8ioXi64oFnXjSUcVceOl2OjCjKA2bCbUIvrcBcYJsCQF3sH4vEdKXlN6Mm1uC7SSXh65oQ">
+    </div>
+    <button aria-label="Edit Profile Photo" class="absolute -bottom-1 -right-1 w-[28px] h-[28px] rounded-full bg-[#0A0A0A] text-white flex items-center justify-center shadow-md active:scale-95 transition-transform border-2 border-[#F4F4F4]" type="button">
+      <span class="material-symbols-outlined text-[13px] leading-none">edit</span>
+    </button>
+  </div>
+  <h2 class="text-[20px] font-medium text-[#0A0A0A] mt-1.5 leading-tight tracking-tight" style="font-family: 'Syne', sans-serif;">Thomas</h2>
+</div>
+
+<!-- 3. INFO CARD (48px rows, #EAEAEA icon circles, #6B6B6B secondary text) -->
+<div class="bg-white rounded-[28px] shadow-sm px-4 py-0.5 flex flex-col shrink-0">
+  <!-- Phone -->
+  <div class="flex items-center justify-between h-[48px]">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-full bg-[#EAEAEA] flex items-center justify-center shrink-0 text-[#0A0A0A]">
+        <span class="material-symbols-outlined text-[17px]">call</span>
+      </div>
+      <div class="flex flex-col justify-center leading-tight">
+        <span class="text-[10px] font-semibold text-[#6B6B6B] tracking-wider uppercase leading-none mb-0.5">PHONE</span>
+        <span class="text-[14px] font-medium text-[#0A0A0A]">+91 98765 XXXXX</span>
+      </div>
+    </div>
+    <span class="material-symbols-outlined text-[#6B6B6B] text-[18px]">chevron_right</span>
+  </div>
+  <div class="border-b border-[#DADADA]"></div>
+  <!-- Email -->
+  <div class="flex items-center justify-between h-[48px]">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-full bg-[#EAEAEA] flex items-center justify-center shrink-0 text-[#0A0A0A]">
+        <span class="material-symbols-outlined text-[17px]">mail</span>
+      </div>
+      <div class="flex flex-col justify-center leading-tight">
+        <span class="text-[10px] font-semibold text-[#6B6B6B] tracking-wider uppercase leading-none mb-0.5">EMAIL</span>
+        <span class="text-[14px] font-medium text-[#0A0A0A]">thomas@gmail.com</span>
+      </div>
+    </div>
+    <span class="material-symbols-outlined text-[#6B6B6B] text-[18px]">chevron_right</span>
+  </div>
+  <div class="border-b border-[#DADADA]"></div>
+  <!-- City -->
+  <div class="flex items-center justify-between h-[48px]">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-full bg-[#EAEAEA] flex items-center justify-center shrink-0 text-[#0A0A0A]">
+        <span class="material-symbols-outlined text-[17px]">location_on</span>
+      </div>
+      <div class="flex flex-col justify-center leading-tight">
+        <span class="text-[10px] font-semibold text-[#6B6B6B] tracking-wider uppercase leading-none mb-0.5">CITY</span>
+        <span class="text-[14px] font-medium text-[#0A0A0A]">Erode, Tamil Nadu</span>
+      </div>
+    </div>
+    <span class="material-symbols-outlined text-[#6B6B6B] text-[18px]">chevron_right</span>
+  </div>
+</div>
+
+<!-- 4. SETTINGS CARD & FLOATING OVERLAY (44x44 icon container, floating card) -->
+<div class="relative shrink-0">
+  <button class="w-full h-[52px] bg-white rounded-[28px] shadow-sm px-3.5 flex items-center justify-between active:scale-[0.99] transition-transform text-left" id="settingsToggleBtn" type="button">
+    <div class="flex items-center gap-3">
+      <div class="w-[44px] h-[44px] rounded-full bg-[#EAEAEA] flex items-center justify-center shrink-0 text-[#0A0A0A]">
+        <span class="material-symbols-outlined text-[20px]">settings</span>
+      </div>
+      <span class="text-[15px] font-medium text-[#0A0A0A]">Settings</span>
+    </div>
+    <span class="material-symbols-outlined text-[#6B6B6B] text-[20px] transition-transform duration-200" id="settingsArrow">keyboard_arrow_down</span>
+  </button>
+  <!-- Absolute floating popover overlay (0 12px 32px rgba(10,10,10,0.12), rounded-[28px]) -->
+  <div class="hidden absolute left-0 right-0 top-[calc(100%+8px)] z-30 bg-white rounded-[28px] shadow-[0_12px_32px_rgba(10,10,10,0.12)] border border-[#DADADA] p-4 flex flex-col gap-3.5" id="settingsPopover">
+    <!-- Theme row -->
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-full bg-[#EAEAEA] flex items-center justify-center text-[#0A0A0A]">
+          <span class="material-symbols-outlined text-[17px]">dark_mode</span>
+        </div>
+        <span class="text-[14px] font-medium text-[#0A0A0A]">Theme</span>
+      </div>
+      <div class="inline-flex items-center p-1 bg-[#EAEAEA] rounded-full">
+        <button class="px-3.5 py-1 text-[12px] font-semibold rounded-full bg-[#0A0A0A] text-white shadow-sm" type="button">Light</button>
+        <button class="px-3.5 py-1 text-[12px] font-medium rounded-full text-[#6B6B6B] hover:text-black" type="button">Dark</button>
+      </div>
+    </div>
+    <!-- Language row -->
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-full bg-[#EAEAEA] flex items-center justify-center text-[#0A0A0A]">
+          <span class="material-symbols-outlined text-[17px]">language</span>
+        </div>
+        <span class="text-[14px] font-medium text-[#0A0A0A]">Language</span>
+      </div>
+      <div class="inline-flex items-center p-1 bg-[#EAEAEA] rounded-full">
+        <button class="px-3.5 py-1 text-[12px] font-semibold rounded-full bg-[#0A0A0A] text-white shadow-sm" type="button">English</button>
+        <button class="px-3.5 py-1 text-[12px] font-medium rounded-full text-[#6B6B6B] hover:text-black" style="font-family: 'Noto Sans Tamil', sans-serif;" type="button">தமிழ்</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 5. FEEDBACK CARD (28px radius, Syne title, 5 stars centered row with 44x44 tap targets, input with white fill + 1px #DADADA border + 44px Send pill) -->
+<div class="bg-white rounded-[28px] shadow-sm p-3.5 px-4 shrink-0 flex flex-col justify-center gap-1.5">
+  <div class="text-center">
+    <span class="text-[14px] font-medium text-[#0A0A0A]" style="font-family: 'Syne', sans-serif;">How's your experience?</span>
+  </div>
+  <!-- 5 Centered stars with 44x44 tap targets -->
+  <div class="flex items-center justify-center -my-1">
+    <button type="button" class="w-[44px] h-[44px] flex items-center justify-center text-[#0A0A0A] active:scale-90 transition-transform" aria-label="Rate 1 star">
+      <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">star</span>
+    </button>
+    <button type="button" class="w-[44px] h-[44px] flex items-center justify-center text-[#0A0A0A] active:scale-90 transition-transform" aria-label="Rate 2 stars">
+      <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">star</span>
+    </button>
+    <button type="button" class="w-[44px] h-[44px] flex items-center justify-center text-[#0A0A0A] active:scale-90 transition-transform" aria-label="Rate 3 stars">
+      <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">star</span>
+    </button>
+    <button type="button" class="w-[44px] h-[44px] flex items-center justify-center text-[#0A0A0A] active:scale-90 transition-transform" aria-label="Rate 4 stars">
+      <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">star</span>
+    </button>
+    <button type="button" class="w-[44px] h-[44px] flex items-center justify-center text-[#6B6B6B] active:scale-90 transition-transform" aria-label="Rate 5 stars">
+      <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 0;">star</span>
+    </button>
+  </div>
+  <!-- Input row (white fill, 1px solid #DADADA, 44px Send pill) -->
+  <div class="h-[44px] bg-white border border-[#DADADA] rounded-full flex items-center pl-3.5 pr-1">
+    <input class="w-full bg-transparent border-0 p-0 text-xs text-[#0A0A0A] placeholder:text-[#6B6B6B] focus:ring-0 outline-none" placeholder="Tell us more (optional)" type="text">
+    <button class="h-[36px] px-4 rounded-full bg-[#0A0A0A] text-white text-xs font-semibold shrink-0 active:scale-95 transition-transform flex items-center justify-center" type="button">
+      Send
+    </button>
+  </div>
+</div>
+
+<!-- 6. HELP AND LEGAL CARD (3 columns, #EAEAEA icons, #DADADA dividers) -->
+<div class="bg-white rounded-[28px] shadow-sm h-[68px] flex items-center shrink-0 divide-x divide-[#DADADA]">
+  <a class="flex-1 flex flex-col items-center justify-center py-1 active:opacity-75 transition-opacity" href="#">
+    <div class="w-8 h-8 rounded-full bg-[#EAEAEA] flex items-center justify-center text-[#0A0A0A]">
+      <span class="material-symbols-outlined text-[17px]">help_center</span>
+    </div>
+    <span class="text-[11px] font-medium text-[#0A0A0A] mt-1 tracking-tight">Help &amp; Support</span>
+  </a>
+  <a class="flex-1 flex flex-col items-center justify-center py-1 active:opacity-75 transition-opacity" href="#">
+    <div class="w-8 h-8 rounded-full bg-[#EAEAEA] flex items-center justify-center text-[#0A0A0A]">
+      <span class="material-symbols-outlined text-[17px]">shield</span>
+    </div>
+    <span class="text-[11px] font-medium text-[#0A0A0A] mt-1 tracking-tight">Terms &amp; Privacy</span>
+  </a>
+  <a class="flex-1 flex flex-col items-center justify-center py-1 active:opacity-75 transition-opacity" href="#">
+    <div class="w-8 h-8 rounded-full bg-[#EAEAEA] flex items-center justify-center text-[#0A0A0A]">
+      <span class="material-symbols-outlined text-[17px]">receipt_long</span>
+    </div>
+    <span class="text-[11px] font-medium text-[#0A0A0A] mt-1 tracking-tight">Refund Policy</span>
+  </a>
+</div>
+
+<!-- 7. ACTIONS ROW & FOOTER (52px pill Log Out button, 44px tap target Delete Account in #B3261E, 12px #6B6B6B version) -->
+<div class="flex flex-col shrink-0">
+  <div class="flex items-center justify-between">
+    <!-- Log out button (52px pill, 1px solid #DADADA) -->
+    <button class="h-[52px] px-5 rounded-full bg-white border border-[#DADADA] shadow-sm flex items-center justify-center gap-2 text-sm font-semibold text-[#0A0A0A] w-[56%] active:scale-[0.98] transition-transform" type="button">
+      <span class="material-symbols-outlined text-[19px]">logout</span>
+      <span class="">Log out</span>
+    </button>
+    <!-- Delete account (44px height tap area, 14px text, #B3261E) -->
+    <button class="h-[44px] px-2 flex items-center justify-end text-[14px] font-semibold text-[#B3261E] hover:opacity-80 active:opacity-70 transition-opacity text-right" type="button">
+      Delete account
+    </button>
+  </div>
+  <div class="text-center mt-1">
+    <span class="text-[12px] text-[#6B6B6B] font-normal">Version 1.0.0</span>
+  </div>
+</div></div>
+<!-- 8. FLOATING BOTTOM NAV (h-16, fixed 16px above bottom, centered, z-20) -->
+<div class="fixed bottom-4 inset-x-0 z-20 pointer-events-none flex justify-center items-center"><nav class="pointer-events-auto h-[64px] w-[72%] bg-white rounded-full shadow-[0_12px_32px_rgba(10,10,10,0.08)] border border-[#DADADA] flex items-center justify-around px-2">
+  <!-- Home (Inactive) -->
+  <a class="flex flex-col items-center justify-center py-1 flex-1 text-[#6B6B6B] hover:text-[#0A0A0A] transition-colors" data-path="home" href="#">
+    <span class="material-symbols-outlined text-[20px] leading-none mb-0.5">home</span>
+    <span class="text-[12px] font-medium leading-none">Home</span>
+  </a>
+  <!-- History (Inactive) -->
+  <a class="flex flex-col items-center justify-center py-1 flex-1 text-[#6B6B6B] hover:text-[#0A0A0A] transition-colors" data-path="history" href="#">
+    <span class="material-symbols-outlined text-[20px] leading-none mb-0.5">history</span>
+    <span class="text-[12px] font-medium leading-none">History</span>
+  </a>
+  <!-- Profile (Active with #EAEAEA pill container, icon above 12px bold black label) -->
+  <a aria-current="page" class="flex flex-col items-center justify-center py-1.5 px-3 rounded-full bg-[#EAEAEA] text-[#0A0A0A] transition-all flex-1" data-path="profile" href="#">
+    <span class="material-symbols-outlined text-[20px] leading-none mb-0.5 text-[#0A0A0A]">person</span>
+    <span class="text-[12px] leading-none font-bold text-[#0A0A0A]">Profile</span>
+  </a>
+</nav></div>
+<!-- Interactive script for Settings Popover -->
+<script>
+    const settingsBtn = document.getElementById('settingsToggleBtn');
+    const settingsPopover = document.getElementById('settingsPopover');
+    const settingsArrow = document.getElementById('settingsArrow');
+
+    if (settingsBtn && settingsPopover) {
+      settingsBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = !settingsPopover.classList.contains('hidden');
+        if (isOpen) {
+          settingsPopover.classList.add('hidden');
+          settingsArrow.style.transform = 'rotate(0deg)';
+        } else {
+          settingsPopover.classList.remove('hidden');
+          settingsArrow.style.transform = 'rotate(180deg)';
+        }
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!settingsPopover.contains(e.target) && !settingsBtn.contains(e.target)) {
+          settingsPopover.classList.add('hidden');
+          settingsArrow.style.transform = 'rotate(0deg)';
+        }
+      });
+    }
+  </script>
+
+
+</body></html>

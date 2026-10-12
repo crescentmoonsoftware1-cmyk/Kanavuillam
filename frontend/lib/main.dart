@@ -1,9 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:responsive_framework/responsive_framework.dart';
+import 'core/providers/app_config_provider.dart';
+import 'core/theme/app_colors.dart';
 import 'screens/splash_screen.dart';
 
 void main() {
-  runApp(const PlanXApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AppConfigProvider()),
+      ],
+      child: const PlanXApp(),
+    ),
+  );
 }
 
 class PlanXApp extends StatelessWidget {
@@ -11,15 +21,36 @@ class PlanXApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final config = context.watch<AppConfigProvider>();
+    final isDark = config.isDarkMode;
+
     return MaterialApp(
       title: 'Kanavu illam',
       debugShowCheckedModeBanner: false,
+      themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
       theme: ThemeData(
+        brightness: Brightness.light,
+        scaffoldBackgroundColor: AppColors.background,
+        colorScheme: const ColorScheme.light(
+          primary: AppColors.primary,
+          surface: Colors.white,
+        ),
+        fontFamily: 'Inter',
+        textTheme: const TextTheme(
+          bodyMedium: TextStyle(color: AppColors.textPrimary),
+        ),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          iconTheme: IconThemeData(color: AppColors.textPrimary),
+        ),
+      ),
+      darkTheme: ThemeData(
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF0D1B2A),
+        scaffoldBackgroundColor: const Color(0xFF111317),
         colorScheme: const ColorScheme.dark(
-          primary: Color(0xFF00C896),
-          surface: Color(0xFF132237),
+          primary: Colors.white,
+          surface: Color(0xFF1D2128),
         ),
         fontFamily: 'Inter',
         textTheme: const TextTheme(

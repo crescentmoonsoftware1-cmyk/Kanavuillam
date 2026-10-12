@@ -1,6 +1,9 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+
+import '../core/theme/app_colors.dart';
+import '../core/providers/app_config_provider.dart';
 import 'auth_screen.dart';
 
 class WelcomeScreen extends StatelessWidget {
@@ -8,256 +11,295 @@ class WelcomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final mediaQuery = MediaQuery.of(context);
+    AppConfigProvider config;
+    try {
+      config = context.watch<AppConfigProvider>();
+    } catch (_) {
+      config = AppConfigProvider();
+    }
+
+    final isDark = config.isDarkMode;
+    final bgColor = config.bgColor;
+    final cardColor = config.cardColor;
+    final primaryTextColor = config.primaryTextColor;
+    final borderColor = config.borderColor;
 
     return Scaffold(
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Background Gradient (Fallback underneath image)
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFFE8DDA8),
-                  Color(0xFFCBC5A3),
+      backgroundColor: bgColor,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 32.0, bottom: 28.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Top Brand Hero
+              Column(
+                children: [
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: 96,
+                    height: 96,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        CustomPaint(
+                          size: const Size(96, 96),
+                          painter: _LogoPainter(color: primaryTextColor),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 14.0),
+                          child: Text(
+                            'KI',
+                            style: GoogleFonts.syne(
+                              fontSize: 31,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 31 * 0.08,
+                              color: primaryTextColor,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Kanavu Illam',
+                    style: GoogleFonts.syne(
+                      fontSize: 34,
+                      fontWeight: FontWeight.w500,
+                      color: primaryTextColor,
+                      letterSpacing: -0.34,
+                      height: 1.1,
+                    ),
+                  ),
                 ],
               ),
-            ),
-          ),
-
-          // High-Res Sunrise City & Forest Skyline Background Image
-          Image.asset(
-            'assets/images/welcome_bg.png',
-            fit: BoxFit.cover,
-            alignment: Alignment.bottomCenter,
-            errorBuilder: (context, error, stackTrace) {
-              return Image.network(
-                'https://lh3.googleusercontent.com/aida-public/AB6AXuCBUPb3DMaSkii6P2yKSPV6AOssvt8d8F3_bnxmC3p5HGTMzd3saG_3e522TpIPRC83AYPng07UOiK4kFM0_7sSKd2RHYSr1ZUTDN9LxiW-L7jUZo2C4prbdgLSBq1SSPIsz7w0LPYWRgWTz3QdiYP6FELpBRFGED94LfpfGQApo_8-yhkvybQUTjS-nxocmis9-AShjcC6a-WqXKlUaA62Q_ilnwCSiLl7woKIffr6W7M-CTtVZx0Ahg',
-                fit: BoxFit.cover,
-                alignment: Alignment.bottomCenter,
-                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-              );
-            },
-          ),
-
-          // Ambient Top Amber Overlay Gradient
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 180,
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0x55FFE082), // Soft amber tint
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          // Ambient Bottom Subtle Dark Gradient Overlay
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: 240,
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: const [
-                    Color(0x59000000), // 35% black opacity
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          // Main Screen Content
-          SafeArea(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Top Brand Hero Section
-                Padding(
-                  padding: EdgeInsets.only(top: mediaQuery.size.height * 0.04),
-                  child: Column(
-                    children: [
-                      // Official App Logo (KI Kanavu Illam)
-                      Image.asset(
-                        'assets/images/logo.png',
-                        height: 150,
-                        fit: BoxFit.contain,
-                      ).animate().fadeIn(duration: 800.ms).scale(
-                          begin: const Offset(0.85, 0.85),
-                          end: const Offset(1.0, 1.0),
-                          duration: 800.ms),
-                    ],
-                  ),
-                ),
-
-                // Middle Area Left Uncluttered to Showcase Skyline & Mist
-                const Spacer(),
-
-                // Bottom Action: Glassmorphism "Get Started" Pill Button
-                Padding(
-                  padding:
-                      const EdgeInsets.only(left: 24, right: 24, bottom: 28),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(30),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                      child: Container(
-                        height: 56,
-                        decoration: BoxDecoration(
-                          color:
-                              const Color(0xF5F6F1DC), // Cream translucent fill
-                          borderRadius: BorderRadius.circular(30),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color(0x33000000), // 20% black opacity
-                              blurRadius: 24,
-                              offset: Offset(0, 8),
-                            ),
-                          ],
+              
+              // Center Architectural 3D Card
+              Expanded(
+                child: Center(
+                  child: Container(
+                    width: double.infinity,
+                    height: 260,
+                    margin: const EdgeInsets.symmetric(vertical: 24),
+                    decoration: BoxDecoration(
+                      color: cardColor,
+                      borderRadius: BorderRadius.circular(28),
+                      border: Border.all(color: borderColor),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.06),
+                          blurRadius: 24,
+                          offset: const Offset(0, 8),
                         ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(30),
-                            onTap: () {
-                              Navigator.of(context).pushReplacement(
-                                PageRouteBuilder(
-                                  pageBuilder: (context, animation,
-                                          secondaryAnimation) =>
-                                      const AuthScreen(),
-                                  transitionsBuilder: (context, animation,
-                                      secondaryAnimation, child) {
-                                    return FadeTransition(
-                                        opacity: animation, child: child);
-                                  },
-                                  transitionDuration:
-                                      const Duration(milliseconds: 600),
-                                ),
-                              );
-                            },
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(28),
+                      child: Stack(
+                        children: [
+                          // Faint grid pattern underlay
+                          Positioned.fill(
+                            child: CustomPaint(
+                              painter: _GridPainter(color: primaryTextColor),
+                            ),
+                          ),
+                          
+                          // 3D Architectural Villa Render Image
+                          Positioned.fill(
                             child: Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 20),
+                              padding: const EdgeInsets.all(12.0),
+                              child: Image.network(
+                                'https://lh3.googleusercontent.com/aida/AEtjO1U4dme8d1LPK7s4Yav-Viq55cHjDbJnaR-NnR0yiX0Cz3Qedd3UsPqrnaP_MM8mXjJebj3AjstvloDN1LL33jcLzQ9KIie1S0Mie9IVW6PZZnBELw24r7tKfBwAqf74aQz56VO7TsfXn372VvzfmEwWE49FEDhIuYIa2uw89CFOApmFFU-iv4jGLavGJLkQ5Jj8kntINOZmymiVz18BBAxoVOgM_1xKNFx80kDTT4pW-ner3kplkEXFrqE',
+                                fit: BoxFit.contain,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Center(
+                                    child: Icon(Icons.home_work_outlined, size: 64, color: config.surfacePillColor),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                          
+                          // Blueprint Corner Crosshair Accents
+                          Positioned(top: 16, left: 16, child: _CornerAccent(top: true, left: true, color: borderColor)),
+                          Positioned(top: 16, right: 16, child: _CornerAccent(top: true, left: false, color: borderColor)),
+                          Positioned(bottom: 16, left: 16, child: _CornerAccent(top: false, left: true, color: borderColor)),
+                          Positioned(bottom: 16, right: 16, child: _CornerAccent(top: false, left: false, color: borderColor)),
+                          
+                          // Corner Micro Badge
+                          Positioned(
+                            bottom: 12,
+                            right: 16,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: config.surfacePillColor,
+                                borderRadius: BorderRadius.circular(100),
+                              ),
                               child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const SizedBox(
-                                      width:
-                                          32), // Symmetry balance for arrow button
-                                  const Text(
-                                    'Get Started',
-                                    style: TextStyle(
-                                      fontFamily: 'Inter',
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: Color(0xFF1B211C),
-                                    ),
-                                  ),
                                   Container(
-                                    width: 32,
-                                    height: 32,
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFF1F2A21),
+                                    width: 6,
+                                    height: 6,
+                                    decoration: BoxDecoration(
+                                      color: primaryTextColor,
                                       shape: BoxShape.circle,
                                     ),
-                                    child: const Icon(
-                                      Icons.arrow_forward_rounded,
-                                      size: 18,
-                                      color: Color(0xFFF6F1DC),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'SCALE 1:100',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: config.secondaryTextColor,
+                                      letterSpacing: 0.6,
+                                      height: 1.0,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
                           ),
-                        ),
+                        ],
                       ),
                     ),
                   ),
-                )
-                    .animate()
-                    .fadeIn(delay: 400.ms, duration: 800.ms)
-                    .slideY(begin: 0.4, end: 0, duration: 800.ms),
-              ],
-            ),
+                ),
+              ),
+
+              // Bottom Action: "Get started" button
+              InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const AuthScreen(isLogin: true),
+                    ),
+                  );
+                },
+                borderRadius: BorderRadius.circular(100),
+                child: Container(
+                  width: double.infinity,
+                  height: 54,
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white : AppColors.primary,
+                    borderRadius: BorderRadius.circular(100),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.12),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const SizedBox(width: 22),
+                      Text(
+                        config.tr('Get started', 'தொடங்குக'),
+                        style: GoogleFonts.inter(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.black : Colors.white,
+                        ),
+                      ),
+                      Icon(
+                        Icons.arrow_forward,
+                        size: 22,
+                        color: isDark ? Colors.black : Colors.white,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
-// Custom Painter for the exact KI House Outline Logo matching code.html SVG
-class HouseLogoPainter extends CustomPainter {
+class _CornerAccent extends StatelessWidget {
+  final bool top;
+  final bool left;
+  final Color color;
+  
+  const _CornerAccent({required this.top, required this.left, required this.color});
+  
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 10,
+      height: 10,
+      decoration: BoxDecoration(
+        border: Border(
+          top: top ? BorderSide(color: color) : BorderSide.none,
+          bottom: !top ? BorderSide(color: color) : BorderSide.none,
+          left: left ? BorderSide(color: color) : BorderSide.none,
+          right: !left ? BorderSide(color: color) : BorderSide.none,
+        ),
+      ),
+    );
+  }
+}
+
+class _GridPainter extends CustomPainter {
+  final Color color;
+  _GridPainter({required this.color});
+
   @override
   void paint(Canvas canvas, Size size) {
-    final scaleX = size.width / 34.0;
-    final scaleY = size.height / 34.0;
-
     final paint = Paint()
-      ..color = const Color(0xFF1B211C)
+      ..color = color.withValues(alpha: 0.035)
+      ..style = PaintingStyle.fill;
+    
+    const double spacing = 16.0;
+    for (double x = 0; x <= size.width; x += spacing) {
+      for (double y = 0; y <= size.height; y += spacing) {
+        canvas.drawCircle(Offset(x, y), 1.0, paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _GridPainter oldDelegate) => oldDelegate.color != color;
+}
+
+class _LogoPainter extends CustomPainter {
+  final Color color;
+  _LogoPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.6
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.8 * scaleX
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
 
     final path = Path();
-    // M17 4 L4 14.5 V28.5 C4 29.3284 4.67157 30 5.5 30 H28.5 C29.3284 30 30 29.3284 30 28.5 V14.5 L17 4 Z
-    path.moveTo(17 * scaleX, 4 * scaleY);
-    path.lineTo(4 * scaleX, 14.5 * scaleY);
-    path.lineTo(4 * scaleX, 28.5 * scaleY);
-    path.cubicTo(4 * scaleX, 29.3284 * scaleY, 4.67157 * scaleX, 30 * scaleY,
-        5.5 * scaleX, 30 * scaleY);
-    path.lineTo(28.5 * scaleX, 30 * scaleY);
-    path.cubicTo(29.3284 * scaleX, 30 * scaleY, 30 * scaleX, 29.3284 * scaleY,
-        30 * scaleX, 28.5 * scaleY);
-    path.lineTo(30 * scaleX, 14.5 * scaleY);
-    path.lineTo(17 * scaleX, 4 * scaleY);
+    path.moveTo(17, 4);
+    path.lineTo(4, 14.5);
+    path.lineTo(4, 28.5);
+    path.arcToPoint(const Offset(5.5, 30), radius: const Radius.circular(1.5), clockwise: false);
+    path.lineTo(28.5, 30);
+    path.arcToPoint(const Offset(30, 28.5), radius: const Radius.circular(1.5), clockwise: false);
+    path.lineTo(30, 14.5);
     path.close();
 
+    canvas.save();
+    canvas.scale(size.width / 34, size.height / 34);
     canvas.drawPath(path, paint);
-
-    // Draw "KI" text inside logo
-    final textPainter = TextPainter(
-      text: const TextSpan(
-        text: 'KI',
-        style: TextStyle(
-          fontFamily: 'Syne',
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          color: Color(0xFF1B211C),
-          letterSpacing: 0.8,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    );
-    textPainter.layout();
-    textPainter.paint(
-      canvas,
-      Offset(
-        (size.width - textPainter.width) / 2,
-        (size.height - textPainter.height) / 2 + (2 * scaleY),
-      ),
-    );
+    canvas.restore();
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _LogoPainter oldDelegate) => oldDelegate.color != color;
 }

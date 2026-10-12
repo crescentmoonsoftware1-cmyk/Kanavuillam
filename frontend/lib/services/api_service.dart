@@ -10,13 +10,14 @@ class ApiService {
   // For local testing on Wi-Fi/Phone: 'http://192.168.1.8:3000/api' or 'http://127.0.0.1:3000/api'
 
   Future<Map<String, dynamic>> uploadPlan(XFile groundFile,
-      XFile? firstFloorFile, XFile? secondFloorFile, String projectName, {String orientation = 'North'}) async {
+      XFile? firstFloorFile, XFile? secondFloorFile, String projectName,
+      {String orientation = 'North', String? userEmail}) async {
     final request = http.MultipartRequest('POST', Uri.parse('$baseUrl/upload'));
     request.fields['name'] = projectName;
     request.fields['orientation'] = orientation;
 
     final prefs = await SharedPreferences.getInstance();
-    request.fields['email'] = prefs.getString('user_email') ?? 'unknown';
+    request.fields['email'] = userEmail ?? prefs.getString('user_email') ?? 'unknown';
 
     // Attach ground floor
     final groundBytes = await groundFile.readAsBytes();
