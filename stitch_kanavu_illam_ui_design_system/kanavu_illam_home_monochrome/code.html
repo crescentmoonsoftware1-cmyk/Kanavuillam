@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+
+<html class="" lang="en" style="background-color: #F4F4F4;"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_blank" name="shell-type"/><title>Kanavu Illam - Home</title><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Syne:wght@500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "on-error": "#ffffff", "surface-variant": "#e2e2e2", "tertiary-fixed-dim": "#c9c6c5", "on-secondary": "#ffffff", "surface-container": "#eeeeee", "surface-container-low": "#f3f3f3", "surface": "#f9f9f9", "tertiary": "#000000", "primary-fixed": "#e5e2e1", "inverse-on-surface": "#f1f1f1", "inverse-surface": "#2f3131", "on-tertiary-container": "#858383", "outline": "#747878", "surface-container-highest": "#e2e2e2", "surface-bright": "#f9f9f9", "surface-container-lowest": "#ffffff", "tertiary-fixed": "#e5e2e1", "primary": "#000000", "surface-container-high": "#e8e8e8", "on-secondary-container": "#626262", "on-primary-fixed": "#1c1b1b", "secondary-container": "#e1dfdf", "on-background": "#1a1c1c", "tertiary-container": "#1c1b1b", "surface-dim": "#dadada", "on-error-container": "#93000a", "on-tertiary-fixed": "#1c1b1b", "secondary-fixed": "#e4e2e2", "on-surface-variant": "#444748", "error-container": "#ffdad6", "primary-container": "#1c1b1b", "outline-variant": "#c4c7c7", "on-primary-fixed-variant": "#474646", "primary-fixed-dim": "#c9c6c5", "on-tertiary-fixed-variant": "#474646", "secondary-fixed-dim": "#c7c6c6", "on-secondary-fixed": "#1b1c1c", "on-surface": "#1a1c1c", "surface-tint": "#5f5e5e", "background": "#f4f4f4", "on-primary-container": "#858383", "inverse-primary": "#c9c6c5", "error": "#ba1a1a", "on-secondary-fixed-variant": "#464747", "on-tertiary": "#ffffff", "on-primary": "#ffffff", "secondary": "#5e5e5e" }, "borderRadius": { "DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px" }, "spacing": { "gutter": "1.5rem", "margin-tablet": "2rem", "space-xl": "2.5rem", "space-sm": "0.5rem", "margin": "3rem", "margin-mobile": "1.25rem", "space-xs": "0.25rem", "space-lg": "1.5rem", "gutter-mobile": "1rem", "space-md": "1rem" }, "fontFamily": { "label-lg": ["Inter"], "display-lg": ["Syne"], "headline-lg": ["Syne"], "body-sm": ["Inter"], "headline-md": ["Syne"], "label-sm": ["Inter"], "label-md": ["Inter"], "headline-lg-mobile": ["Syne"], "display-md-mobile": ["Syne"], "display-lg-mobile": ["Syne"], "body-lg": ["Inter"], "body-md": ["Inter"], "headline-sm": ["Syne"], "display-md": ["Syne"] }, "fontSize": { "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}], "display-lg": ["56px", {"lineHeight": "64px", "letterSpacing": "-0.02em", "fontWeight": "500"}], "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "500"}], "body-sm": ["13px", {"lineHeight": "20px", "letterSpacing": "0.005em", "fontWeight": "400"}], "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.005em", "fontWeight": "500"}], "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.04em", "fontWeight": "600"}], "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}], "headline-lg-mobile": ["26px", {"lineHeight": "34px", "letterSpacing": "-0.01em", "fontWeight": "500"}], "display-md-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "500"}], "display-lg-mobile": ["38px", {"lineHeight": "46px", "letterSpacing": "-0.015em", "fontWeight": "500"}], "body-lg": ["18px", {"lineHeight": "28px", "letterSpacing": "-0.005em", "fontWeight": "400"}], "body-md": ["15px", {"lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400"}], "headline-sm": ["20px", {"lineHeight": "28px", "letterSpacing": "0em", "fontWeight": "500"}], "display-md": ["44px", {"lineHeight": "52px", "letterSpacing": "-0.02em", "fontWeight": "500"}] } } } };</script><style>
+    @layer base {
+      html, body {
+        width: 100%;
+        min-height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background-color: #F4F4F4 !important;
+      }
+      body {
+        overscroll-behavior-y: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+      .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
+      main > :first-child { margin-top: 0 !important; }
+      main > :last-child { margin-bottom: 0 !important; }
+    }
+    ::-webkit-scrollbar { display: none; }
+    body {
+      min-height: max(884px, 100dvh);
+      background-color: #F4F4F4 !important;
+    }
+
+    /* Staggered entrance animations */
+    @keyframes entranceFadeUp {
+      0% {
+        opacity: 0;
+        transform: translateY(18px) scale(0.98);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0px) scale(1);
+      }
+    }
+
+    @keyframes entranceLogo {
+      0% {
+        opacity: 0;
+        transform: scale(0.92) translateY(-8px);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    @keyframes entranceNav {
+      0% {
+        opacity: 0;
+        transform: translateY(24px) scale(0.94);
+      }
+      70% {
+        transform: translateY(-2px) scale(1.02);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .anim-entrance-logo {
+      animation: entranceLogo 0.75s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+    }
+    .anim-entrance-carousel {
+      animation: entranceFadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
+    }
+    .anim-entrance-hero {
+      animation: entranceFadeUp 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+    }
+    .anim-entrance-nav {
+      animation: entranceNav 0.75s cubic-bezier(0.34, 1.4, 0.64, 1) 0.4s both;
+    }
+
+    /* Architectural House Isometric Levitation Float */
+    @keyframes isometricFloat {
+      0%, 100% {
+        transform: translateY(0px) scale(1);
+      }
+      50% {
+        transform: translateY(-5px) scale(1.01);
+      }
+    }
+    .anim-house-float {
+      animation: isometricFloat 6s ease-in-out infinite;
+      transform-origin: center bottom;
+    }
+
+    /* Laser Blueprint Scan Shimmer across plan */
+    @keyframes laserScan {
+      0% {
+        transform: translateY(100%) rotate(-12deg);
+        opacity: 0;
+      }
+      15% {
+        opacity: 0.85;
+      }
+      50% {
+        opacity: 0.95;
+      }
+      85% {
+        opacity: 0.85;
+      }
+      100% {
+        transform: translateY(-120%) rotate(-12deg);
+        opacity: 0;
+      }
+    }
+    .anim-laser-beam {
+      animation: laserScan 4.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+
+    /* Ambient Blueprint Compass Soft Breathing Pulse */
+    @keyframes compassPulse {
+      0%, 100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 0.05;
+      }
+      50% {
+        transform: scale(1.025) rotate(0.6deg);
+        opacity: 0.085;
+      }
+    }
+    .anim-compass-pulse {
+      animation: compassPulse 9s ease-in-out infinite;
+      transform-origin: 195px 124px;
+    }
+
+    /* Logo Emblem Micro Breathing Glow */
+    @keyframes emblemGlow {
+      0%, 100% {
+        opacity: 0.65;
+        transform: scale(1);
+      }
+      50% {
+        opacity: 0.9;
+        transform: scale(1.08);
+      }
+    }
+    .anim-emblem-glow {
+      animation: emblemGlow 5s ease-in-out infinite;
+    }
+
+    /* Arrow icon bounce on button hover */
+    .group:hover .group-hover-bounce {
+      transform: translateY(-2px);
+    }
+
+    /* Reduced motion accessibility */
+    @media (prefers-reduced-motion: reduce) {
+      .anim-entrance-logo,
+      .anim-entrance-carousel,
+      .anim-entrance-hero,
+      .anim-entrance-nav,
+      .anim-house-float,
+      .anim-laser-beam,
+      .anim-compass-pulse,
+      .anim-emblem-glow {
+        animation: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+      }
+      .step-card {
+        transition-duration: 0.05s !important;
+      }
+    }
+  </style>
+</head><body class="font-body-md text-body-md text-on-surface antialiased flex flex-col min-h-screen selection:bg-[#EAEAEA] selection:text-[#0A0A0A]" style="background-color: #F4F4F4;"><main class="flex-1 flex flex-col relative w-full min-h-screen" style="background-color: #F4F4F4;"><div class="flex flex-col w-full h-[844px] max-w-[390px] mx-auto relative overflow-hidden select-none" style="background-color: #F4F4F4; box-shadow: 0 0 40px rgba(10,10,10,0.05);">
+<!-- Hidden File Input for Plan Upload -->
+<input accept=".jpg,.jpeg,.png,.pdf" class="hidden" id="planFileInput" onchange="if(this.files &amp;&amp; this.files[0]){ document.getElementById('heroCardCaption').textContent = this.files[0].name; document.getElementById('heroCardTitle').textContent = 'Plan Ready'; triggerUploadCelebration(); }" type="file"/>
+<!-- BACKGROUND ART: Architectural Linework & Subtle Monochrome Glow -->
+<div class="absolute inset-0 pointer-events-none z-0 overflow-hidden bg-[#F4F4F4]">
+<!-- Soft white ambient radial glow behind brand emblem -->
+<div class="anim-emblem-glow absolute top-[28px] left-1/2 -translate-x-1/2 w-[300px] h-[250px] rounded-full blur-3xl opacity-70" style="background: radial-gradient(circle, #FFFFFF 0%, rgba(244,244,244,0) 70%);"></div>
+<!-- Architectural floorplan motif line sketch in black at 5% opacity with gentle breathing pulse -->
+<svg class="anim-compass-pulse absolute inset-0 w-full h-full pointer-events-none" fill="none" style="opacity: 0.05; color: #0A0A0A;" viewbox="0 0 390 844" xmlns="http://www.w3.org/2000/svg"><circle cx="195" cy="124" r="140" stroke="#0A0A0A" stroke-width="1"></circle><rect height="112" stroke="#0A0A0A" stroke-dasharray="3 3" stroke-width="1.2" width="130" x="130" y="68"></rect><line stroke="#0A0A0A" stroke-width="1" x1="130" x2="260" y1="124" y2="124"></line><line stroke="#0A0A0A" stroke-width="1" x1="195" x2="195" y1="68" y2="180"></line><rect height="30" stroke="#0A0A0A" stroke-width="0.8" width="36" x="146" y="82"></rect><path d="M 220 124 A 22 22 0 0 1 242 102" stroke="#0A0A0A" stroke-width="1"></path><path d="M 152 124 A 18 18 0 0 1 170 142" stroke="#0A0A0A" stroke-width="1"></path></svg>
+</div>
+<!-- MAIN VIEWPORT CONTENT (Exact 844px height, zero overflow, balanced vertical distribution) -->
+<div class="relative z-10 flex flex-col w-full h-full px-[20px] pt-[28px] pb-[16px] justify-between box-border">
+<!-- 1. BRAND BLOCK (Centred ~60px below top, enlarged 88px logo, Syne 34 title) with Entrance animation -->
+<header class="anim-entrance-logo flex flex-col items-center justify-center w-full mt-2 cursor-pointer transition-transform duration-300 hover:scale-[1.02]">
+<div class="w-[88px] h-[88px] flex items-center justify-center relative transition-transform duration-500 hover:rotate-3 active:scale-95">
+<svg class="w-[80px] h-[80px]" fill="none" viewbox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+<path d="M16 36L40 16L64 36V66H16V36Z" fill="none" stroke="#0A0A0A" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+<line stroke="#0A0A0A" stroke-linecap="round" stroke-width="2.5" x1="29" x2="29" y1="29" y2="55"></line>
+<path d="M43 32L32 42.5L43 53" fill="none" stroke="#0A0A0A" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+<line stroke="#0A0A0A" stroke-linecap="round" stroke-width="2.5" x1="51" x2="51" y1="32" y2="55"></line>
+</svg>
+</div>
+<h1 class="mt-[6px] font-medium tracking-[-0.01em] transition-opacity duration-300" style="font-family: Syne, sans-serif; font-size: 34px; line-height: 40px; color: #0A0A0A;">
+  Kanavu Illam
+</h1>
+</header>
+<!-- 2. WORKFLOW TRAIN CAROUSEL (Taller 160px compartment cards + #DADADA couplers + pagination dots) -->
+<section aria-label="Workflow progress steps" class="anim-entrance-carousel w-full flex flex-col items-center relative overflow-hidden mt-1">
+<div class="w-full h-[168px] relative flex items-center justify-center cursor-grab active:cursor-grabbing" id="trainTrack">
+<!-- Card 1: Upload (Active default) -->
+<div class="step-card group absolute w-[300px] h-[168px] rounded-[28px] overflow-hidden flex flex-row items-center transition-all duration-500 ease-out z-20 cursor-pointer shadow-[0_8px_24px_rgba(10,10,10,0.06)] hover:shadow-[0_12px_32px_rgba(10,10,10,0.1)] active:scale-[0.98]" id="card-0" onclick="handleCardClick(0)" style="background-color: #FFFFFF; width: 300px; min-width: 300px; max-width: 300px; transform: translateX(-284px) scale(0.94); opacity: 0.55; z-index: 10; pointer-events: auto;">
+<div class="w-[150px] min-w-[150px] p-[20px] flex flex-col justify-center shrink-0 z-10 box-border">
+<h3 class="text-[22px] font-medium leading-[26px] tracking-tight group-hover:translate-x-0.5 transition-transform" style="font-family: Syne, sans-serif; color: #0A0A0A; white-space: nowrap;">Upload</h3>
+<p class="text-[12px] leading-[16px] mt-1" style="color: #6B6B6B;">Add your 2D plan</p>
+</div>
+<div class="w-[150px] min-w-[150px] h-full relative overflow-hidden shrink-0">
+<img alt="Floor plan blueprint drawing on desk" class="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" src="https://lh3.googleusercontent.com/aida/AEtjO1WYGjukOPEQxqtFhkC5Xfc-Eg30vHHUYMINIpN63AjZbfsXww0X4nASqL7eEc_UttXAr3LEIRTtWrqZBApLpmpY14pcjo4VLww5d1kjolUfXZZ1Ax2u75K28HB-aQMvS572UXM6L-6Etq-WG_N8yIaP4VItn-4cGr2CrZMQMa3vXZG3B6UzZ4FXbMh7S-yKW_ghohWFIemD9yWijKxmwVdKx-myJxZj_RAgwlJSpeNIw25e62WCTt08Oyi0"/>
+<div class="absolute inset-0 pointer-events-none" style="background: linear-gradient(to right, #FFFFFF 0%, rgba(255,255,255,0.85) 25%, rgba(255,255,255,0) 65%);"></div>
+<div class="absolute right-3 top-3 w-[32px] h-[32px] rounded-full flex items-center justify-center font-bold text-[14px] z-20 shadow-md border border-[#DADADA] group-hover:scale-110 transition-transform" style="background-color: #FFFFFF; color: #0A0A0A; font-family: Syne, sans-serif;">1</div>
+</div>
+</div>
+<!-- Card 2: Pay -->
+<div class="step-card group absolute w-[300px] h-[168px] rounded-[28px] overflow-hidden flex flex-row items-center transition-all duration-500 ease-out z-10 cursor-pointer shadow-[0_8px_24px_rgba(10,10,10,0.06)] hover:shadow-[0_12px_32px_rgba(10,10,10,0.1)] active:scale-[0.98]" id="card-1" onclick="handleCardClick(1)" style="background-color: #FFFFFF; width: 300px; min-width: 300px; max-width: 300px; transform: translateX(0px) scale(1); opacity: 1; z-index: 20; pointer-events: auto;">
+<div class="w-[150px] min-w-[150px] p-[20px] flex flex-col justify-center shrink-0 z-10 box-border">
+<h3 class="text-[22px] font-medium leading-[26px] tracking-tight group-hover:translate-x-0.5 transition-transform" style="font-family: Syne, sans-serif; color: #0A0A0A; white-space: nowrap;">Pay</h3>
+<p class="text-[12px] leading-[16px] mt-1" style="color: #6B6B6B;">Secure UPI or card</p>
+</div>
+<div class="w-[150px] min-w-[150px] h-full relative overflow-hidden shrink-0">
+<img alt="Hand holding smartphone with payment success" class="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDfXeQxxzTIZ8DFO2EYUVVqVwVuTbPnEQ-DzDUJaLl4PgXIXLBveyUABMuoj3LXQTftZLdLuSxn6gkgo-lYhfXrWDUie62H0m1epsZXqUgAABQeieDZ3yCso9x11zInyv6yseg7NDr2e0hDvl6QXa2wnkfu3g7nHMx_xiUVcgWncO2jc_9Ikmi0Vkqy9XuyaE4GK8HauWsqBIhT45GRn9u3_Zsky53lO-fYg-aNS-UTLNxva_qs_JVHjA"/>
+<div class="absolute inset-0 pointer-events-none" style="background: linear-gradient(to right, #FFFFFF 0%, rgba(255,255,255,0.85) 25%, rgba(255,255,255,0) 65%);"></div>
+<div class="absolute right-3 top-3 w-[32px] h-[32px] rounded-full flex items-center justify-center font-bold text-[14px] z-20 shadow-md border border-[#DADADA] group-hover:scale-110 transition-transform" style="background-color: #FFFFFF; color: #0A0A0A; font-family: Syne, sans-serif;">2</div>
+</div>
+</div>
+<!-- Card 3: Reports -->
+<div class="step-card group absolute w-[300px] h-[168px] rounded-[28px] overflow-hidden flex flex-row items-center transition-all duration-500 ease-out z-0 cursor-pointer shadow-[0_8px_24px_rgba(10,10,10,0.06)] hover:shadow-[0_12px_32px_rgba(10,10,10,0.1)] active:scale-[0.98]" id="card-2" onclick="handleCardClick(2)" style="background-color: #FFFFFF; width: 300px; min-width: 300px; max-width: 300px; transform: translateX(284px) scale(0.94); opacity: 0.55; z-index: 10; pointer-events: auto;">
+<div class="w-[150px] min-w-[150px] p-[20px] flex flex-col justify-center shrink-0 z-10 box-border">
+<h3 class="text-[22px] font-medium leading-[26px] tracking-tight group-hover:translate-x-0.5 transition-transform" style="font-family: Syne, sans-serif; color: #0A0A0A; white-space: nowrap;">Reports</h3>
+<p class="text-[12px] leading-[16px] mt-1" style="color: #6B6B6B;">3D, Vastu, Cost</p>
+</div>
+<div class="w-[150px] min-w-[150px] h-full relative overflow-hidden shrink-0">
+<img alt="Stack of printed blueprints and architectural specifications" class="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDLZOt4b6n3vSFu-cqlLntqLK8xMzSSMNhif3OdN5cjhMmHuBMmzbjZ6Gjk2F_Y0MbeDU4mL2wH8uehp4QZmNaL51l1dBFD-FDtHoEqPWH1MC6ai18SDw-5B_YG5BCPfn0x2IRDr96w_GiJ1VVQe4Z8rn_4quax_DSq01r9nuChe0U0MK3ir-ZDzvKt9SUrGnQHEEJYox_E9stG68cACMvErpg8E5iPKU-VaqyNAfYW6aHQcXci8gDhDA"/>
+<div class="absolute inset-0 pointer-events-none" style="background: linear-gradient(to right, #FFFFFF 0%, rgba(255,255,255,0.85) 25%, rgba(255,255,255,0) 65%);"></div>
+<div class="absolute right-3 top-3 w-[32px] h-[32px] rounded-full flex items-center justify-center font-bold text-[14px] z-20 shadow-md border border-[#DADADA] group-hover:scale-110 transition-transform" style="background-color: #FFFFFF; color: #0A0A0A; font-family: Syne, sans-serif;">3</div>
+</div>
+</div>
+<!-- Card 4: Download -->
+<div class="step-card group absolute w-[300px] h-[168px] rounded-[28px] overflow-hidden flex flex-row items-center transition-all duration-500 ease-out z-10 cursor-pointer shadow-[0_8px_24px_rgba(10,10,10,0.06)] hover:shadow-[0_12px_32px_rgba(10,10,10,0.1)] active:scale-[0.98]" id="card-3" onclick="handleCardClick(3)" style="background-color: #FFFFFF; width: 300px; min-width: 300px; max-width: 300px; transform: translateX(500px) scale(0.9); opacity: 0; z-index: 0; pointer-events: none;">
+<div class="w-[150px] min-w-[150px] p-[20px] flex flex-col justify-center shrink-0 z-10 box-border">
+<h3 class="text-[22px] font-medium leading-[26px] tracking-tight group-hover:translate-x-0.5 transition-transform" style="font-family: Syne, sans-serif; color: #0A0A0A; white-space: nowrap;">Download</h3>
+<p class="text-[12px] leading-[16px] mt-1" style="color: #6B6B6B;">One PDF report</p>
+</div>
+<div class="w-[150px] min-w-[150px] h-full relative overflow-hidden shrink-0">
+<img alt="Clay architectural model house with tablet displaying schematics" class="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0JpbkGD46RLWXoDmuaUXe91EE0-TXpT83W2ffvQhIZg-7FL7TGdfhS4bP0x_vLWPziR0nm7jDPdMzYoO_TlO3FgimeO9OJ0NI1HKFuRrmTngM2vxjHInQFACJpnajt-r-QfnJJjxDJtgis03eg6Qdm41CywLOtyWDt08w29mGw5fI56e1xq64LQsQTkDzJqGjABPJ64W11X4NAiHG7lLHa-BF8PxAByiweWfig65fhrgtvGmaMis6PA"/>
+<div class="absolute inset-0 pointer-events-none" style="background: linear-gradient(to right, #FFFFFF 0%, rgba(255,255,255,0.85) 25%, rgba(255,255,255,0) 65%);"></div>
+<div class="absolute right-3 top-3 w-[32px] h-[32px] rounded-full flex items-center justify-center font-bold text-[14px] z-20 shadow-md border border-[#DADADA] group-hover:scale-110 transition-transform" style="background-color: #FFFFFF; color: #0A0A0A; font-family: Syne, sans-serif;">4</div>
+</div>
+</div></div>
+<!-- Dots below train (Clickable with smooth pill transition) -->
+<div class="flex items-center justify-center gap-[8px] mt-[10px] h-[10px] py-1">
+<button aria-label="Step 1 Upload" class="h-[8px] w-[8px] rounded-full transition-all duration-300 focus:outline-none cursor-pointer hover:opacity-80 active:scale-90" id="dot-0" onclick="updateCarousel(0)" style="background-color: #0A0A0A; width: 24px;"></button>
+<button aria-label="Step 2 Pay" class="h-[8px] w-[8px] rounded-full transition-all duration-300 focus:outline-none cursor-pointer hover:opacity-80 active:scale-90" id="dot-1" onclick="updateCarousel(1)" style="background-color: #DADADA; width: 8px;"></button>
+<button aria-label="Step 3 Reports" class="h-[8px] w-[8px] rounded-full transition-all duration-300 focus:outline-none cursor-pointer hover:opacity-80 active:scale-90" id="dot-2" onclick="updateCarousel(2)" style="background-color: #DADADA; width: 8px;"></button>
+<button aria-label="Step 4 Download" class="h-[8px] w-[8px] rounded-full transition-all duration-300 focus:outline-none cursor-pointer hover:opacity-80 active:scale-90" id="dot-3" onclick="updateCarousel(3)" style="background-color: #DADADA; width: 8px;"></button>
+</div>
+</section>
+<!-- 3. HERO CARD (Uploaded plan trigger zone, takes leftover height ~270px, #FFFFFF, radius 28) with Float & Laser scan -->
+<div class="anim-entrance-hero w-full mt-[20px] relative select-none" id="heroUploadCardContainer">
+<div class="group w-full h-[230px] rounded-[28px] bg-white relative overflow-hidden shadow-[0_8px_24px_rgba(10,10,10,0.06)] transition-all duration-500 p-[24px] box-border flex flex-col justify-between cursor-pointer border border-[#EAEAEA]" onclick="document.getElementById('planFileInput') &amp;&amp; document.getElementById('planFileInput').click()">
+<!-- Isometric 3D House Render Area with Floating & Laser Beam -->
+<div class="absolute right-0 top-0 w-[60%] h-full pointer-events-none overflow-hidden z-0 flex items-center justify-end">
+<!-- Ambient Laser Scan Beam Shimmer Line -->
+<div class="anim-laser-beam absolute inset-0 pointer-events-none z-10 w-[200%] -left-[50%] h-[32px]" style="background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(10,10,10,0.04) 45%, rgba(10,10,10,0.09) 50%, rgba(10,10,10,0.04) 55%, rgba(0,0,0,0) 100%);"></div>
+<!-- IMAGE_5: Isometric 3D Villa House Render with subtle levitation float (Neutral grey backdrop ring) -->
+<div class="anim-house-float absolute -right-2 -bottom-2 w-[220px] h-[220px] flex items-center justify-center">
+<div class="absolute inset-0 rounded-full border border-[#DADADA]/40 pointer-events-none"></div>
+<img alt="Architectural isometric 3D rendering of villa mid-construction" class="w-full h-full object-contain pointer-events-none opacity-95 mix-blend-multiply transition-transform duration-700 ease-out group-hover:scale-[1.03]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzEPQh3H6YxI0XpJhhfjWWfWpwLUtAAqbMzwIhfA-RkFtxFV1TqiF9rUbdi6qhiiweAahXNkc_l9MSsQcZ2-uz7WPQXraGkLgI6Frnt1GHAtCYNaqcy9UoYwfOhMEmzfAolVExwhLjejV4xuQq9p-uQghSl1lPh5BSA937MokRY3RPNV_-bO5w5_LIU3zUM7Ohy7IngudakNvSa47CvBf-fuPJK5J6Euvopf7mtK4HkjsS9rSNGXrvug" style="filter: contrast(1.04) grayscale(0.15);"/>
+</div>
+<!-- Vignette fade gradient (pure neutral white fade) -->
+<div class="absolute inset-0 pointer-events-none z-10" style="background: linear-gradient(90deg, #FFFFFF 0%, #FFFFFF 35%, rgba(255,255,255,0.85) 60%, rgba(255,255,255,0) 88%);"></div>
+</div>
+<!-- Hero Text Content -->
+<div class="relative z-10 flex flex-col justify-between h-full">
+<div class="flex flex-col">
+<h2 class="text-[22px] leading-[26px] font-medium tracking-tight text-[#0A0A0A] transition-transform duration-300 group-hover:translate-x-0.5" id="heroCardTitle" style="font-family: 'Syne', sans-serif;">Your Plan</h2>
+<p class="text-[14px] leading-[20px] text-[#6B6B6B] mt-1 font-normal transition-colors duration-300 group-hover:text-black" id="heroCardCaption">JPG, PNG, PDF</p>
+</div>
+<!-- Upload Plan Button with Hover Glow, Scale bounce, and Arrow animation -->
+<button class="w-fit h-[48px] px-5 rounded-full bg-[#0A0A0A] text-white flex items-center gap-2.5 hover:bg-[#1a1a1a] hover:shadow-[0_8px_20px_rgba(0,0,0,0.22)] active:scale-95 transition-all duration-300 shadow-sm cursor-pointer" onclick="event.stopPropagation(); document.getElementById('planFileInput') &amp;&amp; document.getElementById('planFileInput').click();" type="button">
+<span class="text-[14px] font-semibold text-white tracking-wide">Upload Plan</span>
+<div class="w-7 h-7 rounded-full bg-[#262626] group-hover:bg-[#333333] flex items-center justify-center text-white shrink-0 transition-transform duration-300">
+<span class="material-symbols-outlined text-[16px] group-hover-bounce transition-transform duration-200">arrow_upward</span>
+</div>
+</button>
+</div>
+</div>
+</div>
+<!-- 4. FLOATING BOTTOM NAVIGATION (64px pill, #FFFFFF, radius 9999px, 280px wide, soft shadow) with Animated Tab Indicator -->
+<nav class="anim-entrance-nav w-[280px] h-[64px] mx-auto rounded-full relative flex items-center justify-between px-[6px] z-30 select-none border border-[#DADADA]/50" id="bottomNav" style="background-color: #FFFFFF; box-shadow: rgba(10, 10, 10, 0.08) 0px 12px 32px; width: 72%;">
+<!-- Sliding active pill highlight indicator -->
+<div class="absolute h-[48px] w-[84px] rounded-full transition-all duration-300 cubic-bezier(0.4, 0, 0.2, 1) pointer-events-none" id="navIndicator" style="background-color: #EAEAEA; left: 6px; top: 8px;"></div>
+<!-- Home (Active default) -->
+<button aria-current="page" class="nav-tab relative z-10 flex flex-col items-center justify-center w-[84px] h-[48px] rounded-full transition-transform active:scale-90 focus:outline-none cursor-pointer" data-index="0" onclick="switchNavTab(0, this)">
+<span class="material-symbols-outlined text-[20px] transition-transform duration-200" style="color: #0A0A0A; font-variation-settings: 'FILL' 1;">cottage</span>
+<span class="text-[12px] leading-[16px] font-bold mt-[1px] transition-colors" style="color: #0A0A0A;">Home</span>
+</button>
+<!-- History (Inactive: #6B6B6B) -->
+<button class="nav-tab relative z-10 flex flex-col items-center justify-center w-[84px] h-[48px] rounded-full transition-transform active:scale-90 focus:outline-none cursor-pointer" data-index="1" onclick="switchNavTab(1, this)">
+<span class="material-symbols-outlined text-[20px] transition-transform duration-200" style="color: #6B6B6B;">schedule</span>
+<span class="text-[12px] leading-[16px] font-medium mt-[1px] transition-colors" style="color: #6B6B6B;">History</span>
+</button>
+<!-- Profile (Inactive: #6B6B6B) -->
+<button class="nav-tab relative z-10 flex flex-col items-center justify-center w-[84px] h-[48px] rounded-full transition-transform active:scale-90 focus:outline-none cursor-pointer" data-index="2" onclick="switchNavTab(2, this)">
+<span class="material-symbols-outlined text-[20px] transition-transform duration-200" style="color: #6B6B6B;">person_outline</span>
+<span class="text-[12px] leading-[16px] font-medium mt-[1px] transition-colors" style="color: #6B6B6B;">Profile</span>
+</button>
+</nav>
+</div>
+</div>
+<script>
+  (function () {
+    const totalCards = 4;
+    let currentIdx = 0;
+    let timer = null;
+    const cards = [
+      document.getElementById('card-0'),
+      document.getElementById('card-1'),
+      document.getElementById('card-2'),
+      document.getElementById('card-3')
+    ];
+    const dots = [
+      document.getElementById('dot-0'),
+      document.getElementById('dot-1'),
+      document.getElementById('dot-2'),
+      document.getElementById('dot-3')
+    ];
+
+    window.updateCarousel = function(nextIdx) {
+      currentIdx = (nextIdx + totalCards) % totalCards;
+
+      cards.forEach((card, i) => {
+        let diff = (i - currentIdx + totalCards) % totalCards;
+        // Normalize distance: active is 0, right is +1, left is -1 (or 3)
+        if (diff === 0) {
+          // Centered active card
+          card.style.transform = 'translateX(0px) scale(1)';
+          card.style.opacity = '1';
+          card.style.zIndex = '20';
+          card.style.pointerEvents = 'auto';
+        } else if (diff === 1) {
+          // Peeking Right
+          card.style.transform = 'translateX(284px) scale(0.94)';
+          card.style.opacity = '0.55';
+          card.style.zIndex = '10';
+          card.style.pointerEvents = 'auto';
+        } else if (diff === totalCards - 1) {
+          // Peeking Left
+          card.style.transform = 'translateX(-284px) scale(0.94)';
+          card.style.opacity = '0.55';
+          card.style.zIndex = '10';
+          card.style.pointerEvents = 'auto';
+        } else {
+          // Hidden back
+          card.style.transform = 'translateX(500px) scale(0.9)';
+          card.style.opacity = '0';
+          card.style.zIndex = '0';
+          card.style.pointerEvents = 'none';
+        }
+      });
+
+      // Update Pagination Dots with active expansion
+      dots.forEach((dot, i) => {
+        if (i === currentIdx) {
+          dot.style.width = '24px';
+          dot.style.backgroundColor = '#0A0A0A';
+        } else {
+          dot.style.width = '8px';
+          dot.style.backgroundColor = '#DADADA';
+        }
+      });
+    };
+
+    window.handleCardClick = function(index) {
+      if (index === currentIdx) {
+        // Active card tapped: subtle micro-bounce feedback
+        const activeCard = cards[index];
+        activeCard.style.transform = 'translateX(0px) scale(0.97)';
+        setTimeout(() => {
+          activeCard.style.transform = 'translateX(0px) scale(1)';
+        }, 150);
+      } else {
+        updateCarousel(index);
+        startAutoAdvance();
+      }
+    };
+
+    function startAutoAdvance() {
+      stopAutoAdvance();
+      timer = setInterval(() => {
+        updateCarousel(currentIdx + 1);
+      }, 5500);
+    }
+
+    function stopAutoAdvance() {
+      if (timer) clearInterval(timer);
+    }
+
+    // Touch / Swipe handler for mobile delight
+    let touchStartX = 0;
+    let touchEndX = 0;
+    const track = document.getElementById('trainTrack');
+
+    if (track) {
+      track.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+        stopAutoAdvance();
+      }, { passive: true });
+
+      track.addEventListener('touchend', (e) => {
+        touchEndX = e.changedTouches[0].screenX;
+        if (touchStartX - touchEndX > 40) {
+          updateCarousel(currentIdx + 1);
+        } else if (touchEndX - touchStartX > 40) {
+          updateCarousel(currentIdx - 1);
+        }
+        startAutoAdvance();
+      }, { passive: true });
+    }
+
+    // Bottom Navigation Dynamic Tab Switcher
+    window.switchNavTab = function(index, el) {
+      const indicator = document.getElementById('navIndicator');
+      const tabs = document.querySelectorAll('.nav-tab');
+      
+      // Calculate offset based on tab width (84px) + margin
+      if (indicator) {
+        indicator.style.left = (6 + index * 92) + 'px';
+      }
+
+      tabs.forEach((tab, i) => {
+        const icon = tab.querySelector('.material-symbols-outlined');
+        const text = tab.querySelector('span:nth-child(2)');
+        if (i === index) {
+          icon.style.color = '#0A0A0A';
+          if (i === 0) icon.style.fontVariationSettings = "'FILL' 1";
+          text.style.color = '#0A0A0A';
+          text.classList.remove('font-medium');
+          text.classList.add('font-semibold');
+          // Icon micro bounce
+          icon.style.transform = 'scale(1.15)';
+          setTimeout(() => { icon.style.transform = 'scale(1)'; }, 200);
+        } else {
+          icon.style.color = '#6B6B6B';
+          icon.style.fontVariationSettings = "'FILL' 0";
+          text.style.color = '#6B6B6B';
+          text.classList.remove('font-semibold');
+          text.classList.add('font-medium');
+          icon.style.transform = 'scale(1)';
+        }
+      });
+    };
+
+    // Upload plan celebration feedback
+    window.triggerUploadCelebration = function() {
+      const heroContainer = document.getElementById('heroUploadCardContainer');
+      if (heroContainer) {
+        heroContainer.classList.add('scale-[1.02]');
+        setTimeout(() => {
+          heroContainer.classList.remove('scale-[1.02]');
+        }, 300);
+      }
+    };
+
+    // Initialize
+    updateCarousel(0);
+    startAutoAdvance();
+  })();
+</script></main>
+</body></html>

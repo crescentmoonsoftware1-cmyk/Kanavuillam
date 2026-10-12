@@ -1,37 +1,41 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../core/providers/app_config_provider.dart';
+import '../core/theme/app_colors.dart';
+import '../core/widgets/custom_text_field.dart';
+import '../core/widgets/primary_button.dart';
 import '../services/api_service.dart';
 import '../utils/legal_texts.dart';
-import 'user_details_screen.dart';
+import 'shell_screen.dart';
 
 class AuthScreen extends StatefulWidget {
-  const AuthScreen({super.key});
+  final bool isLogin;
+  const AuthScreen({super.key, this.isLogin = true});
 
   @override
   State<AuthScreen> createState() => _AuthScreenState();
 }
 
 class _AuthScreenState extends State<AuthScreen> {
-  bool _isLogin = true;
+  final _formKey = GlobalKey<FormState>();
+
+  late bool _isLogin;
   bool _obscurePassword = true;
   bool _isLoading = false;
-  bool _agreedToLegal = false;
+  bool _termsAccepted = false;
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  final FocusNode _nameFocusNode = FocusNode();
-  final FocusNode _emailFocusNode = FocusNode();
-  final FocusNode _passwordFocusNode = FocusNode();
-
   @override
   void initState() {
     super.initState();
-    _nameFocusNode.addListener(() => setState(() {}));
-    _emailFocusNode.addListener(() => setState(() {}));
-    _passwordFocusNode.addListener(() => setState(() {}));
+    _isLogin = widget.isLogin;
   }
 
   @override
@@ -39,18 +43,24 @@ class _AuthScreenState extends State<AuthScreen> {
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
-    _nameFocusNode.dispose();
-    _emailFocusNode.dispose();
-    _passwordFocusNode.dispose();
     super.dispose();
   }
 
-  Future<void> _submit() async {
-    if (!_isLogin && !_agreedToLegal) {
+  Future<void> _handleAuth(AppConfigProvider config) async {
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      return;
+    }
+
+    if (!_isLogin && !_termsAccepted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please agree to the Terms to continue.'),
-          backgroundColor: Colors.redAccent,
+        SnackBar(
+          content: Text(
+            config.tr(
+              'Please accept Terms & Conditions to continue.',
+              'தொடர விதிமுறைகளை ஒப்புக்கொள்ளவும்.',
+            ),
+          ),
+          backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -70,19 +80,41 @@ class _AuthScreenState extends State<AuthScreen> {
       final response = await ApiService.post(endpoint, body);
 
       if (response != null && response['error'] == null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.clear();
+        final user = response['user'] as Map<String, dynamic>?;
+        final email =
+            (user?['email'] as String?) ?? _emailController.text.trim();
+        final meta = user?['user_metadata'] as Map<String, dynamic>?;
+        final name = (meta?['name'] as String?) ??
+            (meta?['full_name'] as String?) ??
+            _nameController.text.trim();
+        final phone = (meta?['phone'] as String?) ?? '';
+
+        await prefs.setString('user_email', email);
+        if (name.isNotEmpty) await prefs.setString('user_name', name);
+        if (phone.isNotEmpty) await prefs.setString('user_phone', phone);
+
         if (mounted) {
-          Navigator.of(context).pushReplacement(
+          Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(
-              builder: (_) => UserDetailsScreen(userData: response['user']),
+              builder: (_) => ShellScreen(userData: response['user']),
             ),
+            (route) => false,
           );
         }
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(response?['error'] ?? 'Authentication failed'),
-              backgroundColor: Colors.redAccent,
+              content: Text(
+                response?['error'] ??
+                    config.tr(
+                      'Authentication failed. Please check credentials.',
+                      'அங்கீகாரம் தோல்வியடைந்தது. விவரங்களைச் சரிபார்க்கவும்.',
+                    ),
+              ),
+              backgroundColor: AppColors.error,
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -93,7 +125,7 @@ class _AuthScreenState extends State<AuthScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: $e'),
-            backgroundColor: Colors.redAccent,
+            backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -105,7 +137,7 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
-  Future<void> _signInWithGoogle() async {
+  Future<void> _signInWithGoogle(AppConfigProvider config) async {
     setState(() => _isLoading = true);
     try {
       final GoogleSignIn googleSignIn = GoogleSignIn.instance;
@@ -116,7 +148,6 @@ class _AuthScreenState extends State<AuthScreen> {
       );
 
       final googleUser = await googleSignIn.authenticate();
-
       final GoogleSignInAuthentication googleAuth = googleUser.authentication;
       final String? idToken = googleAuth.idToken;
 
@@ -131,22 +162,41 @@ class _AuthScreenState extends State<AuthScreen> {
       });
 
       if (response != null && response['error'] == null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.clear();
+        final user = response['user'] as Map<String, dynamic>?;
+        final email = (user?['email'] as String?) ?? googleUser.email;
+        final meta = user?['user_metadata'] as Map<String, dynamic>?;
+        final name = (meta?['name'] as String?) ??
+            (meta?['full_name'] as String?) ??
+            googleUser.displayName ??
+            email.split('@').first;
+
+        await prefs.setString('user_email', email);
+        await prefs.setString('user_name', name);
+
         if (mounted) {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
-              builder: (_) => UserDetailsScreen(userData: response['user']),
+              builder: (_) => ShellScreen(userData: response['user']),
             ),
           );
         }
       } else {
         throw Exception(
-            response?['error'] ?? 'Google Authentication failed on server');
+          response?['error'] ??
+              config.tr(
+                'Google Authentication failed on server',
+                'Google உள்நுழைவு சர்வரில் தோல்வியடைந்தது',
+              ),
+        );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${e.toString()}'),
+            content: Text('Error: $e'),
+            backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -158,719 +208,577 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
-  void _showLegalBottomSheet(String title, String content) {
+  void _showTermsDialog(BuildContext context, AppConfigProvider config) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFFF6F1DC),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.8,
-          minChildSize: 0.5,
-          maxChildSize: 0.95,
-          expand: false,
-          builder: (context, scrollController) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 20, 16, 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          fontFamily: 'Syne',
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1B211C),
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close, color: Color(0xFF1B211C)),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ],
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.82,
+          decoration: BoxDecoration(
+            color: config.cardColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            border: Border.all(color: config.borderColor),
+          ),
+          padding: const EdgeInsets.fromLTRB(24, 20, 16, 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    config.tr(
+                      'Terms & Conditions',
+                      'விதிமுறைகள் மற்றும் நிபந்தனைகள்',
+                    ),
+                    style: GoogleFonts.syne(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: config.primaryTextColor,
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.close, color: config.secondaryTextColor),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              Divider(color: config.borderColor, height: 24),
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.only(right: 8, bottom: 16),
+                  child: Text(
+                    LegalTexts.termsAndConditions,
+                    style: GoogleFonts.inter(
+                      fontSize: 13.5,
+                      height: 1.6,
+                      color: config.secondaryTextColor,
+                    ),
                   ),
                 ),
-                const Divider(color: Color(0xFFD9D2B0), height: 1),
-                Expanded(
-                  child: SingleChildScrollView(
-                    controller: scrollController,
-                    padding: const EdgeInsets.all(24),
-                    child: _buildSimpleMarkdownText(content),
-                  ),
-                ),
-              ],
-            );
-          },
+              ),
+            ],
+          ),
         );
       },
     );
   }
 
-  Widget _buildSimpleMarkdownText(String text) {
-    final lines = text.split('\n');
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: lines.map((line) {
-        if (line.startsWith('# ')) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 16, top: 8),
-            child: Text(
-              line.replaceFirst('# ', ''),
-              style: const TextStyle(
-                fontFamily: 'Syne',
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1B211C),
-              ),
-            ),
-          );
-        } else if (line.startsWith('## ')) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12, top: 20),
-            child: Text(
-              line.replaceFirst('## ', ''),
-              style: const TextStyle(
-                fontFamily: 'Syne',
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1B211C),
-              ),
-            ),
-          );
-        } else if (line.startsWith('* ')) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 6, left: 16),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('• ',
-                    style: TextStyle(fontSize: 16, color: Color(0xFF1F2A21))),
-                Expanded(
-                  child: Text(
-                    line.replaceFirst('* ', ''),
-                    style: const TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 14,
-                      color: Color(0xFF6B6A52),
-                      height: 1.5,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        } else if (line.trim().isEmpty) {
-          return const SizedBox(height: 8);
-        } else {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Text(
-              line,
-              style: const TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 14,
-                color: Color(0xFF6B6A52),
-                height: 1.5,
-              ),
-            ),
-          );
-        }
-      }).toList(),
-    );
-  }
-
-  // Custom Input Field with exact styling matching design system
-  Widget _buildCustomInputField({
-    required TextEditingController controller,
-    required FocusNode focusNode,
-    required String hintText,
-    required IconData prefixIcon,
-    bool isPassword = false,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    final bool isFocused = focusNode.hasFocus;
-
-    return Container(
-      height: 52,
-      decoration: BoxDecoration(
-        color: const Color(0xFFFBF8EA),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isFocused ? const Color(0xFF1F2A21) : const Color(0xFFD9D2B0),
-          width: isFocused ? 1.5 : 1.0,
-        ),
-        boxShadow: isFocused
-            ? const [
-                BoxShadow(
-                  color: Color(0x40F2CB4B), // Golden focus ring
-                  blurRadius: 0,
-                  spreadRadius: 3,
-                ),
-              ]
-            : null,
-      ),
-      child: Center(
-        child: TextField(
-          controller: controller,
-          focusNode: focusNode,
-          obscureText: isPassword && _obscurePassword,
-          keyboardType: keyboardType,
-          style: const TextStyle(
-            fontFamily: 'Inter',
-            fontSize: 14,
-            color: Color(0xFF1B211C),
-            fontWeight: FontWeight.w400,
-          ),
-          decoration: InputDecoration(
-            hintText: hintText,
-            hintStyle: const TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 14,
-              color: Color(0xFF6B6A52),
-              fontWeight: FontWeight.w400,
-            ),
-            prefixIcon: Icon(
-              prefixIcon,
-              color: const Color(0xFF7C7A3C),
-              size: 20,
-            ),
-            suffixIcon: isPassword
-                ? IconButton(
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
-                      color: const Color(0xFF7C7A3C),
-                      size: 20,
-                    ),
-                    onPressed: () =>
-                        setState(() => _obscurePassword = !_obscurePassword),
-                  )
-                : null,
-            border: InputBorder.none,
-            isDense: true,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final mediaQuery = MediaQuery.of(context);
-    final screenHeight = mediaQuery.size.height;
-    // Dynamic top zone height so sheet has ample space to fit everything in 1 viewport
-    final topZoneHeight = (screenHeight * 0.30).clamp(180.0, 260.0);
-    final isCompact = screenHeight < 700;
+    AppConfigProvider config;
+    try {
+      config = context.watch<AppConfigProvider>();
+    } catch (_) {
+      config = AppConfigProvider();
+    }
+    final isDark = config.isDarkMode;
+    final bgColor = config.bgColor;
+    final cardColor = config.cardColor;
+    final primaryTextColor = config.primaryTextColor;
+    final secondaryTextColor = config.secondaryTextColor;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F1DC),
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          // LAYER 1: Top Sunrise City Background & Branding
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: topZoneHeight + 35,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                // Background Sunrise Image
-                Image.asset(
-                  'assets/images/welcome_bg.png',
-                  fit: BoxFit.cover,
-                  alignment: Alignment.topCenter,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Image.network(
-                      'https://lh3.googleusercontent.com/aida-public/AB6AXuDbdKPAYD3ZGh7eXLnPY3hqTzoPD4M6FXa0CNiZcZLAwDoTbwxfO4Punj0-mvvh3ktPnO1X5J0CsFv5QzvNBpHoZvlIobPYVOVKoxaOV3FWJFIZzSYOecfyxtCDF-SIcZw0HEQlm9MzZDz0fRuPmta_mpDiBi0YPvfgayaPZf2Kx_sK1q2cgCvUJRL8VuZH-3mFqzN56erEcYl5UXyYCfwUXxkNED3vklF9djIyGb12oA26T44_V-Nmhg',
-                      fit: BoxFit.cover,
-                      alignment: Alignment.topCenter,
-                      errorBuilder: (_, __, ___) =>
-                          Container(color: const Color(0xFFE8DDA8)),
-                    );
-                  },
+      backgroundColor: bgColor,
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 20.0),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: MediaQuery.of(context).size.height -
+                      MediaQuery.of(context).padding.top -
+                      MediaQuery.of(context).padding.bottom -
+                      40,
                 ),
-
-                // Warm Gradient Fade into Bottom Sheet
-                Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      stops: [0.0, 0.4, 0.8, 1.0],
-                      colors: [
-                        Colors.transparent,
-                        Color(0x22E8DDA8),
-                        Color(0x99F6F1DC),
-                        Color(0xFFF6F1DC),
+                child: IntrinsicHeight(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                  // Top Brand Emblem Section
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Column(
+                      children: [
+                        SizedBox(
+                          width: 52,
+                          height: 52,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              CustomPaint(
+                                size: const Size(52, 52),
+                                painter: _SmallLogoPainter(
+                                  color: primaryTextColor,
+                                ),
+                              ),
+                              Positioned(
+                                bottom: 7.5,
+                                child: Text(
+                                  'KI',
+                                  style: GoogleFonts.syne(
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: -0.2,
+                                    color: primaryTextColor,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Kanavu Illam',
+                          style: GoogleFonts.syne(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w500,
+                            color: primaryTextColor,
+                            letterSpacing: -0.24,
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                ),
 
-                // Top Centered Brand Logo
-                SafeArea(
-                  child: Align(
-                    alignment: Alignment.topCenter,
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: Image.asset(
-                        'assets/images/logo.png',
-                        height: isCompact ? 80 : 95,
-                        fit: BoxFit.contain,
-                      ).animate().fadeIn(duration: 500.ms).scale(
-                          begin: const Offset(0.9, 0.9),
-                          end: const Offset(1.0, 1.0),
-                          duration: 500.ms),
+                  // Main Elevated Card
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.symmetric(vertical: 20.0),
+                    padding: const EdgeInsets.all(24.0),
+                    decoration: BoxDecoration(
+                      color: cardColor,
+                      borderRadius: BorderRadius.circular(28),
+                      border: Border.all(color: config.borderColor),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black
+                              .withValues(alpha: isDark ? 0.35 : 0.06),
+                          blurRadius: 24,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
                     ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // LAYER 2: Bottom Sheet Container (Starts right below Top Zone & fills to bottom)
-          Positioned(
-            top: topZoneHeight - 20,
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              decoration: const BoxDecoration(
-                color: Color(0xFFF6F1DC),
-                borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-                border: Border(
-                  top: BorderSide(color: Color(0x99D9D2B0), width: 1.0),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Color(0x141B211C),
-                    blurRadius: 32,
-                    offset: Offset(0, -12),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(32)),
-                child: SafeArea(
-                  top: false,
-                  child: Padding(
-                    padding:
-                        EdgeInsets.fromLTRB(24, isCompact ? 14 : 20, 24, 14),
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        return SingleChildScrollView(
-                          physics: isCompact
-                              ? const BouncingScrollPhysics()
-                              : const NeverScrollableScrollPhysics(),
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(
-                              minHeight: constraints.maxHeight,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Card Title
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 20.0),
+                          child: Text(
+                            config.tr(
+                              _isLogin ? 'Welcome back' : 'Create account',
+                              _isLogin ? 'மீண்டும் வருக' : 'கணக்கு தொடங்குங்கள்',
                             ),
-                            child: IntrinsicHeight(
-                              child: Column(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Main Form Content Group
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      // Sheet Title: Welcome back / Create account
-                                      Text(
-                                        _isLogin
-                                            ? 'Welcome back'
-                                            : 'Create account',
-                                        style: const TextStyle(
-                                          fontFamily: 'Syne',
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.w600,
-                                          color: Color(0xFF1B211C),
-                                          letterSpacing: -0.3,
-                                        ),
-                                      ).animate().fadeIn(duration: 400.ms),
+                            style: GoogleFonts.syne(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w600,
+                              color: primaryTextColor,
+                              letterSpacing: -0.24,
+                              height: 1.1,
+                            ),
+                          ),
+                        ),
 
-                                      SizedBox(height: isCompact ? 10 : 14),
+                        // Form Inputs
+                        Form(
+                          key: _formKey,
+                          child: Column(
+                            children: [
+                              // Full Name (Only on Sign Up)
+                              if (!_isLogin) ...[
+                                CustomTextField(
+                                  controller: _nameController,
+                                  hintText: config.tr('Full Name', 'முழு பெயர்'),
+                                  prefixIcon: Icons.badge_outlined,
+                                  keyboardType: TextInputType.name,
+                                  textInputAction: TextInputAction.next,
+                                  fillColor: isDark ? const Color(0xFF1E232B) : Colors.white,
+                                  borderColor: isDark ? const Color(0xFF2C323D) : const Color(0xFFE2E2E2),
+                                  textColor: primaryTextColor,
+                                  hintColor: secondaryTextColor,
+                                  validator: (val) {
+                                    if (val == null || val.trim().isEmpty) {
+                                      return config.tr(
+                                        'Please enter your name',
+                                        'உங்கள் பெயரை உள்ளிடவும்',
+                                      );
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 14),
+                              ],
 
-                                      // Form Inputs
-                                      Column(
-                                        children: [
-                                          // Full Name Field (Sign Up Only)
-                                          if (!_isLogin) ...[
-                                            _buildCustomInputField(
-                                              controller: _nameController,
-                                              focusNode: _nameFocusNode,
-                                              hintText: 'Full name',
-                                              prefixIcon: Icons.badge_outlined,
-                                              keyboardType: TextInputType.name,
-                                            ),
-                                            SizedBox(
-                                                height: isCompact ? 8 : 10),
-                                          ],
+                              // Email or Phone
+                              CustomTextField(
+                                controller: _emailController,
+                                hintText: config.tr(
+                                  _isLogin ? 'Email or Phone' : 'Email address',
+                                  _isLogin ? 'மின்னஞ்சல் அல்லது தொலைபேசி' : 'மின்னஞ்சல் முகவரி',
+                                ),
+                                prefixIcon: Icons.mail_outline,
+                                keyboardType: TextInputType.emailAddress,
+                                textInputAction: TextInputAction.next,
+                                fillColor: isDark ? const Color(0xFF1E232B) : Colors.white,
+                                borderColor: isDark ? const Color(0xFF2C323D) : const Color(0xFFE2E2E2),
+                                textColor: primaryTextColor,
+                                hintColor: secondaryTextColor,
+                                validator: (val) {
+                                  if (val == null || val.trim().isEmpty) {
+                                    return config.tr(
+                                      _isLogin
+                                          ? 'Please enter email or phone'
+                                          : 'Please enter email address',
+                                      _isLogin
+                                          ? 'மின்னஞ்சல் அல்லது தொலைபேசியை உள்ளிடவும்'
+                                          : 'மின்னஞ்சல் முகவரியை உள்ளிடவும்',
+                                    );
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 14),
 
-                                          // Email Address Field
-                                          _buildCustomInputField(
-                                            controller: _emailController,
-                                            focusNode: _emailFocusNode,
-                                            hintText: _isLogin
-                                                ? 'alex.morgan@gmail.com'
-                                                : 'Email address',
-                                            prefixIcon:
-                                                Icons.mail_outline_rounded,
-                                            keyboardType:
-                                                TextInputType.emailAddress,
-                                          ),
+                              // Password
+                              CustomTextField(
+                                controller: _passwordController,
+                                hintText: config.tr('Password', 'கடவுச்சொல்'),
+                                prefixIcon: Icons.lock_outline,
+                                isPassword: true,
+                                obscureText: _obscurePassword,
+                                textInputAction: TextInputAction.done,
+                                fillColor: isDark ? const Color(0xFF1E232B) : Colors.white,
+                                borderColor: isDark ? const Color(0xFF2C323D) : const Color(0xFFE2E2E2),
+                                textColor: primaryTextColor,
+                                hintColor: secondaryTextColor,
+                                onToggleVisibility: () {
+                                  setState(() {
+                                    _obscurePassword = !_obscurePassword;
+                                  });
+                                },
+                                validator: (val) {
+                                  if (val == null || val.isEmpty) {
+                                    return config.tr(
+                                      'Please enter password',
+                                      'கடவுச்சொல்லை உள்ளிடவும்',
+                                    );
+                                  }
+                                  if (val.length < 6) {
+                                    return config.tr(
+                                      'Password must be at least 6 characters',
+                                      'குறைந்தது 6 எழுத்துக்கள் இருக்க வேண்டும்',
+                                    );
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
 
-                                          SizedBox(height: isCompact ? 8 : 10),
-
-                                          // Password Field
-                                          _buildCustomInputField(
-                                            controller: _passwordController,
-                                            focusNode: _passwordFocusNode,
-                                            hintText: 'Password',
-                                            prefixIcon:
-                                                Icons.lock_outline_rounded,
-                                            isPassword: true,
-                                          ),
-                                        ],
-                                      ),
-
-                                      // Middle Options: Forgot Password (Login) or Terms Checkbox (Sign Up)
-                                      if (_isLogin) ...[
-                                        const SizedBox(height: 6),
-                                        Align(
-                                          alignment: Alignment.centerRight,
-                                          child: InkWell(
-                                            onTap: () {
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(
-                                                const SnackBar(
-                                                  content: Text(
-                                                      'Password reset instructions sent to your email.'),
-                                                  behavior:
-                                                      SnackBarBehavior.floating,
-                                                ),
-                                              );
-                                            },
-                                            child: const Text(
-                                              'Forgot Password?',
-                                              style: TextStyle(
-                                                fontFamily: 'Inter',
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.w400,
-                                                color: Color(0xFF1F2A21),
-                                                decoration:
-                                                    TextDecoration.underline,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        SizedBox(height: isCompact ? 10 : 14),
-                                      ] else ...[
-                                        SizedBox(height: isCompact ? 8 : 12),
-                                        Row(
-                                          children: [
-                                            GestureDetector(
-                                              onTap: () => setState(() =>
-                                                  _agreedToLegal =
-                                                      !_agreedToLegal),
-                                              child: Container(
-                                                width: 20,
-                                                height: 20,
-                                                decoration: BoxDecoration(
-                                                  color:
-                                                      const Color(0xFFFBF8EA),
-                                                  borderRadius:
-                                                      BorderRadius.circular(6),
-                                                  border: Border.all(
-                                                    color: _agreedToLegal
-                                                        ? const Color(
-                                                            0xFF1F2A21)
-                                                        : const Color(
-                                                            0xFFD9D2B0),
-                                                    width: 1.5,
-                                                  ),
-                                                ),
-                                                child: _agreedToLegal
-                                                    ? const Icon(
-                                                        Icons.check_rounded,
-                                                        size: 14,
-                                                        color:
-                                                            Color(0xFF1F2A21),
-                                                      )
-                                                    : null,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 10),
-                                            Expanded(
-                                              child: Wrap(
-                                                crossAxisAlignment:
-                                                    WrapCrossAlignment.center,
-                                                children: [
-                                                  const Text(
-                                                    'I agree to ',
-                                                    style: TextStyle(
-                                                      fontFamily: 'Inter',
-                                                      fontSize: 13,
-                                                      color: Color(0xFF1B211C),
-                                                    ),
-                                                  ),
-                                                  InkWell(
-                                                    onTap: () =>
-                                                        _showLegalBottomSheet(
-                                                            'Terms of Service',
-                                                            LegalTexts
-                                                                .termsAndConditions),
-                                                    child: const Text(
-                                                      'Terms',
-                                                      style: TextStyle(
-                                                        fontFamily: 'Inter',
-                                                        fontSize: 13,
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                        color:
-                                                            Color(0xFF1B211C),
-                                                        decoration:
-                                                            TextDecoration
-                                                                .underline,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        SizedBox(height: isCompact ? 10 : 14),
-                                      ],
-
-                                      // Primary Button: Sign in / Register
-                                      SizedBox(
-                                        width: double.infinity,
-                                        height: isCompact ? 48 : 52,
-                                        child: ElevatedButton(
-                                          onPressed:
-                                              _isLoading ? null : _submit,
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor:
-                                                const Color(0xFF1F2A21),
-                                            foregroundColor:
-                                                const Color(0xFFF6F1DC),
-                                            elevation: 4,
-                                            shadowColor:
-                                                const Color(0x2E1F2A21),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(26),
-                                            ),
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 16),
-                                          ),
-                                          child: _isLoading
-                                              ? const SizedBox(
-                                                  width: 24,
-                                                  height: 24,
-                                                  child:
-                                                      CircularProgressIndicator(
-                                                    color: Color(0xFFF6F1DC),
-                                                    strokeWidth: 2.5,
-                                                  ),
-                                                )
-                                              : Stack(
-                                                  alignment: Alignment.center,
-                                                  children: [
-                                                    Text(
-                                                      _isLogin
-                                                          ? 'Sign in'
-                                                          : 'Register',
-                                                      style: const TextStyle(
-                                                        fontFamily: 'Inter',
-                                                        fontSize: 16,
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                        color:
-                                                            Color(0xFFF6F1DC),
-                                                      ),
-                                                    ),
-                                                    Align(
-                                                      alignment:
-                                                          Alignment.centerRight,
-                                                      child: Container(
-                                                        width: 30,
-                                                        height: 30,
-                                                        decoration:
-                                                            const BoxDecoration(
-                                                          color:
-                                                              Color(0xFFF6F1DC),
-                                                          shape:
-                                                              BoxShape.circle,
-                                                        ),
-                                                        child: const Icon(
-                                                          Icons
-                                                              .arrow_forward_rounded,
-                                                          size: 17,
-                                                          color:
-                                                              Color(0xFF1F2A21),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
+                        // Forgot Password Link (Sign in only)
+                        if (_isLogin)
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: Padding(
+                              padding: const EdgeInsets.only(
+                                  top: 8.0, bottom: 4.0),
+                              child: InkWell(
+                                onTap: () {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        config.tr(
+                                          'Password reset instructions sent to your email.',
+                                          'கடவுச்சொல் மீட்டமைப்பு வழிமுறைகள் உங்கள் மின்னஞ்சலுக்கு அனுப்பப்பட்டன.',
                                         ),
                                       ),
-
-                                      SizedBox(height: isCompact ? 8 : 12),
-
-                                      // Divider with "or"
-                                      Row(
-                                        children: const [
-                                          Expanded(
-                                            child: Divider(
-                                                color: Color(0xFFD9D2B0),
-                                                height: 1),
-                                          ),
-                                          Padding(
-                                            padding: EdgeInsets.symmetric(
-                                                horizontal: 12),
-                                            child: Text(
-                                              'or',
-                                              style: TextStyle(
-                                                fontFamily: 'Inter',
-                                                fontSize: 12,
-                                                color: Color(0xFF6B6A52),
-                                              ),
-                                            ),
-                                          ),
-                                          Expanded(
-                                            child: Divider(
-                                                color: Color(0xFFD9D2B0),
-                                                height: 1),
-                                          ),
-                                        ],
-                                      ),
-
-                                      SizedBox(height: isCompact ? 8 : 12),
-
-                                      // Continue with Google Button
-                                      SizedBox(
-                                        width: double.infinity,
-                                        height: isCompact ? 46 : 48,
-                                        child: OutlinedButton(
-                                          onPressed: _isLoading
-                                              ? null
-                                              : _signInWithGoogle,
-                                          style: OutlinedButton.styleFrom(
-                                            backgroundColor:
-                                                const Color(0xFFFBF8EA),
-                                            side: const BorderSide(
-                                                color: Color(0xFFD9D2B0),
-                                                width: 1.0),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(24),
-                                            ),
-                                          ),
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: const [
-                                              CustomPaint(
-                                                size: Size(20, 20),
-                                                painter: GoogleGLogoPainter(),
-                                              ),
-                                              SizedBox(width: 12),
-                                              Text(
-                                                'Continue with Google',
-                                                style: TextStyle(
-                                                  fontFamily: 'Inter',
-                                                  fontSize: 15,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: Color(0xFF1B211C),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                },
+                                child: Text(
+                                  config.tr(
+                                    'Forgot Password?',
+                                    'கடவுச்சொல் மறந்துவிட்டதா?',
                                   ),
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                    color: secondaryTextColor,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
 
-                                  // Footer Toggle Link (Anchored cleanly at bottom of page)
-                                  Padding(
-                                    padding: const EdgeInsets.only(
-                                        top: 8, bottom: 4),
-                                    child: Center(
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Text(
-                                            _isLogin
-                                                ? 'New here?'
-                                                : 'Have an account?',
-                                            style: const TextStyle(
-                                              fontFamily: 'Inter',
-                                              fontSize: 14,
-                                              color: Color(0xFF6B6A52),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 6),
-                                          InkWell(
-                                            onTap: () {
-                                              setState(() {
-                                                _isLogin = !_isLogin;
-                                              });
-                                            },
-                                            child: Text(
-                                              _isLogin ? 'Sign up' : 'Login',
-                                              style: const TextStyle(
-                                                fontFamily: 'Inter',
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w600,
-                                                color: Color(0xFF1F2A21),
-                                                decoration:
-                                                    TextDecoration.underline,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
+                        // Terms & Conditions Checkbox (Sign Up only)
+                        if (!_isLogin)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12.0),
+                            child: Row(
+                              children: [
+                                InkWell(
+                                  onTap: () {
+                                    setState(() {
+                                      _termsAccepted = !_termsAccepted;
+                                    });
+                                  },
+                                  borderRadius: BorderRadius.circular(6),
+                                  child: Container(
+                                    width: 22,
+                                    height: 22,
+                                    decoration: BoxDecoration(
+                                      color: _termsAccepted
+                                          ? (isDark
+                                              ? Colors.white
+                                              : AppColors.primary)
+                                          : Colors.transparent,
+                                      border: Border.all(
+                                        color: _termsAccepted
+                                            ? (isDark
+                                                ? Colors.white
+                                                : AppColors.primary)
+                                            : config.borderColor,
+                                        width: 1.5,
                                       ),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: _termsAccepted
+                                        ? Icon(
+                                            Icons.check,
+                                            size: 15,
+                                            color: isDark
+                                                ? Colors.black
+                                                : Colors.white,
+                                          )
+                                        : null,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Text(
+                                  config.tr('I agree to ', 'ஒப்புக்கொள்கிறேன்: '),
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    color: secondaryTextColor,
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: () =>
+                                      _showTermsDialog(context, config),
+                                  child: Text(
+                                    config.tr('Terms', 'விதிமுறைகள்'),
+                                    style: GoogleFonts.inter(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: primaryTextColor,
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                        const SizedBox(height: 16),
+
+                        // Primary Action Button (Sign in / Register)
+                        PrimaryButton(
+                          text: config.tr(
+                            _isLogin ? 'Sign in' : 'Register',
+                            _isLogin ? 'உள்நுழைக' : 'பதிவு செய்',
+                          ),
+                          isLoading: _isLoading,
+                          onTap: () => _handleAuth(config),
+                        ),
+
+                        // Divider with "or"
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16.0),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Divider(
+                                color: config.borderColor,
+                                thickness: 1,
+                                height: 1,
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14.0,
+                                ),
+                                color: cardColor,
+                                child: Text(
+                                  config.tr('or', 'அல்லது'),
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    color: secondaryTextColor,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Continue with Google Button
+                        Center(
+                          child: InkWell(
+                            onTap: () => _signInWithGoogle(config),
+                            borderRadius: BorderRadius.circular(100),
+                            child: Container(
+                              width: double.infinity,
+                              height: 52,
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF1D2128) : Colors.white,
+                                borderRadius: BorderRadius.circular(100),
+                                border: Border.all(color: config.borderColor, width: 1.2),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.05),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child: Image.asset(
+                                      'assets/images/search.png',
+                                      width: 22,
+                                      height: 22,
+                                      fit: BoxFit.contain,
+                                      errorBuilder: (_, __, ___) => const CustomPaint(
+                                        painter: GoogleGLogoPainter(),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    config.tr(
+                                      'Continue with Google',
+                                      'Google மூலம் தொடரவும்',
+                                    ),
+                                    style: GoogleFonts.inter(
+                                      fontSize: 14.5,
+                                      fontWeight: FontWeight.w600,
+                                      color: primaryTextColor,
+                                      letterSpacing: -0.1,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
                           ),
-                        );
-                      },
+                        ),
+                      ],
                     ),
                   ),
-                ),
+
+                  // Bottom Switcher: "New here? Sign up" or "Already have an account? Sign in"
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0, bottom: 20.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          config.tr(
+                            _isLogin ? 'New here? ' : 'Already have an account? ',
+                            _isLogin ? 'புதியவரா? ' : 'ஏற்கனவே கணக்கு உள்ளதா? ',
+                          ),
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            color: secondaryTextColor,
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _isLogin = !_isLogin;
+                              _formKey.currentState?.reset();
+                            });
+                          },
+                          child: Text(
+                            config.tr(
+                              _isLogin ? 'Sign up' : 'Sign in',
+                              _isLogin ? 'பதிவு செய்' : 'உள்நுழைக',
+                            ),
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: primaryTextColor,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-        ],
+        ),
       ),
-    );
+    ),
+  ),
+);
   }
 }
 
-// Custom Painter for the Multi-Color Official Google 'G' Logo
+
+// Logo Painter for Header Emblem
+class _SmallLogoPainter extends CustomPainter {
+  final Color color;
+  _SmallLogoPainter({this.color = AppColors.primary});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final s = size.width / 48.0;
+    final strokeW = 3.2 * s;
+
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeW
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    final path = Path();
+    path.moveTo(6 * s, 20 * s);
+    path.lineTo(24 * s, 5 * s);
+    path.lineTo(42 * s, 20 * s);
+    path.lineTo(42 * s, 43 * s);
+    path.lineTo(6 * s, 43 * s);
+    path.close();
+    canvas.drawPath(path, paint);
+
+    final doorRect = RRect.fromRectAndCorners(
+      Rect.fromLTWH(16.5 * s, 24 * s, 15 * s, 19 * s),
+      topLeft: Radius.circular(2.5 * s),
+      topRight: Radius.circular(2.5 * s),
+    );
+    canvas.drawRRect(doorRect, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _SmallLogoPainter oldDelegate) =>
+      oldDelegate.color != color;
+}
+
+// Official Multi-Color Google G Logo
 class GoogleGLogoPainter extends CustomPainter {
   const GoogleGLogoPainter();
 
@@ -956,4 +864,20 @@ class GoogleGLogoPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+/// Standalone route alias for Login Screen
+class LoginScreen extends StatelessWidget {
+  const LoginScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) => const AuthScreen(isLogin: true);
+}
+
+/// Standalone route alias for Create Account Screen
+class CreateAccountScreen extends StatelessWidget {
+  const CreateAccountScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) => const AuthScreen(isLogin: false);
 }

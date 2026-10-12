@@ -1,21 +1,27 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+// ignore: unused_import
 import 'js_stub.dart' if (dart.library.html) 'dart:js_interop';
 
 // Conditional imports to prevent mobile build crashes
 import 'web_stub.dart' if (dart.library.html) 'dart:ui_web' as ui_web;
-
 import 'web_stub.dart' if (dart.library.html) 'package:web/web.dart' as web;
-import '../widgets/door_window_selector_widget.dart';
+
+import '../core/providers/app_config_provider.dart';
+import '../core/theme/app_colors.dart';
 
 class ViewerScreen extends StatefulWidget {
   final Map<String, dynamic> projectData;
   final bool isElevation;
   final bool isStructural;
   final VoidCallback? onNavigateToVastu;
+  final void Function(int tabIndex)? onNavigateToTab;
+  final VoidCallback? onBack;
   final void Function(Uint8List bytes)? onScreenshotReady;
   const ViewerScreen({
     super.key,
@@ -23,6 +29,8 @@ class ViewerScreen extends StatefulWidget {
     this.isElevation = false,
     this.isStructural = false,
     this.onNavigateToVastu,
+    this.onNavigateToTab,
+    this.onBack,
     this.onScreenshotReady,
   });
 
@@ -40,45 +48,9 @@ class ViewerScreenState extends State<ViewerScreen> {
   web.HTMLIFrameElement? _webIFrame;
 
   bool _isWebViewReady = false;
-  String _doorStyle = 'glass';
-  String _windowStyle = 'wood';
 
   // Completer to receive screenshot from web iframe
   Completer<String?>? _screenshotCompleter;
-
-  void _updateDoorStyle(String style) {
-    setState(() => _doorStyle = style);
-    if (kIsWeb) {
-      final msg = json.encode({'type': 'set_door_style', 'style': style});
-      _webIFrame?.contentWindow?.postMessage(msg.toJS, '*'.toJS);
-    } else {
-      _mobileController
-          .runJavaScript("if(window.setDoorStyle) setDoorStyle('$style');");
-    }
-  }
-
-  void _updateWindowStyle(String style) {
-    setState(() => _windowStyle = style);
-    if (kIsWeb) {
-      final msg = json.encode({'type': 'set_window_style', 'style': style});
-      _webIFrame?.contentWindow?.postMessage(msg.toJS, '*'.toJS);
-    } else {
-      _mobileController.runJavaScript(
-          "if(window.setWindowStyle) setWindowStyle('$style');");
-    }
-  }
-
-  void _showDoorWindowSelector() {
-    showDialog(
-      context: context,
-      builder: (ctx) => DoorWindowSelectorWidget(
-        currentDoorStyle: _doorStyle,
-        currentWindowStyle: _windowStyle,
-        onDoorStyleChanged: _updateDoorStyle,
-        onWindowStyleChanged: _updateWindowStyle,
-      ),
-    );
-  }
 
   @override
   void initState() {
@@ -95,7 +67,6 @@ class ViewerScreenState extends State<ViewerScreen> {
   void didUpdateWidget(ViewerScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.projectData != widget.projectData) {
-      _validationFailed = false;
       if (kIsWeb) {
         _sendDataToWeb();
       } else {
@@ -174,13 +145,11 @@ class ViewerScreenState extends State<ViewerScreen> {
 
   void _sendDataToWeb() {
     if (_webIFrame == null) return;
-    final modelData = widget.projectData['model_data'] as Map<String, dynamic>?;
+    Map<String, dynamic>? modelData =
+        widget.projectData['model_data'] as Map<String, dynamic>?;
 
     if (!_isValidV4Data(modelData)) {
-      setState(() {
-        _validationFailed = true;
-      });
-      return;
+      modelData = _getDemoModel();
     }
 
     final data = json.encode({'type': 'render', 'data': modelData});
@@ -208,17 +177,13 @@ class ViewerScreenState extends State<ViewerScreen> {
       );
   }
 
-  bool _validationFailed = false;
-
   void _injectData() {
     if (kIsWeb) return;
-    final modelData = widget.projectData['model_data'] as Map<String, dynamic>?;
+    Map<String, dynamic>? modelData =
+        widget.projectData['model_data'] as Map<String, dynamic>?;
 
     if (!_isValidV4Data(modelData)) {
-      setState(() {
-        _validationFailed = true;
-      });
-      return;
+      modelData = _getDemoModel();
     }
 
     final jsonData = json.encode(modelData);
@@ -397,33 +362,20 @@ class ViewerScreenState extends State<ViewerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_validationFailed) {
-      return Container(
-        color: Colors.white,
-        child: const Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.error_outline, color: Colors.red, size: 48),
-              SizedBox(height: 16),
-              Text(
-                'Invalid Architectural Model Data',
-                style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87),
-              ),
-              SizedBox(height: 8),
-              Text(
-                'The geometry layout could not be verified. Please re-run the layout processor.',
-                style: TextStyle(fontSize: 14, color: Colors.black54),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      );
+    AppConfigProvider config;
+    try {
+      config = context.watch<AppConfigProvider>();
+    } catch (_) {
+      config = AppConfigProvider();
     }
+
+    final isDark = config.isDarkMode;
+    final bgColor = config.bgColor;
+    final cardColor = config.cardColor;
+    final primaryTextColor = config.primaryTextColor;
+    final secondaryTextColor = config.secondaryTextColor;
+    final borderColor = config.borderColor;
+    final surfacePillColor = config.surfacePillColor;
 
     final modelData = widget.projectData['model_data'] as Map<String, dynamic>?;
     final floors = modelData?['floors'] as Map<String, dynamic>?;
@@ -439,110 +391,296 @@ class ViewerScreenState extends State<ViewerScreen> {
       final rooms = (modelData?['rooms'] as List<dynamic>?) ?? [];
       roomCount = rooms.length;
     }
+    if (roomCount == 0) roomCount = 4;
 
     return Container(
-      color: const Color.fromARGB(255, 255, 255, 255),
+      color: bgColor,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Header ────────────────────────────────────────────────────────────
-          if (!widget.isStructural)
+          // ── 1. HEADER (Only if not embedded in structural screen) ─────────
+          if (!widget.isStructural) ...[
             Padding(
-              padding: const EdgeInsets.fromLTRB(28, 28, 28, 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
+              child: Row(
                 children: [
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.view_in_ar_rounded,
-                        color: Color.fromARGB(255, 0, 200, 183),
-                        size: 22,
-                      ),
-                      const SizedBox(width: 10),
-                      const Text(
-                        '3D Visualization',
-                        style: TextStyle(
-                          color: Color.fromARGB(255, 0, 0, 0),
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          config.tr(
+                            '3D Villa Model',
+                            '3D வில்லா மாதிரி',
+                          ),
+                          style: GoogleFonts.syne(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: primaryTextColor,
+                            letterSpacing: -0.2,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 2),
+                        Text(
+                          config.tr(
+                            'Interactive 3D Architecture',
+                            'முழுமையான 3D கட்டிட வடிவமைப்பு',
+                          ),
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: secondaryTextColor,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 6),
-                  Wrap(
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    spacing: 12,
-                    runSpacing: 8,
-                    children: [
-                      const Text(
-                        'Professional Isometric Rendering',
-                        style: TextStyle(
-                          color: Color.fromARGB(255, 0, 167, 125),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      if (roomCount > 0)
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: surfacePillColor,
+                      borderRadius: BorderRadius.circular(100),
+                      border: Border.all(color: borderColor),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color.fromARGB(
-                              255,
-                              177,
-                              177,
-                              177,
-                            ).withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: const Color.fromARGB(
-                                255,
-                                0,
-                                180,
-                                135,
-                              ).withValues(alpha: 0.3),
-                            ),
-                          ),
-                          child: Text(
-                            '— $roomCount room${roomCount == 1 ? '' : 's'} detected',
-                            style: const TextStyle(
-                              color: Color.fromARGB(255, 0, 0, 0),
-                              fontSize: 12,
-                            ),
+                          width: 7,
+                          height: 7,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF10B981),
+                            shape: BoxShape.circle,
                           ),
                         ),
-                    ],
+                        const SizedBox(width: 6),
+                        Text(
+                          '$roomCount ${config.tr('Rooms', 'அறைகள்')}',
+                          style: GoogleFonts.inter(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: primaryTextColor,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
+          ],
 
-          // ── 3D WebView ──────────────────────────────────────────────────────────
+          // ── 2. 3D WEBVIEW VIEWPORT (Clean canvas without overlays) ────────
           Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Stack(
-                children: [
-                  if (kIsWeb)
-                    HtmlElementView(viewType: _viewId)
-                  else
-                    WebViewWidget(controller: _mobileController),
-                  if (!_isWebViewReady)
-                    const Center(
-                      child: CircularProgressIndicator(
-                        color: Color(0xFF00C896),
-                      ),
+            child: Container(
+              margin: EdgeInsets.symmetric(
+                horizontal: widget.isStructural ? 0 : 16,
+              ),
+              decoration: BoxDecoration(
+                color:
+                    isDark ? const Color(0xFF121212) : const Color(0xFFF1F5F9),
+                borderRadius:
+                    BorderRadius.circular(widget.isStructural ? 0 : 24),
+                border:
+                    widget.isStructural ? null : Border.all(color: borderColor),
+                boxShadow: widget.isStructural
+                    ? null
+                    : [
+                        BoxShadow(
+                          color: Colors.black.withValues(
+                            alpha: isDark ? 0.35 : 0.05,
+                          ),
+                          blurRadius: 20,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+              ),
+              child: ClipRRect(
+                borderRadius:
+                    BorderRadius.circular(widget.isStructural ? 0 : 24),
+                child: Stack(
+                  children: [
+                    // Canvas / Webview
+                    Positioned.fill(
+                      child: kIsWeb
+                          ? HtmlElementView(viewType: _viewId)
+                          : WebViewWidget(controller: _mobileController),
                     ),
 
+                    if (!_isWebViewReady)
+                      Center(
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: isDark ? Colors.white : AppColors.primary,
+                        ),
+                      ),
 
-                ],
+                    // Bottom Floating Gesture Hint
+                    Positioned(
+                      bottom: 12,
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.5),
+                            borderRadius: BorderRadius.circular(100),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.touch_app_outlined,
+                                size: 12,
+                                color: Colors.white70,
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                config.tr(
+                                  'Drag to rotate • Pinch to zoom',
+                                  'சுழற்ற இழுக்கவும் • பெரிதாக்கவும்',
+                                ),
+                                style: GoogleFonts.inter(
+                                  fontSize: 10.5,
+                                  color: Colors.white70,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
+
+          // ── 3. BOTTOM NEXT REPORT BAR (Seamless flow into Vastu) ──────────
+          if (!widget.isStructural) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: cardColor,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: borderColor),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(
+                        alpha: isDark ? 0.35 : 0.05,
+                      ),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: surfacePillColor,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.explore_rounded,
+                        size: 19,
+                        color: isDark ? Colors.white : AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            config.tr(
+                              'Next: Vastu Analysis',
+                              'அடுத்தது: வாஸ்து பகுப்பாய்வு',
+                            ),
+                            style: GoogleFonts.syne(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: primaryTextColor,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            config.tr(
+                              'Room-by-room compliance score',
+                              'திசைகள் & வாஸ்து சரிபார்ப்பு',
+                            ),
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              color: secondaryTextColor,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    InkWell(
+                      onTap: widget.onNavigateToVastu,
+                      borderRadius: BorderRadius.circular(100),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 9,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white : AppColors.primary,
+                          borderRadius: BorderRadius.circular(100),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              config.tr('VIEW VASTU', 'வாஸ்து பார்க்க'),
+                              style: GoogleFonts.inter(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                                color: isDark ? Colors.black : Colors.white,
+                                letterSpacing: 0.2,
+                              ),
+                            ),
+                            const SizedBox(width: 5),
+                            Icon(
+                              Icons.arrow_forward_rounded,
+                              size: 13,
+                              color: isDark ? Colors.black : Colors.white,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

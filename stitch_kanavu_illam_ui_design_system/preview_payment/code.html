@@ -1,0 +1,160 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><style>
+    @layer base {
+      html, body {
+        width: 100vw;
+        height: 100vh;
+        margin: 0;
+        padding: 0;
+        background-color: #F4F4F4;
+        font-family: 'Inter', sans-serif;
+        overflow: hidden;
+      }
+      body {
+        overscroll-behavior: none;
+      }
+      .pb-safe {
+        padding-bottom: env(safe-area-inset-bottom, 16px);
+      }
+    }
+  </style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-[#F4F4F4] text-neutral-900 antialiased flex justify-center items-start min-h-screen overflow-hidden p-0 m-0"><main class="flex flex-col justify-between w-[390px] h-[844px] max-w-[390px] max-h-[844px] relative bg-[#F4F4F4] select-none overflow-hidden"><!-- Upper Section: Direct Plan Card & Reports List -->
+<header class="flex items-center justify-between w-full pt-6 pb-2 px-5 shrink-0">
+  <div>
+    <h1 class="text-[22px] font-medium text-[#0A0A0A] tracking-tight leading-tight" style="font-family: Syne, sans-serif;">Preview &amp; Payment</h1>
+    <p class="text-[13px] text-[#6B6B6B] mt-0.5 font-normal">Verify details and complete order</p>
+  </div>
+  <button class="w-[44px] h-[44px] rounded-full bg-[#EAEAEA] flex items-center justify-center text-[#0A0A0A] shrink-0 active:opacity-90 transition-opacity" type="button" aria-label="Close">
+    <svg class="w-5 h-5" fill="none" stroke="#0A0A0A" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
+      <line x1="18" x2="6" y1="6" y2="18"></line>
+      <line x1="6" x2="18" y1="6" y2="6"></line>
+    </svg>
+  </button>
+</header>
+
+<div class="flex flex-col w-full px-5 pt-1.5 flex-1 overflow-hidden">
+  <!-- 1. PLAN CARD -->
+  <div class="w-full h-[98px] bg-white rounded-[24px] p-3.5 flex items-center gap-3.5 shrink-0" style="box-shadow: rgba(10, 10, 10, 0.05) 0px 6px 20px;">
+    <div class="w-[70px] h-[70px] rounded-[16px] overflow-hidden flex items-center justify-center shrink-0 border border-[#DADADA] bg-white">
+      <img alt="2D Floor Plan Blueprint" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1WmYPORWUmPF2hMljEMbeMPF4IMzM_J9dNu5NpH2SL_6P1OH-1JFI6-NAj9PRtD3q_l7kT-MsRXiD2J8KAA-TU2zX3adjy4a2jWkOZZ7Cc24qKrxZu1OQzTGMLhC0wnG2048wCut8hwq7_Jla9M7qNmKG0bVuKQCjqmu-clm0lYLF3vhniJVBf-QUjFEV61M8zN6PXZK1Of2BU4eJhvTke7Bof3xP0fdIc_XTJB54bN2g">
+    </div>
+    <div class="flex flex-col flex-1 min-w-0 justify-center">
+      <div class="flex items-center justify-between">
+        <span class="text-[15px] font-semibold text-[#0A0A0A] truncate">house_plan.pdf</span>
+        <button class="text-[13px] font-semibold text-[#0A0A0A] underline underline-offset-2 transition-colors ml-2 shrink-0" type="button">Change</button>
+      </div>
+      <span class="text-[12px] text-[#6B6B6B] truncate font-normal mt-0.5">Ground Floor • 1,600 sq ft</span>
+      <div class="flex items-center gap-1.5 mt-1.5">
+        <div class="w-4 h-4 rounded-full bg-black flex items-center justify-center shrink-0">
+          <span class="material-symbols-outlined text-[12px] text-white font-bold">check</span>
+        </div>
+        <span class="text-[12px] text-[#0A0A0A] font-medium truncate">Quality check passed</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. SECTION HEADING -->
+  <div class="flex flex-col mt-4 mb-2.5 shrink-0">
+    <h2 class="text-[17px] font-medium text-[#0A0A0A] leading-tight" style="font-family: Syne, sans-serif;">What you will get</h2>
+    
+  </div>
+
+  <!-- 3. REPORT LIST (All 4 Included) -->
+  <div class="flex flex-col gap-2 w-full shrink-0">
+    <!-- 3D Model -->
+    <div class="w-full h-[62px] bg-white rounded-[20px] px-4 flex items-center justify-between" style="box-shadow: rgba(10, 10, 10, 0.04) 0px 4px 16px;">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-[40px] h-[40px] rounded-full bg-[#EAEAEA] flex items-center justify-center shrink-0 text-[#0A0A0A]">
+          <span class="material-symbols-outlined text-[20px]">view_in_ar</span>
+        </div>
+        <div class="flex flex-col min-w-0">
+          <span class="text-[14px] font-medium text-[#0A0A0A] leading-snug truncate" style="font-family: Syne, sans-serif;">3D Model</span>
+          
+        </div>
+      </div>
+      <div class="w-[20px] h-[20px] rounded-full bg-black flex items-center justify-center shrink-0 ml-3">
+        <span class="material-symbols-outlined text-[12px] text-white font-bold">check</span>
+      </div>
+    </div>
+
+    <!-- Vastu Analysis -->
+    <div class="w-full h-[62px] bg-white rounded-[20px] px-4 flex items-center justify-between" style="box-shadow: rgba(10, 10, 10, 0.04) 0px 4px 16px;">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-[40px] h-[40px] rounded-full bg-[#EAEAEA] flex items-center justify-center shrink-0 text-[#0A0A0A]">
+          <span class="material-symbols-outlined text-[20px]">explore</span>
+        </div>
+        <div class="flex flex-col min-w-0">
+          <span class="text-[14px] font-medium text-[#0A0A0A] leading-snug truncate" style="font-family: Syne, sans-serif;">Vastu Analysis</span>
+          
+        </div>
+      </div>
+      <div class="w-[20px] h-[20px] rounded-full bg-black flex items-center justify-center shrink-0 ml-3">
+        <span class="material-symbols-outlined text-[12px] text-white font-bold">check</span>
+      </div>
+    </div>
+
+    <!-- Cost Breakdown / BOQ -->
+    <div class="w-full h-[62px] bg-white rounded-[20px] px-4 flex items-center justify-between" style="box-shadow: rgba(10, 10, 10, 0.04) 0px 4px 16px;">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-[40px] h-[40px] rounded-full bg-[#EAEAEA] flex items-center justify-center shrink-0 text-[#0A0A0A]">
+          <span class="material-symbols-outlined text-[20px]">calculate</span>
+        </div>
+        <div class="flex flex-col min-w-0">
+          <span class="text-[14px] font-medium text-[#0A0A0A] leading-snug truncate" style="font-family: Syne, sans-serif;">Cost Breakdown / BOQ</span>
+          
+        </div>
+      </div>
+      <div class="w-[20px] h-[20px] rounded-full bg-black flex items-center justify-center shrink-0 ml-3">
+        <span class="material-symbols-outlined text-[12px] text-white font-bold">check</span>
+      </div>
+    </div>
+
+    <!-- Structural Check -->
+    <div class="w-full h-[62px] bg-white rounded-[20px] px-4 flex items-center justify-between" style="box-shadow: rgba(10, 10, 0.04) 0px 4px 16px;">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-[40px] h-[40px] rounded-full bg-[#EAEAEA] flex items-center justify-center shrink-0 text-[#0A0A0A]">
+          <span class="material-symbols-outlined text-[20px]">domain</span>
+        </div>
+        <div class="flex flex-col min-w-0">
+          <span class="text-[14px] font-medium text-[#0A0A0A] leading-snug truncate" style="font-family: Syne, sans-serif;">Structural Check</span>
+          
+        </div>
+      </div>
+      <div class="w-[20px] h-[20px] rounded-full bg-black flex items-center justify-center shrink-0 ml-3">
+        <span class="material-symbols-outlined text-[12px] text-white font-bold">check</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 4. BOTTOM PAYMENT PANEL -->
+<div class="w-full bg-white rounded-t-[28px] px-5 pt-4 pb-6 pb-safe flex flex-col shrink-0 mt-auto" style="box-shadow: rgba(10, 10, 10, 0.08) 0px -6px 20px;">
+  <div class="flex items-center justify-between w-full">
+    <!-- Left side: All 4 reports & ₹500 -->
+    <div class="flex flex-col justify-center min-w-0">
+      <span class="text-[13px] font-normal text-[#6B6B6B] whitespace-nowrap leading-tight">All 4 reports</span>
+      <span class="text-[24px] font-medium text-[#0A0A0A] tracking-tight leading-tight mt-0.5 whitespace-nowrap" style="font-family: Syne, sans-serif;">₹500</span>
+    </div>
+
+    <!-- Right side: 52px tall black pill Pay button -->
+    <button class="h-[52px] px-6 rounded-full bg-[#0A0A0A] text-white font-semibold text-[15px] flex items-center gap-3 shrink-0 active:opacity-90 transition-opacity" type="button">
+      <span class="whitespace-nowrap font-medium text-[15px]">Pay ₹500</span>
+      <div class="w-7 h-7 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm">
+        <span class="material-symbols-outlined text-[18px] text-[#0A0A0A] font-semibold">arrow_forward</span>
+      </div>
+    </button>
+  </div>
+  
+</div></main>
+
+
+
+
+
+
+
+
+</body></html>
