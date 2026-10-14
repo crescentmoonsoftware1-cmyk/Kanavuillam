@@ -39,7 +39,10 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
     setState(() => _isGenerating = true);
     widget.onFinish?.call();
     if (mounted) {
-      Navigator.of(context).popUntil((route) => route.isFirst);
+      int count = 0;
+      Navigator.of(context).popUntil((route) {
+        return count++ >= 2 || route.isFirst;
+      });
     }
   }
 
@@ -96,7 +99,7 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
                       child: Row(
                         children: [
                           GestureDetector(
-                            onTap: () => Navigator.of(context).popUntil((route) => route.isFirst),
+                            onTap: () => Navigator.of(context).pop(),
                             child: Container(
                               width: 36,
                               height: 36,

@@ -219,10 +219,10 @@ class _DirectionScreenState extends State<DirectionScreen>
     );
   }
 
-  void _onConfirmAndContinue() {
+  Future<void> _onConfirmAndContinue() async {
     final selectedIdsSet = {'3d', 'vastu', 'cost', 'structural'};
 
-    Navigator.push(
+    final bool? completed = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (_) => SecurePaymentScreen(
@@ -248,6 +248,12 @@ class _DirectionScreenState extends State<DirectionScreen>
         ),
       ),
     );
+
+    if (mounted && completed == true) {
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop(true);
+      }
+    }
   }
 
   String _formatFileSize() {
