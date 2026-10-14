@@ -65,7 +65,7 @@ class _VastuScreenState extends State<VastuScreen> {
     return {
       'score': 65,
       'grade': 'B',
-      'orientation': 'East',
+      'orientation': widget.projectData['orientation'] ?? 'East',
       'strengths': isTamil
           ? [
               'முதன்மை வாயில் 3-வது பாதத்தில் (இந்திரன்) சாதகமாக அமைந்துள்ளது.',
@@ -199,7 +199,7 @@ class _VastuScreenState extends State<VastuScreen> {
 
               final int score = (data['score'] is num) ? (data['score'] as num).toInt() : 65;
               final String grade = data['grade']?.toString() ?? 'B';
-              final String orientation = data['orientation']?.toString() ?? 'East';
+              final String orientation = data['orientation']?.toString() ?? widget.projectData['orientation']?.toString() ?? 'East';
               final int pointsLost = 100 - score;
 
               final List strengths = (data['strengths'] is List && (data['strengths'] as List).isNotEmpty)

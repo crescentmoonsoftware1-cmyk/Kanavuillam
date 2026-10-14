@@ -557,14 +557,30 @@
     // ─── GEOMETRY UTILS ────────────────────────────────────────────────────
     function createTextSprite(text, color) {
       const cv = document.createElement('canvas');
-      cv.width = 256; cv.height = 64;
+      cv.width = 512; cv.height = 128;
       const ctx = cv.getContext('2d');
-      ctx.fillStyle = color;
-      ctx.font = 'bold 28px sans-serif';
+      
+      // Clean background pill for high contrast & visibility against floors and furniture
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.82)';
+      if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(16, 16, 480, 96, 48);
+        ctx.fill();
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = color || '#38bdf8';
+        ctx.stroke();
+      } else {
+        ctx.fillRect(16, 16, 480, 96);
+      }
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 34px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(text, 128, 42);
-      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false }));
-      sp.scale.set(5, 1.25, 1);
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, 256, 64);
+
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: true }));
+      sp.scale.set(5.5, 1.35, 1);
       return sp;
     }
 
@@ -1649,8 +1665,8 @@
           ceilGrp.add(ceilMesh);
         }
 
-        const sp = createTextSprite(effectiveLabel.toUpperCase(), '#0284c7');
-        sp.position.set(rCx, 0.15, rCz);
+        const sp = createTextSprite(effectiveLabel.toUpperCase(), '#38bdf8');
+        sp.position.set(rCx, 2.2, rCz);
         archGrp.add(sp);
 
         if (state.dbg) {

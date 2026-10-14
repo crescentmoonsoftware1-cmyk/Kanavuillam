@@ -5,10 +5,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  // Production Cloud API URL (works on Web, Mobile Devices, Emulators & Desktop)
-  static const String baseUrl =
-      'https://kanavuillam-production.up.railway.app/api';
-  // For local testing on Wi-Fi/Phone: 'http://192.168.1.8:3000/api' or 'http://127.0.0.1:3000/api'
+  // Use local backend during web development/testing, fallback to cloud for mobile production
+  static String get baseUrl =>
+      kIsWeb ? 'http://localhost:3000/api' : 'https://kanavuillam-production.up.railway.app/api';
 
   Future<Map<String, dynamic>> uploadPlan(XFile groundFile,
       XFile? firstFloorFile, XFile? secondFloorFile, String projectName,

@@ -196,10 +196,32 @@ class _EstimationScreenState extends State<EstimationScreen> {
         (modelData?['project']?['height'] as num?)?.toDouble() ??
         0.0;
 
+    var roomsList = (modelData?['rooms'] as List<dynamic>?) ??
+        (modelData?['floors']?['ground']?['rooms'] as List<dynamic>?) ??
+        (widget.projectData['rooms'] as List<dynamic>?);
+    double roomsAreaSum = 0.0;
+    if (roomsList != null && roomsList.isNotEmpty) {
+      for (var r in roomsList) {
+        if (r is Map) {
+          final a = (r['area_sqft'] as num?)?.toDouble() ??
+              (((r['width'] as num?)?.toDouble() ?? 0.0) *
+                  ((r['height'] as num?)?.toDouble() ?? 0.0));
+          roomsAreaSum += a;
+        }
+      }
+    }
+
     // Total area calculation
     double totalArea = (rootCost['total_area_sqft'] as num?)?.toDouble() ??
+        (widget.projectData['total_built_area_sqft'] as num?)?.toDouble() ??
+        (widget.projectData['built_area'] as num?)?.toDouble() ??
         (widget.projectData['total_area_sqft'] as num?)?.toDouble() ??
-        0.0;
+        (modelData?['total_built_area_sqft'] as num?)?.toDouble() ??
+        (modelData?['built_area'] as num?)?.toDouble() ??
+        (modelData?['total_area_sqft'] as num?)?.toDouble() ??
+        (overallDims?['total_built_area_sqft'] as num?)?.toDouble() ??
+        (overallDims?['total_area_sqft'] as num?)?.toDouble() ??
+        (roomsAreaSum > 100 ? roomsAreaSum : 0.0);
     if (totalArea <= 0 && w > 0 && l > 0) {
       totalArea = w * l;
     }
