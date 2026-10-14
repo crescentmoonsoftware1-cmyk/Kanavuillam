@@ -1,10 +1,10 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import '../services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../core/providers/app_config_provider.dart';
 import 'upload_screen.dart';
@@ -15,6 +15,8 @@ import 'structural_screen.dart';
 import 'download_screen.dart';
 import 'history_screen.dart';
 import 'profile_screen.dart';
+
+import '../core/theme/app_colors.dart';
 
 // ─── Nav Item Model ───────────────────────────────────────────────────────────
 class _NavItem {
@@ -34,12 +36,12 @@ const _navItems = [
   _NavItem(Icons.person_outline_rounded, 'Profile'),
 ];
 
-// ─── Color Palette (Professional Light Theme) ──────────────────────────────────
-const _bgDark = Color.fromARGB(255, 245, 247, 250); // Clean light background
-const _accent = Color(0xFF2979FF); // Professional blue
-const _textPri = Color(0xFF1E293B); // Dark slate for primary text
-const _textSec = Color(0xFF64748B); // Slate gray for secondary text
-const _divider = Color(0x15000000); // Subtle dark divider
+// ─── Color Palette (Professional Theme) ──────────────────────────────────
+const _bgDark = AppColors.bgGradientTop;
+const _accent = AppColors.amber;
+const _textPri = AppColors.deepInk;
+const _textSec = AppColors.readingSlate;
+const _divider = AppColors.cardBorder;
 
 class ShellScreen extends StatefulWidget {
   final Map<String, dynamic>? userData;
@@ -372,19 +374,9 @@ class _ShellScreenState extends State<ShellScreen> {
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF2979FF), Color(0xFF1565C0)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  gradient: AppColors.orangeGradient,
                   borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF2979FF).withValues(alpha: 0.3),
-                      blurRadius: 12,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
+                  boxShadow: AppColors.orangeGlow,
                 ),
                 child: ElevatedButton(
                   onPressed: () {
@@ -627,7 +619,7 @@ class _SidebarItem extends StatelessWidget {
   }
 }
 
-class _FloatingCapsuleNavBar extends StatelessWidget {
+class _FloatingCapsuleNavBar extends StatefulWidget {
   final int selectedIndex;
   final ValueChanged<int> onTap;
 
@@ -637,115 +629,503 @@ class _FloatingCapsuleNavBar extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    AppConfigProvider config;
-    try {
-      config = context.watch<AppConfigProvider>();
-    } catch (_) {
-      config = AppConfigProvider();
-    }
-    final isDark = config.isDarkMode;
+  State<_FloatingCapsuleNavBar> createState() => _FloatingCapsuleNavBarState();
+}
 
+class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar>
+    with TickerProviderStateMixin {
+  late AnimationController _glideController;
+  late Animation<double> _glideCurved;
+
+  late AnimationController _squashController;
+  late AnimationController _shimmerController;
+  late AnimationController _pulseController;
+  AnimationController? _rippleController;
+  Offset? _rippleCenter;
+
+  int _currentTab = 0;
+  int _fromTab = 0;
+  int _toTab = 0;
+  int _direction = 0;
+
+  int _tabForIndex(int index) {
+    if (index == 6) return 1;
+    if (index == 7) return 2;
+    return 0;
+  }
+
+  // Exact slot coordinates matching code.html
+  // Nav bar width = 320, padding = 10, inner width = 300
+  // Tab 0: Home (left: 10, width: 84)
+  // Tab 1: History (left: 114, width: 92)
+  // Tab 2: Profile (left: 226, width: 84)
+  double _getSlotLeft(int tab) {
+    switch (tab) {
+      case 1:
+        return 114.0;
+      case 2:
+        return 226.0;
+      default:
+        return 10.0;
+    }
+  }
+
+  double _getSlotWidth(int tab) {
+    switch (tab) {
+      case 1:
+        return 92.0;
+      default:
+        return 84.0;
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _currentTab = _tabForIndex(widget.selectedIndex);
+    _fromTab = _currentTab;
+    _toTab = _currentTab;
+
+    // Matches transition: transform 550ms cubic-bezier(0.34, 1.56, 0.64, 1) in code.html
+    _glideController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 550),
+    );
+    _glideCurved = CurvedAnimation(
+      parent: _glideController,
+      curve: const Cubic(0.34, 1.56, 0.64, 1.0),
+    );
+
+    // Matches liquid-squash 380ms transition in code.html
+    _squashController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 380),
+    );
+
+    // Matches waterShimmer 3.8s infinite in code.html
+    _shimmerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 3800),
+    )..repeat();
+
+    // Matches organicPulse 3.5s infinite in code.html
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 3500),
+    )..repeat();
+  }
+
+  @override
+  void didUpdateWidget(covariant _FloatingCapsuleNavBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final target = _tabForIndex(widget.selectedIndex);
+    if (target != _currentTab) {
+      _triggerFlow(target);
+    }
+  }
+
+  @override
+  void dispose() {
+    _glideController.dispose();
+    _squashController.dispose();
+    _shimmerController.dispose();
+    _pulseController.dispose();
+    _rippleController?.dispose();
+    super.dispose();
+  }
+
+  void _triggerFlow(int targetTab, [Offset? tapLocal]) {
+    if (_currentTab == targetTab && !_glideController.isAnimating) return;
+    _fromTab = _currentTab;
+    _toTab = targetTab;
+    _direction = _toTab - _fromTab;
+    _currentTab = targetTab;
+
+    if (tapLocal != null) {
+      _rippleCenter = tapLocal;
+      _rippleController?.dispose();
+      _rippleController = AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 600),
+      )..forward();
+    }
+
+    _glideController.forward(from: 0.0);
+    _squashController.forward(from: 0.0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return SafeArea(
       top: false,
       child: Container(
         height: 76,
         alignment: Alignment.bottomCenter,
         padding: const EdgeInsets.only(bottom: 12),
-        child: Container(
-          width: 290,
+        child: SizedBox(
+          width: 320,
           height: 64,
+          child: Container(
             decoration: BoxDecoration(
-              color: config.cardColor,
-              borderRadius: BorderRadius.circular(100),
-              border: Border.all(color: config.borderColor),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(
-                    alpha: isDark ? 0.35 : 0.08,
-                  ),
-                  blurRadius: 32,
-                  offset: const Offset(0, 12),
-                ),
-              ],
+              color: AppColors.card,
+              borderRadius: BorderRadius.circular(32),
+              border: Border.all(color: AppColors.cardBorder, width: 1.0),
+              boxShadow: AppColors.floatingNavShadow,
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+            clipBehavior: Clip.antiAlias,
+            child: Stack(
               children: [
-                _buildNavTab(
-                  index: 0,
-                  icon: Icons.home_outlined,
-                  activeIcon: Icons.home_rounded,
-                  label: config.tr('Home', 'முகப்பு'),
-                  isSelected: selectedIndex == 0,
-                  config: config,
+                // 1. Ambient Fluid Backdrop Glow (matches .nav-bar-fluid-backdrop in code.html)
+                AnimatedBuilder(
+                  animation: _glideCurved,
+                  builder: (context, _) {
+                    final t = _glideCurved.value;
+                    final fromLeft = _getSlotLeft(_fromTab);
+                    final toLeft = _getSlotLeft(_toTab);
+                    final fromW = _getSlotWidth(_fromTab);
+                    final toW = _getSlotWidth(_toTab);
+
+                    final curLeft = fromLeft + (toLeft - fromLeft) * t;
+                    final curW = fromW + (toW - fromW) * t;
+                    final percentage = ((curLeft + curW / 2) / 320.0).clamp(0.0, 1.0);
+
+                    return Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      height: 24,
+                      child: IgnorePointer(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
+                            gradient: RadialGradient(
+                              center: Alignment((percentage * 2.0) - 1.0, 1.0),
+                              radius: 0.85,
+                              colors: [
+                                AppColors.amberHighlight.withValues(alpha: 0.22),
+                                AppColors.amber.withValues(alpha: 0.05),
+                                Colors.transparent,
+                              ],
+                              stops: const [0.0, 0.5, 0.8],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
-                _buildNavTab(
-                  index: 6,
-                  icon: Icons.history_rounded,
-                  activeIcon: Icons.history_rounded,
-                  label: config.tr('History', 'வரலாறு'),
-                  isSelected: selectedIndex == 6,
-                  config: config,
+
+                // 2. Glider with Water Flow, Organic Waves, Squashing & Skew (matches #navGlider)
+                AnimatedBuilder(
+                  animation: Listenable.merge([
+                    _glideCurved,
+                    _squashController,
+                    _shimmerController,
+                    _pulseController,
+                  ]),
+                  builder: (context, _) {
+                    final t = _glideCurved.value;
+                    final fromLeft = _getSlotLeft(_fromTab);
+                    final toLeft = _getSlotLeft(_toTab);
+                    final fromW = _getSlotWidth(_fromTab);
+                    final toW = _getSlotWidth(_toTab);
+
+                    final curLeft = fromLeft + (toLeft - fromLeft) * t;
+                    final curWidth = fromW + (toW - fromW) * t;
+
+                    // Squash & Skew calculation matching .liquid-squash-right / .liquid-squash-left
+                    final squashFactor = math.sin(_squashController.value * math.pi);
+                    final scaleX = 1.0 + (0.18 * squashFactor);
+                    final scaleY = 1.0 - (0.14 * squashFactor);
+                    final skewDeg = (_direction > 0 ? -4.0 : (_direction < 0 ? 4.0 : 0.0)) * squashFactor;
+                    final skewRad = skewDeg * (math.pi / 180.0);
+
+                    final transformMatrix = Matrix4.diagonal3Values(scaleX, scaleY, 1.0)
+                      ..setEntry(0, 1, math.tan(skewRad));
+
+                    final shimmerT = _shimmerController.value;
+                    final pulseT = _pulseController.value;
+
+                    return Positioned(
+                      left: curLeft,
+                      top: 10,
+                      width: curWidth,
+                      height: 44,
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          // A. .nav-water-flow (soft blurred ambient glow aura)
+                          Positioned(
+                            left: -6,
+                            top: -6,
+                            right: -6,
+                            bottom: -6,
+                            child: Transform.scale(
+                              scale: 1.0 + (0.06 * math.sin(pulseT * 2 * math.pi)),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(30),
+                                  gradient: RadialGradient(
+                                    center: const Alignment(-0.3, -0.3),
+                                    colors: [
+                                      AppColors.amberHighlight.withValues(alpha: 0.45),
+                                      AppColors.amber.withValues(alpha: 0.15),
+                                      Colors.transparent,
+                                    ],
+                                    stops: const [0.0, 0.6, 0.85],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          // B. .nav-water-ripple (organic border expanding pulse)
+                          Positioned(
+                            left: -2,
+                            top: -2,
+                            right: -2,
+                            bottom: -2,
+                            child: Transform.scale(
+                              scale: 1.0 + (0.18 * pulseT),
+                              child: Opacity(
+                                opacity: (1.0 - pulseT).clamp(0.0, 0.35),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(28),
+                                    border: Border.all(
+                                      color: AppColors.amberHighlight.withValues(alpha: 0.5),
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          // C. .glider-liquid-body (Liquid body with squash & skew)
+                          Transform(
+                            transform: transformMatrix,
+                            alignment: Alignment.center,
+                            child: Container(
+                              width: curWidth,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(28),
+                                gradient: AppColors.amberGradient,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.amber.withValues(alpha: 0.38),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 6),
+                                  ),
+                                ],
+                              ),
+                              clipBehavior: Clip.antiAlias,
+                              child: Stack(
+                                children: [
+                                  // Top specular light highlight
+                                  Positioned(
+                                    top: 1,
+                                    left: 8,
+                                    right: 8,
+                                    height: 1.5,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(2),
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            Colors.white.withValues(alpha: 0.1),
+                                            Colors.white.withValues(alpha: 0.6),
+                                            Colors.white.withValues(alpha: 0.1),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+
+                                  // .nav-shimmer-sweep (Angled water shimmer line)
+                                  Positioned.fill(
+                                    child: Transform.translate(
+                                      offset: Offset((shimmerT * 2.8 - 1.4) * curWidth, 0),
+                                      child: Transform(
+                                        transform: Matrix4.identity()..setEntry(0, 1, math.tan(-15 * math.pi / 180)),
+                                        alignment: Alignment.center,
+                                        child: Container(
+                                          width: curWidth * 0.6,
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                              colors: [
+                                                Colors.white.withValues(alpha: 0.0),
+                                                Colors.white.withValues(alpha: 0.55),
+                                                Colors.white.withValues(alpha: 0.0),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+
+                                  // .liquid-wave-strip (Bottom radial liquid wave glow)
+                                  Positioned(
+                                    left: 0,
+                                    right: 0,
+                                    bottom: -2,
+                                    height: 14,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        gradient: RadialGradient(
+                                          center: const Alignment(0.0, 1.2),
+                                          radius: 0.8,
+                                          colors: [
+                                            Colors.white.withValues(alpha: 0.35),
+                                            Colors.transparent,
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
-                _buildNavTab(
-                  index: 7,
-                  icon: Icons.person_outline_rounded,
-                  activeIcon: Icons.person_rounded,
-                  label: config.tr('Profile', 'சுயவிவரம்'),
-                  isSelected: selectedIndex == 7,
-                  config: config,
+
+                // 3. Water Click Ripple (.water-click-ripple in code.html)
+                if (_rippleCenter != null && _rippleController != null)
+                  AnimatedBuilder(
+                    animation: _rippleController!,
+                    builder: (context, _) {
+                      final val = _rippleController!.value;
+                      if (val >= 1.0) return const SizedBox.shrink();
+                      final radius = 8.0 + (val * 44.0); // Expands to ~52px
+                      final opacity = (1.0 - val).clamp(0.0, 1.0);
+
+                      return Positioned(
+                        left: _rippleCenter!.dx - radius,
+                        top: _rippleCenter!.dy - radius,
+                        width: radius * 2,
+                        height: radius * 2,
+                        child: IgnorePointer(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: AppColors.amber.withValues(alpha: opacity * 0.65),
+                                width: 2.0,
+                              ),
+                              gradient: RadialGradient(
+                                colors: [
+                                  AppColors.amberHighlight.withValues(alpha: opacity * 0.30),
+                                  AppColors.amber.withValues(alpha: opacity * 0.05),
+                                  Colors.transparent,
+                                ],
+                                stops: const [0.0, 0.6, 1.0],
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+
+                // 4. Interactive Tabs Layer (Home, History, Profile)
+                // Both icon and label always present, exactly matching code.html & screen.png
+                Positioned.fill(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        _buildNavItem(
+                          tabIndex: 0,
+                          realIndex: 0,
+                          label: 'Home',
+                          icon: Icons.home_rounded,
+                          width: 84,
+                        ),
+                        _buildNavItem(
+                          tabIndex: 1,
+                          realIndex: 6,
+                          label: 'History',
+                          icon: Icons.history_rounded,
+                          width: 92,
+                        ),
+                        _buildNavItem(
+                          tabIndex: 2,
+                          realIndex: 7,
+                          label: 'Profile',
+                          icon: Icons.person_rounded,
+                          width: 84,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
         ),
-      );
+      ),
+    );
   }
 
-  Widget _buildNavTab({
-    required int index,
-    required IconData icon,
-    required IconData activeIcon,
+  Widget _buildNavItem({
+    required int tabIndex,
+    required int realIndex,
     required String label,
-    required bool isSelected,
-    required AppConfigProvider config,
+    required IconData icon,
+    required double width,
   }) {
-    return GestureDetector(
-      onTap: () => onTap(index),
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
-        decoration: isSelected
-            ? BoxDecoration(
-                color: config.surfacePillColor,
-                borderRadius: BorderRadius.circular(100),
-              )
-            : null,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isSelected ? activeIcon : icon,
-              size: 21,
-              color: isSelected
-                  ? config.primaryTextColor
-                  : config.secondaryTextColor,
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                fontSize: 11.5,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected
-                    ? config.primaryTextColor
-                    : config.secondaryTextColor,
+    final isSelected = _currentTab == tabIndex;
+
+    return SizedBox(
+      width: width,
+      height: 44,
+      child: GestureDetector(
+        onTapDown: (details) {
+          final slotLeft = _getSlotLeft(tabIndex);
+          final tapInBar = Offset(slotLeft + details.localPosition.dx, 10 + details.localPosition.dy);
+          _triggerFlow(tabIndex, tapInBar);
+          widget.onTap(realIndex);
+        },
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 300),
+          opacity: isSelected ? 1.0 : 0.8,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                child: Icon(
+                  icon,
+                  key: ValueKey('${tabIndex}_$isSelected'),
+                  size: 20,
+                  color: isSelected ? AppColors.onAmberInk : AppColors.quietGrey,
+                ),
               ),
-            ),
-          ],
+              const SizedBox(width: 5),
+              AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 300),
+                style: TextStyle(
+                  fontFamily: 'Plus Jakarta Sans',
+                  fontSize: isSelected ? 13 : 12,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: isSelected ? AppColors.onAmberInk : AppColors.quietGrey,
+                  letterSpacing: -0.2,
+                ),
+                child: Text(label),
+              ),
+            ],
+          ),
         ),
       ),
     );

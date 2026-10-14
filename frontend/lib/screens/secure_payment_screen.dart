@@ -221,7 +221,6 @@ class _SecurePaymentScreenState extends State<SecurePaymentScreen> {
     }
 
     final isDark = config.isDarkMode;
-    final bgColor = config.bgColor;
     final cardColor = config.cardColor;
     final primaryTextColor = config.primaryTextColor;
     final secondaryTextColor = config.secondaryTextColor;
@@ -233,7 +232,7 @@ class _SecurePaymentScreenState extends State<SecurePaymentScreen> {
         'house_plan.pdf';
 
     return Scaffold(
-      backgroundColor: bgColor,
+      backgroundColor: isDark ? const Color(0xFF14171F) : AppColors.canvasGradientTop,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -256,19 +255,23 @@ class _SecurePaymentScreenState extends State<SecurePaymentScreen> {
           ),
         ),
       ),
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 440),
-            child: Column(
-              children: [
-                Expanded(
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20.0,
-                      vertical: 12.0,
-                    ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: isDark ? null : AppColors.canvasGradient,
+        ),
+        child: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 440),
+              child: Column(
+                children: [
+                  Expanded(
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20.0,
+                        vertical: 12.0,
+                      ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -542,15 +545,13 @@ class _SecurePaymentScreenState extends State<SecurePaymentScreen> {
                           height: 52,
                           padding: const EdgeInsets.symmetric(horizontal: 24),
                           decoration: BoxDecoration(
-                            color: isDark ? Colors.white : AppColors.primary,
+                            color: AppColors.amberDefault,
                             borderRadius: BorderRadius.circular(100),
-                            boxShadow: [
+                            boxShadow: const [
                               BoxShadow(
-                                color: Colors.black.withValues(
-                                  alpha: isDark ? 0.3 : 0.15,
-                                ),
-                                blurRadius: 10,
-                                offset: const Offset(0, 3),
+                                color: Color(0x33E58A18),
+                                blurRadius: 14,
+                                offset: Offset(0, 4),
                               ),
                             ],
                           ),
@@ -558,12 +559,12 @@ class _SecurePaymentScreenState extends State<SecurePaymentScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               if (_isProcessing) ...[
-                                SizedBox(
+                                const SizedBox(
                                   width: 18,
                                   height: 18,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    color: isDark ? Colors.black : Colors.white,
+                                    color: AppColors.onAmberInk,
                                   ),
                                 ),
                                 const SizedBox(width: 10),
@@ -577,8 +578,8 @@ class _SecurePaymentScreenState extends State<SecurePaymentScreen> {
                                       ),
                                 style: GoogleFonts.inter(
                                   fontSize: 14.5,
-                                  fontWeight: FontWeight.w600,
-                                  color: isDark ? Colors.black : Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.onAmberInk,
                                 ),
                               ),
                               if (!_isProcessing) ...[
@@ -586,16 +587,14 @@ class _SecurePaymentScreenState extends State<SecurePaymentScreen> {
                                 Container(
                                   width: 26,
                                   height: 26,
-                                  decoration: BoxDecoration(
-                                    color: isDark
-                                        ? const Color(0xFFE2E8F0)
-                                        : const Color(0xFF262626),
+                                  decoration: const BoxDecoration(
+                                    color: Color(0x241E252D),
                                     shape: BoxShape.circle,
                                   ),
-                                  child: Icon(
+                                  child: const Icon(
                                     Icons.arrow_forward_rounded,
                                     size: 15,
-                                    color: isDark ? Colors.black : Colors.white,
+                                    color: AppColors.onAmberInk,
                                   ),
                                 ),
                               ],
@@ -610,6 +609,7 @@ class _SecurePaymentScreenState extends State<SecurePaymentScreen> {
             ),
           ),
         ),
+      ),
       ),
     );
   }
@@ -680,14 +680,14 @@ class _SecurePaymentScreenState extends State<SecurePaymentScreen> {
           Container(
             width: 22,
             height: 22,
-            decoration: BoxDecoration(
-              color: isDark ? Colors.white : AppColors.primary,
+            decoration: const BoxDecoration(
+              color: AppColors.amberDefault,
               shape: BoxShape.circle,
             ),
-            child: Icon(
+            child: const Icon(
               Icons.check,
               size: 13,
-              color: isDark ? Colors.black : Colors.white,
+              color: AppColors.onAmberInk,
             ),
           ),
         ],

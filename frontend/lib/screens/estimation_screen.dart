@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../core/providers/app_config_provider.dart';
 import '../core/theme/app_colors.dart';
+import '../core/theme/app_decor.dart';
 import '../services/api_service.dart';
 import '../widgets/material_search_widget.dart';
 
@@ -261,408 +262,377 @@ class _EstimationScreenState extends State<EstimationScreen> {
     double laborCost = calculatedTotal * 0.38;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Padding(
-          padding:
-              const EdgeInsets.only(left: 20.0, right: 20.0, top: 16.0, bottom: 20.0),
-          child: Column(
-            children: [
-              // ── 1. HEADER (Plan Name, Subtitle, Language Capsule) ────────
-              SizedBox(
-                height: 52,
-                child: Row(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: AppColors.canvasGradient,
+        ),
+        child: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 440),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
+                    // ── 1. HEADER ROW ───────────────────────────────────────
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            planName,
-                            style: GoogleFonts.syne(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.primary,
-                              letterSpacing: -0.2,
-                              height: 1.0,
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  planName,
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.inkPrimary,
+                                    letterSpacing: -0.3,
+                                    height: 1.1,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  isTamil
+                                      ? 'செலவு அறிக்கை · $dimsText (${totalArea.toInt()} ச.அடி)'
+                                      : 'Cost report · $dimsText (${totalArea.toInt()} sq ft)',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: AppColors.inkQuiet,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 3),
-                          Text(
-                            isTamil
-                                ? 'செலவு அறிக்கை · $dimsText (${totalArea.toInt()} ச.அடி)'
-                                : 'Cost report · $dimsText (${totalArea.toInt()} sq ft)',
-                            style: GoogleFonts.inter(
-                              fontSize: 12.5,
-                              color: AppColors.textSecondary,
+                          // Language Switcher Capsule
+                          Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              color: AppColors.card,
+                              borderRadius: BorderRadius.circular(100),
+                              border: Border.all(color: AppColors.borderLight),
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                GestureDetector(
+                                  onTap: () {
+                                    if (isTamil) config.setTamil(false);
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: !isTamil ? AppColors.inkDark : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(100),
+                                    ),
+                                    child: Text(
+                                      'EN',
+                                      style: GoogleFonts.plusJakartaSans(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: !isTamil ? Colors.white : AppColors.inkMuted,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: () {
+                                    if (!isTamil) config.setTamil(true);
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: isTamil ? AppColors.inkDark : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(100),
+                                    ),
+                                    child: Text(
+                                      'தமிழ்',
+                                      style: GoogleFonts.plusJakartaSans(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: isTamil ? Colors.white : AppColors.inkMuted,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    // Language Switcher Capsule (No [X] button)
-                    Container(
+                    const SizedBox(height: 8),
+
+                    // ── 2. MAIN TABS (3D, Vastu, Cost, Structure, Download) ──
+                    SizedBox(
                       height: 34,
-                      padding: const EdgeInsets.all(2),
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        children: [
+                          _buildMainTab(
+                            title: '3D',
+                            isActive: false,
+                            onTap: () => widget.onNavigateToTab?.call(1),
+                          ),
+                          const SizedBox(width: 6),
+                          _buildMainTab(
+                            title: isTamil ? 'வாஸ்து' : 'Vastu',
+                            isActive: false,
+                            onTap: () => widget.onNavigateToTab?.call(2),
+                          ),
+                          const SizedBox(width: 6),
+                          _buildMainTab(
+                            title: isTamil ? 'செலவு' : 'Cost',
+                            isActive: true,
+                            onTap: () {},
+                          ),
+                          const SizedBox(width: 6),
+                          _buildMainTab(
+                            title: isTamil ? 'அமைப்பு' : 'Structure',
+                            isActive: false,
+                            onTap: () => widget.onNavigateToTab?.call(4),
+                          ),
+                          const SizedBox(width: 6),
+                          _buildMainTab(
+                            title: isTamil ? 'பதிவிறக்கம்' : 'Download',
+                            isActive: false,
+                            onTap: () => widget.onNavigateToTab?.call(5),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    // ── 3. ESTIMATED TOTAL BUDGET CARD (Elevated Card) ────────
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(
-                        color: AppColors.surfaceSecondary,
-                        borderRadius: BorderRadius.circular(100),
+                        color: AppColors.card,
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(color: AppColors.borderLight),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x141B212F),
+                            blurRadius: 32,
+                            offset: Offset(0, 12),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            isTamil ? 'மதிப்பிடப்பட்ட மொத்த பட்ஜெட்' : 'Estimated Total Budget',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.inkQuiet,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '₹${_formatIndianCurrency(calculatedTotal.round())}',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 32,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.inkPrimary,
+                              height: 1.1,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '₹${effectivePerSqft.round()} / sq ft · ${totalArea.toInt()} sq ft',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.inkQuiet,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          // Badges row
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: AppColors.canvasGradientTop,
+                                  borderRadius: BorderRadius.circular(100),
+                                ),
+                                child: Text(
+                                  'Engineer BOQ',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.inkMuted,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              GestureDetector(
+                                onTap: _fetchLiveMarketPrices,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.canvasGradientTop,
+                                    borderRadius: BorderRadius.circular(100),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        _isFetchingLiveMarket ? Icons.sync : Icons.sensors_outlined,
+                                        size: 13,
+                                        color: AppColors.inkMuted,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        _isFetchingLiveMarket ? 'Syncing...' : 'Live TN rates',
+                                        style: GoogleFonts.plusJakartaSans(
+                                          fontSize: 11.5,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.inkMuted,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                          const SizedBox(height: 12),
+                          // 3 Dropdown Pills in a row
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildFactorDropdown(
+                                  label: isTamil ? 'ஒப்பந்தம்' : 'Contract',
+                                  value: _selectedContractMode,
+                                  items: {
+                                    'turnkey': 'Turnkey',
+                                    'labor': 'Labor Only',
+                                    'self': 'Direct',
+                                  },
+                                  menuItems: {
+                                    'turnkey': 'Turnkey (Material + Labor)',
+                                    'labor': 'Labor Only (40%)',
+                                    'self': 'Direct Procurement (Self)',
+                                  },
+                                  onChanged: (val) {
+                                    if (val != null) setState(() => _selectedContractMode = val);
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: _buildFactorDropdown(
+                                  label: isTamil ? 'மண்' : 'Soil',
+                                  value: _selectedSoil,
+                                  items: {
+                                    'normal': 'Normal',
+                                    'soft_silt': 'Silt (+12%)',
+                                    'hard_rock': 'Rock (+8%)',
+                                  },
+                                  menuItems: {
+                                    'normal': 'Normal / Red Clay (Std)',
+                                    'soft_silt': 'Black Cotton / Silt (+12%)',
+                                    'hard_rock': 'Hard Rock (+8%)',
+                                  },
+                                  onChanged: (val) {
+                                    if (val != null) setState(() => _selectedSoil = val);
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: _buildFactorDropdown(
+                                  label: isTamil ? 'இடம்' : 'Location',
+                                  value: _selectedLocation,
+                                  items: {
+                                    'metro': 'Metro',
+                                    'tier2': 'Town (Std)',
+                                    'rural': 'Rural',
+                                  },
+                                  menuItems: {
+                                    'metro': 'Chennai Metro (+10%)',
+                                    'tier2': 'District / Town (Std)',
+                                    'rural': 'Rural / Village (-5%)',
+                                  },
+                                  onChanged: (val) {
+                                    if (val != null) setState(() => _selectedLocation = val);
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    // ── 4. SUB TABS CAPSULE (Tiers, Stages, BOQ, Materials) ────
+                    Container(
+                      height: 48,
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE2E8F0),
+                        borderRadius: BorderRadius.circular(24),
                       ),
                       child: Row(
                         children: [
-                          GestureDetector(
-                            onTap: () {
-                              if (isTamil) config.setTamil(false);
-                            },
-                            child: Container(
-                              height: 30,
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 11),
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                color: !isTamil
-                                    ? Colors.white
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(100),
-                                boxShadow: !isTamil
-                                    ? [
-                                        BoxShadow(
-                                          color: AppColors.primary
-                                              .withValues(alpha: 0.05),
-                                          blurRadius: 2,
-                                          offset: const Offset(0, 1),
-                                        )
-                                      ]
-                                    : null,
-                              ),
-                              child: Text(
-                                'EN',
-                                style: GoogleFonts.inter(
-                                  fontSize: 11.5,
-                                  fontWeight: !isTamil
-                                      ? FontWeight.w600
-                                      : FontWeight.w400,
-                                  color: !isTamil
-                                      ? AppColors.textDark
-                                      : AppColors.textSecondary,
-                                ),
-                              ),
-                            ),
+                          _buildSubTabItem(
+                            index: 0,
+                            title: isTamil ? 'தொகுப்புகள்' : 'Tiers',
+                            isActive: _currentSubTab == 0,
                           ),
-                          GestureDetector(
-                            onTap: () {
-                              if (!isTamil) config.setTamil(true);
-                            },
-                            child: Container(
-                              height: 30,
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 11),
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                color: isTamil
-                                    ? Colors.white
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(100),
-                                boxShadow: isTamil
-                                    ? [
-                                        BoxShadow(
-                                          color: AppColors.primary
-                                              .withValues(alpha: 0.05),
-                                          blurRadius: 2,
-                                          offset: const Offset(0, 1),
-                                        )
-                                      ]
-                                    : null,
-                              ),
-                              child: Text(
-                                'தமிழ்',
-                                style: GoogleFonts.inter(
-                                  fontSize: 11.5,
-                                  fontWeight: isTamil
-                                      ? FontWeight.w600
-                                      : FontWeight.w400,
-                                  color: isTamil
-                                      ? AppColors.textDark
-                                      : AppColors.textSecondary,
-                                ),
-                              ),
-                            ),
+                          _buildSubTabItem(
+                            index: 1,
+                            title: isTamil ? 'நிலைகள்' : 'Stages',
+                            isActive: _currentSubTab == 1,
+                          ),
+                          _buildSubTabItem(
+                            index: 2,
+                            title: 'BOQ',
+                            isActive: _currentSubTab == 2,
+                          ),
+                          _buildSubTabItem(
+                            index: 3,
+                            title: isTamil ? 'பொருட்கள்' : 'Materials',
+                            isActive: _currentSubTab == 3,
                           ),
                         ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
+                    const SizedBox(height: 12),
 
-              // ── 2. MAIN TABS (3D, Vastu, Cost, Structure, Download) ────────
-              SizedBox(
-                height: 36,
-                child: Row(
-                  children: [
+                    // ── 5. ACTIVE TAB CONTENT VIEW ───────────────────────────
                     Expanded(
-                      child: _buildMainTab(
-                        title: '3D',
-                        isActive: false,
-                        onTap: () => widget.onNavigateToTab?.call(1),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: _buildMainTab(
-                        title: isTamil ? 'வாஸ்து' : 'Vastu',
-                        isActive: false,
-                        onTap: () => widget.onNavigateToTab?.call(2),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: _buildMainTab(
-                        title: isTamil ? 'செலவு' : 'Cost',
-                        isActive: true,
-                        onTap: () {},
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: _buildMainTab(
-                        title: isTamil ? 'அமைப்பு' : 'Structure',
-                        isActive: false,
-                        onTap: () => widget.onNavigateToTab?.call(4),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: _buildMainTab(
-                        title: isTamil ? 'பதிவிறக்கம்' : 'Download',
-                        isActive: false,
-                        onTap: () => widget.onNavigateToTab?.call(5),
+                      child: _buildSubTabContent(
+                        totalArea: totalArea,
+                        calculatedTotal: calculatedTotal,
+                        materialCost: materialCost,
+                        laborCost: laborCost,
+                        effectivePerSqft: effectivePerSqft,
+                        isTamil: isTamil,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
-
-              // ── 3. EXECUTIVE HERO BUDGET CARD ────────────────────────────
-              Container(
-                width: double.infinity,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.05),
-                      blurRadius: 20,
-                      offset: const Offset(0, 6),
-                    )
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    // Budget Amount & Per Sqft Rate
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            isTamil
-                                ? 'மதிப்பிடப்பட்ட பட்ஜெட்'
-                                : 'Estimated budget',
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.textTertiary,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '₹${_formatIndianCurrency(calculatedTotal.round())}',
-                            style: GoogleFonts.syne(
-                              fontSize: 27,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.primary,
-                              letterSpacing: -0.4,
-                              height: 1.15,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 9, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: AppColors.background,
-                              borderRadius: BorderRadius.circular(100),
-                            ),
-                            child: Text(
-                              '₹${effectivePerSqft.round()} / sq ft · ${totalArea.toInt()} sq ft',
-                              style: GoogleFonts.inter(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.textSecondary,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    // Status Badges (Engineer BOQ & Live TN rates)
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _buildTagIcon(
-                          Icons.architecture,
-                          isTamil ? 'பொறியாளர் BOQ' : 'Engineer BOQ',
-                        ),
-                        const SizedBox(height: 6),
-                        GestureDetector(
-                          onTap: _fetchLiveMarketPrices,
-                          child: _buildTagIcon(
-                            _isFetchingLiveMarket
-                                ? Icons.sync
-                                : Icons.sensors_outlined,
-                            _isFetchingLiveMarket
-                                ? (isTamil ? 'புதுப்பிக்கிறது...' : 'Syncing...')
-                                : (isTamil ? 'நேரலை சந்தை' : 'Live TN rates'),
-                            isHighlight: true,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-
-              // ── 4. COST CALIBRATOR FACTOR PILLS (All on one page, no horizontal scroll) ──
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildFactorDropdown(
-                      label: isTamil ? 'ஒப்பந்தம்' : 'Contract',
-                      value: _selectedContractMode,
-                      items: {
-                        'turnkey': isTamil ? 'டர்ன்கி' : 'Turnkey',
-                        'labor': isTamil ? 'கூலி' : 'Labor Only',
-                        'self': isTamil ? 'சுய பணி' : 'Self Build',
-                      },
-                      menuItems: {
-                        'turnkey': isTamil ? 'டர்ன்கி (பொருள் + கூலி)' : 'Turnkey (Material + Labor)',
-                        'labor': isTamil ? 'கூலி மட்டும் (40%)' : 'Labor Only (40%)',
-                        'self': isTamil ? 'சுய கொள்முதல்' : 'Direct Procurement (Self)',
-                      },
-                      onChanged: (val) {
-                        if (val != null) setState(() => _selectedContractMode = val);
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: _buildFactorDropdown(
-                      label: isTamil ? 'மண் வகை' : 'Soil',
-                      value: _selectedSoil,
-                      items: {
-                        'normal': isTamil ? 'செம்மண்' : 'Normal',
-                        'soft_silt': isTamil ? 'களிமண்' : 'Silt (+12%)',
-                        'hard_rock': isTamil ? 'பாறை' : 'Rock (+8%)',
-                      },
-                      menuItems: {
-                        'normal': isTamil ? 'செம்மண் / வழக்கமான' : 'Red / Normal Soil (Std)',
-                        'soft_silt': isTamil ? 'களிமண் / பைல் (+12%)' : 'Black Cotton / Silt (+12%)',
-                        'hard_rock': isTamil ? 'பாறை மண் (+8%)' : 'Hard Rock (+8%)',
-                      },
-                      onChanged: (val) {
-                        if (val != null) setState(() => _selectedSoil = val);
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: _buildFactorDropdown(
-                      label: isTamil ? 'இடம்' : 'Location',
-                      value: _selectedLocation,
-                      items: {
-                        'metro': isTamil ? 'மெட்ரோ' : 'Metro (+10%)',
-                        'tier2': isTamil ? 'மாவட்டம்' : 'Town (Std)',
-                        'rural': isTamil ? 'கிராமம்' : 'Rural (-5%)',
-                      },
-                      menuItems: {
-                        'metro': isTamil ? 'சென்னை மெட்ரோ (+10%)' : 'Metro (+10%)',
-                        'tier2': isTamil ? 'மாவட்டம் (வழக்கமான)' : 'Tier 2 Towns (Std)',
-                        'rural': isTamil ? 'கிராமம் / ஊர் (-5%)' : 'Rural / Village (-5%)',
-                      },
-                      onChanged: (val) {
-                        if (val != null) setState(() => _selectedLocation = val);
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-
-              // ── 5. SUB TABS (Tiers, Stages, BOQ, Materials) ──────────────
-              SizedBox(
-                height: 42,
-                child: Stack(
-                  children: [
-                    Positioned(
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      child: Container(height: 1, color: AppColors.border),
-                    ),
-                    Row(
-                      children: [
-                        _buildSubTab(
-                          title: isTamil ? 'தொகுப்புகள்' : 'Tiers',
-                          index: 0,
-                        ),
-                        _buildSubTab(
-                          title: isTamil ? 'நிலைகள்' : 'Stages',
-                          index: 1,
-                        ),
-                        _buildSubTab(
-                          title: 'BOQ',
-                          index: 2,
-                        ),
-                        _buildSubTab(
-                          title: isTamil ? 'பொருட்கள்' : 'Materials',
-                          index: 3,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // ── 6. ACTIVE TAB CONTENT VIEW ───────────────────────────────
-              Expanded(
-                child: _buildSubTabContent(
-                  totalArea: totalArea,
-                  calculatedTotal: calculatedTotal,
-                  materialCost: materialCost,
-                  laborCost: laborCost,
-                  effectivePerSqft: effectivePerSqft,
-                  isTamil: isTamil,
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -676,95 +646,86 @@ class _EstimationScreenState extends State<EstimationScreen> {
     required VoidCallback onTap,
   }) {
     return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 7),
-        alignment: Alignment.center,
+      onTap: isActive ? null : onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
-          color: isActive ? AppColors.primary : AppColors.surfaceSecondary,
+          color: isActive ? AppColors.inkDark : AppColors.card,
           borderRadius: BorderRadius.circular(100),
+          border: isActive ? null : Border.all(color: AppColors.borderLight),
+          boxShadow: isActive
+              ? const [
+                  BoxShadow(
+                    color: Color(0x141B212F),
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
+                  )
+                ]
+              : null,
         ),
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(
-            title,
-            maxLines: 1,
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-              color: isActive ? Colors.white : AppColors.textSecondary,
-            ),
+        alignment: Alignment.center,
+        child: Text(
+          title,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: isActive ? Colors.white : AppColors.inkMuted,
           ),
         ),
       ),
     );
   }
 
-  // ── Sub Tab Button Builder ─────────────────────────────────────────────────
-  Widget _buildSubTab({required String title, required int index}) {
-    final bool isActive = _currentSubTab == index;
+  // ── Sub Tab Item Builder ───────────────────────────────────────────────────
+  Widget _buildSubTabItem({
+    required int index,
+    required String title,
+    required bool isActive,
+  }) {
     return Expanded(
-      child: InkWell(
+      child: GestureDetector(
         onTap: () => setState(() => _currentSubTab = index),
         child: Container(
-          alignment: Alignment.center,
           decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: isActive ? AppColors.primary : Colors.transparent,
-                width: 2.0,
+            color: isActive ? AppColors.card : Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: isActive
+                ? const [
+                    BoxShadow(
+                      color: Color(0x141B212F),
+                      blurRadius: 8,
+                      offset: Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 12,
+                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
+                  color: isActive ? AppColors.inkPrimary : AppColors.inkMuted,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-            ),
-          ),
-          child: Text(
-            title,
-            style: GoogleFonts.inter(
-              fontSize: 13,
-              fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-              color: isActive ? AppColors.primary : AppColors.textTertiary,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+              if (isActive) ...[
+                const SizedBox(height: 2),
+                Container(
+                  width: 5,
+                  height: 5,
+                  decoration: const BoxDecoration(
+                    color: AppColors.amberDefault,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
-      ),
-    );
-  }
-
-  // ── Tag Badge Pill Builder ─────────────────────────────────────────────────
-  Widget _buildTagIcon(IconData icon, String label, {bool isHighlight = false}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-      decoration: BoxDecoration(
-        color: isHighlight
-            ? const Color(0xFFF0FDF4)
-            : AppColors.background,
-        borderRadius: BorderRadius.circular(100),
-        border: Border.all(
-          color: isHighlight
-              ? const Color(0xFF86EFAC)
-              : AppColors.borderLight,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 12,
-            color: isHighlight ? const Color(0xFF15803D) : AppColors.primary,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: GoogleFonts.inter(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: isHighlight ? const Color(0xFF15803D) : AppColors.primary,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -779,12 +740,12 @@ class _EstimationScreenState extends State<EstimationScreen> {
   }) {
     final dropdownItems = menuItems ?? items;
     return Container(
-      height: 38,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+      height: 36,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(100),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
@@ -795,9 +756,9 @@ class _EstimationScreenState extends State<EstimationScreen> {
           borderRadius: BorderRadius.circular(16),
           dropdownColor: Colors.white,
           icon: const Icon(
-            Icons.keyboard_arrow_down,
+            Icons.keyboard_arrow_down_rounded,
             size: 16,
-            color: AppColors.primary,
+            color: AppColors.inkQuiet,
           ),
           selectedItemBuilder: (BuildContext context) {
             return items.entries.map((e) {
@@ -805,10 +766,10 @@ class _EstimationScreenState extends State<EstimationScreen> {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   e.value,
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primary,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.inkPrimary,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -821,10 +782,10 @@ class _EstimationScreenState extends State<EstimationScreen> {
               value: e.key,
               child: Text(
                 e.value,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.plusJakartaSans(
                   fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.primary,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.inkPrimary,
                 ),
               ),
             );
@@ -956,11 +917,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.borderLight),
-            ),
+            decoration: AppDecor.card(radius: 24),
             child: Row(
               children: [
                 Expanded(
@@ -969,18 +926,18 @@ class _EstimationScreenState extends State<EstimationScreen> {
                     children: [
                       Text(
                         isTamil ? 'மொத்த கட்டப்பட்ட பரப்பளவு' : 'Total Builtup Area',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.plusJakartaSans(
                           fontSize: 11.5,
-                          color: AppColors.textTertiary,
+                          color: AppColors.textMuted,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         '${totalArea.toInt()} sq ft',
-                        style: GoogleFonts.syne(
+                        style: GoogleFonts.plusJakartaSans(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.primary,
+                          color: AppColors.textTitle,
                         ),
                       ),
                     ],
@@ -992,18 +949,18 @@ class _EstimationScreenState extends State<EstimationScreen> {
                     children: [
                       Text(
                         isTamil ? 'தற்போதைய சதுர அடி விலை' : 'Effective Sq.Ft Rate',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.plusJakartaSans(
                           fontSize: 11.5,
-                          color: AppColors.textTertiary,
+                          color: AppColors.textMuted,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         '₹${effectivePerSqft.round()} / sq ft',
-                        style: GoogleFonts.syne(
+                        style: GoogleFonts.plusJakartaSans(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.primary,
+                          color: AppColors.orangeText,
                         ),
                       ),
                     ],
@@ -1011,6 +968,14 @@ class _EstimationScreenState extends State<EstimationScreen> {
                 ),
               ],
             ),
+          ),
+          const SizedBox(height: 20),
+          AppDecor.primaryPillButton(
+            label: isTamil
+                ? 'அடுத்து: கட்டமைப்பு அறிக்கை'
+                : 'Proceed to Structural Report',
+            onTap: () => widget.onNavigateToNext?.call(),
+            icon: Icons.arrow_forward_rounded,
           ),
           const SizedBox(height: 20),
         ],
@@ -1032,32 +997,15 @@ class _EstimationScreenState extends State<EstimationScreen> {
 
     return InkWell(
       onTap: () => setState(() => _selectedTier = id),
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: BorderRadius.circular(28),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.borderLight,
-            width: isSelected ? 2.0 : 1.0,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.06),
-                    blurRadius: 16,
-                    offset: const Offset(0, 4),
-                  )
-                ]
-              : [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.02),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  )
-                ],
+        padding: const EdgeInsets.all(20),
+        decoration: AppDecor.card(
+          radius: 28,
+          border: isSelected
+              ? AppDecor.selectedBorder
+              : Border.all(color: AppColors.cardBorder, width: 1.0),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1070,18 +1018,18 @@ class _EstimationScreenState extends State<EstimationScreen> {
                     children: [
                       Text(
                         tierName,
-                        style: GoogleFonts.syne(
+                        style: GoogleFonts.plusJakartaSans(
                           fontSize: 17,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.primary,
+                          color: AppColors.textTitle,
                         ),
                       ),
                       const SizedBox(width: 8),
                       Text(
                         '· $subtitle',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.plusJakartaSans(
                           fontSize: 12,
-                          color: AppColors.textTertiary,
+                          color: AppColors.textMuted,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -1095,34 +1043,46 @@ class _EstimationScreenState extends State<EstimationScreen> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: AppColors.surfaceSecondary,
+                      color: AppColors.innerPanel,
                       borderRadius: BorderRadius.circular(100),
+                      border: Border.all(color: AppColors.cardBorder),
                     ),
                     child: Text(
                       isTamil ? 'பரிந்துரை' : 'Popular',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.plusJakartaSans(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
+                        color: AppColors.orangeText,
                       ),
                     ),
                   ),
                 Container(
-                  width: 20,
-                  height: 20,
+                  width: 22,
+                  height: 22,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: isSelected
-                          ? AppColors.primary
-                          : AppColors.border,
-                      width: isSelected ? 6.0 : 1.5,
+                          ? AppColors.orangeHighlight
+                          : AppColors.cardBorder,
+                      width: 1.5,
                     ),
                   ),
+                  alignment: Alignment.center,
+                  child: isSelected
+                      ? Container(
+                          width: 12,
+                          height: 12,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppColors.orangeHighlight,
+                          ),
+                        )
+                      : null,
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
 
             // Price & Rate Row
             Row(
@@ -1134,20 +1094,20 @@ class _EstimationScreenState extends State<EstimationScreen> {
                   children: [
                     Text(
                       '₹${_formatIndianCurrency(amount.round())}',
-                      style: GoogleFonts.syne(
+                      style: GoogleFonts.plusJakartaSans(
                         fontSize: 24,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
+                        color: AppColors.orangeText,
                         letterSpacing: -0.3,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       '₹${sqftRate.round()} / sq ft',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.plusJakartaSans(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
+                        color: AppColors.textBody,
                       ),
                     ),
                   ],
@@ -1193,10 +1153,11 @@ class _EstimationScreenState extends State<EstimationScreen> {
                   },
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 6),
+                        horizontal: 12, vertical: 7),
                     decoration: BoxDecoration(
-                      color: AppColors.background,
+                      color: AppColors.innerPanel,
                       borderRadius: BorderRadius.circular(100),
+                      border: Border.all(color: AppColors.cardBorder),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -1204,15 +1165,15 @@ class _EstimationScreenState extends State<EstimationScreen> {
                         const Icon(
                           Icons.info_outline,
                           size: 13,
-                          color: AppColors.textSecondary,
+                          color: AppColors.textBody,
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 5),
                         Text(
                           isTamil ? 'விவரம் பார்க்க' : 'View Specs',
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.plusJakartaSans(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.textSecondary,
+                            color: AppColors.textBody,
                           ),
                         ),
                       ],

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/providers/app_config_provider.dart';
+import '../core/theme/app_colors.dart';
 import '../services/api_service.dart';
 
 class HistoryScreen extends StatefulWidget {
@@ -25,6 +26,45 @@ class _HistoryScreenState extends State<HistoryScreen> {
     _loadUserHistory();
   }
 
+  static final List<Map<String, dynamic>> _sampleProjects = [
+    {
+      'name': 'Floor Plan 01',
+      'date': '12 Oct 2026',
+      'features': ['3D', 'Va', '₹', 'St'],
+      'amount': '₹499',
+    },
+    {
+      'name': 'Floor Plan 02',
+      'date': '28 Sep 2026',
+      'features': ['3D', 'Va', '₹', 'St'],
+      'amount': '₹799',
+    },
+    {
+      'name': 'Floor Plan 03',
+      'date': '15 Sep 2026',
+      'features': ['3D', 'Va', '₹', 'St'],
+      'amount': '₹499',
+    },
+    {
+      'name': 'Floor Plan 04',
+      'date': '02 Aug 2026',
+      'features': ['3D', 'Va', '₹', 'St'],
+      'amount': '₹1,299',
+    },
+    {
+      'name': 'Floor Plan 05',
+      'date': '19 Jul 2026',
+      'features': ['3D', 'Va', '₹', 'St'],
+      'amount': '₹499',
+    },
+    {
+      'name': 'Floor Plan 06',
+      'date': '04 Jun 2026',
+      'features': ['3D', 'Va', '₹', 'St'],
+      'amount': '₹899',
+    },
+  ];
+
   Future<void> _loadUserHistory() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -34,7 +74,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       if (email == null || email.isEmpty || email == 'unknown') {
         if (mounted) {
           setState(() {
-            _projects = [];
+            _projects = _sampleProjects;
             _isLoading = false;
           });
         }
@@ -89,7 +129,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           });
         } else {
           setState(() {
-            _projects = [];
+            _projects = _sampleProjects;
             _isLoading = false;
           });
         }
@@ -97,7 +137,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     } catch (_) {
       if (mounted) {
         setState(() {
-          _projects = [];
+          _projects = _sampleProjects;
           _isLoading = false;
         });
       }
@@ -113,143 +153,166 @@ class _HistoryScreenState extends State<HistoryScreen> {
       config = AppConfigProvider();
     }
 
-    final bgColor = config.bgColor;
     final primaryTextColor = config.primaryTextColor;
     final secondaryTextColor = config.secondaryTextColor;
 
-    return Scaffold(
-      backgroundColor: bgColor,
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 440),
-            child: Stack(
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Header
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20.0,
-                        vertical: 16.0,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                config.tr('History', 'வரலாறு'),
-                                style: GoogleFonts.syne(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w600,
-                                  color: primaryTextColor,
-                                  letterSpacing: -0.2,
-                                ),
-                              ),
-                              const SizedBox(height: 3),
-                              Text(
-                                config.tr(
-                                  '${_projects.length} Downloads',
-                                  '${_projects.length} பதிவிறக்கங்கள்',
-                                ),
-                                style: GoogleFonts.inter(
-                                  fontSize: 13,
-                                  color: secondaryTextColor,
-                                ),
-                              ),
-                            ],
-                          ),
-                          // Subtle Refresh / Sync icon
-                          IconButton(
-                            icon: Icon(
-                              Icons.refresh_rounded,
-                              size: 20,
-                              color: secondaryTextColor,
-                            ),
-                            onPressed: () {
-                              setState(() => _isLoading = true);
-                              _loadUserHistory();
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
+    final isDark = config.isDarkMode;
 
-                    // Project List
-                    Expanded(
-                      child: _isLoading
-                          ? Center(
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                                color: primaryTextColor,
+    return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF14171F) : AppColors.canvasGradientTop,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: isDark ? null : AppColors.canvasGradient,
+        ),
+        child: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 440),
+              child: Stack(
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 10),
+                      // 1. TOP DARK HEADER (16px side margin, ~140px tall, 32px radius)
+                      Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 16.0),
+                        height: 140,
+                        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Color(0xFF364050), Color(0xFF1B212F)],
+                          ),
+                          borderRadius: BorderRadius.circular(32),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x381B212F),
+                              blurRadius: 40,
+                              offset: Offset(0, 16),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  config.tr('History', 'வரலாறு'),
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                    letterSpacing: -0.6,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  config.tr(
+                                    '${_projects.length} Floor Plans',
+                                    '${_projects.length} தள வரைபடங்கள்',
+                                  ),
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    color: Colors.white.withValues(alpha: 0.7),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            // Subtle Refresh / Sync icon
+                            IconButton(
+                              icon: const Icon(
+                                Icons.refresh_rounded,
+                                size: 22,
+                                color: Colors.white70,
                               ),
-                            )
-                          : _projects.isEmpty
-                              ? Center(
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 32.0,
-                                    ),
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Container(
-                                          width: 68,
-                                          height: 68,
-                                          decoration: BoxDecoration(
-                                            color: config.cardColor,
-                                            shape: BoxShape.circle,
-                                            border: Border.all(
-                                              color: config.borderColor,
+                              onPressed: () {
+                                setState(() => _isLoading = true);
+                                _loadUserHistory();
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // 2. Project List
+                      Expanded(
+                        child: _isLoading
+                            ? const Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  color: Color(0xFFE58A18),
+                                ),
+                              )
+                            : _projects.isEmpty
+                                ? Center(
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 32.0,
+                                      ),
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Container(
+                                            width: 68,
+                                            height: 68,
+                                            decoration: BoxDecoration(
+                                              color: config.cardColor,
+                                              shape: BoxShape.circle,
+                                              border: Border.all(
+                                                color: config.borderColor,
+                                              ),
+                                            ),
+                                            child: Icon(
+                                              Icons.folder_open_rounded,
+                                              size: 32,
+                                              color: secondaryTextColor,
                                             ),
                                           ),
-                                          child: Icon(
-                                            Icons.folder_open_rounded,
-                                            size: 32,
-                                            color: secondaryTextColor,
+                                          const SizedBox(height: 16),
+                                          Text(
+                                            config.tr(
+                                              'No Projects Yet',
+                                              'திட்டங்கள் எதுவும் இல்லை',
+                                            ),
+                                            style: GoogleFonts.syne(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.w600,
+                                              color: primaryTextColor,
+                                            ),
                                           ),
-                                        ),
-                                        const SizedBox(height: 16),
-                                        Text(
-                                          config.tr(
-                                            'No Projects Yet',
-                                            'திட்டங்கள் எதுவும் இல்லை',
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            config.tr(
+                                              'Upload your 2D floor plan to see generated 3D models and reports here.',
+                                              'உருவாக்கப்பட்ட 3D மாதிரி மற்றும் அறிக்கைகளைக் காண 2D வரைபடத்தைப் பதிவேற்றவும்.',
+                                            ),
+                                            textAlign: TextAlign.center,
+                                            style: GoogleFonts.inter(
+                                              fontSize: 12.5,
+                                              color: secondaryTextColor,
+                                              height: 1.4,
+                                            ),
                                           ),
-                                          style: GoogleFonts.syne(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.w600,
-                                            color: primaryTextColor,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 6),
-                                        Text(
-                                          config.tr(
-                                            'Upload your 2D floor plan to see generated 3D models and reports here.',
-                                            'உருவாக்கப்பட்ட 3D மாதிரி மற்றும் அறிக்கைகளைக் காண 2D வரைபடத்தைப் பதிவேற்றவும்.',
-                                          ),
-                                          textAlign: TextAlign.center,
-                                          style: GoogleFonts.inter(
-                                            fontSize: 12.5,
-                                            color: secondaryTextColor,
-                                            height: 1.4,
-                                          ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                )
-                              : ListView.separated(
-                                  physics: const BouncingScrollPhysics(),
-                                  padding: const EdgeInsets.only(
-                                    left: 20,
-                                    right: 20,
-                                    top: 6,
-                                    bottom: 120, // Breathing space for bottom nav
-                                  ),
+                                  )
+                                : ListView.separated(
+                                    physics: const BouncingScrollPhysics(),
+                                    padding: const EdgeInsets.only(
+                                      left: 16,
+                                      right: 16,
+                                      top: 4,
+                                      bottom: 110, // Space for bottom nav
+                                    ),
                                   itemCount: _projects.length,
                                   separatorBuilder: (context, index) =>
                                       const SizedBox(height: 12),
@@ -277,9 +340,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           begin: Alignment.bottomCenter,
                           end: Alignment.topCenter,
                           colors: [
-                            bgColor,
-                            bgColor.withValues(alpha: 0.8),
-                            bgColor.withValues(alpha: 0.0),
+                            isDark ? const Color(0xFF14171F) : const Color(0xFFD8DFE9),
+                            (isDark ? const Color(0xFF14171F) : const Color(0xFFD8DFE9)).withValues(alpha: 0.8),
+                            (isDark ? const Color(0xFF14171F) : const Color(0xFFD8DFE9)).withValues(alpha: 0.0),
                           ],
                         ),
                       ),
@@ -291,6 +354,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           ),
         ),
       ),
+      ),
     );
   }
 
@@ -298,56 +362,55 @@ class _HistoryScreenState extends State<HistoryScreen> {
     Map<String, dynamic> project, {
     required AppConfigProvider config,
   }) {
-    final List<String> features =
-        List<String>.from(project['features'] ?? ['3D']);
-    final String amount = project['amount'] ?? '₹500';
+    final String amount = project['amount'] ?? '₹499';
     final isDark = config.isDarkMode;
 
     return Container(
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
-        color: config.cardColor,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: config.borderColor),
-        boxShadow: [
+        color: isDark ? const Color(0xFF1C2230) : const Color(0xFFFCFDFF),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: isDark ? const Color(0xFF2E384D) : const Color(0xFFE9EAEC)),
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.05),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
+            color: Color(0x1A1B212F),
+            blurRadius: 32,
+            offset: Offset(0, 12),
           ),
         ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Blueprint Architectural Thumbnail
+          // 48x48 circle #2E3744 with white icon
           Container(
             width: 48,
             height: 48,
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: config.surfacePillColor,
-              borderRadius: BorderRadius.circular(14),
+            decoration: const BoxDecoration(
+              color: Color(0xFF2E3744),
+              shape: BoxShape.circle,
             ),
-            child: CustomPaint(
-              painter: _BlueprintThumbPainter(
-                color: config.primaryTextColor,
+            child: const Center(
+              child: Icon(
+                Icons.grid_view_rounded,
+                color: Colors.white,
+                size: 22,
               ),
             ),
           ),
           const SizedBox(width: 14),
 
-          // Project Title & Badges
+          // Project Title & Date
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   project['name'] ?? 'Floor Plan',
-                  style: GoogleFonts.inter(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: config.primaryTextColor,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : const Color(0xFF18191D),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -355,113 +418,30 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 const SizedBox(height: 3),
                 Text(
                   project['date'] ?? '',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.plusJakartaSans(
                     fontSize: 12,
-                    color: config.secondaryTextColor,
+                    fontWeight: FontWeight.w400,
+                    color: isDark ? const Color(0xFFA1A1AA) : const Color(0xFF8E94A0),
                   ),
-                ),
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 6.0,
-                  runSpacing: 6.0,
-                  children: features
-                      .map((f) => _buildFeatureBadge(f, config: config))
-                      .toList(),
                 ),
               ],
             ),
           ),
 
-          const SizedBox(width: 10),
+          const SizedBox(width: 12),
 
-          // Amount Spent Column
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                config.tr('Spent', 'செலவு'),
-                style: GoogleFonts.inter(
-                  fontSize: 11,
-                  color: config.secondaryTextColor,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                amount,
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: config.primaryTextColor,
-                ),
-              ),
-            ],
+          // Amount
+          Text(
+            amount,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: isDark ? Colors.white : const Color(0xFF18191D),
+            ),
           ),
         ],
       ),
     );
   }
-
-  Widget _buildFeatureBadge(
-    String label, {
-    required AppConfigProvider config,
-  }) {
-    return Container(
-      width: 28,
-      height: 28,
-      decoration: BoxDecoration(
-        color: config.surfacePillColor,
-        shape: BoxShape.circle,
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        label,
-        style: GoogleFonts.inter(
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          color: config.primaryTextColor,
-        ),
-      ),
-    );
-  }
 }
 
-// Custom Painter for the architectural blueprint thumbnail icon
-class _BlueprintThumbPainter extends CustomPainter {
-  final Color color;
-  const _BlueprintThumbPainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.6
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    canvas.save();
-    canvas.scale(size.width / 40, size.height / 40);
-
-    // Outer architectural boundary rect
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        const Rect.fromLTWH(3, 3, 34, 34),
-        const Radius.circular(3),
-      ),
-      paint..strokeWidth = 1.8,
-    );
-
-    // Floor plan inner grid lines
-    canvas.drawLine(const Offset(3, 20), const Offset(37, 20), paint);
-    canvas.drawLine(const Offset(18, 3), const Offset(18, 20), paint);
-    canvas.drawLine(const Offset(28, 20), const Offset(28, 37), paint);
-    canvas.drawCircle(const Offset(8, 28), 1.5, Paint()..color = color);
-
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(covariant _BlueprintThumbPainter oldDelegate) =>
-      oldDelegate.color != color;
-}

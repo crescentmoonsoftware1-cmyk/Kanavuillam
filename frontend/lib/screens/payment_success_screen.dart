@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../core/providers/app_config_provider.dart';
 import '../core/theme/app_colors.dart';
+import '../core/theme/app_decor.dart';
 
 class PaymentSuccessScreen extends StatefulWidget {
   final double amount;
@@ -21,18 +22,13 @@ class PaymentSuccessScreen extends StatefulWidget {
 
 class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
   bool _isGenerating = false;
-  double _progress = 0.65;
+  double _progress = 0.88;
 
   @override
   void initState() {
     super.initState();
-    // Simulate initial scan progression
-    Future.delayed(const Duration(milliseconds: 600), () {
-      if (mounted) {
-        setState(() => _progress = 0.88);
-      }
-    });
-    Future.delayed(const Duration(milliseconds: 1400), () {
+    // Simulate progression
+    Future.delayed(const Duration(milliseconds: 1200), () {
       if (mounted) {
         setState(() => _progress = 1.0);
       }
@@ -55,14 +51,7 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
     } catch (_) {
       config = AppConfigProvider();
     }
-
-    final isDark = config.isDarkMode;
-    final bgColor = config.bgColor;
-    final cardColor = config.cardColor;
-    final primaryTextColor = config.primaryTextColor;
-    final secondaryTextColor = config.secondaryTextColor;
-    final borderColor = config.borderColor;
-    final surfacePillColor = config.surfacePillColor;
+    final isTamil = config.isTamil;
 
     final now = DateTime.now();
     final months = [
@@ -87,315 +76,259 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
     final formattedDate = '${now.day} $month ${now.year}, $hour:$minute $ampm';
 
     return Scaffold(
-      backgroundColor: bgColor,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios_new_rounded,
-            size: 18,
-            color: primaryTextColor,
-          ),
-          onPressed: () => Navigator.pop(context),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: AppColors.canvasGradient,
         ),
-        title: Text(
-          config.tr('Payment Receipt', 'பணம் செலுத்திய ரசீது'),
-          style: GoogleFonts.syne(
-            fontSize: 19,
-            fontWeight: FontWeight.w600,
-            color: primaryTextColor,
-            letterSpacing: -0.2,
-          ),
-        ),
-      ),
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 440),
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20.0,
-                vertical: 12.0,
-              ),
-              child: Column(
-                children: [
-                  // 1. SUCCESS BADGE & AMOUNT
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20.0,
-                      vertical: 24.0,
-                    ),
-                    decoration: BoxDecoration(
-                      color: cardColor,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: borderColor),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(
-                            alpha: isDark ? 0.35 : 0.05,
-                          ),
-                          blurRadius: 20,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        Container(
-                          width: 58,
-                          height: 58,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF10B981),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.check_rounded,
-                            size: 34,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        Text(
-                          config.tr(
-                            'Payment Successful',
-                            'பணம் வெற்றிகரமாக பெறப்பட்டது',
-                          ),
-                          style: GoogleFonts.syne(
-                            fontSize: 19,
-                            fontWeight: FontWeight.w600,
-                            color: primaryTextColor,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '₹${widget.amount.toInt()}.00',
-                          style: GoogleFonts.syne(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w700,
-                            color: primaryTextColor,
-                            letterSpacing: -0.3,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Divider(color: borderColor, height: 1),
-                        const SizedBox(height: 16),
-
-                        // Receipt Details
-                        _buildReceiptRow(
-                          label: config.tr('Transaction ID', 'பரிவர்த்தனை எண்'),
-                          value: '#KI-ORD-89412',
-                          primaryTextColor: primaryTextColor,
-                          secondaryTextColor: secondaryTextColor,
-                        ),
-                        const SizedBox(height: 10),
-                        _buildReceiptRow(
-                          label: config.tr('Date & Time', 'தேதி & நேரம்'),
-                          value: formattedDate,
-                          primaryTextColor: primaryTextColor,
-                          secondaryTextColor: secondaryTextColor,
-                        ),
-                        const SizedBox(height: 10),
-                        _buildReceiptRow(
-                          label: config.tr('Method', 'முறை'),
-                          value: 'UPI / Direct',
-                          primaryTextColor: primaryTextColor,
-                          secondaryTextColor: secondaryTextColor,
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // 2. LIVE AI PROCESSING PIPELINE CARD
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20.0),
-                    decoration: BoxDecoration(
-                      color: cardColor,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: borderColor),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(
-                            alpha: isDark ? 0.35 : 0.05,
-                          ),
-                          blurRadius: 20,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                config.tr(
-                                  'Architecture Pipeline',
-                                  'கட்டிடக்கலை பகுப்பாய்வு',
-                                ),
-                                style: GoogleFonts.syne(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: primaryTextColor,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              '${(_progress * 100).toInt()}%',
-                              style: GoogleFonts.syne(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                                color: isDark
-                                    ? const Color(0xFF38BDF8)
-                                    : AppColors.primary,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-
-                        // Progress Bar
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(100),
-                          child: LinearProgressIndicator(
-                            value: _progress,
-                            minHeight: 6,
-                            backgroundColor: surfacePillColor,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              isDark ? Colors.white : AppColors.primary,
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 18),
-                        Divider(color: borderColor, height: 1),
-                        const SizedBox(height: 14),
-
-                        // Pipeline Steps
-                        _buildPipelineStep(
-                          title: config.tr(
-                            'Reading walls & CAD dimensions',
-                            'சுவர்கள் மற்றும் அளவுகள் ஆய்வு',
-                          ),
-                          isDone: true,
-                          config: config,
-                        ),
-                        const SizedBox(height: 10),
-                        _buildPipelineStep(
-                          title: config.tr(
-                            'Synthesizing 3D Villa Geometry',
-                            '3D வில்லா மாதிரி உருவாக்கம்',
-                          ),
-                          isDone: true,
-                          config: config,
-                        ),
-                        const SizedBox(height: 10),
-                        _buildPipelineStep(
-                          title: config.tr(
-                            'Computing Vastu directional score',
-                            'வாஸ்து திசைகள் கணக்கீடு',
-                          ),
-                          isDone: _progress >= 0.8,
-                          isActive: _progress < 0.8,
-                          config: config,
-                        ),
-                        const SizedBox(height: 10),
-                        _buildPipelineStep(
-                          title: config.tr(
-                            'Generating BOQ & Cost estimation',
-                            'கட்டுமான செலவு & BOQ கணக்கீடு',
-                          ),
-                          isDone: _progress >= 1.0,
-                          isActive: _progress >= 0.8 && _progress < 1.0,
-                          config: config,
-                        ),
-                        const SizedBox(height: 10),
-                        _buildPipelineStep(
-                          title: config.tr(
-                            'Validating IS Code structural safety',
-                            'கட்டமைப்பு பாதுகாப்பு சரிபார்ப்பு',
-                          ),
-                          isDone: _progress >= 1.0,
-                          isActive: false,
-                          config: config,
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // 3. ACTION TRIGGER BUTTON
-                  SizedBox(
-                    width: double.infinity,
-                    height: 54,
-                    child: ElevatedButton(
-                      onPressed: _isGenerating ? null : _handleStartGeneration,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            isDark ? Colors.white : AppColors.primary,
-                        foregroundColor: isDark ? Colors.black : Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(100),
-                        ),
-                      ),
+        child: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 440),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // ── 1. HEADER ROW ───────────────────────────────────────
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          if (_isGenerating) ...[
-                            SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: isDark ? Colors.black : Colors.white,
+                          GestureDetector(
+                            onTap: () => Navigator.pop(context),
+                            child: Container(
+                              width: 36,
+                              height: 36,
+                              decoration: const BoxDecoration(
+                                color: AppColors.canvasGradientTop,
+                                shape: BoxShape.circle,
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                          ],
-                          Flexible(
-                            child: Text(
-                              _isGenerating
-                                  ? config.tr('Opening Model...',
-                                      'மாதிரி திறக்கிறது...')
-                                  : config.tr(
-                                      'VIEW 3D VILLA & REPORTS',
-                                      '3D வில்லா & அறிக்கைகளை பார்க்கவும்',
-                                    ),
-                              style: GoogleFonts.inter(
-                                fontSize: 13.0,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0.1,
+                              child: const Icon(
+                                Icons.arrow_back_ios_new_rounded,
+                                size: 16,
+                                color: AppColors.inkPrimary,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          if (!_isGenerating) ...[
-                            const SizedBox(width: 8),
-                            const Icon(
-                              Icons.arrow_forward_rounded,
-                              size: 18,
+                          Expanded(
+                            child: Text(
+                              isTamil ? 'பணம் செலுத்திய ரசீது' : 'Payment Receipt',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.inkPrimary,
+                              ),
                             ),
-                          ],
+                          ),
+                          const SizedBox(width: 36), // Balance the back button
                         ],
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                ],
+                    const SizedBox(height: 8),
+
+                    // ── 2. SCROLLABLE CARDS ──────────────────────────────────
+                    Expanded(
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        child: Column(
+                          children: [
+                            // Card 1: Success Card
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(20.0),
+                              decoration: BoxDecoration(
+                                color: AppColors.card,
+                                borderRadius: BorderRadius.circular(28),
+                                border: Border.all(color: AppColors.borderLight),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Color(0x141B212F),
+                                    blurRadius: 32,
+                                    offset: Offset(0, 12),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                children: [
+                                  // 72px circle with check and amber ring
+                                  Container(
+                                    width: 72,
+                                    height: 72,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.badgeSlate,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: AppColors.amberHighlight, width: 2.0),
+                                    ),
+                                    child: const Icon(
+                                      Icons.check_rounded,
+                                      size: 38,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    isTamil ? 'பணம் வெற்றிகரமாக பெறப்பட்டது' : 'Payment Successful',
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.inkPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '₹${widget.amount.toInt()}.00',
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.w800,
+                                      color: AppColors.inkPrimary,
+                                      letterSpacing: -0.4,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  const Divider(color: Color(0xFFE2E8F0), height: 1),
+                                  const SizedBox(height: 14),
+
+                                  // Receipt Rows
+                                  _buildReceiptRow(
+                                    label: isTamil ? 'பரிவர்த்தனை எண்' : 'Transaction ID',
+                                    value: 'TXN-98421804',
+                                  ),
+                                  const SizedBox(height: 10),
+                                  _buildReceiptRow(
+                                    label: isTamil ? 'தேதி & நேரம்' : 'Date & Time',
+                                    value: formattedDate,
+                                  ),
+                                  const SizedBox(height: 10),
+                                  _buildReceiptRow(
+                                    label: isTamil ? 'முறை' : 'Method',
+                                    value: 'UPI (Google Pay)',
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+
+                            // Card 2: Architecture Pipeline
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(18.0),
+                              decoration: BoxDecoration(
+                                color: AppColors.card,
+                                borderRadius: BorderRadius.circular(28),
+                                border: Border.all(color: AppColors.borderLight),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Color(0x141B212F),
+                                    blurRadius: 32,
+                                    offset: Offset(0, 12),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        isTamil ? 'கட்டிடக்கலை பகுப்பாய்வு' : 'Architecture Pipeline',
+                                        style: GoogleFonts.plusJakartaSans(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.inkPrimary,
+                                        ),
+                                      ),
+                                      Text(
+                                        '${(_progress * 100).toInt()}%',
+                                        style: GoogleFonts.plusJakartaSans(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.inkPrimary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 10),
+
+                                  // Amber Progress Bar
+                                  Container(
+                                    width: double.infinity,
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFE2E8F0),
+                                      borderRadius: BorderRadius.circular(100),
+                                    ),
+                                    alignment: Alignment.centerLeft,
+                                    child: FractionallySizedBox(
+                                      widthFactor: _progress.clamp(0.0, 1.0),
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          gradient: AppColors.amberGradient,
+                                          borderRadius: BorderRadius.circular(100),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+
+                                  // 5 Checklist steps
+                                  _buildPipelineStep(
+                                    title: isTamil
+                                        ? 'சுவர்கள் மற்றும் அளவுகள் ஆய்வு'
+                                        : 'Reading walls & CAD dimensions',
+                                    isDone: true,
+                                  ),
+                                  const SizedBox(height: 10),
+                                  _buildPipelineStep(
+                                    title: isTamil
+                                        ? '3D வில்லா மாதிரி உருவாக்கம்'
+                                        : 'Synthesising 3D Villa geometry',
+                                    isDone: true,
+                                  ),
+                                  const SizedBox(height: 10),
+                                  _buildPipelineStep(
+                                    title: isTamil
+                                        ? 'வாஸ்து திசைகள் கணக்கீடு'
+                                        : 'Computing Vastu directional score',
+                                    isDone: true,
+                                  ),
+                                  const SizedBox(height: 10),
+                                  _buildPipelineStep(
+                                    title: isTamil
+                                        ? 'கட்டுமான செலவு & BOQ கணக்கீடு'
+                                        : 'Generating BOQ & Cost estimation',
+                                    isDone: _progress >= 1.0,
+                                    isActive: _progress < 1.0,
+                                  ),
+                                  const SizedBox(height: 10),
+                                  _buildPipelineStep(
+                                    title: isTamil
+                                        ? 'கட்டமைப்பு பாதுகாப்பு சரிபார்ப்பு'
+                                        : 'Validating IS Code structural safety',
+                                    isDone: _progress >= 1.0,
+                                    isActive: false,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    // ── 3. BOTTOM CTA BUTTON ─────────────────────────────────
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: AppDecor.primaryPillButton(
+                        label: isTamil ? '3D வில்லா & அறிக்கைகளை பார்க்கவும்' : 'VIEW 3D VILLA & REPORTS',
+                        onTap: _handleStartGeneration,
+                        isLoading: _isGenerating,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -407,33 +340,24 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
   Widget _buildReceiptRow({
     required String label,
     required String value,
-    required Color primaryTextColor,
-    required Color secondaryTextColor,
   }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Expanded(
-          child: Text(
-            label,
-            style: GoogleFonts.inter(
-              fontSize: 12.5,
-              color: secondaryTextColor,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+        Text(
+          label,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 13,
+            color: AppColors.inkQuiet,
           ),
         ),
-        const SizedBox(width: 8),
         Text(
           value,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.plusJakartaSans(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: primaryTextColor,
+            color: AppColors.inkPrimary,
           ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
         ),
       ],
     );
@@ -443,51 +367,49 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
     required String title,
     required bool isDone,
     bool isActive = false,
-    required AppConfigProvider config,
   }) {
-    final isDark = config.isDarkMode;
-
     return Row(
       children: [
-        Container(
-          width: 22,
-          height: 22,
-          decoration: BoxDecoration(
-            color: isDone
-                ? (isDark ? Colors.white : AppColors.primary)
-                : (isActive ? config.surfacePillColor : Colors.transparent),
-            shape: BoxShape.circle,
-            border: isDone || isActive
-                ? null
-                : Border.all(color: config.borderColor, width: 1.5),
+        if (isDone)
+          Container(
+            width: 20,
+            height: 20,
+            decoration: const BoxDecoration(
+              color: AppColors.badgeSlate,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.check_rounded,
+              size: 13,
+              color: Colors.white,
+            ),
+          )
+        else if (isActive)
+          const SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2.2,
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.amberDefault),
+            ),
+          )
+        else
+          Container(
+            width: 20,
+            height: 20,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: const Color(0xFFD8DFE9), width: 2),
+            ),
           ),
-          child: isDone
-              ? Icon(
-                  Icons.check,
-                  size: 13,
-                  color: isDark ? Colors.black : Colors.white,
-                )
-              : (isActive
-                  ? Padding(
-                      padding: const EdgeInsets.all(4.0),
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: isDark ? Colors.white : AppColors.primary,
-                      ),
-                    )
-                  : null),
-        ),
         const SizedBox(width: 12),
         Expanded(
           child: Text(
             title,
-            style: GoogleFonts.inter(
-              fontSize: 12.5,
-              fontWeight:
-                  isDone || isActive ? FontWeight.w600 : FontWeight.w400,
-              color: isDone || isActive
-                  ? config.primaryTextColor
-                  : config.secondaryTextColor,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 13,
+              fontWeight: isDone || isActive ? FontWeight.w600 : FontWeight.w400,
+              color: isDone || isActive ? AppColors.inkPrimary : AppColors.inkQuiet,
             ),
           ),
         ),

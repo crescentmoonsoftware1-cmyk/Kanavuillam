@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -143,7 +144,7 @@ class ApiService {
         return json.decode(response.body);
       }
     } catch (e) {
-      print('[ApiService] Live market prices fetch notice: $e');
+      debugPrint('[ApiService] Live market prices fetch notice: $e');
     }
     return {
       'is_live_market': true,
