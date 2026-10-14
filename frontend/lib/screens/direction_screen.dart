@@ -767,12 +767,12 @@ class _DirectionScreenState extends State<DirectionScreen>
                                               ),
                                               style:
                                                   GoogleFonts.plusJakartaSans(
-                                                    fontSize: 19,
-                                                    fontWeight: FontWeight.w700,
-                                                    color: Colors.white,
-                                                    letterSpacing: -0.3,
-                                                    height: 1.25,
-                                                  ),
+                                                fontSize: 19,
+                                                fontWeight: FontWeight.w700,
+                                                color: Colors.white,
+                                                letterSpacing: -0.3,
+                                                height: 1.25,
+                                              ),
                                             ),
                                             const SizedBox(height: 4),
                                             Text(
@@ -782,12 +782,12 @@ class _DirectionScreenState extends State<DirectionScreen>
                                               ),
                                               style:
                                                   GoogleFonts.plusJakartaSans(
-                                                    fontSize: 13,
-                                                    fontWeight: FontWeight.w400,
-                                                    color: Colors.white
-                                                        .withValues(alpha: 0.7),
-                                                    height: 1.3,
-                                                  ),
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w400,
+                                                color: Colors.white
+                                                    .withValues(alpha: 0.7),
+                                                height: 1.3,
+                                              ),
                                             ),
                                           ],
                                         ),
@@ -907,14 +907,13 @@ class _DirectionScreenState extends State<DirectionScreen>
                                                   'உங்கள் வாசல் திசையை அடிப்படையாகக் கொண்டு வாஸ்து மதிப்பெண் கணக்கிடப்படுகிறது.',
                                                 ),
                                                 style:
-                                                    GoogleFonts
-                                                        .plusJakartaSans(
-                                                      fontSize: 11.5,
-                                                      color: const Color(
-                                                        0xFF364050,
-                                                      ),
-                                                      height: 1.35,
-                                                    ),
+                                                    GoogleFonts.plusJakartaSans(
+                                                  fontSize: 11.5,
+                                                  color: const Color(
+                                                    0xFF364050,
+                                                  ),
+                                                  height: 1.35,
+                                                ),
                                               ),
                                             ),
                                           ],
@@ -958,15 +957,13 @@ class _DirectionScreenState extends State<DirectionScreen>
                                                   'உறுதி செய்து தொடர்க',
                                                 ),
                                                 style:
-                                                    GoogleFonts
-                                                        .plusJakartaSans(
-                                                      fontSize: 16,
-                                                      fontWeight:
-                                                          FontWeight.w700,
-                                                      color: const Color(
-                                                        0xFF1E252D,
-                                                      ),
-                                                    ),
+                                                    GoogleFonts.plusJakartaSans(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: const Color(
+                                                    0xFF1E252D,
+                                                  ),
+                                                ),
                                               ),
                                               const SizedBox(width: 8),
                                               const Icon(
@@ -1014,9 +1011,8 @@ class _DirectionScreenState extends State<DirectionScreen>
           color: isSelected ? const Color(0xFFFDEBCB) : const Color(0xFFF4F7FB),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected
-                ? const Color(0xFFE58A18)
-                : const Color(0xFFE2E8F0),
+            color:
+                isSelected ? const Color(0xFFE58A18) : const Color(0xFFE2E8F0),
             width: isSelected ? 1.5 : 1.0,
           ),
           boxShadow: isSelected
@@ -1094,9 +1090,8 @@ class _DirectionScreenState extends State<DirectionScreen>
                       caption,
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 10.5,
-                        fontWeight: isSelected
-                            ? FontWeight.w600
-                            : FontWeight.w400,
+                        fontWeight:
+                            isSelected ? FontWeight.w600 : FontWeight.w400,
                         color: isSelected
                             ? const Color(0xFFB46205)
                             : const Color(0xFF8E94A0),
@@ -1122,9 +1117,7 @@ class _DirectionScreenState extends State<DirectionScreen>
         Icon(
           icon,
           size: 18,
-          color: isSelected
-              ? const Color(0xFF1E252D)
-              : const Color(0xFF8E94A0),
+          color: isSelected ? const Color(0xFF1E252D) : const Color(0xFF8E94A0),
         ),
         if (isSelected) ...[
           const SizedBox(width: 4),
