@@ -417,8 +417,11 @@ async function runVastuAnalysis(modelData, lang = 'English', orientation = 'Nort
   const plotW = (plotMaxX - plotMinX) || 1;
   const plotH = (plotMaxY - plotMinY) || 1;
 
-  // Auto-deduce plot orientation if default or not explicitly provided by user
-  if (!orientation || orientation === 'North' || orientation === 'Auto') {
+  // Auto-deduce plot orientation ONLY if user did NOT explicitly choose a direction
+  const validUserDirections = ['North', 'North-East', 'East', 'South-East', 'South', 'South-West', 'West', 'North-West'];
+  const userExplicitlyChose = validUserDirections.some(d => (orientation || '').toLowerCase().replace(/[\s\-_]/g,'') === d.toLowerCase().replace(/[\s\-_]/g,''));
+  if (!orientation || orientation === 'Auto' || (!userExplicitlyChose)) {
+
     let autoOrientation = null;
 
     // Priority 1: Spatial Geometry Deduction using Puja / Prayer Room & Kitchen positions (Vastu Anchors)
@@ -935,9 +938,22 @@ async function runVastuAnalysis(modelData, lang = 'English', orientation = 'Nort
     poojaRoom: processedTypes.has('pooja') ? analysis.poojaRoom : null,
     livingRoom: processedTypes.has('living') ? analysis.livingRoom : null,
     roomPlacements: roomPlacements,
+    rooms: roomPlacements.map((rp, idx) => ({
+      id: `r_${idx}`,
+      title: rp.name,
+      subtitle: rp.zone,
+      isCorrect: rp.isIdeal,
+      analysis: rp.text ? [rp.text] : []
+    })),
     strengths: [...new Set(cleanStrengths)].slice(0, 7),
     violations: [...new Set(cleanViolations)].slice(0, 7),
     suggestions: [...new Set(cleanSuggestions)].slice(0, 7),
+    fixes: cleanSuggestions.map((s, idx) => ({
+      number: `${idx + 1}`,
+      issue: cleanViolations[idx] || (isTamil ? 'வாஸ்து பரிந்துரை' : 'Vastu Recommendation'),
+      fix: s,
+      points: '+5 pts'
+    })),
     whyPointsReduced: [...new Set(whyPointsReduced)].slice(0, 7),
     room_ratings: {}
   };
@@ -1027,9 +1043,21 @@ function runCostEstimation(modelData, customLiveRates = null) {
   const windows = modelData.windows || [];
   const project = modelData.project || {};
 
-  const width = parseFloat(project?.overall_dimensions?.width_ft || project?.width); const height = parseFloat(project?.overall_dimensions?.length_ft || project?.height); if (!width || !height || isNaN(width) || isNaN(height)) throw new Error('SCALE_CALIBRATION_FAILED: Missing physical scale for Cost Estimation.');
+  const width = parseFloat(project?.overall_dimensions?.width_ft || project?.width || 0);
+  const height = parseFloat(project?.overall_dimensions?.length_ft || project?.height || 0);
   const floors = parseInt(project.floors || 1);
-  const floorArea = width * height;
+  let floorArea = parseFloat(project?.total_built_area_sqft || project?.built_area || project?.total_area_sqft || modelData?.total_built_area_sqft || modelData?.built_area || modelData?.total_area_sqft);
+  if (!floorArea || isNaN(floorArea) || floorArea <= 0) {
+    if (width > 0 && height > 0) {
+      floorArea = width * height;
+    }
+  }
+  if (!floorArea || isNaN(floorArea) || floorArea <= 0) {
+    floorArea = rooms.reduce((acc, r) => acc + (parseFloat(r.area_sqft) || (parseFloat(r.width || 0) * parseFloat(r.height || 0))), 0);
+  }
+  if (!floorArea || isNaN(floorArea) || floorArea <= 0) {
+    throw new Error('SCALE_CALIBRATION_FAILED: Missing physical scale for Cost Estimation.');
+  }
   const totalArea = floorArea * floors;
 
   // 1. Calculate Exact Wall Length from 2D Geometry
@@ -1132,6 +1160,7 @@ function runCostEstimation(modelData, customLiveRates = null) {
   const structureCost = (materials.cement.quantity * materials.cement.price) +
     (materials.steel.quantity * materials.steel.price) +
     (materials.sand.quantity * materials.sand.price) +
+
     (materials.aggregate.quantity * materials.aggregate.price) +
     (materials.bricks.quantity * materials.bricks.price) +
     (laborCost * 0.5);
@@ -1316,7 +1345,20 @@ app.post('/api/material/search', async (req, res) => {
 function runStructuralReport(modelData) {
   const rooms = modelData.rooms || [];
   const project = modelData.project || {};
-  const floorArea = parseFloat(project.width) * parseFloat(project.height);
+  const width = parseFloat(project?.overall_dimensions?.width_ft || project?.width || 0);
+  const height = parseFloat(project?.overall_dimensions?.length_ft || project?.height || 0);
+  let floorArea = parseFloat(project.total_built_area_sqft || project.built_area || project.total_area_sqft || modelData.total_built_area_sqft || modelData.built_area || modelData.total_area_sqft);
+  if (!floorArea || isNaN(floorArea) || floorArea <= 0) {
+    if (width > 0 && height > 0) {
+      floorArea = width * height;
+    }
+  }
+  if (!floorArea || isNaN(floorArea) || floorArea <= 0) {
+    floorArea = rooms.reduce((acc, r) => acc + (parseFloat(r.area_sqft) || (parseFloat(r.width || 0) * parseFloat(r.height || 0))), 0);
+  }
+  if (!floorArea || isNaN(floorArea) || floorArea <= 0) {
+    floorArea = 1200;
+  }
   const floors = project.floors || 1;
   const totalArea = floorArea * floors;
 
@@ -1631,7 +1673,7 @@ app.post('/api/analyze-vastu/:id', async (req, res) => {
       result[floorName] = await runVastuAnalysis(
         floorData,
         lang,
-        'Auto', // Force Auto-Deduction Engine for 100% accurate dynamic direction deduction
+        storedOrientation, // Use stored user-selected direction, not Auto
         floorName === 'ground' ? groundPath : null,
         null,
         null,
