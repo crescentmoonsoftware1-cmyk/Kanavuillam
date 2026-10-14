@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'core/providers/app_config_provider.dart';
 import 'core/theme/app_colors.dart';
-import 'screens/splash_screen.dart';
+import 'screens/welcome_screen.dart';
 
 void main() {
   runApp(
@@ -32,29 +33,31 @@ class PlanXApp extends StatelessWidget {
         brightness: Brightness.light,
         scaffoldBackgroundColor: AppColors.background,
         colorScheme: const ColorScheme.light(
-          primary: AppColors.primary,
-          surface: Colors.white,
+          primary: AppColors.amber,
+          surface: AppColors.card,
         ),
-        fontFamily: 'Inter',
-        textTheme: const TextTheme(
-          bodyMedium: TextStyle(color: AppColors.textPrimary),
+        textTheme: GoogleFonts.plusJakartaSansTextTheme(
+          const TextTheme(
+            bodyMedium: TextStyle(color: AppColors.deepInk),
+          ),
         ),
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.transparent,
           elevation: 0,
-          iconTheme: IconThemeData(color: AppColors.textPrimary),
+          iconTheme: IconThemeData(color: AppColors.deepInk),
         ),
       ),
       darkTheme: ThemeData(
         brightness: Brightness.dark,
         scaffoldBackgroundColor: const Color(0xFF111317),
         colorScheme: const ColorScheme.dark(
-          primary: Colors.white,
+          primary: AppColors.amber,
           surface: Color(0xFF1D2128),
         ),
-        fontFamily: 'Inter',
-        textTheme: const TextTheme(
-          bodyMedium: TextStyle(color: Color(0xFFCDD6E0)),
+        textTheme: GoogleFonts.plusJakartaSansTextTheme(
+          const TextTheme(
+            bodyMedium: TextStyle(color: Color(0xFFCDD6E0)),
+          ),
         ),
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.transparent,
@@ -71,7 +74,7 @@ class PlanXApp extends StatelessWidget {
           const Breakpoint(start: 1921, end: double.infinity, name: '4K'),
         ],
       ),
-      home: const SplashScreen(),
+      home: const WelcomeScreen(),
     );
   }
 }

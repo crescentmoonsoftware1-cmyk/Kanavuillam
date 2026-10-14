@@ -6,10 +6,7 @@ import '../services/api_service.dart';
 const _bg = Color(0xFFF1F5FB);
 const _textPri = Color.fromARGB(255, 241, 242, 245);
 const _textSec = Color.fromARGB(255, 7, 7, 7);
-const _accent = Color.fromARGB(255, 1, 136, 163);
-const _tealEnd = Color.fromARGB(255, 1, 167, 153);
 const _purple = Color(0xFF818CF8);
-const _pink = Color(0xFFC084FC);
 
 class BlueprintEstimationScreen extends StatefulWidget {
   final Map<String, dynamic> projectData;
@@ -134,7 +131,6 @@ class _BlueprintEstimationScreenState extends State<BlueprintEstimationScreen> {
   };
 
   double _totalArea = 0;
-  bool _isLiveMarketActive = true;
 
   @override
   void initState() {
@@ -177,7 +173,7 @@ class _BlueprintEstimationScreenState extends State<BlueprintEstimationScreen> {
         });
       }
     } catch (e) {
-      print('[BlueprintEstimation] Live market fetch notice: $e');
+      debugPrint('[BlueprintEstimation] Live market fetch notice: $e');
     }
   }
 

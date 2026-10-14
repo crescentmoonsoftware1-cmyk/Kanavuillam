@@ -5,7 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/providers/app_config_provider.dart';
 import '../core/theme/app_colors.dart';
-import '../services/api_service.dart';
 import 'welcome_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -17,25 +16,14 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final ApiService _apiService = ApiService();
-  bool _isSettingsOpen = false;
-  bool _notificationsEnabled = true;
-
-  // Editable user fields
+  // User fields
   String _name = 'Thomas';
   String _phone = '+91 98765 43210';
-  String _email = 'thomas@kanavuillam.com';
+  String _email = 'thomas.arch@kanavuillam.com';
   String _city = 'Erode, Tamil Nadu';
-
-  int _runCount = 0;
-  int _amountSpent = 0;
-
-  // Active inline editing field: null, 'name', 'phone', 'email', 'city'
-  String? _editingField;
 
   late final TextEditingController _nameController;
   late final TextEditingController _phoneController;
-  late final TextEditingController _emailController;
   late final TextEditingController _cityController;
 
   @override
@@ -43,7 +31,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.initState();
     _nameController = TextEditingController(text: _name);
     _phoneController = TextEditingController(text: _phone);
-    _emailController = TextEditingController(text: _email);
     _cityController = TextEditingController(text: _city);
     _loadProfileData();
   }
@@ -52,7 +39,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
-    _emailController.dispose();
     _cityController.dispose();
     super.dispose();
   }
@@ -68,12 +54,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final savedName = (meta?['name'] as String?) ??
         (meta?['full_name'] as String?) ??
         prefs.getString('user_name') ??
-        (currentEmail.isNotEmpty ? currentEmail.split('@').first : 'User');
+        (currentEmail.isNotEmpty ? currentEmail.split('@').first : 'Thomas');
 
-    final savedEmail = currentEmail;
+    final savedEmail = currentEmail.isNotEmpty ? currentEmail : 'thomas.arch@kanavuillam.com';
     final savedPhone = (meta?['phone'] as String?) ??
         prefs.getString('user_phone') ??
-        '';
+        '+91 98765 43210';
     final savedCity = prefs.getString('user_address') ?? 'Tamil Nadu, India';
 
     if (mounted) {
@@ -85,82 +71,250 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
         _nameController.text = _name;
         _phoneController.text = _phone;
-        _emailController.text = _email;
         _cityController.text = _city;
       });
     }
+  }
 
-    if (savedEmail.isEmpty || savedEmail == 'unknown') {
-      if (mounted) {
-        setState(() {
-          _runCount = 0;
-          _amountSpent = 0;
-        });
-      }
-      return;
-    }
+  Future<void> _saveProfileDetails() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_name', _nameController.text.trim());
+    await prefs.setString('user_phone', _phoneController.text.trim());
+    await prefs.setString('user_address', _cityController.text.trim());
 
-    try {
-      final projects = await _apiService.getAllProjects(savedEmail);
-      if (mounted) {
-        int total = 0;
-        for (var p in projects) {
-          String pName = p['name'] ?? '';
-          if (pName.contains('|')) {
-            var parts = pName.split('|');
-            if (parts.length > 2) {
-              total += (double.tryParse(parts[2]) ?? 500.0).round();
-            } else {
-              total += 500;
-            }
-          } else {
-            total += 500;
-          }
-        }
-        setState(() {
-          _runCount = projects.length;
-          _amountSpent = total;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _runCount = 0;
-          _amountSpent = 0;
-        });
-      }
+    if (mounted) {
+      setState(() {
+        _name = _nameController.text.trim();
+        _phone = _phoneController.text.trim();
+        _city = _cityController.text.trim();
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Profile updated successfully'),
+          backgroundColor: Color(0xFF1B212F),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
-  Future<void> _saveField(String key, String value) async {
-    final prefs = await SharedPreferences.getInstance();
-    if (key == 'name') {
-      await prefs.setString('user_name', value);
-      setState(() => _name = value);
-    } else if (key == 'phone') {
-      await prefs.setString('user_phone', value);
-      setState(() => _phone = value);
-    } else if (key == 'email') {
-      await prefs.setString('user_email', value);
-      setState(() => _email = value);
-    } else if (key == 'city') {
-      await prefs.setString('user_address', value);
-      setState(() => _city = value);
-    }
-    setState(() => _editingField = null);
+  void _showEditProfileDialog(BuildContext context, AppConfigProvider config) {
+    _nameController.text = _name;
+    _phoneController.text = _phone;
+    _cityController.text = _city;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final isDark = config.isDarkMode;
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(24.0),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1C2230) : const Color(0xFFFCFDFF),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x2E1B212F),
+                  blurRadius: 32,
+                  offset: Offset(0, -6),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF364050) : const Color(0xFFCBD5E1),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  config.tr('Edit Profile', 'சுயவிவரத்தை மாற்றவும்'),
+                  style: GoogleFonts.syne(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : const Color(0xFF18191D),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _buildSheetTextField('Name', _nameController, isDark),
+                const SizedBox(height: 12),
+                _buildSheetTextField('Phone', _phoneController, isDark),
+                const SizedBox(height: 12),
+                _buildSheetTextField('City / Location', _cityController, isDark),
+                const SizedBox(height: 20),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _saveProfileDetails();
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFFBA73B), Color(0xFFE58A18)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(100),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x40E58A18),
+                          blurRadius: 16,
+                          offset: Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Text(
+                        config.tr('Save Changes', 'சேமிக்கவும்'),
+                        style: GoogleFonts.inter(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF1E252D),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSheetTextField(String label, TextEditingController controller, bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: isDark ? const Color(0xFFA1A1AA) : const Color(0xFF64748B),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF242C3D) : const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isDark ? const Color(0xFF2E384D) : const Color(0xFFE2E8F0),
+            ),
+          ),
+          child: TextField(
+            controller: controller,
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: isDark ? Colors.white : const Color(0xFF18191D),
+            ),
+            decoration: const InputDecoration(
+              border: InputBorder.none,
+              isDense: true,
+              contentPadding: EdgeInsets.symmetric(vertical: 12),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showHelpDialog(BuildContext context, AppConfigProvider config) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: config.isDarkMode ? const Color(0xFF1C2230) : const Color(0xFFFCFDFF),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text(
+          config.tr('Help & Support', 'உதவி மற்றும் ஆதரவு'),
+          style: GoogleFonts.syne(fontWeight: FontWeight.w700),
+        ),
+        content: Text(
+          config.tr(
+            'Need assistance with your architectural plan or reports? Reach out to our technical team at support@kanavuillam.com or call +91 98765 43210.',
+            'உங்கள் வரைபடம் அல்லது அறிக்கைகளில் உதவி தேவையா? support@kanavuillam.com என்ற மின்னஞ்சல் அல்லது +91 98765 43210 என்ற எண்ணில் எங்களைத் தொடர்பு கொள்ளவும்.',
+          ),
+          style: GoogleFonts.inter(fontSize: 13, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('OK', style: TextStyle(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAboutDialog(BuildContext context, AppConfigProvider config) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: config.isDarkMode ? const Color(0xFF1C2230) : const Color(0xFFFCFDFF),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text(
+          config.tr('About Kanavu Illam', 'கனவு இல்லம் பற்றி'),
+          style: GoogleFonts.syne(fontWeight: FontWeight.w700),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Kanavu Illam AI v1.0.0',
+              style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 14),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              config.tr(
+                'AI-Powered architectural visualization, traditional Tamil Vastu compliance, cost estimation, and structural safety checks for dream homes in Tamil Nadu.',
+                'தமிழ்நாட்டின் கனவு இல்லங்களுக்கான AI கட்டிடக்கலை மாதிரி, வாஸ்து பகுப்பாய்வு, மதிப்பீட்டு செலவு மற்றும் பாதுகாப்பு சரிபார்ப்பு தளம்.',
+              ),
+              style: GoogleFonts.inter(fontSize: 12.5, height: 1.4),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close', style: TextStyle(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
   }
 
   void _confirmLogout(BuildContext context, AppConfigProvider config) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: config.cardColor,
+        backgroundColor: config.isDarkMode ? const Color(0xFF1C2230) : const Color(0xFFFCFDFF),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Text(
           config.tr('Log out?', 'வெளியேறவா?'),
           style: GoogleFonts.syne(
-            fontWeight: FontWeight.w600,
-            color: config.primaryTextColor,
+            fontWeight: FontWeight.w700,
+            color: config.isDarkMode ? Colors.white : const Color(0xFF18191D),
           ),
         ),
         content: Text(
@@ -170,7 +324,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           style: GoogleFonts.inter(
             fontSize: 13,
-            color: config.secondaryTextColor,
+            color: config.isDarkMode ? const Color(0xFFA1A1AA) : const Color(0xFF8E94A0),
           ),
         ),
         actions: [
@@ -179,7 +333,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Text(
               config.tr('Cancel', 'ரத்து செய்'),
               style: GoogleFonts.inter(
-                color: config.secondaryTextColor,
+                color: config.isDarkMode ? const Color(0xFFA1A1AA) : const Color(0xFF8E94A0),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -205,7 +359,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             },
             child: Text(
               config.tr('Log out', 'வெளியேறு'),
-              style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+              style: GoogleFonts.inter(fontWeight: FontWeight.w700),
             ),
           ),
         ],
@@ -223,731 +377,368 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     final isDark = config.isDarkMode;
-    final bgColor = config.bgColor;
-    final cardColor = config.cardColor;
-    final primaryTextColor = config.primaryTextColor;
-    final secondaryTextColor = config.secondaryTextColor;
-    final borderColor = config.borderColor;
-    final surfacePillColor = config.surfacePillColor;
 
     return Scaffold(
-      backgroundColor: bgColor,
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 440),
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.only(
-                left: 20.0,
-                right: 20.0,
-                top: 16.0,
-                bottom: 120.0, // Space for bottom nav
-              ),
-              child: Column(
-                children: [
-                  // 1. TOP HEADER
-                  SizedBox(
-                    height: 40,
-                    child: Center(
-                      child: Text(
-                        config.tr('Profile', 'சுயவிவரம்'),
-                        style: GoogleFonts.syne(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: primaryTextColor,
-                          letterSpacing: -0.2,
+      backgroundColor: isDark ? const Color(0xFF14171F) : AppColors.canvasGradientTop,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: isDark ? null : AppColors.canvasGradient,
+        ),
+        child: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 440),
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.only(
+                  left: 16.0,
+                  right: 16.0,
+                  top: 12.0,
+                  bottom: 110.0, // Breathing space for floating bottom nav
+                ),
+                child: Column(
+                  children: [
+                    // 1. TOP DARK HEADER (236px tall, 32px radius, gradient #364050 -> #1B212F)
+                    Container(
+                      width: double.infinity,
+                      height: 236,
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Color(0xFF364050), Color(0xFF1B212F)],
                         ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // 2. AVATAR BLOCK & INLINE EDITABLE NAME
-                  Column(
-                    children: [
-                      SizedBox(
-                        width: 84,
-                        height: 84,
-                        child: Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            Container(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(color: borderColor, width: 2),
-                                color: surfacePillColor,
-                              ),
-                              child: ClipOval(
-                                child: Center(
-                                  child: Icon(
-                                    Icons.person_rounded,
-                                    size: 44,
-                                    color: primaryTextColor,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              bottom: 0,
-                              right: 0,
-                              child: Container(
-                                width: 28,
-                                height: 28,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: isDark
-                                      ? Colors.white
-                                      : AppColors.primary,
-                                  border: Border.all(
-                                    color: bgColor,
-                                    width: 2,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(
-                                        alpha: isDark ? 0.3 : 0.15,
-                                      ),
-                                      blurRadius: 6,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: Icon(
-                                  Icons.edit,
-                                  size: 13,
-                                  color: isDark ? Colors.black : Colors.white,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      // Inline Editable Name
-                      if (_editingField == 'name')
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            SizedBox(
-                              width: 150,
-                              height: 36,
-                              child: TextField(
-                                controller: _nameController,
-                                autofocus: true,
-                                textAlign: TextAlign.center,
-                                style: GoogleFonts.syne(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w600,
-                                  color: primaryTextColor,
-                                ),
-                                decoration: InputDecoration(
-                                  isDense: true,
-                                  contentPadding:
-                                      const EdgeInsets.symmetric(vertical: 4),
-                                  border: UnderlineInputBorder(
-                                    borderSide: BorderSide(
-                                      color: primaryTextColor,
-                                      width: 1.5,
-                                    ),
-                                  ),
-                                ),
-                                onSubmitted: (val) {
-                                  if (val.trim().isNotEmpty) {
-                                    _saveField('name', val.trim());
-                                  } else {
-                                    setState(() => _editingField = null);
-                                  }
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            GestureDetector(
-                              onTap: () {
-                                if (_nameController.text.trim().isNotEmpty) {
-                                  _saveField('name', _nameController.text.trim());
-                                } else {
-                                  setState(() => _editingField = null);
-                                }
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.all(5),
-                                decoration: BoxDecoration(
-                                  color: isDark
-                                      ? Colors.white
-                                      : AppColors.primary,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  Icons.check,
-                                  size: 13,
-                                  color: isDark ? Colors.black : Colors.white,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            GestureDetector(
-                              onTap: () {
-                                _nameController.text = _name;
-                                setState(() => _editingField = null);
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.all(5),
-                                decoration: BoxDecoration(
-                                  color: surfacePillColor,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  Icons.close,
-                                  size: 13,
-                                  color: secondaryTextColor,
-                                ),
-                              ),
-                            ),
-                          ],
-                        )
-                      else
-                        GestureDetector(
-                          onTap: () {
-                            _nameController.text = _name;
-                            setState(() => _editingField = 'name');
-                          },
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                _name,
-                                style: GoogleFonts.syne(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w600,
-                                  color: primaryTextColor,
-                                  letterSpacing: -0.2,
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Icon(
-                                Icons.edit_outlined,
-                                size: 14,
-                                color: secondaryTextColor,
-                              ),
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // 3. COMBINED PROFILE MEGA CARD
-                  Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: cardColor,
-                      borderRadius: BorderRadius.circular(28),
-                      border: Border.all(color: borderColor),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(
-                            alpha: isDark ? 0.35 : 0.06,
-                          ),
-                          blurRadius: 24,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        // --- STATS ROW ---
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20.0,
-                            vertical: 18.0,
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      config.tr('PROJECTS', 'திட்டங்கள்'),
-                                      style: GoogleFonts.inter(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: secondaryTextColor,
-                                        letterSpacing: 0.5,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      '$_runCount',
-                                      style: GoogleFonts.syne(
-                                        fontSize: 22,
-                                        fontWeight: FontWeight.w700,
-                                        color: primaryTextColor,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Container(
-                                width: 1,
-                                height: 36,
-                                color: borderColor,
-                              ),
-                              const SizedBox(width: 20),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      config.tr('TOTAL SPENT', 'மொத்த செலவு'),
-                                      style: GoogleFonts.inter(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: secondaryTextColor,
-                                        letterSpacing: 0.5,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      '₹$_amountSpent',
-                                      style: GoogleFonts.syne(
-                                        fontSize: 22,
-                                        fontWeight: FontWeight.w700,
-                                        color: primaryTextColor,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        Divider(color: borderColor, height: 1, thickness: 1),
-
-                        // --- USER CONTACT DETAILS (INLINE EDITABLE) ---
-                        _buildInlineInfoRow(
-                          fieldKey: 'phone',
-                          icon: Icons.phone_outlined,
-                          label: config.tr('PHONE', 'தொலைபேசி'),
-                          value: _phone,
-                          controller: _phoneController,
-                          config: config,
-                          onSave: (v) => _saveField('phone', v),
-                        ),
-                        Divider(
-                          color: borderColor,
-                          height: 1,
-                          thickness: 1,
-                          indent: 16,
-                          endIndent: 16,
-                        ),
-                        _buildInlineInfoRow(
-                          fieldKey: 'email',
-                          icon: Icons.email_outlined,
-                          label: config.tr('EMAIL', 'மின்னஞ்சல்'),
-                          value: _email,
-                          controller: _emailController,
-                          config: config,
-                          onSave: (v) => _saveField('email', v),
-                        ),
-                        Divider(
-                          color: borderColor,
-                          height: 1,
-                          thickness: 1,
-                          indent: 16,
-                          endIndent: 16,
-                        ),
-                        _buildInlineInfoRow(
-                          fieldKey: 'city',
-                          icon: Icons.location_on_outlined,
-                          label: config.tr('CITY', 'இருப்பிடம்'),
-                          value: _city,
-                          controller: _cityController,
-                          config: config,
-                          onSave: (v) => _saveField('city', v),
-                        ),
-
-                        Divider(color: borderColor, height: 1, thickness: 1),
-
-                        // --- SETTINGS ACCORDION ---
-                        InkWell(
-                          onTap: () {
-                            setState(() {
-                              _isSettingsOpen = !_isSettingsOpen;
-                            });
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 18.0,
-                              vertical: 14.0,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
-                                  children: [
-                                    Container(
-                                      width: 34,
-                                      height: 34,
-                                      decoration: BoxDecoration(
-                                        color: surfacePillColor,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Icon(
-                                        Icons.settings_outlined,
-                                        size: 18,
-                                        color: primaryTextColor,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Text(
-                                      config.tr('Settings', 'அமைப்புகள்'),
-                                      style: GoogleFonts.inter(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                        color: primaryTextColor,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                AnimatedRotation(
-                                  turns: _isSettingsOpen ? 0.5 : 0.0,
-                                  duration: const Duration(milliseconds: 200),
-                                  child: Icon(
-                                    Icons.keyboard_arrow_down_rounded,
-                                    size: 22,
-                                    color: secondaryTextColor,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-
-                        if (_isSettingsOpen) ...[
-                          Padding(
-                            padding: const EdgeInsets.only(
-                              left: 18.0,
-                              right: 18.0,
-                              bottom: 16.0,
-                              top: 4.0,
-                            ),
-                            child: Column(
-                              children: [
-                                // Theme Toggle
-                                _buildSettingRow(
-                                  icon: isDark
-                                      ? Icons.dark_mode_outlined
-                                      : Icons.light_mode_outlined,
-                                  label: config.tr('Theme', 'தோற்றம்'),
-                                  trailing: _buildSegmentedPill(
-                                    options: [
-                                      config.tr('Light', 'வெளிச்சம்'),
-                                      config.tr('Dark', 'இருள்'),
-                                    ],
-                                    selectedIndex: isDark ? 1 : 0,
-                                    onSelect: (idx) {
-                                      config.setTheme(idx == 1);
-                                    },
-                                    config: config,
-                                  ),
-                                  config: config,
-                                ),
-                                const SizedBox(height: 12),
-
-                                // Language Toggle
-                                _buildSettingRow(
-                                  icon: Icons.language_rounded,
-                                  label: config.tr('Language', 'மொழி'),
-                                  trailing: _buildSegmentedPill(
-                                    options: const ['English', 'தமிழ்'],
-                                    selectedIndex: config.isTamil ? 1 : 0,
-                                    onSelect: (idx) {
-                                      config.setTamil(idx == 1);
-                                    },
-                                    config: config,
-                                  ),
-                                  config: config,
-                                ),
-                                const SizedBox(height: 12),
-
-                                // Notification Switch
-                                _buildSettingRow(
-                                  icon: Icons.notifications_none_rounded,
-                                  label: config.tr(
-                                    'Notifications',
-                                    'அறிவிப்புகள்',
-                                  ),
-                                  trailing: Switch.adaptive(
-                                    value: _notificationsEnabled,
-                                    activeThumbColor: isDark
-                                        ? Colors.white
-                                        : AppColors.primary,
-                                    activeTrackColor: (isDark
-                                            ? Colors.white
-                                            : AppColors.primary)
-                                        .withValues(alpha: 0.5),
-                                    onChanged: (val) {
-                                      setState(() {
-                                        _notificationsEnabled = val;
-                                      });
-                                    },
-                                  ),
-                                  config: config,
-                                ),
-                              ],
-                            ),
+                        borderRadius: BorderRadius.circular(32),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x381B212F),
+                            blurRadius: 40,
+                            offset: Offset(0, 16),
                           ),
                         ],
-
-                        Divider(color: borderColor, height: 1, thickness: 1),
-
-                        // --- LOGOUT BUTTON ---
-                        InkWell(
-                          onTap: () => _confirmLogout(context, config),
-                          borderRadius: const BorderRadius.only(
-                            bottomLeft: Radius.circular(28),
-                            bottomRight: Radius.circular(28),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 18.0,
-                              vertical: 16.0,
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 34,
-                                  height: 34,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFEF4444)
-                                        .withValues(alpha: 0.12),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.logout_rounded,
-                                    size: 17,
-                                    color: Color(0xFFEF4444),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Text(
-                                  config.tr('Log out', 'வெளியேறு'),
-                                  style: GoogleFonts.inter(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: const Color(0xFFEF4444),
-                                  ),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Avatar with Amber Ring (88x88)
+                          Container(
+                            width: 88,
+                            height: 88,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF2E3744),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: const Color(0xFFFBA73B),
+                                width: 2,
+                              ),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Color(0x2E000000),
+                                  blurRadius: 14,
+                                  offset: Offset(0, 4),
                                 ),
                               ],
                             ),
+                            child: const Center(
+                              child: Icon(
+                                Icons.person_rounded,
+                                size: 44,
+                                color: Colors.white,
+                              ),
+                            ),
                           ),
-                        ),
-                      ],
+
+                          const SizedBox(height: 12),
+
+                          // User Name
+                          Text(
+                            _name,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                              letterSpacing: -0.3,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+
+                          const SizedBox(height: 4),
+
+                          // Email
+                          Text(
+                            _email,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400,
+                              color: Colors.white.withValues(alpha: 0.7),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+
+                    const SizedBox(height: 20),
+
+                    // 2. SETTINGS LIST CARD (28px radius, border #E9EAEC, shadow-sm)
+                    Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF1C2230) : const Color(0xFFFCFDFF),
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(
+                          color: isDark ? const Color(0xFF2E384D) : const Color(0xFFE9EAEC),
+                        ),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x1A1B212F),
+                            blurRadius: 32,
+                            offset: Offset(0, 12),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          // Row 1: Edit Profile
+                          _buildSettingRow(
+                            icon: Icons.person_outline_rounded,
+                            title: config.tr('Edit Profile', 'சுயவிவரம் திருத்து'),
+                            isDark: isDark,
+                            trailing: const Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              size: 16,
+                              color: Color(0xFF8E94A0),
+                            ),
+                            onTap: () => _showEditProfileDialog(context, config),
+                            showDivider: true,
+                          ),
+
+                          // Row 2: Language
+                          _buildSettingRow(
+                            icon: Icons.language_rounded,
+                            title: config.tr('Language', 'மொழி'),
+                            isDark: isDark,
+                            trailing: Container(
+                              height: 32,
+                              padding: const EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF242C3D) : const Color(0xFFE9EEF4),
+                                borderRadius: BorderRadius.circular(100),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  _buildLanguageTab('EN', !config.isTamil, () => config.setTamil(false), isDark),
+                                  _buildLanguageTab('தமிழ்', config.isTamil, () => config.setTamil(true), isDark),
+                                ],
+                              ),
+                            ),
+                            showDivider: true,
+                          ),
+
+                          // Row 3: Theme
+                          _buildSettingRow(
+                            icon: isDark ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
+                            title: config.tr('Theme', 'தோற்றம்'),
+                            isDark: isDark,
+                            trailing: Container(
+                              height: 32,
+                              padding: const EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF242C3D) : const Color(0xFFE9EEF4),
+                                borderRadius: BorderRadius.circular(100),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  _buildLanguageTab(
+                                    config.tr('Light', 'வெளிச்சம்'),
+                                    !isDark,
+                                    () => config.setTheme(false),
+                                    isDark,
+                                  ),
+                                  _buildLanguageTab(
+                                    config.tr('Dark', 'இருள்'),
+                                    isDark,
+                                    () => config.setTheme(true),
+                                    isDark,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            showDivider: true,
+                          ),
+
+                          // Row 4: Help & Support
+                          _buildSettingRow(
+                            icon: Icons.help_outline_rounded,
+                            title: config.tr('Help & Support', 'உதவி மற்றும் ஆதரவு'),
+                            isDark: isDark,
+                            trailing: const Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              size: 16,
+                              color: Color(0xFF8E94A0),
+                            ),
+                            onTap: () => _showHelpDialog(context, config),
+                            showDivider: true,
+                          ),
+
+                          // Row 5: About
+                          _buildSettingRow(
+                            icon: Icons.info_outline_rounded,
+                            title: config.tr('About & Privacy', 'பற்றி & கொள்கை'),
+                            isDark: isDark,
+                            trailing: const Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              size: 16,
+                              color: Color(0xFF8E94A0),
+                            ),
+                            onTap: () => _showAboutDialog(context, config),
+                            showDivider: false,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // 3. LOG OUT BUTTON (Pill Button 54px)
+                    GestureDetector(
+                      onTap: () => _confirmLogout(context, config),
+                      child: Container(
+                        width: double.infinity,
+                        height: 54,
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF1C2230) : const Color(0xFFFCFDFF),
+                          borderRadius: BorderRadius.circular(100),
+                          border: Border.all(
+                            color: isDark ? const Color(0xFF2E384D) : const Color(0xFFE2E8F0),
+                          ),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x0A000000),
+                              blurRadius: 8,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.logout_rounded,
+                              size: 18,
+                              color: Color(0xFFEF4444),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              config.tr('Log Out', 'வெளியேறு'),
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFFEF4444),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildInlineInfoRow({
-    required String fieldKey,
-    required IconData icon,
-    required String label,
-    required String value,
-    required TextEditingController controller,
-    required AppConfigProvider config,
-    required Function(String) onSave,
-  }) {
-    final isEditing = _editingField == fieldKey;
-    final isDark = config.isDarkMode;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 12.0),
-      child: Row(
-        children: [
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: config.surfacePillColor,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, size: 17, color: config.primaryTextColor),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: config.secondaryTextColor,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                if (isEditing)
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: controller,
-                          autofocus: true,
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: config.primaryTextColor,
-                          ),
-                          decoration: InputDecoration(
-                            isDense: true,
-                            contentPadding:
-                                const EdgeInsets.symmetric(vertical: 4),
-                            border: UnderlineInputBorder(
-                              borderSide: BorderSide(
-                                color: config.primaryTextColor,
-                              ),
-                            ),
-                          ),
-                          onSubmitted: (val) {
-                            if (val.trim().isNotEmpty) onSave(val.trim());
-                          },
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.check, size: 18),
-                        color: isDark ? Colors.white : AppColors.primary,
-                        onPressed: () {
-                          if (controller.text.trim().isNotEmpty) {
-                            onSave(controller.text.trim());
-                          }
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close, size: 18),
-                        color: config.secondaryTextColor,
-                        onPressed: () {
-                          setState(() => _editingField = null);
-                        },
-                      ),
-                    ],
-                  )
-                else
-                  Text(
-                    value,
-                    style: GoogleFonts.inter(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w500,
-                      color: config.primaryTextColor,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          if (!isEditing)
-            IconButton(
-              icon: Icon(
-                Icons.edit_outlined,
-                size: 16,
-                color: config.secondaryTextColor,
-              ),
-              onPressed: () {
-                controller.text = value;
-                setState(() => _editingField = fieldKey);
-              },
-            ),
-        ],
       ),
     );
   }
 
   Widget _buildSettingRow({
     required IconData icon,
-    required String label,
+    required String title,
+    required bool isDark,
     required Widget trailing,
-    required AppConfigProvider config,
+    VoidCallback? onTap,
+    required bool showDivider,
   }) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Column(
       children: [
-        Row(
-          children: [
-            Icon(icon, size: 18, color: config.secondaryTextColor),
-            const SizedBox(width: 10),
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: config.primaryTextColor,
-              ),
+        InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF2E3744) : const Color(0xFFE9EEF4),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        icon,
+                        size: 20,
+                        color: isDark ? Colors.white : const Color(0xFF364050),
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Text(
+                      title,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white : const Color(0xFF18191D),
+                      ),
+                    ),
+                  ],
+                ),
+                trailing,
+              ],
             ),
-          ],
+          ),
         ),
-        trailing,
+        if (showDivider)
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: isDark ? const Color(0xFF2E384D) : const Color(0xFFE2E8F0),
+            indent: 70,
+            endIndent: 16,
+          ),
       ],
     );
   }
 
-  Widget _buildSegmentedPill({
-    required List<String> options,
-    required int selectedIndex,
-    required Function(int) onSelect,
-    required AppConfigProvider config,
-  }) {
-    final isDark = config.isDarkMode;
-
-    return Container(
-      padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        color: config.surfacePillColor,
-        borderRadius: BorderRadius.circular(100),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: List.generate(options.length, (idx) {
-          final isSelected = idx == selectedIndex;
-          return GestureDetector(
-            onTap: () => onSelect(idx),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 10,
-                vertical: 4,
-              ),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? (isDark ? Colors.white : AppColors.primary)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(100),
-              ),
-              child: Text(
-                options[idx],
-                style: GoogleFonts.inter(
-                  fontSize: 11,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                  color: isSelected
-                      ? (isDark ? Colors.black : Colors.white)
-                      : config.secondaryTextColor,
-                ),
-              ),
-            ),
-          );
-        }),
+  Widget _buildLanguageTab(String text, bool isSelected, VoidCallback onTap, bool isDark) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? (isDark ? const Color(0xFF364050) : const Color(0xFF1B212F))
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(100),
+        ),
+        child: Text(
+          text,
+          style: GoogleFonts.inter(
+            fontSize: 11.5,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            color: isSelected
+                ? Colors.white
+                : (isDark ? const Color(0xFFA1A1AA) : const Color(0xFF364050)),
+          ),
+        ),
       ),
     );
   }

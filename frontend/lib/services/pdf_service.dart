@@ -108,15 +108,6 @@ class PdfService {
         modelData['_visual'] as Map<String, dynamic>? ??
         {};
 
-    // Structural blueprint URL is inside visual_data.structural (set by server.js line 807-808)
-    // Also fallback to structural_data[floor].blueprint_url
-    final visualStructural =
-        visualData['structural'] as Map<String, dynamic>? ?? {};
-    final structuralData = data['structural_data'] as Map<String, dynamic>? ??
-        modelData['_structural'] as Map<String, dynamic>? ??
-        {};
-    final groundStructural =
-        (structuralData['ground'] as Map<String, dynamic>?) ?? structuralData;
 
     if (selectedReportIds.isEmpty || selectedReportIds.contains('3d')) {
       if (screenshots3D != null && screenshots3D.isNotEmpty) {
@@ -144,10 +135,6 @@ class PdfService {
     if (selectedReportIds.isEmpty || selectedReportIds.contains('structural')) {
       for (var floor in floors) {
         try {
-          final structData = (structuralData.containsKey('ground')
-                  ? structuralData['ground']
-                  : structuralData) ??
-              {};
 
           final floorData =
               isMultiFloor(floorsMap) ? (floorsMap[floor] ?? ground) : ground;
@@ -405,14 +392,14 @@ class PdfService {
                               color: textDark)),
                       pw.SizedBox(height: 10),
                       if (images3d != null &&
-                          (images3d![floor] != null ||
-                              images3d!['default'] != null))
+                          (images3d[floor] != null ||
+                              images3d['default'] != null))
                         pw.ClipRRect(
                             horizontalRadius: 8,
                             verticalRadius: 8,
                             child: pw.Image(
                                 pw.MemoryImage(
-                                    images3d![floor] ?? images3d!['default']!),
+                                    images3d[floor] ?? images3d['default']!),
                                 fit: pw.BoxFit.contain,
                                 height: 250))
                       else

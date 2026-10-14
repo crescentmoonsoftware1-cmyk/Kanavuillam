@@ -5,7 +5,6 @@ import '../services/api_service.dart';
 const _accent = Color(0xFF6366F1);
 const _textPri = Color(0xFF0F172A);
 const _textSec = Color(0xFF64748B);
-const _bg = Color(0xFFF4F7FB);
 
 // ─── Full Material Database ──────────────────────────────────────────────────
 final List<MaterialBrand> allMaterials = [

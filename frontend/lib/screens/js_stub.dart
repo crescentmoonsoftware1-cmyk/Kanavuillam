@@ -6,5 +6,5 @@ extension JSAnyStub on Object? {
 }
 
 class JSString {
-  String get toDart => this.toString();
+  String get toDart => toString();
 }

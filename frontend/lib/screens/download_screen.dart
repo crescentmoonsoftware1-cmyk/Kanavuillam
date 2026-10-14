@@ -10,19 +10,10 @@ import '../services/pdf_service.dart';
 import '../services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'feedback_screen.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import 'js_stub.dart' if (dart.library.html) 'dart:js_interop';
-// Conditional imports to prevent mobile build crashes
-import 'web_stub.dart' if (dart.library.html) 'dart:ui_web' as ui_web;
-import 'web_stub.dart' if (dart.library.html) 'package:web/web.dart' as web;
 
-const _surface = Colors.white;
-const _textPri = Color(0xFF111827);
-const _textSec = Color(0xFF6B7280);
 
 class DownloadScreen extends StatefulWidget {
   final Map<String, dynamic> projectData;
@@ -70,7 +61,6 @@ class _DownloadScreenState extends State<DownloadScreen> {
     }
     final isTamil = config.isTamil;
     final isDark = config.isDarkMode;
-    final bgColor = isDark ? const Color(0xFF0F0F0F) : AppColors.background;
     final cardColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
     final primaryTextColor = isDark ? Colors.white : AppColors.primary;
     final secondaryTextColor = isDark ? const Color(0xFFA1A1AA) : AppColors.textSecondary;
@@ -95,14 +85,18 @@ class _DownloadScreenState extends State<DownloadScreen> {
     final createdAt = _formatDate(widget.projectData['created_at']?.toString());
 
     return Scaffold(
-      backgroundColor: bgColor,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 16.0, bottom: 32.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+      backgroundColor: isDark ? const Color(0xFF14171F) : AppColors.canvasGradientTop,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: isDark ? null : AppColors.canvasGradient,
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 16.0, bottom: 32.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
               // ── 1. HEADER (Plan Name, Subtitle, Language Switcher Capsule) ─
               SizedBox(
                 height: 52,
@@ -289,14 +283,14 @@ class _DownloadScreenState extends State<DownloadScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: cardColor,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: borderColor),
-                  boxShadow: [
+                  color: isDark ? cardColor : const Color(0xFFFCFDFF),
+                  borderRadius: BorderRadius.circular(28),
+                  border: Border.all(color: isDark ? borderColor : const Color(0xFFE9EAEC)),
+                  boxShadow: const [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
-                      blurRadius: 20,
-                      offset: const Offset(0, 6),
+                      color: Color(0x1A1B212F),
+                      blurRadius: 32,
+                      offset: Offset(0, 12),
                     ),
                   ],
                 ),
@@ -307,15 +301,22 @@ class _DownloadScreenState extends State<DownloadScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
-                          width: 46,
-                          height: 46,
+                          width: 44,
+                          height: 44,
                           decoration: BoxDecoration(
-                            color: isDark ? Colors.white : AppColors.primary,
-                            borderRadius: BorderRadius.circular(14),
+                            color: const Color(0xFF1B212F),
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x14000000),
+                                blurRadius: 8,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
                           ),
-                          child: Icon(
-                            Icons.picture_as_pdf_rounded,
-                            color: isDark ? Colors.black : Colors.white,
+                          child: const Icon(
+                            Icons.home_work_rounded,
+                            color: Colors.white,
                             size: 24,
                           ),
                         ),
@@ -331,7 +332,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
                                 style: GoogleFonts.syne(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w700,
-                                  color: primaryTextColor,
+                                  color: isDark ? primaryTextColor : const Color(0xFF18191D),
                                   letterSpacing: -0.2,
                                 ),
                               ),
@@ -342,7 +343,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
                                     : '3D, Vastu, Cost & Structural combined in one file',
                                 style: GoogleFonts.inter(
                                   fontSize: 12,
-                                  color: secondaryTextColor,
+                                  color: isDark ? secondaryTextColor : const Color(0xFF8E94A0),
                                 ),
                               ),
                             ],
@@ -351,11 +352,13 @@ class _DownloadScreenState extends State<DownloadScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
+                    // 3-Column stats row
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF27272A) : AppColors.background,
+                        color: isDark ? const Color(0xFF27272A) : const Color(0xFFF8FAFC),
                         borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: isDark ? borderColor : const Color(0xFFE2E8F0)),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -364,95 +367,98 @@ class _DownloadScreenState extends State<DownloadScreen> {
                             label: isTamil ? 'அளவு' : 'Plot Size',
                             value: dimsText,
                             isDark: isDark,
-                            primaryTextColor: primaryTextColor,
-                            secondaryTextColor: secondaryTextColor,
+                            primaryTextColor: isDark ? primaryTextColor : const Color(0xFF18191D),
+                            secondaryTextColor: isDark ? secondaryTextColor : const Color(0xFF8E94A0),
                           ),
-                          Container(width: 1, height: 26, color: borderColor),
+                          Container(width: 1, height: 26, color: isDark ? borderColor : const Color(0xFFE2E8F0)),
                           _buildHeroMeta(
                             label: isTamil ? 'பரப்பளவு' : 'Built-up Area',
                             value: '${totalArea.toInt()} sq ft',
                             isDark: isDark,
-                            primaryTextColor: primaryTextColor,
-                            secondaryTextColor: secondaryTextColor,
+                            primaryTextColor: isDark ? primaryTextColor : const Color(0xFF18191D),
+                            secondaryTextColor: isDark ? secondaryTextColor : const Color(0xFF8E94A0),
                           ),
-                          Container(width: 1, height: 26, color: borderColor),
+                          Container(width: 1, height: 26, color: isDark ? borderColor : const Color(0xFFE2E8F0)),
                           _buildHeroMeta(
                             label: isTamil ? 'நாள்' : 'Date',
                             value: createdAt,
                             isDark: isDark,
-                            primaryTextColor: primaryTextColor,
-                            secondaryTextColor: secondaryTextColor,
+                            primaryTextColor: isDark ? primaryTextColor : const Color(0xFF18191D),
+                            secondaryTextColor: isDark ? secondaryTextColor : const Color(0xFF8E94A0),
                           ),
                         ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Full-width Amber Pill Button: Download Full PDF Report
+                    GestureDetector(
+                      onTap: _isGeneratingPdf ? null : () => _downloadAll(context, widget.projectData),
+                      child: Container(
+                        width: double.infinity,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFFBA73B), Color(0xFFE58A18)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(100),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x59E58A18),
+                              blurRadius: 20,
+                              offset: Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: Center(
+                          child: _isGeneratingPdf
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.2,
+                                    color: Color(0xFF1E252D),
+                                  ),
+                                )
+                              : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(
+                                      Icons.file_download_outlined,
+                                      color: Color(0xFF1E252D),
+                                      size: 19,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      isTamil
+                                          ? 'முழு அறிக்கையை பதிவிறக்கு (PDF)'
+                                          : 'Download Full PDF Report',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 13.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: const Color(0xFF1E252D),
+                                        letterSpacing: 0.1,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
-
-              // ── 4. MASTER DOWNLOAD ACTION BUTTON ─────────────────────────
-              GestureDetector(
-                onTap: _isGeneratingPdf ? null : () => _downloadAll(context, widget.projectData),
-                child: Container(
-                  width: double.infinity,
-                  height: 54,
-                  decoration: BoxDecoration(
-                    color: isDark ? Colors.white : AppColors.primary,
-                    borderRadius: BorderRadius.circular(100),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.15),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: Center(
-                    child: _isGeneratingPdf
-                        ? SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: isDark ? Colors.black : Colors.white,
-                            ),
-                          )
-                        : Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.file_download_outlined,
-                                color: isDark ? Colors.black : Colors.white,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                isTamil
-                                    ? 'முழு அறிக்கையை பதிவிறக்கு (PDF)'
-                                    : 'Download Full PDF Report',
-                                style: GoogleFonts.inter(
-                                  fontSize: 14.5,
-                                  fontWeight: FontWeight.w600,
-                                  color: isDark ? Colors.black : Colors.white,
-                                  letterSpacing: 0.1,
-                                ),
-                              ),
-                            ],
-                          ),
-                  ),
-                ),
-              ),
               const SizedBox(height: 24),
 
-              // ── 5. DELIVERABLES TITLE ────────────────────────────────────
               Text(
-                isTamil ? 'அறிக்கையின் உள்ளடக்கங்கள்' : 'Included Deliverables',
-                style: GoogleFonts.syne(
-                  fontSize: 17,
+                isTamil ? 'அறிக்கையின் உள்ளடக்கங்கள்' : 'INCLUDED DELIVERABLES',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: primaryTextColor,
-                  letterSpacing: -0.2,
+                  color: isDark ? secondaryTextColor : const Color(0xFF8E94A0),
+                  letterSpacing: 1.0,
                 ),
               ),
               const SizedBox(height: 12),
@@ -532,6 +538,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
           ),
         ),
       ),
+      ),
     );
   }
 
@@ -603,7 +610,6 @@ class _DownloadScreenState extends State<DownloadScreen> {
     );
   }
 
-  // ── Deliverable Card Builder ───────────────────────────────────────────────
   Widget _buildDeliverableCard({
     required IconData icon,
     required String title,
@@ -619,309 +625,85 @@ class _DownloadScreenState extends State<DownloadScreen> {
     required bool isDark,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: borderColor),
-        boxShadow: [
+        color: isDark ? cardColor : const Color(0xFFFCFDFF),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: isDark ? borderColor : const Color(0xFFE9EAEC)),
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Color(0x0D1B212F),
+            blurRadius: 16,
+            offset: Offset(0, 4),
           ),
         ],
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
             width: 40,
             height: 40,
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF27272A) : AppColors.background,
-              borderRadius: BorderRadius.circular(12),
+            decoration: const BoxDecoration(
+              color: Color(0xFF2E3744),
+              shape: BoxShape.circle,
             ),
             child: Icon(
               icon,
               size: 20,
-              color: primaryTextColor,
+              color: Colors.white,
             ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        title,
-                        style: GoogleFonts.inter(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w600,
-                          color: primaryTextColor,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF0FDF4),
-                        borderRadius: BorderRadius.circular(100),
-                        border: Border.all(color: const Color(0xFF86EFAC)),
-                      ),
-                      child: Text(
-                        tag,
-                        style: GoogleFonts.inter(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF15803D),
-                        ),
-                      ),
-                    ),
-                  ],
+                Text(
+                  title,
+                  style: GoogleFonts.inter(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? primaryTextColor : const Color(0xFF18191D),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 2),
                 Text(
                   subtitle,
                   style: GoogleFonts.inter(
-                    fontSize: 11.5,
-                    color: secondaryTextColor,
-                    height: 1.3,
+                    fontSize: 11,
+                    color: isDark ? secondaryTextColor : const Color(0xFF8E94A0),
                   ),
-                  maxLines: 2,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
           ),
-
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFDEBCB),
+              borderRadius: BorderRadius.circular(100),
+            ),
+            child: Text(
+              tag,
+              style: GoogleFonts.inter(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFFB46205),
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  void _showReportViewer(BuildContext context, _Report report) {
-    if (report.id == '3d') {
-      widget.onNavigateTo3D?.call();
-      return;
-    }
-    final model = widget.projectData['model_data'] ?? {};
-    String content = '';
 
-    if (report.id == 'full') {
-      content = _generateFullReportText(widget.projectData);
-    } else if (report.id == 'vastu') {
-      final v = widget.projectData['vastu_data'] ??
-          widget.projectData['_vastu'] ??
-          model['_vastu'] ??
-          {};
-      content = _generateVastuText(widget.projectData['name'] ?? 'Project', v);
-    } else if (report.id == 'cost') {
-      final c = widget.projectData['cost_data'] ??
-          widget.projectData['_cost'] ??
-          model['_cost'] ??
-          {};
-      content = _generateCostText(widget.projectData['name'] ?? 'Project', c);
-    } else if (report.id == '3d') {
-      content =
-          _generateModelSummaryText(widget.projectData['name'] ?? 'Project', model);
-    } else if (report.id == 'structural') {
-      content =
-          _generateStructuralText(widget.projectData['name'] ?? 'Project', model);
-    } else if (report.id == 'elevation') {
-      content = _generateElevationText(widget.projectData['name'] ?? 'Project', model);
-    }
-
-    showGeneralDialog(
-      context: context,
-      barrierDismissible: true,
-      barrierLabel: 'ReportViewer',
-      barrierColor: Colors.black54,
-      transitionDuration: const Duration(milliseconds: 300),
-      pageBuilder: (context, anim1, anim2) {
-        return Align(
-          alignment: Alignment.center,
-          child: Container(
-            width: MediaQuery.of(context).size.width * 0.9,
-            height: MediaQuery.of(context).size.height * 0.8,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.15),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                )
-              ],
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: Column(
-                children: [
-                  // Header
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(
-                          color: Colors.grey.withValues(alpha: 0.2),
-                          width: 1,
-                        ),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: report.color.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child:
-                              Icon(report.icon, color: report.color, size: 24),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                report.label,
-                                style: const TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                report.sub,
-                                style: const TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close, color: Colors.grey),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Content
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(24),
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: Colors.blueGrey.withValues(alpha: 0.1),
-                          ),
-                        ),
-                        child: Text(
-                          content,
-                          style: const TextStyle(
-                            fontFamily: 'monospace',
-                            fontSize: 13,
-                            color: Color(0xFF1E293B),
-                            height: 1.5,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  // Footer Action
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      border: Border(
-                        top: BorderSide(
-                          color: Colors.grey.withValues(alpha: 0.2),
-                          width: 1,
-                        ),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () => Navigator.pop(context),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              side: BorderSide(
-                                  color: Colors.grey.withValues(alpha: 0.5)),
-                            ),
-                            child: const Text(
-                              'Close',
-                              style: TextStyle(
-                                  color: Colors.black87,
-                                  fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.pop(context);
-                              _downloadSingle(
-                                  context, report.label, widget.projectData);
-                            },
-                            icon: const Icon(Icons.download_rounded, size: 18),
-                            label: const Text('Download PDF'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: report.color,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              textStyle: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-      transitionBuilder: (context, anim1, anim2, child) {
-        return FadeTransition(
-          opacity: anim1,
-          child: ScaleTransition(
-            scale: CurvedAnimation(
-              parent: anim1,
-              curve: Curves.easeOutBack,
-            ),
-            child: child,
-          ),
-        );
-      },
-    );
-  }
 
   Future<Uint8List> _createPdf(String title, String content) async {
     final tamilFont = await PdfGoogleFonts.notoSansTamilRegular();
@@ -968,73 +750,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
     return pdf.save();
   }
 
-  String _generateFullReportText(Map<String, dynamic> data) {
-    final name = data['name'] ?? 'Project';
-    final model = data['model_data'] ?? {};
-    final costRoot = data['cost_data'] ?? data['_cost'] ?? model['_cost'] ?? {};
-    final vastuRoot =
-        data['vastu_data'] ?? data['_vastu'] ?? model['_vastu'] ?? {};
 
-    final cost =
-        costRoot.containsKey('ground') ? (costRoot['ground'] ?? {}) : costRoot;
-    final vastu = vastuRoot.containsKey('ground')
-        ? (vastuRoot['ground'] ?? {})
-        : vastuRoot;
-
-    final StringBuffer buffer = StringBuffer();
-    buffer.writeln('Project: $name');
-    buffer.writeln('Date:    ${DateTime.now().toString().split('.')[0]}');
-    buffer.writeln('------------------------------------------\n');
-
-    buffer.writeln('CONSTRUCTION COST ESTIMATES');
-    buffer.writeln('------------------------------');
-    if (cost['estimates'] != null) {
-      final est = cost['estimates'];
-      buffer.writeln('Basic Package:    Rs. ${est['basic'] ?? 'N/A'}');
-      buffer.writeln('Standard Package: Rs. ${est['standard'] ?? 'N/A'}');
-      buffer.writeln('Premium Package:  Rs. ${est['premium'] ?? 'N/A'}');
-      buffer.writeln('\n* Rates are calculated dynamically based on real-time live market prices.');
-    } else {
-      buffer.writeln('No cost data available.');
-    }
-    buffer.writeln('\n');
-
-    buffer.writeln('VASTU SHASTRA ANALYSIS');
-    buffer.writeln('-------------------------');
-    buffer.writeln('Compliance Score: ${vastu['score'] ?? 'N/A'}/100');
-    buffer.writeln('Overall Grade:    ${vastu['grade'] ?? 'N/A'}');
-
-    buffer.writeln('\n[Strengths]');
-    for (var s in (vastu['strengths'] ?? [])) {
-      buffer.writeln('* $s');
-    }
-
-    buffer.writeln('\n[Compliance Issues]');
-    for (var v in (vastu['violations'] ?? [])) {
-      buffer.writeln('! $v');
-    }
-
-    buffer.writeln('\n[Recommendations]');
-    for (var r in (vastu['suggestions'] ?? [])) {
-      buffer.writeln('- $r');
-    }
-    buffer.writeln('\n');
-
-    buffer.writeln('ROOM-BY-ROOM BREAKDOWN');
-    buffer.writeln('-------------------------');
-    final rooms = cost['room_breakdown'] ?? [];
-    if (rooms.isNotEmpty) {
-      for (var r in rooms) {
-        buffer.writeln(
-          '${(r['name'] ?? 'Room').padRight(18)} : ${r['area']} sq.ft (Rs. ${r['cost']})',
-        );
-      }
-    } else {
-      buffer.writeln('Room details not found.');
-    }
-
-    return buffer.toString();
-  }
 
   String _generateVastuText(String projectName, Map rootVastu) {
     final StringBuffer b = StringBuffer();
@@ -1176,21 +892,6 @@ class _DownloadScreenState extends State<DownloadScreen> {
     return b.toString();
   }
 
-  String _generateBOQText(String projectName, Map cost) {
-    final StringBuffer b = StringBuffer();
-    b.writeln('Project: $projectName');
-    b.writeln('------------------------------------------\n');
-    b.writeln('MATERIAL ESTIMATIONS:');
-    b.writeln('* Cement:      ~450 Bags');
-    b.writeln('* Steel:       ~3.2 Tons');
-    b.writeln('* Sand:        ~1200 Cu.ft');
-    b.writeln('* Bricks:      ~12,000 Units');
-    b.writeln('\n[LABOR ESTIMATION]');
-    b.writeln('* Estimated Man-days: 1,450');
-    b.writeln('\n*Quantities are approximate based on AI analysis.');
-    return b.toString();
-  }
-
   Future<String?> _askVastuLanguage(BuildContext context) async {
     return showDialog<String>(
       context: context,
@@ -1215,10 +916,10 @@ class _DownloadScreenState extends State<DownloadScreen> {
     setState(() => _isGeneratingPdf = true);
     if (widget.selectedReportIds.isEmpty || widget.selectedReportIds.contains('vastu')) {
       final lang = await _askVastuLanguage(ctx);
-      if (lang == null) return;
+      if (lang == null || !mounted) return;
 
       if (lang == 'Tamil') {
-        _showSnack(ctx, 'Translating Vastu to Tamil... Please wait.', isSuccess: true);
+        _showSnack(context, 'Translating Vastu to Tamil... Please wait.', isSuccess: true);
         try {
           final backendBase = ApiService.baseUrl.replaceAll(RegExp(r'/api$'), '');
           final res = await http.post(
@@ -1242,10 +943,10 @@ class _DownloadScreenState extends State<DownloadScreen> {
       }
     }
 
-    final name = data['name'] ?? 'Project';
+    if (!mounted) return;
     final filename = 'kanavu_illam_report.pdf';
 
-    _showSnack(ctx, 'Generating Comprehensive Report PDF... Please wait.',
+    _showSnack(context, 'Generating Comprehensive Report PDF... Please wait.',
         isSuccess: true);
 
     try {
@@ -1276,25 +977,27 @@ class _DownloadScreenState extends State<DownloadScreen> {
           completeData, widget.selectedReportIds,
           screenshots3D: screenshots3D);
 
+      if (!mounted) return;
       if (kIsWeb) {
         await Printing.sharePdf(bytes: bytes, filename: filename);
-        _showSnack(ctx, 'Download initiated!', isSuccess: true);
+        if (!mounted) return;
+        _showSnack(context, 'Download initiated!', isSuccess: true);
       } else {
-        await _downloadFileMobilePdf(ctx, filename, bytes);
+        await _downloadFileMobilePdf(context, filename, bytes);
       }
 
-      if (ctx.mounted) {
-        final prefs = await SharedPreferences.getInstance();
-        final uEmail = prefs.getString('user_email') ?? (widget.userData?['email'] as String?) ?? 'unknown';
-        final countKey = 'download_count_$uEmail';
-        await prefs.setInt(countKey, (prefs.getInt(countKey) ?? 0) + 1);
+      if (!mounted) return;
+      final prefsInst = await SharedPreferences.getInstance();
+      final uEmail = prefsInst.getString('user_email') ?? (widget.userData?['email'] as String?) ?? 'unknown';
+      final countKey = 'download_count_$uEmail';
+      await prefsInst.setInt(countKey, (prefsInst.getInt(countKey) ?? 0) + 1);
 
-        Navigator.of(ctx).push(MaterialPageRoute(builder: (_) => FeedbackScreen(userData: widget.userData)));
-      }
+      if (!mounted) return;
+      Navigator.of(context).push(MaterialPageRoute(builder: (_) => FeedbackScreen(userData: widget.userData)));
     } catch (e, stack) {
       debugPrint('Error generating Comprehensive PDF: $e\n$stack');
-      if (ctx.mounted) {
-        _showSnack(ctx, 'Error creating PDF: $e', isError: true);
+      if (mounted) {
+        _showSnack(context, 'Error creating PDF: $e', isError: true);
       }
     } finally {
       if (mounted) setState(() => _isGeneratingPdf = false);
@@ -1314,10 +1017,10 @@ class _DownloadScreenState extends State<DownloadScreen> {
 
     if (label.contains('Vastu')) {
       final lang = await _askVastuLanguage(ctx);
-      if (lang == null) return;
+      if (lang == null || !mounted) return;
 
       if (lang == 'Tamil') {
-        _showSnack(ctx, 'Translating Vastu to Tamil... Please wait.', isSuccess: true);
+        _showSnack(context, 'Translating Vastu to Tamil... Please wait.', isSuccess: true);
         try {
           final backendBase = ApiService.baseUrl.replaceAll(RegExp(r'/api$'), '');
           final res = await http.post(
@@ -1363,30 +1066,33 @@ class _DownloadScreenState extends State<DownloadScreen> {
       content = json.encode(data);
     }
 
-    _showSnack(ctx, 'Generating $label PDF... Please wait.', isSuccess: true);
+    if (!mounted) return;
+    _showSnack(context, 'Generating $label PDF... Please wait.', isSuccess: true);
 
     try {
       final bytes = await _createPdf(docTitle, content);
 
+      if (!mounted) return;
       if (kIsWeb) {
         await Printing.sharePdf(bytes: bytes, filename: filename);
-        _showSnack(ctx, 'Download initiated!', isSuccess: true);
+        if (!mounted) return;
+        _showSnack(context, 'Download initiated!', isSuccess: true);
       } else {
-        await _downloadFileMobilePdf(ctx, filename, bytes);
+        await _downloadFileMobilePdf(context, filename, bytes);
       }
 
-      if (ctx.mounted) {
-        final prefs = await SharedPreferences.getInstance();
-        final uEmail = prefs.getString('user_email') ?? (widget.userData?['email'] as String?) ?? 'unknown';
-        final countKey = 'download_count_$uEmail';
-        await prefs.setInt(countKey, (prefs.getInt(countKey) ?? 0) + 1);
+      if (!mounted) return;
+      final prefs = await SharedPreferences.getInstance();
+      final uEmail = prefs.getString('user_email') ?? (widget.userData?['email'] as String?) ?? 'unknown';
+      final countKey = 'download_count_$uEmail';
+      await prefs.setInt(countKey, (prefs.getInt(countKey) ?? 0) + 1);
 
-        Navigator.of(ctx).push(MaterialPageRoute(builder: (_) => FeedbackScreen(userData: widget.userData)));
-      }
+      if (!mounted) return;
+      Navigator.of(context).push(MaterialPageRoute(builder: (_) => FeedbackScreen(userData: widget.userData)));
     } catch (e, stack) {
       debugPrint('Error generating $label PDF: $e\n$stack');
-      if (ctx.mounted) {
-        _showSnack(ctx, 'Error creating PDF: $e', isError: true);
+      if (mounted) {
+        _showSnack(context, 'Error creating PDF: $e', isError: true);
       }
     } finally {
       if (mounted) setState(() => _activeSingleDownload = null);
@@ -1418,240 +1124,5 @@ class _DownloadScreenState extends State<DownloadScreen> {
       ),
     );
   }
-
-  void _triggerWebDownloadPdf(String filename, Uint8List bytes) {
-    if (!kIsWeb) return;
-
-    final blob = web.Blob(
-      [bytes.toJS].toJS,
-      web.BlobPropertyBag(type: 'application/pdf'),
-    );
-    final url = web.URL.createObjectURL(blob);
-
-    final anchor = web.HTMLAnchorElement()
-      ..href = url
-      ..download = filename;
-
-    web.document.body?.append(anchor);
-    anchor.click();
-    anchor.remove();
-    web.URL.revokeObjectURL(url);
-  }
 }
 
-class _InfoItem extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String value;
-  final Color color;
-  const _InfoItem(
-      {required this.icon,
-      required this.title,
-      required this.value,
-      required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: color, size: 16),
-          const SizedBox(width: 4),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title,
-                    style: const TextStyle(
-                        color: Color(0xFF64748B), fontSize: 10)),
-                const SizedBox(height: 1),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(value,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          color: Color(0xFF0F172A),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600)),
-                ),
-              ],
-            ),
-          )
-        ],
-      ),
-    );
-  }
-}
-
-class _FeatureBox extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final Color color;
-  const _FeatureBox(
-      {required this.icon, required this.title, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 90,
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(icon, color: color, size: 26),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-                color: Color(0xFF0F172A),
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                height: 1.3),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CheckItem extends StatelessWidget {
-  final String text;
-  const _CheckItem(this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.only(top: 2),
-          child: Icon(Icons.check_circle_rounded,
-              color: Color(0xFF059669), size: 16),
-        ),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Text(text,
-              style: const TextStyle(
-                  color: Color(0xFF064E3B),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500)),
-        ),
-      ],
-    );
-  }
-}
-
-class _Report {
-  final String id;
-  final IconData icon;
-  final String label, sub;
-  final Color color;
-  const _Report({
-    required this.id,
-    required this.icon,
-    required this.label,
-    required this.sub,
-    required this.color,
-  });
-}
-
-class _ReportRow extends StatelessWidget {
-  final _Report report;
-  final int delay;
-  final VoidCallback onTap;
-  final VoidCallback onDownload;
-
-  const _ReportRow({
-    required this.report,
-    required this.delay,
-    required this.onTap,
-    required this.onDownload,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: _surface,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            )
-          ],
-          border: Border.all(
-            color: const Color(0xFFF3F4F6),
-            width: 1.5,
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: report.color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(report.icon, color: report.color, size: 20),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    report.label,
-                    style: const TextStyle(
-                      color: _textPri,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    report.sub,
-                    style: const TextStyle(
-                        color: _textSec,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w400),
-                  ),
-                ],
-              ),
-            ),
-            Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(20),
-                onTap: onDownload,
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Icon(Icons.download_outlined,
-                      color: report.color, size: 20),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    )
-        .animate()
-        .fadeIn(delay: Duration(milliseconds: delay))
-        .slideX(begin: 0.04, end: 0);
-  }
-}
