@@ -217,12 +217,12 @@ class _StructuralScreenState extends State<StructuralScreen> {
                         children: [
                           Text(
                             planName,
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              color: const Color(0xFF18191D),
-                              letterSpacing: -0.3,
-                              height: 1.1,
+                            style: GoogleFonts.syne(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primary,
+                              letterSpacing: -0.2,
+                              height: 1.0,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -242,39 +242,51 @@ class _StructuralScreenState extends State<StructuralScreen> {
                         ],
                       ),
                     ),
-                    // Language Capsule (Matches Vastu / Stitch)
+                    // Language Switcher Capsule (No [X] button)
                     Container(
                       height: 34,
                       padding: const EdgeInsets.all(2),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFCFDFF),
+                        color: AppColors.surfaceSecondary,
                         borderRadius: BorderRadius.circular(100),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
                       ),
                       child: Row(
-                        mainAxisSize: MainAxisSize.min,
                         children: [
                           GestureDetector(
                             onTap: () {
                               if (isTamil) config.setTamil(false);
                             },
                             child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 4),
+                              height: 30,
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 11),
+                              alignment: Alignment.center,
                               decoration: BoxDecoration(
                                 color: !isTamil
-                                    ? const Color(0xFF1B212F)
+                                    ? Colors.white
                                     : Colors.transparent,
                                 borderRadius: BorderRadius.circular(100),
+                                boxShadow: !isTamil
+                                    ? [
+                                        BoxShadow(
+                                          color: AppColors.primary
+                                              .withValues(alpha: 0.05),
+                                          blurRadius: 2,
+                                          offset: const Offset(0, 1),
+                                        )
+                                      ]
+                                    : null,
                               ),
                               child: Text(
                                 'EN',
-                                style: GoogleFonts.plusJakartaSans(
+                                style: GoogleFonts.inter(
                                   fontSize: 11.5,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: !isTamil
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
                                   color: !isTamil
-                                      ? Colors.white
-                                      : const Color(0xFF364050),
+                                      ? AppColors.textDark
+                                      : AppColors.textSecondary,
                                 ),
                               ),
                             ),
@@ -284,22 +296,36 @@ class _StructuralScreenState extends State<StructuralScreen> {
                               if (!isTamil) config.setTamil(true);
                             },
                             child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 4),
+                              height: 30,
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 11),
+                              alignment: Alignment.center,
                               decoration: BoxDecoration(
                                 color: isTamil
-                                    ? const Color(0xFF1B212F)
+                                    ? Colors.white
                                     : Colors.transparent,
                                 borderRadius: BorderRadius.circular(100),
+                                boxShadow: isTamil
+                                    ? [
+                                        BoxShadow(
+                                          color: AppColors.primary
+                                              .withValues(alpha: 0.05),
+                                          blurRadius: 2,
+                                          offset: const Offset(0, 1),
+                                        )
+                                      ]
+                                    : null,
                               ),
                               child: Text(
                                 'தமிழ்',
-                                style: GoogleFonts.plusJakartaSans(
+                                style: GoogleFonts.inter(
                                   fontSize: 11.5,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: isTamil
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
                                   color: isTamil
-                                      ? Colors.white
-                                      : const Color(0xFF364050),
+                                      ? AppColors.textDark
+                                      : AppColors.textSecondary,
                                 ),
                               ),
                             ),
@@ -596,44 +622,29 @@ class _StructuralScreenState extends State<StructuralScreen> {
   // ── Sub Tab Button Builder ─────────────────────────────────────────────────
   Widget _buildSubTab({required String title, required int index}) {
     final bool isActive = _safeSubTab == index;
-    const Color goldAmber = Color(0xFFE58A18);
-    const Color goldAmberLight = Color(0xFFFBA73B);
-
     return Expanded(
       child: InkWell(
         onTap: () => setState(() => _currentSubTab = index),
-        child: Stack(
+        child: Container(
           alignment: Alignment.center,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10.0),
-              child: Text(
-                title,
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                  color: isActive ? AppColors.primary : AppColors.textTertiary,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: isActive ? AppColors.primary : Colors.transparent,
+                width: 2.0,
               ),
             ),
-            if (isActive)
-              Positioned(
-                bottom: 0,
-                left: 6,
-                right: 6,
-                child: Container(
-                  height: 3,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [goldAmberLight, goldAmber],
-                    ),
-                    borderRadius: BorderRadius.circular(100),
-                  ),
-                ),
-              ),
-          ],
+          ),
+          child: Text(
+            title,
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+              color: isActive ? AppColors.primary : AppColors.textTertiary,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
       ),
     );
@@ -1455,7 +1466,7 @@ class _BlueprintPainter extends CustomPainter {
       for (final r in rooms) {
         final mid = Offset(
             (r['x'] + r['width'] / 2) * sX, (r['y'] + r['height'] / 2) * sY);
-        _text(canvas, r['name']?.toString() ?? '', mid.dx, mid.dy, 8.0, Colors.black87,
+        _text(canvas, r['name'], mid.dx, mid.dy, 10, Colors.black,
             FontWeight.bold);
       }
     });
@@ -1530,7 +1541,7 @@ void _drawBase(
   final double layoutW = math.max(1.0, maxX - minX);
   final double layoutH = math.max(1.0, maxY - minY);
 
-  const double pad = 20.0;
+  const double pad = 45.0;
   final double availW = math.max(10.0, size.width - (pad * 2));
   final double availH = math.max(10.0, size.height - (pad * 2));
 
@@ -1548,6 +1559,11 @@ void _drawBase(
   canvas.translate(offsetX, offsetY);
 
   drawInner(scale, scale);
+
+  _drawBubble(canvas, Offset(minX * scale, minY * scale), '1', true);
+  _drawBubble(canvas, Offset(maxX * scale, minY * scale), '2', true);
+  _drawBubble(canvas, Offset(minX * scale, minY * scale), 'A', false);
+  _drawBubble(canvas, Offset(minX * scale, maxY * scale), 'B', false);
 
   canvas.restore();
 }
@@ -1573,16 +1589,27 @@ List<Offset> _getWallPts(dynamic w, double sX, double sY) {
   return [Offset(x1 * sX, y1 * sY), Offset(x2 * sX, y2 * sY)];
 }
 
+void _drawBubble(Canvas canvas, Offset p, String text, bool top) {
+  final center = top ? Offset(p.dx, -35) : Offset(-35, p.dy);
+  canvas.drawCircle(
+      center,
+      12,
+      Paint()
+        ..color = Colors.black
+        ..style = PaintingStyle.stroke);
+  _text(canvas, text, center.dx, center.dy, 10, Colors.black, FontWeight.bold);
+}
+
 void _text(Canvas c, String t, double x, double y, double fs, Color col,
     FontWeight fw) {
-  final tp = TextPainter(
+  TextPainter(
       text: TextSpan(
           text: t,
           style: GoogleFonts.inter(
               color: col, fontSize: fs, fontWeight: fw)),
       textDirection: TextDirection.ltr)
-    ..layout();
-  tp.paint(c, Offset(x - (tp.width / 2), y - (tp.height / 2)));
+    ..layout()
+    ..paint(c, Offset(x - 10, y - 5));
 }
 
 class _SlabCrossSectionTechnicalPainter extends CustomPainter {
