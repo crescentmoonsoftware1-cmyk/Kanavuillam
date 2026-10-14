@@ -100,13 +100,37 @@ class _StructuralScreenState extends State<StructuralScreen> {
         (overallDims?['height'] as num?)?.toDouble() ??
         30.85;
 
-    final int area = (pw * ph).toInt();
-
-    const planName = 'kanavuillam_report';
-
-    // ── DATA FOR BEAM PLAN ──────────────────────────────────────────────────
     var rooms = (ground['rooms'] as List<dynamic>?) ?? [];
     var walls = (ground['walls'] as List<dynamic>?) ?? [];
+
+    double roomsAreaSum = 0.0;
+    if (rooms.isNotEmpty) {
+      for (var r in rooms) {
+        if (r is Map) {
+          final a = (r['area_sqft'] as num?)?.toDouble() ??
+              (((r['width'] as num?)?.toDouble() ?? 0.0) *
+                  ((r['height'] as num?)?.toDouble() ?? 0.0));
+          roomsAreaSum += a;
+        }
+      }
+    }
+
+    final double totalAreaSqft = (widget.projectData['built_area'] as num?)?.toDouble() ??
+        (widget.projectData['total_built_area_sqft'] as num?)?.toDouble() ??
+        (widget.projectData['total_area_sqft'] as num?)?.toDouble() ??
+        (modelData['total_built_area_sqft'] as num?)?.toDouble() ??
+        (modelData['built_area'] as num?)?.toDouble() ??
+        (modelData['total_area_sqft'] as num?)?.toDouble() ??
+        (overallDims?['total_built_area_sqft'] as num?)?.toDouble() ??
+        (overallDims?['total_area_sqft'] as num?)?.toDouble() ??
+        (project['total_built_area_sqft'] as num?)?.toDouble() ??
+        (project['built_area'] as num?)?.toDouble() ??
+        (project['total_area_sqft'] as num?)?.toDouble() ??
+        (roomsAreaSum > 100 ? roomsAreaSum : (pw * ph));
+
+    final int area = totalAreaSqft.toInt();
+
+    const planName = 'kanavuillam_report';
 
     if (rooms.isEmpty && walls.isEmpty) {
       rooms = [
@@ -550,6 +574,7 @@ class _StructuralScreenState extends State<StructuralScreen> {
                   walls: walls,
                   pw: pw,
                   ph: ph,
+                  totalAreaSqft: totalAreaSqft,
                   structural: structural,
                   isMultiFloor: isMultiFloor,
                   isTamil: isTamil,
@@ -669,6 +694,7 @@ class _StructuralScreenState extends State<StructuralScreen> {
     required List<dynamic> walls,
     required double pw,
     required double ph,
+    required double totalAreaSqft,
     required Map<String, dynamic> structural,
     required bool isMultiFloor,
     required bool isTamil,
@@ -730,7 +756,7 @@ class _StructuralScreenState extends State<StructuralScreen> {
           physics: const BouncingScrollPhysics(),
           child: Column(
             children: [
-              _StructuralSafetyCard(pw: pw, ph: ph),
+              _StructuralSafetyCard(pw: pw, ph: ph, customArea: totalAreaSqft),
               const SizedBox(height: 20),
             ],
           ),
@@ -742,7 +768,7 @@ class _StructuralScreenState extends State<StructuralScreen> {
           physics: const BouncingScrollPhysics(),
           child: Column(
             children: [
-              _StructuralMaterialEstimationCard(pw: pw, ph: ph),
+              _StructuralMaterialEstimationCard(pw: pw, ph: ph, customArea: totalAreaSqft),
               const SizedBox(height: 20),
             ],
           ),
@@ -1203,11 +1229,12 @@ class _FootingDetailsCard extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 class _StructuralSafetyCard extends StatelessWidget {
   final double pw, ph;
-  const _StructuralSafetyCard({required this.pw, required this.ph});
+  final double? customArea;
+  const _StructuralSafetyCard({required this.pw, required this.ph, this.customArea});
 
   @override
   Widget build(BuildContext context) {
-    final double areaSqFt = pw * ph;
+    final double areaSqFt = customArea ?? (pw * ph);
     final double areaSqm = areaSqFt * 0.092903;
     final double maxSpanFt = math.max(pw, ph) * 0.45;
     final double maxSpanM = maxSpanFt * 0.3048;
@@ -1297,11 +1324,12 @@ class _StructuralSafetyCard extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 class _StructuralMaterialEstimationCard extends StatelessWidget {
   final double pw, ph;
-  const _StructuralMaterialEstimationCard({required this.pw, required this.ph});
+  final double? customArea;
+  const _StructuralMaterialEstimationCard({required this.pw, required this.ph, this.customArea});
 
   @override
   Widget build(BuildContext context) {
-    final double area = (pw > 0 && ph > 0) ? (pw * ph) : 800.0;
+    final double area = customArea ?? ((pw > 0 && ph > 0) ? (pw * ph) : 800.0);
 
     final int cementBags = (area * 0.40).round();
     final int cementRccBags = (area * 0.30).round();

@@ -66,7 +66,7 @@ class _UploadScreenState extends State<UploadScreen> {
   XFile? _firstFloorFile;
   XFile? _secondFloorFile;
   final int _selectedFloors = 0;
-  final String _selectedOrientation = 'Auto';
+  String _selectedOrientation = 'East'; // user-chosen plot facing direction
 
   static const List<_WorkflowStepItem> _workflowSteps = [
     _WorkflowStepItem(
@@ -158,11 +158,344 @@ class _UploadScreenState extends State<UploadScreen> {
           _groundFileBytes = bytes;
           _groundFileSizeBytes = bytes.length;
         });
-        _navigateToReviewAndPay();
+        // Show direction picker popup before going to Review & Pay
+        await _showDirectionPopup();
       }
     } catch (e) {
       debugPrint('Error picking image: $e');
     }
+  }
+
+  /// Popup - user chooses plot facing direction (East/North/South/West)
+  Future<void> _showDirectionPopup() async {
+    if (!mounted) return;
+    final config = Provider.of<AppConfigProvider>(context, listen: false);
+    final isDark = config.isDarkMode;
+
+    // 4 Vastu Moolai directions
+    final directions = [
+      {
+        'key': 'East',
+        'emoji': '🌅',
+        'en': 'East',
+        'ta': 'கிழக்கு',
+        'moolaiEn': 'Sunrise / Prosperity',
+        'moolaiTa': 'சூரிய உதயம் / செழிப்பு',
+        'color': const Color(0xFFF59E0B),
+      },
+      {
+        'key': 'North',
+        'emoji': '🧭',
+        'en': 'North',
+        'ta': 'வடக்கு',
+        'moolaiEn': 'Kubera / Wealth Zone',
+        'moolaiTa': 'குபேரன் / செல்வம்',
+        'color': const Color(0xFF10B981),
+      },
+      {
+        'key': 'West',
+        'emoji': '🌇',
+        'en': 'West',
+        'ta': 'மேற்கு',
+        'moolaiEn': 'Vayu Moolai / Wind',
+        'moolaiTa': 'வாயு மூலை / காற்று',
+        'color': const Color(0xFF8B5CF6),
+      },
+      {
+        'key': 'South',
+        'emoji': '🔥',
+        'en': 'South',
+        'ta': 'தெற்கு',
+        'moolaiEn': 'Yama / Strength',
+        'moolaiTa': 'யமன் / வலிமை',
+        'color': const Color(0xFFEF4444),
+      },
+    ];
+
+    String tempSelected = _selectedOrientation;
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx2, setPopupState) {
+            return Dialog(
+              backgroundColor: Colors.transparent,
+              insetPadding:
+                  const EdgeInsets.symmetric(horizontal: 18, vertical: 40),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF131B2A) : Colors.white,
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.35),
+                      blurRadius: 40,
+                      offset: const Offset(0, 16),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Header
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.fromLTRB(22, 22, 22, 16),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF1E3A5F), Color(0xFF0F2744)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(28)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Text('🏠',
+                                    style: TextStyle(fontSize: 20)),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  config.tr(
+                                    'Choose Plot Facing Direction',
+                                    'மனை பார்த்த திசை தேர்வு',
+                                  ),
+                                  style: GoogleFonts.syne(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            config.tr(
+                              'Which direction does your main entrance face?',
+                              'உங்கள் வீட்டின் முன் வாசல் எத்திசை நோக்கி உள்ளது?',
+                            ),
+                            style: GoogleFonts.inter(
+                              fontSize: 12.5,
+                              color: Colors.white.withValues(alpha: 0.75),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Direction Grid
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                          childAspectRatio: 1.55,
+                        ),
+                        itemCount: directions.length,
+                        itemBuilder: (_, i) {
+                          final d = directions[i];
+                          final key = d['key'] as String;
+                          final color = d['color'] as Color;
+                          final isSelected = tempSelected == key;
+                          return GestureDetector(
+                            onTap: () =>
+                                setPopupState(() => tempSelected = key),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? color.withValues(alpha: 0.15)
+                                    : (isDark
+                                        ? const Color(0xFF1C2840)
+                                        : const Color(0xFFF8FAFC)),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? color
+                                      : (isDark
+                                          ? Colors.white12
+                                          : Colors.grey.shade200),
+                                  width: isSelected ? 2 : 1,
+                                ),
+                                boxShadow: isSelected
+                                    ? [
+                                        BoxShadow(
+                                          color: color.withValues(alpha: 0.25),
+                                          blurRadius: 12,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ]
+                                    : [],
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 10),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        d['emoji'] as String,
+                                        style: const TextStyle(fontSize: 18),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        config.tr(
+                                          d['en'] as String,
+                                          d['ta'] as String,
+                                        ),
+                                        style: GoogleFonts.syne(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w700,
+                                          color: isSelected
+                                              ? color
+                                              : (isDark
+                                                  ? Colors.white
+                                                  : Colors.black87),
+                                        ),
+                                      ),
+                                      if (isSelected) ...[
+                                        const Spacer(),
+                                        Icon(Icons.check_circle,
+                                            size: 16, color: color),
+                                      ],
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    config.tr(
+                                      d['moolaiEn'] as String,
+                                      d['moolaiTa'] as String,
+                                    ),
+                                    style: GoogleFonts.inter(
+                                      fontSize: 10,
+                                      color: isSelected
+                                          ? color.withValues(alpha: 0.85)
+                                          : (isDark
+                                              ? Colors.white38
+                                              : Colors.grey.shade500),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+
+                    // Vastu info note
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 2),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? const Color(0xFF1E3A5F).withValues(alpha: 0.4)
+                              : const Color(0xFFEFF6FF),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color:
+                                const Color(0xFF3B82F6).withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            const Text('ℹ️', style: TextStyle(fontSize: 14)),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                config.tr(
+                                  'Vastu score is calculated based on your entrance direction. Correct selection = accurate report.',
+                                  'வாஸ்து மதிப்பெண் உங்கள் முன்வாசல் திசையை வைத்து கணிக்கப்படும். சரியான தேர்வு = துல்லியமான அறிக்கை.',
+                                ),
+                                style: GoogleFonts.inter(
+                                  fontSize: 10.5,
+                                  color: isDark
+                                      ? Colors.white60
+                                      : const Color(0xFF1D4ED8),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    // Confirm button
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF1E3A5F),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            elevation: 0,
+                          ),
+                          onPressed: () {
+                            setState(() => _selectedOrientation = tempSelected);
+                            Navigator.of(ctx).pop();
+                          },
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                config.tr(
+                                  'Confirm & Continue →',
+                                  'உறுதிப்படுத்து & தொடர் →',
+                                ),
+                                style: GoogleFonts.syne(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    // After dialog closes, go to Review & Pay
+    if (mounted) _navigateToReviewAndPay();
   }
 
   void _showPickSourceModal(AppConfigProvider config) {
@@ -1127,7 +1460,8 @@ class _UploadScreenState extends State<UploadScreen> {
 
                                     // Auto Vastu & Direction Analysis Notice
                                     Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
                                         Icon(
                                           Icons.auto_awesome_rounded,
