@@ -115,12 +115,12 @@ class _DownloadScreenState extends State<DownloadScreen> {
                         children: [
                           Text(
                             planName,
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
+                            style: GoogleFonts.syne(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w600,
                               color: primaryTextColor,
-                              letterSpacing: -0.3,
-                              height: 1.1,
+                              letterSpacing: -0.2,
+                              height: 1.0,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -140,40 +140,45 @@ class _DownloadScreenState extends State<DownloadScreen> {
                         ],
                       ),
                     ),
-                    // Language Switcher Capsule (Matches Vastu / Stitch)
+                    // Language Switcher Capsule (EN | தமிழ்)
                     Container(
                       height: 34,
                       padding: const EdgeInsets.all(2),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF27272A) : const Color(0xFFFCFDFF),
+                        color: isDark ? const Color(0xFF27272A) : AppColors.surfaceSecondary,
                         borderRadius: BorderRadius.circular(100),
-                        border: Border.all(
-                            color: isDark ? const Color(0xFF3F3F46) : const Color(0xFFE2E8F0)),
                       ),
                       child: Row(
-                        mainAxisSize: MainAxisSize.min,
                         children: [
                           GestureDetector(
                             onTap: () {
                               if (isTamil) config.setTamil(false);
                             },
                             child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 4),
+                              height: 30,
+                              padding: const EdgeInsets.symmetric(horizontal: 11),
+                              alignment: Alignment.center,
                               decoration: BoxDecoration(
                                 color: !isTamil
-                                    ? const Color(0xFF1B212F)
+                                    ? (isDark ? const Color(0xFF3F3F46) : Colors.white)
                                     : Colors.transparent,
                                 borderRadius: BorderRadius.circular(100),
+                                boxShadow: !isTamil
+                                    ? [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.08),
+                                          blurRadius: 2,
+                                          offset: const Offset(0, 1),
+                                        )
+                                      ]
+                                    : null,
                               ),
                               child: Text(
                                 'EN',
-                                style: GoogleFonts.plusJakartaSans(
+                                style: GoogleFonts.inter(
                                   fontSize: 11.5,
-                                  fontWeight: FontWeight.w600,
-                                  color: !isTamil
-                                      ? Colors.white
-                                      : (isDark ? const Color(0xFFA1A1AA) : const Color(0xFF364050)),
+                                  fontWeight: !isTamil ? FontWeight.w600 : FontWeight.w400,
+                                  color: !isTamil ? primaryTextColor : secondaryTextColor,
                                 ),
                               ),
                             ),
@@ -183,22 +188,30 @@ class _DownloadScreenState extends State<DownloadScreen> {
                               if (!isTamil) config.setTamil(true);
                             },
                             child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 4),
+                              height: 30,
+                              padding: const EdgeInsets.symmetric(horizontal: 11),
+                              alignment: Alignment.center,
                               decoration: BoxDecoration(
                                 color: isTamil
-                                    ? const Color(0xFF1B212F)
+                                    ? (isDark ? const Color(0xFF3F3F46) : Colors.white)
                                     : Colors.transparent,
                                 borderRadius: BorderRadius.circular(100),
+                                boxShadow: isTamil
+                                    ? [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.08),
+                                          blurRadius: 2,
+                                          offset: const Offset(0, 1),
+                                        )
+                                      ]
+                                    : null,
                               ),
                               child: Text(
                                 'தமிழ்',
-                                style: GoogleFonts.plusJakartaSans(
+                                style: GoogleFonts.inter(
                                   fontSize: 11.5,
-                                  fontWeight: FontWeight.w600,
-                                  color: isTamil
-                                      ? Colors.white
-                                      : (isDark ? const Color(0xFFA1A1AA) : const Color(0xFF364050)),
+                                  fontWeight: isTamil ? FontWeight.w600 : FontWeight.w400,
+                                  color: isTamil ? primaryTextColor : secondaryTextColor,
                                 ),
                               ),
                             ),
@@ -385,16 +398,11 @@ class _DownloadScreenState extends State<DownloadScreen> {
                   width: double.infinity,
                   height: 54,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE58A18),
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFE58A18), Color(0xFFFBA73B)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
+                    color: isDark ? Colors.white : AppColors.primary,
                     borderRadius: BorderRadius.circular(100),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFFE58A18).withValues(alpha: 0.35),
+                        color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.15),
                         blurRadius: 16,
                         offset: const Offset(0, 6),
                       ),
@@ -402,20 +410,20 @@ class _DownloadScreenState extends State<DownloadScreen> {
                   ),
                   child: Center(
                     child: _isGeneratingPdf
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 20,
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Colors.white,
+                              color: isDark ? Colors.black : Colors.white,
                             ),
                           )
                         : Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.file_download_outlined,
-                                color: Colors.white,
+                                color: isDark ? Colors.black : Colors.white,
                                 size: 20,
                               ),
                               const SizedBox(width: 8),
@@ -423,11 +431,11 @@ class _DownloadScreenState extends State<DownloadScreen> {
                                 isTamil
                                     ? 'முழு அறிக்கையை பதிவிறக்கு (PDF)'
                                     : 'Download Full PDF Report',
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.white,
-                                  letterSpacing: 0.2,
+                                style: GoogleFonts.inter(
+                                  fontSize: 14.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark ? Colors.black : Colors.white,
+                                  letterSpacing: 0.1,
                                 ),
                               ),
                             ],
