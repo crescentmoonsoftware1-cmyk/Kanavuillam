@@ -31,14 +31,156 @@ class _VastuScreenState extends State<VastuScreen> {
   late Future<Map<String, dynamic>> _vastuFuture;
   final Map<String, Map<String, dynamic>> _resultsCache = {};
 
+  IconData _getRoomIcon(String name) {
+    final lower = name.toLowerCase();
+    if (lower.contains('bed') || lower.contains('master')) {
+      return Icons.bed_rounded;
+    } else if (lower.contains('kitchen') || lower.contains('cook')) {
+      return Icons.soup_kitchen_rounded;
+    } else if (lower.contains('bath') || lower.contains('toilet') || lower.contains('wc')) {
+      return Icons.bathtub_rounded;
+    } else if (lower.contains('living') || lower.contains('hall') || lower.contains('drawing')) {
+      return Icons.weekend_rounded;
+    } else if (lower.contains('pooja') || lower.contains('puja') || lower.contains('prayer') || lower.contains('mandir')) {
+      return Icons.self_improvement_rounded;
+    } else if (lower.contains('stair') || lower.contains('step')) {
+      return Icons.stairs_rounded;
+    } else if (lower.contains('dining')) {
+      return Icons.dining_rounded;
+    } else if (lower.contains('portico') || lower.contains('parking') || lower.contains('car') || lower.contains('porch')) {
+      return Icons.directions_car_rounded;
+    } else if (lower.contains('utility') || lower.contains('store') || lower.contains('wash')) {
+      return Icons.local_laundry_service_rounded;
+    } else if (lower.contains('balcony') || lower.contains('terrace')) {
+      return Icons.deck_rounded;
+    }
+    return Icons.meeting_room_rounded;
+  }
+
+  Map<String, dynamic> _normalizeVastuResult(Map<String, dynamic> raw) {
+    final Map<String, dynamic> map = Map<String, dynamic>.from(raw);
+
+    // 1. DYNAMIC ROOM AUDIT MAPPING (from backend rooms, roomPlacements, or 2D plan rooms)
+    List<dynamic> roomsList = [];
+    if (map['rooms'] is List && (map['rooms'] as List).isNotEmpty) {
+      roomsList = (map['rooms'] as List).map((r) {
+        if (r is Map) {
+          final title = (r['title'] ?? r['name'] ?? 'Room').toString();
+          return {
+            'title': title,
+            'subtitle': (r['subtitle'] ?? r['zone'] ?? '').toString(),
+            'isCorrect': r['isCorrect'] ?? r['isIdeal'] ?? true,
+            'icon': (r['icon'] is IconData) ? r['icon'] : _getRoomIcon(title),
+            'analysis': (r['analysis'] is List) ? r['analysis'] : (r['text'] != null ? [r['text'].toString()] : []),
+          };
+        }
+        return r;
+      }).toList();
+    } else if (map['roomPlacements'] is List && (map['roomPlacements'] as List).isNotEmpty) {
+      roomsList = (map['roomPlacements'] as List).map((rp) {
+        if (rp is Map) {
+          final title = (rp['name'] ?? 'Room').toString();
+          final zone = (rp['zone'] ?? '').toString();
+          final isCorrect = rp['isIdeal'] == true;
+          final text = (rp['text'] ?? '').toString();
+          return {
+            'title': title,
+            'subtitle': zone,
+            'isCorrect': isCorrect,
+            'icon': _getRoomIcon(title),
+            'analysis': text.isNotEmpty ? [text] : [],
+          };
+        }
+        return rp;
+      }).toList();
+    } else {
+      // Fallback: Use rooms directly extracted from the uploaded 2D plan!
+      final dynamic projRooms = widget.projectData['rooms'] ??
+          widget.projectData['model_data']?['rooms'] ??
+          widget.projectData['model_data']?['floors']?['ground']?['rooms'];
+      if (projRooms is List && projRooms.isNotEmpty) {
+        roomsList = projRooms.map((r) {
+          if (r is Map) {
+            final title = (r['name'] ?? r['label'] ?? 'Room').toString();
+            return {
+              'title': title,
+              'subtitle': r['zone']?.toString() ?? '2D Plan Room',
+              'isCorrect': true,
+              'icon': _getRoomIcon(title),
+              'analysis': [r['vastu']?.toString() ?? 'Accurately detected from uploaded 2D plan.'],
+            };
+          }
+          return r;
+        }).toList();
+      }
+    }
+    map['rooms'] = roomsList;
+
+    // 2. DYNAMIC FIXES & REMEDIES MAPPING (from fixes or suggestions)
+    List<dynamic> fixesList = [];
+    if (map['fixes'] is List && (map['fixes'] as List).isNotEmpty) {
+      fixesList = (map['fixes'] as List).asMap().entries.map((entry) {
+        final f = entry.value;
+        if (f is Map) {
+          return {
+            'number': f['number']?.toString() ?? '${entry.key + 1}',
+            'issue': f['issue']?.toString() ?? 'Vastu Defect',
+            'fix': f['fix']?.toString() ?? '',
+            'points': f['points']?.toString() ?? '+5 pts',
+          };
+        }
+        return {
+          'number': '${entry.key + 1}',
+          'issue': 'Vastu Remedy ${entry.key + 1}',
+          'fix': f.toString(),
+          'points': '+5 pts',
+        };
+      }).toList();
+    } else if (map['suggestions'] is List && (map['suggestions'] as List).isNotEmpty) {
+      final violList = (map['violations'] is List) ? (map['violations'] as List) : [];
+      fixesList = (map['suggestions'] as List).asMap().entries.map((entry) {
+        final idx = entry.key;
+        final s = entry.value.toString();
+        final issue = (idx < violList.length)
+            ? violList[idx].toString()
+            : 'Vastu Alignment ${idx + 1}';
+        return {
+          'number': '${idx + 1}',
+          'issue': issue,
+          'fix': s,
+          'points': '+5 pts',
+        };
+      }).toList();
+    }
+    map['fixes'] = fixesList;
+
+    return map;
+  }
+
+  /// Unwrap nested {ground: {...}} structure from backend response and normalize fields
+  Map<String, dynamic> _unwrapVastuData(dynamic raw) {
+    if (raw == null) return {};
+    if (raw is Map<String, dynamic>) {
+      // If it has 'ground' key with score inside, unwrap it
+      if (raw.containsKey('ground') && raw['ground'] is Map) {
+        final g = raw['ground'] as Map<String, dynamic>;
+        if (g.containsKey('score')) return _normalizeVastuResult(g);
+      }
+      // If already flat (has score directly), return normalized
+      if (raw.containsKey('score')) return _normalizeVastuResult(raw);
+    }
+    return {};
+  }
+
   @override
   void initState() {
     super.initState();
-    final initialVastu =
+    final rawVastu =
         widget.projectData['vastu_data'] ?? widget.projectData['_vastu'];
-    if (initialVastu != null) {
-      _resultsCache['EN'] = Map<String, dynamic>.from(initialVastu);
-      _vastuFuture = Future.value(_resultsCache['EN']);
+    final initialVastu = _unwrapVastuData(rawVastu);
+    if (initialVastu.isNotEmpty) {
+      _resultsCache['EN'] = initialVastu;
+      _vastuFuture = Future.value(_resultsCache['EN']!);
     } else {
       _vastuFuture = _fetchVastuData('EN');
     }
@@ -46,10 +188,11 @@ class _VastuScreenState extends State<VastuScreen> {
 
   Future<Map<String, dynamic>> _fetchVastuData(String lang) async {
     try {
-      final res = await ApiService().analyzeVastu(
+      final raw = await ApiService().analyzeVastu(
         widget.projectData['id']?.toString() ?? 'demo',
         lang: lang == 'TA' ? 'Tamil' : 'English',
       );
+      final res = _unwrapVastuData(raw);
       _resultsCache[lang] = res;
       return res;
     } catch (_) {
@@ -61,124 +204,26 @@ class _VastuScreenState extends State<VastuScreen> {
 
   Map<String, dynamic> _getFallbackData(String lang) {
     final isTamil = lang == 'TA';
+    // Return an empty error state - never show fake hardcoded room placements
     return {
-      'score': 65,
-      'grade': 'B',
-      'orientation': 'North',
-      'strengths': isTamil
-          ? [
-              'முதன்மை வாயில் ஈசான்யத்தில் (வடகிழக்கு) நேர்மறை ஆற்றலை ஈர்க்கிறது.',
-              'சமையலறை ஆக்னேயத்தில் (தென்கிழக்கு) அக்னி மூலையில் சரியான அமைப்பில் உள்ளது.',
-              'வரவேற்பறை மற்றும் காற்று சுழற்சி பிரம்மஸ்தானத்தை ஒட்டி திறந்துள்ளது.'
-            ]
-          : [
-              'Main entrance in North-East (Ishanya) harnesses positive solar magnetic prana.',
-              'Kitchen positioned in South-East (Agni) fire corner for digestive vitality.',
-              'Living area open layout promotes unhindered air circulation and natural lighting.'
-            ],
-      'violations': isTamil
-          ? [
-              'முதன்மை படுக்கையறை வடகிழக்கில் உள்ளது (தென்மேற்கிற்கு உகந்தது).',
-              'பூஜை அறை தென்கிழக்கு அக்னி மூலையில் உள்ளது (ஈசான்யத்திற்கு உகந்தது).',
-              'படிக்கட்டு சுழற்சி எதிர்-கடிகார திசையில் அமைந்துள்ளது.'
-            ]
-          : [
-              'Master bedroom in North-East (violates South-West gravitational earth anchor).',
-              'Pooja room placed in South-East fire zone (should be in North-East Ishanya).',
-              'Staircase risers follow anti-clockwise flow creating energy resistance.'
-            ],
-      'whyPointsReduced': isTamil
-          ? [
-              'படுக்கையறை தவறான திசை: 15 புள்ளிகள் குறைப்பு (-15 pts)',
-              'பூஜை அறை அக்னி மூலையில்: 10 புள்ளிகள் குறைப்பு (-10 pts)',
-              'படிக்கட்டு சுழற்சி அமைப்பு: 10 புள்ளிகள் குறைப்பு (-10 pts)'
-            ]
-          : [
-              'Master bedroom incorrect zone: -15 points deduction',
-              'Pooja room in fire quadrant: -10 points deduction',
-              'Staircase anti-clockwise flow: -10 points deduction'
-            ],
-      'rooms': [
-        {
-          'title': isTamil ? 'வரவேற்பறை' : 'Living Room',
-          'subtitle': 'North-West',
-          'isCorrect': true,
-          'icon': Icons.chair,
-          'analysis': isTamil
-              ? ['சரியான வாஸ்து அமைவிடம்', 'நேர்மறை ஆற்றலை ஈர்க்கிறது', 'நல்வாழ்விற்கு உகந்தது']
-              : ['Perfect Vastu placement', 'Enhances positive energy', 'Optimal for well-being']
-        },
-        {
-          'title': isTamil ? 'சமையலறை' : 'Kitchen',
-          'subtitle': 'South-East',
-          'isCorrect': true,
-          'icon': Icons.local_fire_department,
-          'analysis': isTamil
-              ? ['அக்னி மூலை - உகந்த அமைவிடம்', 'ஆரோக்கியத்தை மேம்படுத்துகிறது', 'காலை சூரிய ஒளி பயன்']
-              : ['Ideal Agni fire corner', 'Improves digestion & health', 'Harnesses morning solar rays']
-        },
-        {
-          'title': isTamil ? 'கழிவறை' : 'Bathroom',
-          'subtitle': 'North-West',
-          'isCorrect': true,
-          'icon': Icons.bathtub,
-          'analysis': isTamil
-              ? ['வாயு மூலை சரியான இடம்', 'கழிவுகளை வெளியேற்ற உகந்தது', 'துர்நாற்றம் பரவாது']
-              : ['Vayu wind zone alignment', 'Optimal waste elimination', 'No damp stagnation']
-        },
-        {
-          'title': isTamil ? 'முதன்மை படுக்கையறை' : 'Master Bedroom',
-          'subtitle': 'North-East',
-          'isCorrect': false,
-          'icon': Icons.bed,
-          'analysis': isTamil
-              ? ['கடுமையான வாஸ்து குறைபாடு', 'தென்மேற்கிற்கு மாற்ற வேண்டும்', 'மன அமைதியின்மை ஏற்படும்']
-              : ['Severe Vastu violation', 'Heavy load in spiritual zone', 'Weakens decisions & finances']
-        },
-        {
-          'title': isTamil ? 'பூஜை அறை' : 'Pooja Room',
-          'subtitle': 'South-East',
-          'isCorrect': false,
-          'icon': Icons.wb_sunny,
-          'analysis': isTamil
-              ? ['அக்னி மூலையில் அமைத்தல் கூடாது', 'வடகிழக்கு ஈசான்யத்திற்கு மாற்றவும்', 'மனஅமைதி பாதிக்கும்']
-              : ['Wrong fire placement for worship', 'Shift to North-East Ishanya', 'Spiritual disturbance']
-        },
+      'score': 0,
+      'grade': '--',
+      'orientation': widget.projectData['orientation'] ?? 'East',
+      'error': true,
+      'strengths': <String>[],
+      'violations': [
+        isTamil
+            ? 'இணைப்பில் சிக்கல் உள்ளது. மீண்டும் முயற்சி செய்யவும்.'
+            : 'Connection error. Please try again.',
       ],
-      'fixes': [
-        {
-          'number': '1',
-          'issue': isTamil ? 'முதன்மை படுக்கையறை வடகிழக்கில் உள்ளது' : 'Master bedroom in North-East',
-          'fix': isTamil ? 'பூஜை அல்லது படிப்பு அறையாக மாற்றவும்' : 'Convert to prayer or study space',
-          'points': '+15 pts',
-          'border': true,
-        },
-        {
-          'number': '2',
-          'issue': isTamil ? 'படுக்கை வடகிழக்கு நோக்கி உள்ளது' : 'Bed frame in North-East',
-          'fix': isTamil ? 'படுக்கையை தென்மேற்கு நோக்கி நகர்த்தவும்' : 'Move bed to South-West',
-          'points': '+8 pts',
-          'border': true,
-        },
-        {
-          'number': '3',
-          'issue': isTamil ? 'பூஜை அறை தென்கிழக்கில் உள்ளது' : 'Pooja room in South-East',
-          'fix': isTamil ? 'பூஜை அறையை வடகிழக்கிற்கு மாற்றவும்' : 'Shift pooja to North-East',
-          'points': '+10 pts',
-          'border': true,
-        },
-        {
-          'number': '4',
-          'issue': isTamil ? 'திசை ஆற்றல் முரண்பாடுகள்' : 'Quadrant energy conflicts',
-          'fix': isTamil ? 'வாஸ்து பிரமிடு அல்லது படிகங்களை பொருத்தவும்' : 'Install Vastu pyramids on site',
-          'points': '+2 pts',
-          'border': false,
-        },
-      ]
+      'whyPointsReduced': <String>[],
+      'rooms': <Map<String, dynamic>>[],
+      'fixes': <Map<String, dynamic>>[],
     };
   }
 
   @override
+
   Widget build(BuildContext context) {
     final config = context.watch<AppConfigProvider>();
     final isTamil = config.isTamil;
@@ -194,32 +239,40 @@ class _VastuScreenState extends State<VastuScreen> {
           builder: (context, snapshot) {
             final data = snapshot.data ?? _getFallbackData(langKey);
 
-            final int score = (data['score'] is num) ? (data['score'] as num).toInt() : 65;
+            final int score =
+                (data['score'] is num) ? (data['score'] as num).toInt() : 65;
             final String grade = data['grade']?.toString() ?? 'B';
-            final String orientation = data['orientation']?.toString() ?? 'North';
+            final String orientation =
+                data['orientation']?.toString() ?? 'North';
             final int pointsLost = 100 - score;
 
-            final List strengths = (data['strengths'] is List && (data['strengths'] as List).isNotEmpty)
+            final List strengths = (data['strengths'] is List &&
+                    (data['strengths'] as List).isNotEmpty)
                 ? (data['strengths'] as List)
                 : (_getFallbackData(langKey)['strengths'] as List);
 
-            final List violations = (data['violations'] is List && (data['violations'] as List).isNotEmpty)
+            final List violations = (data['violations'] is List &&
+                    (data['violations'] as List).isNotEmpty)
                 ? (data['violations'] as List)
                 : (_getFallbackData(langKey)['violations'] as List);
 
-            final List whyPointsReduced = (data['whyPointsReduced'] is List && (data['whyPointsReduced'] as List).isNotEmpty)
+            final List whyPointsReduced = (data['whyPointsReduced'] is List &&
+                    (data['whyPointsReduced'] as List).isNotEmpty)
                 ? (data['whyPointsReduced'] as List)
-                : (data['negativePoints'] is List && (data['negativePoints'] as List).isNotEmpty
+                : (data['negativePoints'] is List &&
+                        (data['negativePoints'] as List).isNotEmpty
                     ? (data['negativePoints'] as List)
                     : (_getFallbackData(langKey)['whyPointsReduced'] as List));
 
-            final List rooms = (data['rooms'] is List && (data['rooms'] as List).isNotEmpty)
-                ? (data['rooms'] as List)
-                : (_getFallbackData(langKey)['rooms'] as List);
+            final List rooms =
+                (data['rooms'] is List && (data['rooms'] as List).isNotEmpty)
+                    ? (data['rooms'] as List)
+                    : (_getFallbackData(langKey)['rooms'] as List);
 
-            final List fixes = (data['fixes'] is List && (data['fixes'] as List).isNotEmpty)
-                ? (data['fixes'] as List)
-                : (_getFallbackData(langKey)['fixes'] as List);
+            final List fixes =
+                (data['fixes'] is List && (data['fixes'] as List).isNotEmpty)
+                    ? (data['fixes'] as List)
+                    : (_getFallbackData(langKey)['fixes'] as List);
 
             return Center(
               child: ConstrainedBox(
@@ -287,15 +340,20 @@ class _VastuScreenState extends State<VastuScreen> {
                                     },
                                     child: Container(
                                       height: 30,
-                                      padding: const EdgeInsets.symmetric(horizontal: 11),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 11),
                                       alignment: Alignment.center,
                                       decoration: BoxDecoration(
-                                        color: !isTamil ? Colors.white : Colors.transparent,
-                                        borderRadius: BorderRadius.circular(100),
+                                        color: !isTamil
+                                            ? Colors.white
+                                            : Colors.transparent,
+                                        borderRadius:
+                                            BorderRadius.circular(100),
                                         boxShadow: !isTamil
                                             ? [
                                                 BoxShadow(
-                                                  color: AppColors.primary.withValues(alpha: 0.05),
+                                                  color: AppColors.primary
+                                                      .withValues(alpha: 0.05),
                                                   blurRadius: 2,
                                                   offset: const Offset(0, 1),
                                                 )
@@ -306,8 +364,12 @@ class _VastuScreenState extends State<VastuScreen> {
                                         'EN',
                                         style: GoogleFonts.inter(
                                           fontSize: 11.5,
-                                          fontWeight: !isTamil ? FontWeight.w600 : FontWeight.w400,
-                                          color: !isTamil ? AppColors.textDark : AppColors.textSecondary,
+                                          fontWeight: !isTamil
+                                              ? FontWeight.w600
+                                              : FontWeight.w400,
+                                          color: !isTamil
+                                              ? AppColors.textDark
+                                              : AppColors.textSecondary,
                                         ),
                                       ),
                                     ),
@@ -323,15 +385,20 @@ class _VastuScreenState extends State<VastuScreen> {
                                     },
                                     child: Container(
                                       height: 30,
-                                      padding: const EdgeInsets.symmetric(horizontal: 11),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 11),
                                       alignment: Alignment.center,
                                       decoration: BoxDecoration(
-                                        color: isTamil ? Colors.white : Colors.transparent,
-                                        borderRadius: BorderRadius.circular(100),
+                                        color: isTamil
+                                            ? Colors.white
+                                            : Colors.transparent,
+                                        borderRadius:
+                                            BorderRadius.circular(100),
                                         boxShadow: isTamil
                                             ? [
                                                 BoxShadow(
-                                                  color: AppColors.primary.withValues(alpha: 0.05),
+                                                  color: AppColors.primary
+                                                      .withValues(alpha: 0.05),
                                                   blurRadius: 2,
                                                   offset: const Offset(0, 1),
                                                 )
@@ -342,8 +409,12 @@ class _VastuScreenState extends State<VastuScreen> {
                                         'தமிழ்',
                                         style: GoogleFonts.inter(
                                           fontSize: 11.5,
-                                          fontWeight: isTamil ? FontWeight.w600 : FontWeight.w400,
-                                          color: isTamil ? AppColors.textDark : AppColors.textSecondary,
+                                          fontWeight: isTamil
+                                              ? FontWeight.w600
+                                              : FontWeight.w400,
+                                          color: isTamil
+                                              ? AppColors.textDark
+                                              : AppColors.textSecondary,
                                         ),
                                       ),
                                     ),
@@ -414,24 +485,28 @@ class _VastuScreenState extends State<VastuScreen> {
                               bottom: 0,
                               left: 0,
                               right: 0,
-                              child: Container(height: 1, color: AppColors.border),
+                              child:
+                                  Container(height: 1, color: AppColors.border),
                             ),
                             Row(
                               children: [
                                 _buildSubTab(
                                   title: isTamil ? 'மதிப்பெண்' : 'Score',
                                   isActive: _currentSubTab == 0,
-                                  onTap: () => setState(() => _currentSubTab = 0),
+                                  onTap: () =>
+                                      setState(() => _currentSubTab = 0),
                                 ),
                                 _buildSubTab(
                                   title: isTamil ? 'அறைகள்' : 'Rooms',
                                   isActive: _currentSubTab == 1,
-                                  onTap: () => setState(() => _currentSubTab = 1),
+                                  onTap: () =>
+                                      setState(() => _currentSubTab = 1),
                                 ),
                                 _buildSubTab(
                                   title: isTamil ? 'பரிகாரங்கள்' : 'Fixes',
                                   isActive: _currentSubTab == 2,
-                                  onTap: () => setState(() => _currentSubTab = 2),
+                                  onTap: () =>
+                                      setState(() => _currentSubTab = 2),
                                 ),
                               ],
                             ),
@@ -444,13 +519,15 @@ class _VastuScreenState extends State<VastuScreen> {
                       Expanded(
                         child: Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 16),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(28),
                             boxShadow: [
                               BoxShadow(
-                                color: AppColors.primary.withValues(alpha: 0.06),
+                                color:
+                                    AppColors.primary.withValues(alpha: 0.06),
                                 blurRadius: 24,
                                 offset: const Offset(0, 8),
                               ),
@@ -578,7 +655,8 @@ class _VastuScreenState extends State<VastuScreen> {
               ),
               const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: AppColors.surfaceSecondary,
                   borderRadius: BorderRadius.circular(100),
@@ -631,7 +709,8 @@ class _VastuScreenState extends State<VastuScreen> {
                 ),
                 const SizedBox(height: 10),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
                   decoration: BoxDecoration(
                     color: AppColors.primary,
                     borderRadius: BorderRadius.circular(100),
@@ -685,7 +764,8 @@ class _VastuScreenState extends State<VastuScreen> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFEE2E2),
                   borderRadius: BorderRadius.circular(100),
@@ -706,13 +786,16 @@ class _VastuScreenState extends State<VastuScreen> {
             ...whyPointsReduced.map(
               (pt) => Padding(
                 padding: const EdgeInsets.only(bottom: 10.0),
-                child: _buildReasonRow(Icons.remove_circle_outline, pt.toString()),
+                child:
+                    _buildReasonRow(Icons.remove_circle_outline, pt.toString()),
               ),
             )
           else
             _buildReasonRow(
               Icons.check_circle,
-              isTamil ? 'எந்த பெரிய குறைபாடும் இல்லை!' : 'No severe issues found!',
+              isTamil
+                  ? 'எந்த பெரிய குறைபாடும் இல்லை!'
+                  : 'No severe issues found!',
             ),
         ],
       ),
@@ -721,7 +804,8 @@ class _VastuScreenState extends State<VastuScreen> {
 
   // ── 2. ROOMS SUBTAB ────────────────────────────────────────────────────────
   Widget _buildRoomsView(List rooms, bool isTamil) {
-    final int correctCount = rooms.where((r) => r is Map && r['isCorrect'] == true).length;
+    final int correctCount =
+        rooms.where((r) => r is Map && r['isCorrect'] == true).length;
 
     return Column(
       children: [
@@ -758,8 +842,11 @@ class _VastuScreenState extends State<VastuScreen> {
               final String title = r['title']?.toString() ?? 'Room';
               final String subtitle = r['subtitle']?.toString() ?? '';
               final bool isCorrect = r['isCorrect'] == true;
-              final IconData icon = (r['icon'] is IconData) ? r['icon'] as IconData : Icons.meeting_room;
-              final List analysis = (r['analysis'] is List) ? (r['analysis'] as List) : [];
+              final IconData icon = (r['icon'] is IconData)
+                  ? r['icon'] as IconData
+                  : _getRoomIcon(title);
+              final List analysis =
+                  (r['analysis'] is List) ? (r['analysis'] as List) : [];
 
               return _buildRoomRow(
                 context: context,
@@ -803,21 +890,27 @@ class _VastuScreenState extends State<VastuScreen> {
               ),
               const SizedBox(width: 6),
               _buildFilterChip(
-                label: isTamil ? 'பலங்கள் (${strengths.length})' : 'Strengths (${strengths.length})',
+                label: isTamil
+                    ? 'பலங்கள் (${strengths.length})'
+                    : 'Strengths (${strengths.length})',
                 isSelected: _analysisFilter == 1,
                 onTap: () => setState(() => _analysisFilter = 1),
                 color: const Color(0xFF059669),
               ),
               const SizedBox(width: 6),
               _buildFilterChip(
-                label: isTamil ? 'குறைபாடுகள் (${violations.length})' : 'Violations (${violations.length})',
+                label: isTamil
+                    ? 'குறைபாடுகள் (${violations.length})'
+                    : 'Violations (${violations.length})',
                 isSelected: _analysisFilter == 2,
                 onTap: () => setState(() => _analysisFilter = 2),
                 color: const Color(0xFFDC2626),
               ),
               const SizedBox(width: 6),
               _buildFilterChip(
-                label: isTamil ? 'பரிகாரங்கள் (${fixes.length})' : 'Fixes (${fixes.length})',
+                label: isTamil
+                    ? 'பரிகாரங்கள் (${fixes.length})'
+                    : 'Fixes (${fixes.length})',
                 isSelected: _analysisFilter == 3,
                 onTap: () => setState(() => _analysisFilter = 3),
               ),
@@ -922,7 +1015,9 @@ class _VastuScreenState extends State<VastuScreen> {
               // 3. POINTS REDUCTION BREAKDOWN
               if (_analysisFilter == 0 || _analysisFilter == 2) ...[
                 _buildSectionHeader(
-                  title: isTamil ? 'மதிப்பெண் குறைந்த காரணங்கள்' : 'Why Points Reduced',
+                  title: isTamil
+                      ? 'மதிப்பெண் குறைந்த காரணங்கள்'
+                      : 'Why Points Reduced',
                   badge: '-${100 - score} pts',
                   icon: Icons.trending_down_rounded,
                   color: const Color(0xFFB45309),
@@ -969,13 +1064,16 @@ class _VastuScreenState extends State<VastuScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     _buildSectionHeader(
-                      title: isTamil ? 'பரிகாரங்கள் & தீர்வுகள்' : 'Suggestions & Fixes',
+                      title: isTamil
+                          ? 'பரிகாரங்கள் & தீர்வுகள்'
+                          : 'Suggestions & Fixes',
                       badge: '${fixes.length}',
                       icon: Icons.lightbulb_outline_rounded,
                       color: AppColors.primary,
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 9, vertical: 3.5),
                       decoration: BoxDecoration(
                         color: AppColors.surfaceSecondary,
                         borderRadius: BorderRadius.circular(100),
@@ -1252,7 +1350,8 @@ class _VastuScreenState extends State<VastuScreen> {
                   children: [
                     if (isCorrect)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 9, vertical: 3.5),
                         decoration: BoxDecoration(
                           color: AppColors.surfaceSecondary,
                           borderRadius: BorderRadius.circular(100),
@@ -1260,7 +1359,8 @@ class _VastuScreenState extends State<VastuScreen> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.check, size: 12, color: Colors.black),
+                            const Icon(Icons.check,
+                                size: 12, color: Colors.black),
                             const SizedBox(width: 3),
                             Text(
                               isTamil ? 'சரியானது' : 'Correct',
@@ -1275,7 +1375,8 @@ class _VastuScreenState extends State<VastuScreen> {
                       )
                     else
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3.5),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 3.5),
                         decoration: BoxDecoration(
                           color: AppColors.primary,
                           borderRadius: BorderRadius.circular(100),
@@ -1316,11 +1417,27 @@ class _VastuScreenState extends State<VastuScreen> {
   }) {
     final List defaultAnalysis = isCorrect
         ? (isTamil
-            ? ['சரியான வாஸ்து அமைவிடம்', 'நேர்மறை ஆற்றலை ஈர்க்கிறது', 'நல்வாழ்விற்கு உகந்தது']
-            : ['Perfect Vastu placement', 'Enhances positive energy', 'Optimal for well-being'])
+            ? [
+                'சரியான வாஸ்து அமைவிடம்',
+                'நேர்மறை ஆற்றலை ஈர்க்கிறது',
+                'நல்வாழ்விற்கு உகந்தது'
+              ]
+            : [
+                'Perfect Vastu placement',
+                'Enhances positive energy',
+                'Optimal for well-being'
+              ])
         : (isTamil
-            ? ['கடுமையான வாஸ்து குறைபாடு', 'ஆற்றல் தடையை ஏற்படுத்துகிறது', 'பரிகாரங்கள் தேவை']
-            : ['Severe Vastu violation', 'Causes restlessness', 'Weakens decisions & finances']);
+            ? [
+                'கடுமையான வாஸ்து குறைபாடு',
+                'ஆற்றல் தடையை ஏற்படுத்துகிறது',
+                'பரிகாரங்கள் தேவை'
+              ]
+            : [
+                'Severe Vastu violation',
+                'Causes restlessness',
+                'Weakens decisions & finances'
+              ]);
 
     final items = analysisList.isNotEmpty ? analysisList : defaultAnalysis;
 
@@ -1337,7 +1454,8 @@ class _VastuScreenState extends State<VastuScreen> {
               topRight: Radius.circular(32),
             ),
           ),
-          padding: const EdgeInsets.only(top: 20, left: 24, right: 24, bottom: 28),
+          padding:
+              const EdgeInsets.only(top: 20, left: 24, right: 24, bottom: 28),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1538,7 +1656,8 @@ class _VastuScreenState extends State<VastuScreen> {
                         ),
                         if (points.isNotEmpty)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
                               color: const Color(0xFFD1FAE5),
                               borderRadius: BorderRadius.circular(6),
