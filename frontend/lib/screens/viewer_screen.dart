@@ -647,32 +647,33 @@ class ViewerScreenState extends State<ViewerScreen> {
                       borderRadius: BorderRadius.circular(100),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
+                          horizontal: 18,
                           vertical: 9,
                         ),
                         decoration: BoxDecoration(
-                          color: isDark ? Colors.white : AppColors.primary,
+                          color: const Color(0xFFE58A18),
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFE58A18), Color(0xFFFBA73B)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
                           borderRadius: BorderRadius.circular(100),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              config.tr('VIEW VASTU', 'வாஸ்து பார்க்க'),
-                              style: GoogleFonts.inter(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w700,
-                                color: isDark ? Colors.black : Colors.white,
-                                letterSpacing: 0.2,
-                              ),
-                            ),
-                            const SizedBox(width: 5),
-                            Icon(
-                              Icons.arrow_forward_rounded,
-                              size: 13,
-                              color: isDark ? Colors.black : Colors.white,
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFFE58A18).withValues(alpha: 0.35),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
                             ),
                           ],
+                        ),
+                        child: Text(
+                          config.tr('VASTU', 'வாஸ்து'),
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                            letterSpacing: 0.4,
+                          ),
                         ),
                       ),
                     ),

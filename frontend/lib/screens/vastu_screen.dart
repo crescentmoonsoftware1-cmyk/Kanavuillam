@@ -37,19 +37,31 @@ class _VastuScreenState extends State<VastuScreen> {
       return Icons.bed_rounded;
     } else if (lower.contains('kitchen') || lower.contains('cook')) {
       return Icons.soup_kitchen_rounded;
-    } else if (lower.contains('bath') || lower.contains('toilet') || lower.contains('wc')) {
+    } else if (lower.contains('bath') ||
+        lower.contains('toilet') ||
+        lower.contains('wc')) {
       return Icons.bathtub_rounded;
-    } else if (lower.contains('living') || lower.contains('hall') || lower.contains('drawing')) {
+    } else if (lower.contains('living') ||
+        lower.contains('hall') ||
+        lower.contains('drawing')) {
       return Icons.weekend_rounded;
-    } else if (lower.contains('pooja') || lower.contains('puja') || lower.contains('prayer') || lower.contains('mandir')) {
+    } else if (lower.contains('pooja') ||
+        lower.contains('puja') ||
+        lower.contains('prayer') ||
+        lower.contains('mandir')) {
       return Icons.self_improvement_rounded;
     } else if (lower.contains('stair') || lower.contains('step')) {
       return Icons.stairs_rounded;
     } else if (lower.contains('dining')) {
       return Icons.dining_rounded;
-    } else if (lower.contains('portico') || lower.contains('parking') || lower.contains('car') || lower.contains('porch')) {
+    } else if (lower.contains('portico') ||
+        lower.contains('parking') ||
+        lower.contains('car') ||
+        lower.contains('porch')) {
       return Icons.directions_car_rounded;
-    } else if (lower.contains('utility') || lower.contains('store') || lower.contains('wash')) {
+    } else if (lower.contains('utility') ||
+        lower.contains('store') ||
+        lower.contains('wash')) {
       return Icons.local_laundry_service_rounded;
     } else if (lower.contains('balcony') || lower.contains('terrace')) {
       return Icons.deck_rounded;
@@ -71,12 +83,15 @@ class _VastuScreenState extends State<VastuScreen> {
             'subtitle': (r['subtitle'] ?? r['zone'] ?? '').toString(),
             'isCorrect': r['isCorrect'] ?? r['isIdeal'] ?? true,
             'icon': (r['icon'] is IconData) ? r['icon'] : _getRoomIcon(title),
-            'analysis': (r['analysis'] is List) ? r['analysis'] : (r['text'] != null ? [r['text'].toString()] : []),
+            'analysis': (r['analysis'] is List)
+                ? r['analysis']
+                : (r['text'] != null ? [r['text'].toString()] : []),
           };
         }
         return r;
       }).toList();
-    } else if (map['roomPlacements'] is List && (map['roomPlacements'] as List).isNotEmpty) {
+    } else if (map['roomPlacements'] is List &&
+        (map['roomPlacements'] as List).isNotEmpty) {
       roomsList = (map['roomPlacements'] as List).map((rp) {
         if (rp is Map) {
           final title = (rp['name'] ?? 'Room').toString();
@@ -107,7 +122,10 @@ class _VastuScreenState extends State<VastuScreen> {
               'subtitle': r['zone']?.toString() ?? '2D Plan Room',
               'isCorrect': true,
               'icon': _getRoomIcon(title),
-              'analysis': [r['vastu']?.toString() ?? 'Accurately detected from uploaded 2D plan.'],
+              'analysis': [
+                r['vastu']?.toString() ??
+                    'Accurately detected from uploaded 2D plan.'
+              ],
             };
           }
           return r;
@@ -136,8 +154,10 @@ class _VastuScreenState extends State<VastuScreen> {
           'points': '+5 pts',
         };
       }).toList();
-    } else if (map['suggestions'] is List && (map['suggestions'] as List).isNotEmpty) {
-      final violList = (map['violations'] is List) ? (map['violations'] as List) : [];
+    } else if (map['suggestions'] is List &&
+        (map['suggestions'] as List).isNotEmpty) {
+      final violList =
+          (map['violations'] is List) ? (map['violations'] as List) : [];
       fixesList = (map['suggestions'] as List).asMap().entries.map((entry) {
         final idx = entry.key;
         final s = entry.value.toString();
@@ -223,7 +243,6 @@ class _VastuScreenState extends State<VastuScreen> {
   }
 
   @override
-
   Widget build(BuildContext context) {
     final config = context.watch<AppConfigProvider>();
     final isTamil = config.isTamil;
@@ -298,36 +317,39 @@ class _VastuScreenState extends State<VastuScreen> {
                                 children: [
                                   Text(
                                     planName,
-                                    style: GoogleFonts.syne(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.primary,
-                                      letterSpacing: -0.2,
-                                      height: 1.0,
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w700,
+                                      color: const Color(0xFF18191D),
+                                      letterSpacing: -0.3,
+                                      height: 1.1,
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
-                                  const SizedBox(height: 3),
+                                  const SizedBox(height: 2),
                                   Text(
                                     isTamil ? 'வாஸ்து அறிக்கை' : 'Vastu report',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 12.5,
-                                      color: AppColors.textSecondary,
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w400,
+                                      color: const Color(0xFF8E94A0),
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                            // Language Capsule
+                            // Language Capsule (Matches Stitch image)
                             Container(
                               height: 34,
                               padding: const EdgeInsets.all(2),
                               decoration: BoxDecoration(
-                                color: AppColors.surfaceSecondary,
+                                color: const Color(0xFFFCFDFF),
                                 borderRadius: BorderRadius.circular(100),
+                                border: Border.all(color: const Color(0xFFE2E8F0)),
                               ),
                               child: Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   GestureDetector(
                                     onTap: () {
@@ -339,37 +361,23 @@ class _VastuScreenState extends State<VastuScreen> {
                                       }
                                     },
                                     child: Container(
-                                      height: 30,
                                       padding: const EdgeInsets.symmetric(
-                                          horizontal: 11),
-                                      alignment: Alignment.center,
+                                          horizontal: 10, vertical: 4),
                                       decoration: BoxDecoration(
                                         color: !isTamil
-                                            ? Colors.white
+                                            ? const Color(0xFF1B212F)
                                             : Colors.transparent,
                                         borderRadius:
                                             BorderRadius.circular(100),
-                                        boxShadow: !isTamil
-                                            ? [
-                                                BoxShadow(
-                                                  color: AppColors.primary
-                                                      .withValues(alpha: 0.05),
-                                                  blurRadius: 2,
-                                                  offset: const Offset(0, 1),
-                                                )
-                                              ]
-                                            : null,
                                       ),
                                       child: Text(
                                         'EN',
-                                        style: GoogleFonts.inter(
+                                        style: GoogleFonts.plusJakartaSans(
                                           fontSize: 11.5,
-                                          fontWeight: !isTamil
-                                              ? FontWeight.w600
-                                              : FontWeight.w400,
+                                          fontWeight: FontWeight.w600,
                                           color: !isTamil
-                                              ? AppColors.textDark
-                                              : AppColors.textSecondary,
+                                              ? Colors.white
+                                              : const Color(0xFF364050),
                                         ),
                                       ),
                                     ),
@@ -384,37 +392,23 @@ class _VastuScreenState extends State<VastuScreen> {
                                       }
                                     },
                                     child: Container(
-                                      height: 30,
                                       padding: const EdgeInsets.symmetric(
-                                          horizontal: 11),
-                                      alignment: Alignment.center,
+                                          horizontal: 10, vertical: 4),
                                       decoration: BoxDecoration(
                                         color: isTamil
-                                            ? Colors.white
+                                            ? const Color(0xFF1B212F)
                                             : Colors.transparent,
                                         borderRadius:
                                             BorderRadius.circular(100),
-                                        boxShadow: isTamil
-                                            ? [
-                                                BoxShadow(
-                                                  color: AppColors.primary
-                                                      .withValues(alpha: 0.05),
-                                                  blurRadius: 2,
-                                                  offset: const Offset(0, 1),
-                                                )
-                                              ]
-                                            : null,
                                       ),
                                       child: Text(
                                         'தமிழ்',
-                                        style: GoogleFonts.inter(
+                                        style: GoogleFonts.plusJakartaSans(
                                           fontSize: 11.5,
-                                          fontWeight: isTamil
-                                              ? FontWeight.w600
-                                              : FontWeight.w400,
+                                          fontWeight: FontWeight.w600,
                                           color: isTamil
-                                              ? AppColors.textDark
-                                              : AppColors.textSecondary,
+                                              ? Colors.white
+                                              : const Color(0xFF364050),
                                         ),
                                       ),
                                     ),
@@ -492,18 +486,21 @@ class _VastuScreenState extends State<VastuScreen> {
                               children: [
                                 _buildSubTab(
                                   title: isTamil ? 'மதிப்பெண்' : 'Score',
+                                  icon: Icons.speed_rounded,
                                   isActive: _currentSubTab == 0,
                                   onTap: () =>
                                       setState(() => _currentSubTab = 0),
                                 ),
                                 _buildSubTab(
                                   title: isTamil ? 'அறைகள்' : 'Rooms',
+                                  icon: Icons.table_chart_outlined,
                                   isActive: _currentSubTab == 1,
                                   onTap: () =>
                                       setState(() => _currentSubTab = 1),
                                 ),
                                 _buildSubTab(
                                   title: isTamil ? 'பரிகாரங்கள்' : 'Fixes',
+                                  icon: Icons.build_rounded,
                                   isActive: _currentSubTab == 2,
                                   onTap: () =>
                                       setState(() => _currentSubTab = 2),
@@ -676,75 +673,80 @@ class _VastuScreenState extends State<VastuScreen> {
           Container(height: 1, color: AppColors.borderLight),
           const SizedBox(height: 16),
 
-          // Crystal Clear Score Hero Section (NO Clipping!)
-          Center(
-            child: Column(
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(
-                      score.toString(),
-                      style: GoogleFonts.syne(
-                        fontSize: 54,
+          // Crystal Clear Score Hero Section with Grade on the Right Side
+          Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        score.toString(),
+                        style: GoogleFonts.syne(
+                          fontSize: 54,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary,
+                          height: 1.0,
+                          letterSpacing: -1.0,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '/100',
+                        style: GoogleFonts.syne(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textSecondary,
+                          height: 1.0,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(100),
+                    ),
+                    child: Text(
+                      'Grade $grade',
+                      style: GoogleFonts.inter(
+                        fontSize: 12.5,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
-                        height: 1.0,
-                        letterSpacing: -1.0,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '/100',
-                      style: GoogleFonts.syne(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.textSecondary,
-                        height: 1.0,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(100),
-                  ),
-                  child: Text(
-                    'Grade $grade',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  width: double.infinity,
-                  height: 7,
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceSecondary,
-                    borderRadius: BorderRadius.circular(100),
-                  ),
-                  alignment: Alignment.centerLeft,
-                  child: FractionallySizedBox(
-                    widthFactor: (score / 100.0).clamp(0.0, 1.0),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(100),
+                        color: Colors.white,
                       ),
                     ),
                   ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Container(
+                width: double.infinity,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceSecondary,
+                  borderRadius: BorderRadius.circular(100),
                 ),
-              ],
-            ),
+                alignment: Alignment.centerLeft,
+                child: FractionallySizedBox(
+                  widthFactor: (score / 100.0).clamp(0.0, 1.0),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFFBA73B), Color(0xFFE58A18)],
+                      ),
+                      borderRadius: BorderRadius.circular(100),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
 
           const SizedBox(height: 20),
@@ -757,46 +759,87 @@ class _VastuScreenState extends State<VastuScreen> {
             children: [
               Text(
                 isTamil ? 'மதிப்பெண் குறைவு' : 'Score reduced',
-                style: GoogleFonts.inter(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primary,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF18191D),
                 ),
               ),
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFEE2E2),
+                  color: const Color(0xFFFDEBCB),
                   borderRadius: BorderRadius.circular(100),
                 ),
                 child: Text(
                   '-$pointsLost points',
-                  style: GoogleFonts.syne(
-                    fontSize: 13,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFFDC2626),
+                    color: const Color(0xFFB46205),
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           if (whyPointsReduced.isNotEmpty)
-            ...whyPointsReduced.map(
-              (pt) => Padding(
-                padding: const EdgeInsets.only(bottom: 10.0),
-                child:
-                    _buildReasonRow(Icons.remove_circle_outline, pt.toString()),
+            ...whyPointsReduced.asMap().entries.map(
+              (entry) => _buildNumberedReasonRow(
+                entry.key + 1,
+                entry.value.toString(),
               ),
             )
           else
-            _buildReasonRow(
-              Icons.check_circle,
+            _buildNumberedReasonRow(
+              1,
               isTamil
                   ? 'எந்த பெரிய குறைபாடும் இல்லை!'
-                  : 'No severe issues found!',
+                  : 'Pristine alignment! No major defects.',
             ),
+          const SizedBox(height: 8),
+
+          // View Fixes Button (matches Stitch image)
+          GestureDetector(
+            onTap: () => setState(() => _currentSubTab = 2),
+            child: Container(
+              height: 52,
+              margin: const EdgeInsets.only(top: 8, bottom: 6),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFFBA73B), Color(0xFFE58A18)],
+                ),
+                borderRadius: BorderRadius.circular(100),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x59E58A18),
+                    blurRadius: 20,
+                    offset: Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    isTamil ? 'பரிகாரங்களை காண்க' : 'View Fixes',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF1E252D),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(
+                    Icons.arrow_forward_rounded,
+                    size: 18,
+                    color: Color(0xFF1E252D),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -1224,9 +1267,13 @@ class _VastuScreenState extends State<VastuScreen> {
 
   Widget _buildSubTab({
     required String title,
+    required IconData icon,
     required bool isActive,
     required VoidCallback onTap,
   }) {
+    const Color goldAmber = Color(0xFFE58A18);
+    const Color goldAmberLight = Color(0xFFFBA73B);
+
     return Expanded(
       child: InkWell(
         onTap: onTap,
@@ -1235,21 +1282,41 @@ class _VastuScreenState extends State<VastuScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.only(bottom: 8.0),
-              child: Text(
-                title,
-                style: GoogleFonts.inter(
-                  fontSize: 13.5,
-                  fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-                  color: isActive ? AppColors.primary : AppColors.textSecondary,
-                ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    icon,
+                    size: 15,
+                    color: isActive ? goldAmber : AppColors.textSecondary,
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    title,
+                    style: GoogleFonts.inter(
+                      fontSize: 13.5,
+                      fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                      color: isActive ? AppColors.primary : AppColors.textSecondary,
+                    ),
+                  ),
+                ],
               ),
             ),
             if (isActive)
               Positioned(
                 bottom: 0,
-                left: 16,
-                right: 16,
-                child: Container(height: 2, color: AppColors.primary),
+                left: 14,
+                right: 14,
+                child: Container(
+                  height: 3,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [goldAmberLight, goldAmber],
+                    ),
+                    borderRadius: BorderRadius.circular(100),
+                  ),
+                ),
               ),
           ],
         ),
@@ -1257,28 +1324,50 @@ class _VastuScreenState extends State<VastuScreen> {
     );
   }
 
-  Widget _buildReasonRow(IconData icon, String text) {
-    return Row(
-      children: [
-        Container(
-          width: 32,
-          height: 32,
-          decoration: const BoxDecoration(
-            color: AppColors.surfaceSecondary,
-            shape: BoxShape.circle,
+  Widget _buildNumberedReasonRow(int number, String text) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8.0),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            decoration: const BoxDecoration(
+              color: Color(0xFFE9EEF4),
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              '$number',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF364050),
+              ),
+            ),
           ),
-          child: Icon(icon, size: 16, color: Colors.black),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            text,
-            style: GoogleFonts.inter(fontSize: 13, color: AppColors.primary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              text,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF18191D),
+                height: 1.35,
+              ),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
+
 
   Widget _buildRoomRow({
     required BuildContext context,
@@ -1378,7 +1467,12 @@ class _VastuScreenState extends State<VastuScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 3.5),
                         decoration: BoxDecoration(
-                          color: AppColors.primary,
+                          color: const Color(0xFFE58A18),
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFE58A18), Color(0xFFFBA73B)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
                           borderRadius: BorderRadius.circular(100),
                         ),
                         child: Text(
@@ -1494,7 +1588,7 @@ class _VastuScreenState extends State<VastuScreen> {
                               width: 20,
                               height: 20,
                               decoration: const BoxDecoration(
-                                color: Color(0xFFEEEEEE),
+                                color: Color(0xFFE58A18),
                                 shape: BoxShape.circle,
                               ),
                               alignment: Alignment.center,
@@ -1502,8 +1596,8 @@ class _VastuScreenState extends State<VastuScreen> {
                                 '!',
                                 style: GoogleFonts.inter(
                                   fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
                                   height: 1.0,
                                 ),
                               ),
