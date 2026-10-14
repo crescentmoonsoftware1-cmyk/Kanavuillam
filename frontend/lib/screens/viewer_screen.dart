@@ -371,6 +371,11 @@ class ViewerScreenState extends State<ViewerScreen> {
 
     final isDark = config.isDarkMode;
     final bgColor = config.bgColor;
+    final cardColor = config.cardColor;
+    final primaryTextColor = config.primaryTextColor;
+    final secondaryTextColor = config.secondaryTextColor;
+    final borderColor = config.borderColor;
+    final surfacePillColor = config.surfacePillColor;
 
     final modelData = widget.projectData['model_data'] as Map<String, dynamic>?;
     final floors = modelData?['floors'] as Map<String, dynamic>?;
@@ -399,30 +404,6 @@ class ViewerScreenState extends State<ViewerScreen> {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
               child: Row(
                 children: [
-                  if (widget.onBack != null) ...[
-                    InkWell(
-                      onTap: widget.onBack,
-                      borderRadius: BorderRadius.circular(100),
-                      child: Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF1D2128) : AppColors.card,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: isDark ? const Color(0xFF2C323D) : AppColors.cardBorder,
-                          ),
-                          boxShadow: AppColors.coolShadow,
-                        ),
-                        child: Icon(
-                          Icons.arrow_back_rounded,
-                          size: 20,
-                          color: isDark ? Colors.white : AppColors.deepInk,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                  ],
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -432,10 +413,10 @@ class ViewerScreenState extends State<ViewerScreen> {
                             '3D Villa Model',
                             '3D வில்லா மாதிரி',
                           ),
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 18,
+                          style: GoogleFonts.syne(
+                            fontSize: 20,
                             fontWeight: FontWeight.w700,
-                            color: isDark ? Colors.white : AppColors.deepInk,
+                            color: primaryTextColor,
                             letterSpacing: -0.2,
                           ),
                           maxLines: 1,
@@ -447,9 +428,9 @@ class ViewerScreenState extends State<ViewerScreen> {
                             'Interactive 3D Architecture',
                             'முழுமையான 3D கட்டிட வடிவமைப்பு',
                           ),
-                          style: GoogleFonts.plusJakartaSans(
+                          style: GoogleFonts.inter(
                             fontSize: 12,
-                            color: isDark ? const Color(0xFF9EACB9) : AppColors.quietGrey,
+                            color: secondaryTextColor,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -460,20 +441,35 @@ class ViewerScreenState extends State<ViewerScreen> {
                   const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
+                      horizontal: 10,
+                      vertical: 5,
                     ),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF282E38) : AppColors.innerPanel,
+                      color: surfacePillColor,
                       borderRadius: BorderRadius.circular(100),
+                      border: Border.all(color: borderColor),
                     ),
-                    child: Text(
-                      '$roomCount ${config.tr('Rooms', 'அறைகள்')}',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white : AppColors.steelBinder,
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 7,
+                          height: 7,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF10B981),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '$roomCount ${config.tr('Rooms', 'அறைகள்')}',
+                          style: GoogleFonts.inter(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: primaryTextColor,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -481,24 +477,34 @@ class ViewerScreenState extends State<ViewerScreen> {
             ),
           ],
 
-          // ── 2. 3D WEBVIEW VIEWPORT ─────────────────────────────────────────
+          // ── 2. 3D WEBVIEW VIEWPORT (Clean canvas without overlays) ────────
           Expanded(
             child: Container(
               margin: EdgeInsets.symmetric(
                 horizontal: widget.isStructural ? 0 : 16,
               ),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF121212) : AppColors.card,
-                borderRadius: BorderRadius.circular(widget.isStructural ? 0 : 28),
-                border: widget.isStructural
+                color:
+                    isDark ? const Color(0xFF121212) : const Color(0xFFF1F5F9),
+                borderRadius:
+                    BorderRadius.circular(widget.isStructural ? 0 : 24),
+                border:
+                    widget.isStructural ? null : Border.all(color: borderColor),
+                boxShadow: widget.isStructural
                     ? null
-                    : Border.all(
-                        color: isDark ? const Color(0xFF2C323D) : AppColors.cardBorder,
-                      ),
-                boxShadow: widget.isStructural ? null : AppColors.coolShadow,
+                    : [
+                        BoxShadow(
+                          color: Colors.black.withValues(
+                            alpha: isDark ? 0.35 : 0.05,
+                          ),
+                          blurRadius: 20,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
               ),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(widget.isStructural ? 0 : 28),
+                borderRadius:
+                    BorderRadius.circular(widget.isStructural ? 0 : 24),
                 child: Stack(
                   children: [
                     // Canvas / Webview
@@ -512,60 +518,9 @@ class ViewerScreenState extends State<ViewerScreen> {
                       Center(
                         child: CircularProgressIndicator(
                           strokeWidth: 2.5,
-                          color: AppColors.amber,
+                          color: isDark ? Colors.white : AppColors.primary,
                         ),
                       ),
-
-                    // Top Viewport Indicator (Compass N & Floor chip)
-                    Positioned(
-                      top: 14,
-                      left: 14,
-                      right: 14,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? const Color(0xFF282E38)
-                                  : AppColors.innerPanel,
-                              shape: BoxShape.circle,
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              'N',
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w800,
-                                color: isDark ? Colors.white : AppColors.steelBinder,
-                              ),
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? const Color(0xFF282E38)
-                                  : AppColors.innerPanel,
-                              borderRadius: BorderRadius.circular(100),
-                            ),
-                            child: Text(
-                              'Ground + 1F',
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: isDark ? Colors.white : AppColors.steelBinder,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
 
                     // Bottom Floating Gesture Hint
                     Positioned(
@@ -575,23 +530,34 @@ class ViewerScreenState extends State<ViewerScreen> {
                       child: Center(
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 6,
+                            horizontal: 12,
+                            vertical: 5,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF1B212F).withValues(alpha: 0.70),
+                            color: Colors.black.withValues(alpha: 0.5),
                             borderRadius: BorderRadius.circular(100),
                           ),
-                          child: Text(
-                            config.tr(
-                              'Drag to rotate • Pinch to zoom',
-                              'சுழற்ற இழுக்கவும் • பெரிதாக்கவும்',
-                            ),
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 11,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w500,
-                            ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.touch_app_outlined,
+                                size: 12,
+                                color: Colors.white70,
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                config.tr(
+                                  'Drag to rotate • Pinch to zoom',
+                                  'சுழற்ற இழுக்கவும் • பெரிதாக்கவும்',
+                                ),
+                                style: GoogleFonts.inter(
+                                  fontSize: 10.5,
+                                  color: Colors.white70,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -612,26 +578,32 @@ class ViewerScreenState extends State<ViewerScreen> {
                   vertical: 12,
                 ),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1D2128) : AppColors.card,
-                  borderRadius: BorderRadius.circular(32),
-                  border: Border.all(
-                    color: isDark ? const Color(0xFF2C323D) : AppColors.cardBorder,
-                  ),
-                  boxShadow: AppColors.floatingNavShadow,
+                  color: cardColor,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: borderColor),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(
+                        alpha: isDark ? 0.35 : 0.05,
+                      ),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: Row(
                   children: [
                     Container(
-                      width: 40,
-                      height: 40,
+                      width: 36,
+                      height: 36,
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF282E38) : AppColors.innerPanel,
+                        color: surfacePillColor,
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Icons.explore_rounded,
-                        size: 20,
-                        color: isDark ? Colors.white : AppColors.steelBinder,
+                        size: 19,
+                        color: isDark ? Colors.white : AppColors.primary,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -645,10 +617,10 @@ class ViewerScreenState extends State<ViewerScreen> {
                               'Next: Vastu Analysis',
                               'அடுத்தது: வாஸ்து பகுப்பாய்வு',
                             ),
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : AppColors.deepInk,
+                            style: GoogleFonts.syne(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: primaryTextColor,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -656,12 +628,12 @@ class ViewerScreenState extends State<ViewerScreen> {
                           const SizedBox(height: 2),
                           Text(
                             config.tr(
-                              'Room-by-room compliance',
+                              'Room-by-room compliance score',
                               'திசைகள் & வாஸ்து சரிபார்ப்பு',
                             ),
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 11.5,
-                              color: isDark ? const Color(0xFF9EACB9) : AppColors.quietGrey,
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              color: secondaryTextColor,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -675,21 +647,32 @@ class ViewerScreenState extends State<ViewerScreen> {
                       borderRadius: BorderRadius.circular(100),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 10,
+                          horizontal: 18,
+                          vertical: 9,
                         ),
                         decoration: BoxDecoration(
-                          gradient: AppColors.amberGradient,
+                          color: const Color(0xFFE58A18),
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFE58A18), Color(0xFFFBA73B)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
                           borderRadius: BorderRadius.circular(100),
-                          boxShadow: AppColors.amberGlow,
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFFE58A18).withValues(alpha: 0.35),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
                         ),
                         child: Text(
-                          config.tr('VIEW VASTU', 'வாஸ்து பார்க்க'),
+                          config.tr('VASTU', 'வாஸ்து'),
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.onAmberInk,
-                            letterSpacing: 0.3,
+                            color: Colors.white,
+                            letterSpacing: 0.4,
                           ),
                         ),
                       ),

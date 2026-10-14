@@ -198,333 +198,363 @@ class _StructuralScreenState extends State<StructuralScreen> {
     final safeTab = _safeSubTab;
 
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppColors.canvasGradient,
-        ),
-        child: SafeArea(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 440),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: Padding(
+          padding:
+              const EdgeInsets.only(left: 20.0, right: 20.0, top: 16.0, bottom: 20.0),
+          child: Column(
+            children: [
+              // ── 1. HEADER (Plan Name, Subtitle, Language Capsule) ────────
+              SizedBox(
+                height: 52,
+                child: Row(
                   children: [
-                    // ── 1. HEADER ROW ───────────────────────────────────────
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  planName,
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.inkPrimary,
-                                    letterSpacing: -0.3,
-                                    height: 1.1,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  isTamil ? 'கட்டமைப்பு அறிக்கை' : 'Structure report',
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                    color: AppColors.inkQuiet,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          // Language Switcher Capsule
-                          Container(
-                            padding: const EdgeInsets.all(2),
-                            decoration: BoxDecoration(
-                              color: AppColors.card,
-                              borderRadius: BorderRadius.circular(100),
-                              border: Border.all(color: AppColors.borderLight),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                GestureDetector(
-                                  onTap: () {
-                                    if (isTamil) config.setTamil(false);
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: !isTamil ? AppColors.inkDark : Colors.transparent,
-                                      borderRadius: BorderRadius.circular(100),
-                                    ),
-                                    child: Text(
-                                      'EN',
-                                      style: GoogleFonts.plusJakartaSans(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: !isTamil ? Colors.white : AppColors.inkMuted,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                GestureDetector(
-                                  onTap: () {
-                                    if (!isTamil) config.setTamil(true);
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: isTamil ? AppColors.inkDark : Colors.transparent,
-                                      borderRadius: BorderRadius.circular(100),
-                                    ),
-                                    child: Text(
-                                      'தமிழ்',
-                                      style: GoogleFonts.plusJakartaSans(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: isTamil ? Colors.white : AppColors.inkMuted,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-
-                    // ── 2. MAIN TABS (3D, Vastu, Cost, Structure, Download) ──
-                    SizedBox(
-                      height: 34,
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        physics: const BouncingScrollPhysics(),
-                        children: [
-                          _buildMainTab(
-                            title: '3D',
-                            isActive: false,
-                            onTap: () => widget.onNavigateToTab?.call(1),
-                          ),
-                          const SizedBox(width: 6),
-                          _buildMainTab(
-                            title: isTamil ? 'வாஸ்து' : 'Vastu',
-                            isActive: false,
-                            onTap: () => widget.onNavigateToTab?.call(2),
-                          ),
-                          const SizedBox(width: 6),
-                          _buildMainTab(
-                            title: isTamil ? 'செலவு' : 'Cost',
-                            isActive: false,
-                            onTap: () => widget.onNavigateToTab?.call(3),
-                          ),
-                          const SizedBox(width: 6),
-                          _buildMainTab(
-                            title: isTamil ? 'அமைப்பு' : 'Structure',
-                            isActive: true,
-                            onTap: () {},
-                          ),
-                          const SizedBox(width: 6),
-                          _buildMainTab(
-                            title: isTamil ? 'பதிவிறக்கம்' : 'Download',
-                            isActive: false,
-                            onTap: () => widget.onNavigateToTab?.call(5),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-
-                    // ── 3. PERSISTENT PLOT SIZE HERO CARD ────────────────────
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: AppColors.card,
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: AppColors.borderLight),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x141B212F),
-                            blurRadius: 24,
-                            offset: Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    '${pw.toInt()}\' × ${ph.toInt()}\'',
-                                    style: GoogleFonts.plusJakartaSans(
-                                      fontSize: 19,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.inkPrimary,
-                                      height: 1.0,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    '$area sq ft',
-                                    style: GoogleFonts.plusJakartaSans(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                      color: AppColors.inkQuiet,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 6),
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.canvasGradientTop,
-                                      borderRadius: BorderRadius.circular(100),
-                                    ),
-                                    child: Text(
-                                      'IS 456:2000',
-                                      style: GoogleFonts.plusJakartaSans(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: AppColors.inkMuted,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.canvasGradientTop,
-                                      borderRadius: BorderRadius.circular(100),
-                                    ),
-                                    child: Text(
-                                      'Zone III',
-                                      style: GoogleFonts.plusJakartaSans(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: AppColors.inkMuted,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          // Floor Dropdown Pill
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF8FAFC),
-                              borderRadius: BorderRadius.circular(100),
-                              border: Border.all(color: const Color(0xFFE2E8F0)),
-                            ),
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
-                                value: isMultiFloor && rootStructural.containsKey(_selectedFloor)
-                                    ? _selectedFloor
-                                    : 'ground',
-                                isDense: true,
-                                icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: AppColors.inkQuiet),
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.inkPrimary,
-                                ),
-                                items: (isMultiFloor ? rootStructural.keys.toList() : ['ground'])
-                                    .map<DropdownMenuItem<String>>(
-                                        (k) => DropdownMenuItem<String>(
-                                              value: k,
-                                              child: Text(k.toUpperCase()),
-                                            ))
-                                    .toList(),
-                                onChanged: (val) {
-                                  if (val != null) {
-                                    setState(() => _selectedFloor = val);
-                                  }
-                                },
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-
-                    // ── 4. 5-SEGMENT SUB TABS CAPSULE ─────────────────────────
-                    Container(
-                      height: 48,
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE2E8F0),
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      child: Row(
-                        children: [
-                          _buildSubTabItem(
-                            index: 0,
-                            title: isTamil ? 'திட்டம்' : 'Plan',
-                            isActive: safeTab == 0,
-                          ),
-                          _buildSubTabItem(
-                            index: 1,
-                            title: '3D',
-                            isActive: safeTab == 1,
-                          ),
-                          _buildSubTabItem(
-                            index: 2,
-                            title: isTamil ? 'அட்டவணை' : 'Schedule',
-                            isActive: safeTab == 2,
-                          ),
-                          _buildSubTabItem(
-                            index: 3,
-                            title: isTamil ? 'பாதுகாப்பு' : 'Safety',
-                            isActive: safeTab == 3,
-                          ),
-                          _buildSubTabItem(
-                            index: 4,
-                            title: isTamil ? 'அளவுகள்' : 'Quantity',
-                            isActive: safeTab == 4,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // ── 5. ACTIVE TAB CONTENT VIEW ───────────────────────────
                     Expanded(
-                      child: _buildSubTabContent(
-                        safeTab: safeTab,
-                        rooms: rooms,
-                        walls: walls,
-                        pw: pw,
-                        ph: ph,
-                        totalAreaSqft: totalAreaSqft,
-                        structural: structural,
-                        isMultiFloor: isMultiFloor,
-                        isTamil: isTamil,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            planName,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF18191D),
+                              letterSpacing: -0.3,
+                              height: 1.1,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            isTamil
+                                ? 'கட்டமைப்பு அறிக்கை · ${pw.toInt()}\' × ${ph.toInt()}\' ($area ச.அடி)'
+                                : 'Structural report · ${pw.toInt()}\' × ${ph.toInt()}\' ($area sq ft)',
+                            style: GoogleFonts.inter(
+                              fontSize: 12.5,
+                              color: AppColors.textSecondary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Language Capsule (Matches Vastu / Stitch)
+                    Container(
+                      height: 34,
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFCFDFF),
+                        borderRadius: BorderRadius.circular(100),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              if (isTamil) config.setTamil(false);
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: !isTamil
+                                    ? const Color(0xFF1B212F)
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(100),
+                              ),
+                              child: Text(
+                                'EN',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: !isTamil
+                                      ? Colors.white
+                                      : const Color(0xFF364050),
+                                ),
+                              ),
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              if (!isTamil) config.setTamil(true);
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: isTamil
+                                    ? const Color(0xFF1B212F)
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(100),
+                              ),
+                              child: Text(
+                                'தமிழ்',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: isTamil
+                                      ? Colors.white
+                                      : const Color(0xFF364050),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
+              const SizedBox(height: 8),
+
+              // ── 2. MAIN TABS (3D, Vastu, Cost, Structure, Download) ────────
+              SizedBox(
+                height: 36,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _buildMainTab(
+                        title: '3D',
+                        isActive: false,
+                        onTap: () => widget.onNavigateToTab?.call(1),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: _buildMainTab(
+                        title: isTamil ? 'வாஸ்து' : 'Vastu',
+                        isActive: false,
+                        onTap: () => widget.onNavigateToTab?.call(2),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: _buildMainTab(
+                        title: isTamil ? 'செலவு' : 'Cost',
+                        isActive: false,
+                        onTap: () => widget.onNavigateToTab?.call(3),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: _buildMainTab(
+                        title: isTamil ? 'அமைப்பு' : 'Structure',
+                        isActive: true,
+                        onTap: () {},
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: _buildMainTab(
+                        title: isTamil ? 'பதிவிறக்கம்' : 'Download',
+                        isActive: false,
+                        onTap: () => widget.onNavigateToTab?.call(5),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // ── 3. EXECUTIVE PLOT & CODES HERO CARD ──────────────────────
+              Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.05),
+                      blurRadius: 20,
+                      offset: const Offset(0, 6),
+                    )
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    // Plot Size & Area Badge
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            isTamil ? 'மனை அளவு' : 'Plot size',
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.textTertiary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  '${pw.toInt()}\' × ${ph.toInt()}\'',
+                                  style: GoogleFonts.syne(
+                                    fontSize: 26,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.primary,
+                                    letterSpacing: -0.3,
+                                    height: 1.15,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.background,
+                                    borderRadius: BorderRadius.circular(100),
+                                  ),
+                                  child: Text(
+                                    '$area sq ft',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (isMultiFloor && rootStructural.isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            Container(
+                              height: 28,
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 8),
+                              decoration: BoxDecoration(
+                                color: AppColors.background,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: DropdownButtonHideUnderline(
+                                child: DropdownButton<String>(
+                                  value: rootStructural.containsKey(_selectedFloor)
+                                      ? _selectedFloor
+                                      : rootStructural.keys.first,
+                                  isDense: true,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.primary,
+                                  ),
+                                  items: rootStructural.keys
+                                      .map<DropdownMenuItem<String>>(
+                                          (k) => DropdownMenuItem<String>(
+                                                value: k,
+                                                child: Text(
+                                                  k.toUpperCase(),
+                                                  style: GoogleFonts.inter(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: AppColors.primary,
+                                                  ),
+                                                ),
+                                              ))
+                                      .toList(),
+                                  onChanged: (val) {
+                                    if (val != null) {
+                                      setState(() => _selectedFloor = val);
+                                    }
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Civil Code Standards Badges
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildTagIcon(
+                          Icons.verified_outlined,
+                          'IS 456:2000',
+                        ),
+                        const SizedBox(height: 6),
+                        _buildTagIcon(
+                          Icons.shield_outlined,
+                          'Zone III',
+                          isHighlight: true,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              // ── 4. SUB TABS (Plan, 3D, Schedule, Safety, Quantity) ───────
+              SizedBox(
+                height: 42,
+                child: Stack(
+                  children: [
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: Container(height: 1, color: AppColors.border),
+                    ),
+                    Row(
+                      children: [
+                        _buildSubTab(
+                          title: isTamil ? 'திட்டம்' : 'Plan',
+                          index: 0,
+                        ),
+                        _buildSubTab(
+                          title: '3D',
+                          index: 1,
+                        ),
+                        _buildSubTab(
+                          title: isTamil ? 'அட்டவணை' : 'Schedule',
+                          index: 2,
+                        ),
+                        _buildSubTab(
+                          title: isTamil ? 'பாதுகாப்பு' : 'Safety',
+                          index: 3,
+                        ),
+                        _buildSubTab(
+                          title: isTamil ? 'அளவுகள்' : 'Quantity',
+                          index: 4,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // ── 5. ACTIVE TAB CONTENT VIEW ───────────────────────────────
+              Expanded(
+                child: _buildSubTabContent(
+                  safeTab: safeTab,
+                  rooms: rooms,
+                  walls: walls,
+                  pw: pw,
+                  ph: ph,
+                  totalAreaSqft: totalAreaSqft,
+                  structural: structural,
+                  isMultiFloor: isMultiFloor,
+                  isTamil: isTamil,
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -538,86 +568,110 @@ class _StructuralScreenState extends State<StructuralScreen> {
     required VoidCallback onTap,
   }) {
     return GestureDetector(
-      onTap: isActive ? null : onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-        decoration: BoxDecoration(
-          color: isActive ? AppColors.inkDark : AppColors.card,
-          borderRadius: BorderRadius.circular(100),
-          border: isActive ? null : Border.all(color: AppColors.borderLight),
-          boxShadow: isActive
-              ? const [
-                  BoxShadow(
-                    color: Color(0x141B212F),
-                    blurRadius: 4,
-                    offset: Offset(0, 2),
-                  )
-                ]
-              : null,
-        ),
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 7),
         alignment: Alignment.center,
-        child: Text(
-          title,
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: isActive ? Colors.white : AppColors.inkMuted,
+        decoration: BoxDecoration(
+          color: isActive ? AppColors.primary : AppColors.surfaceSecondary,
+          borderRadius: BorderRadius.circular(100),
+        ),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            title,
+            maxLines: 1,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+              color: isActive ? Colors.white : AppColors.textSecondary,
+            ),
           ),
         ),
       ),
     );
   }
 
-  // ── Sub Tab Item Builder ───────────────────────────────────────────────────
-  Widget _buildSubTabItem({
-    required int index,
-    required String title,
-    required bool isActive,
-  }) {
+  // ── Sub Tab Button Builder ─────────────────────────────────────────────────
+  Widget _buildSubTab({required String title, required int index}) {
+    final bool isActive = _safeSubTab == index;
+    const Color goldAmber = Color(0xFFE58A18);
+    const Color goldAmberLight = Color(0xFFFBA73B);
+
     return Expanded(
-      child: GestureDetector(
+      child: InkWell(
         onTap: () => setState(() => _currentSubTab = index),
-        child: Container(
-          decoration: BoxDecoration(
-            color: isActive ? AppColors.card : Colors.transparent,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: isActive
-                ? const [
-                    BoxShadow(
-                      color: Color(0x141B212F),
-                      blurRadius: 8,
-                      offset: Offset(0, 2),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10.0),
+              child: Text(
                 title,
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 12,
-                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
-                  color: isActive ? AppColors.inkPrimary : AppColors.inkMuted,
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                  color: isActive ? AppColors.primary : AppColors.textTertiary,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-              if (isActive) ...[
-                const SizedBox(height: 2),
-                Container(
-                  width: 5,
-                  height: 5,
-                  decoration: const BoxDecoration(
-                    color: AppColors.amberDefault,
-                    shape: BoxShape.circle,
+            ),
+            if (isActive)
+              Positioned(
+                bottom: 0,
+                left: 6,
+                right: 6,
+                child: Container(
+                  height: 3,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [goldAmberLight, goldAmber],
+                    ),
+                    borderRadius: BorderRadius.circular(100),
                   ),
                 ),
-              ],
-            ],
-          ),
+              ),
+          ],
         ),
+      ),
+    );
+  }
+
+  // ── Tag Badge Pill Builder ─────────────────────────────────────────────────
+  Widget _buildTagIcon(IconData icon, String label, {bool isHighlight = false}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+      decoration: BoxDecoration(
+        color: isHighlight
+            ? const Color(0xFFF0FDF4)
+            : AppColors.background,
+        borderRadius: BorderRadius.circular(100),
+        border: Border.all(
+          color: isHighlight
+              ? const Color(0xFF86EFAC)
+              : AppColors.borderLight,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 12,
+            color: isHighlight ? const Color(0xFF15803D) : AppColors.primary,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: isHighlight ? const Color(0xFF15803D) : AppColors.primary,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -740,15 +794,15 @@ class _BlueprintCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.circular(28),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(color: AppColors.borderLight),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0x141B212F),
-            blurRadius: 32,
-            offset: Offset(0, 12),
-          ),
+            color: AppColors.primary.withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          )
         ],
       ),
       clipBehavior: Clip.hardEdge,
@@ -763,10 +817,10 @@ class _BlueprintCard extends StatelessWidget {
             ),
             child: Text(
               title,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 13,
+              style: GoogleFonts.syne(
+                fontSize: 14,
                 fontWeight: FontWeight.w700,
-                color: AppColors.inkPrimary,
+                color: AppColors.primary,
                 letterSpacing: 0.2,
               ),
               textAlign: TextAlign.center,
@@ -1401,7 +1455,7 @@ class _BlueprintPainter extends CustomPainter {
       for (final r in rooms) {
         final mid = Offset(
             (r['x'] + r['width'] / 2) * sX, (r['y'] + r['height'] / 2) * sY);
-        _text(canvas, r['name'], mid.dx, mid.dy, 10, Colors.black,
+        _text(canvas, r['name']?.toString() ?? '', mid.dx, mid.dy, 8.0, Colors.black87,
             FontWeight.bold);
       }
     });
@@ -1476,7 +1530,7 @@ void _drawBase(
   final double layoutW = math.max(1.0, maxX - minX);
   final double layoutH = math.max(1.0, maxY - minY);
 
-  const double pad = 45.0;
+  const double pad = 20.0;
   final double availW = math.max(10.0, size.width - (pad * 2));
   final double availH = math.max(10.0, size.height - (pad * 2));
 
@@ -1494,11 +1548,6 @@ void _drawBase(
   canvas.translate(offsetX, offsetY);
 
   drawInner(scale, scale);
-
-  _drawBubble(canvas, Offset(minX * scale, minY * scale), '1', true);
-  _drawBubble(canvas, Offset(maxX * scale, minY * scale), '2', true);
-  _drawBubble(canvas, Offset(minX * scale, minY * scale), 'A', false);
-  _drawBubble(canvas, Offset(minX * scale, maxY * scale), 'B', false);
 
   canvas.restore();
 }
@@ -1524,27 +1573,16 @@ List<Offset> _getWallPts(dynamic w, double sX, double sY) {
   return [Offset(x1 * sX, y1 * sY), Offset(x2 * sX, y2 * sY)];
 }
 
-void _drawBubble(Canvas canvas, Offset p, String text, bool top) {
-  final center = top ? Offset(p.dx, -35) : Offset(-35, p.dy);
-  canvas.drawCircle(
-      center,
-      12,
-      Paint()
-        ..color = Colors.black
-        ..style = PaintingStyle.stroke);
-  _text(canvas, text, center.dx, center.dy, 10, Colors.black, FontWeight.bold);
-}
-
 void _text(Canvas c, String t, double x, double y, double fs, Color col,
     FontWeight fw) {
-  TextPainter(
+  final tp = TextPainter(
       text: TextSpan(
           text: t,
           style: GoogleFonts.inter(
               color: col, fontSize: fs, fontWeight: fw)),
       textDirection: TextDirection.ltr)
-    ..layout()
-    ..paint(c, Offset(x - 10, y - 5));
+    ..layout();
+  tp.paint(c, Offset(x - (tp.width / 2), y - (tp.height / 2)));
 }
 
 class _SlabCrossSectionTechnicalPainter extends CustomPainter {
