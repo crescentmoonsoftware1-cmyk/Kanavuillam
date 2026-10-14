@@ -39,7 +39,7 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
     setState(() => _isGenerating = true);
     widget.onFinish?.call();
     if (mounted) {
-      Navigator.of(context).pop();
+      Navigator.of(context).popUntil((route) => route.isFirst);
     }
   }
 
@@ -85,7 +85,8 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 440),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -95,7 +96,7 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
                       child: Row(
                         children: [
                           GestureDetector(
-                            onTap: () => Navigator.pop(context),
+                            onTap: () => Navigator.of(context).popUntil((route) => route.isFirst),
                             child: Container(
                               width: 36,
                               height: 36,
@@ -112,7 +113,9 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
                           ),
                           Expanded(
                             child: Text(
-                              isTamil ? 'பணம் செலுத்திய ரசீது' : 'Payment Receipt',
+                              isTamil
+                                  ? 'பணம் செலுத்திய ரசீது'
+                                  : 'Payment Receipt',
                               textAlign: TextAlign.center,
                               style: GoogleFonts.plusJakartaSans(
                                 fontSize: 20,
@@ -140,7 +143,8 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
                               decoration: BoxDecoration(
                                 color: AppColors.card,
                                 borderRadius: BorderRadius.circular(28),
-                                border: Border.all(color: AppColors.borderLight),
+                                border:
+                                    Border.all(color: AppColors.borderLight),
                                 boxShadow: const [
                                   BoxShadow(
                                     color: Color(0x141B212F),
@@ -158,7 +162,9 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
                                     decoration: BoxDecoration(
                                       color: AppColors.badgeSlate,
                                       shape: BoxShape.circle,
-                                      border: Border.all(color: AppColors.amberHighlight, width: 2.0),
+                                      border: Border.all(
+                                          color: AppColors.amberHighlight,
+                                          width: 2.0),
                                     ),
                                     child: const Icon(
                                       Icons.check_rounded,
@@ -168,7 +174,9 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
                                   ),
                                   const SizedBox(height: 12),
                                   Text(
-                                    isTamil ? 'பணம் வெற்றிகரமாக பெறப்பட்டது' : 'Payment Successful',
+                                    isTamil
+                                        ? 'பணம் வெற்றிகரமாக பெறப்பட்டது'
+                                        : 'Payment Successful',
                                     style: GoogleFonts.plusJakartaSans(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w700,
@@ -186,17 +194,22 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
                                     ),
                                   ),
                                   const SizedBox(height: 16),
-                                  const Divider(color: Color(0xFFE2E8F0), height: 1),
+                                  const Divider(
+                                      color: Color(0xFFE2E8F0), height: 1),
                                   const SizedBox(height: 14),
 
                                   // Receipt Rows
                                   _buildReceiptRow(
-                                    label: isTamil ? 'பரிவர்த்தனை எண்' : 'Transaction ID',
+                                    label: isTamil
+                                        ? 'பரிவர்த்தனை எண்'
+                                        : 'Transaction ID',
                                     value: 'TXN-98421804',
                                   ),
                                   const SizedBox(height: 10),
                                   _buildReceiptRow(
-                                    label: isTamil ? 'தேதி & நேரம்' : 'Date & Time',
+                                    label: isTamil
+                                        ? 'தேதி & நேரம்'
+                                        : 'Date & Time',
                                     value: formattedDate,
                                   ),
                                   const SizedBox(height: 10),
@@ -216,7 +229,8 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
                               decoration: BoxDecoration(
                                 color: AppColors.card,
                                 borderRadius: BorderRadius.circular(28),
-                                border: Border.all(color: AppColors.borderLight),
+                                border:
+                                    Border.all(color: AppColors.borderLight),
                                 boxShadow: const [
                                   BoxShadow(
                                     color: Color(0x141B212F),
@@ -229,10 +243,13 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
-                                        isTamil ? 'கட்டிடக்கலை பகுப்பாய்வு' : 'Architecture Pipeline',
+                                        isTamil
+                                            ? 'கட்டிடக்கலை பகுப்பாய்வு'
+                                            : 'Architecture Pipeline',
                                         style: GoogleFonts.plusJakartaSans(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w700,
@@ -265,7 +282,8 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
                                       child: Container(
                                         decoration: BoxDecoration(
                                           gradient: AppColors.amberGradient,
-                                          borderRadius: BorderRadius.circular(100),
+                                          borderRadius:
+                                              BorderRadius.circular(100),
                                         ),
                                       ),
                                     ),
@@ -322,7 +340,9 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8.0),
                       child: AppDecor.primaryPillButton(
-                        label: isTamil ? '3D வில்லா & அறிக்கைகளை பார்க்கவும்' : 'VIEW 3D VILLA & REPORTS',
+                        label: isTamil
+                            ? '3D வில்லா & அறிக்கைகளை பார்க்கவும்'
+                            : 'VIEW 3D VILLA & REPORTS',
                         onTap: _handleStartGeneration,
                         isLoading: _isGenerating,
                       ),
@@ -408,8 +428,11 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
             title,
             style: GoogleFonts.plusJakartaSans(
               fontSize: 13,
-              fontWeight: isDone || isActive ? FontWeight.w600 : FontWeight.w400,
-              color: isDone || isActive ? AppColors.inkPrimary : AppColors.inkQuiet,
+              fontWeight:
+                  isDone || isActive ? FontWeight.w600 : FontWeight.w400,
+              color: isDone || isActive
+                  ? AppColors.inkPrimary
+                  : AppColors.inkQuiet,
             ),
           ),
         ),
