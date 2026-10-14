@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import '../services/api_service.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import '../core/providers/app_config_provider.dart';
@@ -450,12 +451,66 @@ class _ShellScreenState extends State<ShellScreen> {
         ),
       ),
       appBar: null,
-      body: Column(
+      body: Stack(
         children: [
-          _buildNavigationHeader(),
-          Expanded(
-            child: _buildBody(),
+          Column(
+            children: [
+              _buildNavigationHeader(),
+              Expanded(
+                child: _buildBody(),
+              ),
+            ],
           ),
+          if (_isGenerating)
+            Positioned.fill(
+              child: Container(
+                color: Colors.black.withValues(alpha: 0.65),
+                child: Center(
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 28),
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                    decoration: BoxDecoration(
+                      color: config.cardColor,
+                      borderRadius: BorderRadius.circular(28),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.2),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const SizedBox(
+                          width: 56,
+                          height: 56,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 3.5,
+                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFE58A18)),
+                            backgroundColor: Color(0x33E58A18),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          config.isTamil
+                              ? '3D வில்லா & அறிக்கைகள் உருவாகிறது...\nதயவுசெய்து காத்திருக்கவும்'
+                              : 'Generating 3D Villa & Reports...\nPlease wait a moment',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                            color: config.isDarkMode ? Colors.white : AppColors.deepInk,
+                            height: 1.4,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
       bottomNavigationBar: (_isGenerating ||
