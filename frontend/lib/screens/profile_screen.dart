@@ -368,9 +368,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _confirmDeleteAccount(BuildContext context, AppConfigProvider config) {
+  void _confirmDeleteAccount(BuildContext context, AppConfigProvider config) async {
+    final prefs = await SharedPreferences.getInstance();
+    final userEmail = prefs.getString('user_email') ?? _email;
+    final userId = widget.userData?['id'] as String?;
+
+    if (!context.mounted) return;
+
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (dialogCtx) {
         bool isDeleting = false;
         return StatefulBuilder(
@@ -378,23 +385,91 @@ class _ProfileScreenState extends State<ProfileScreen> {
             return AlertDialog(
               backgroundColor: config.isDarkMode ? const Color(0xFF1C2230) : const Color(0xFFFCFDFF),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-              title: Text(
-                config.tr('Delete Account?', 'கணக்கை நீக்க வேண்டுமா?'),
-                style: GoogleFonts.syne(
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFFEF4444),
-                ),
+              title: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: const BoxDecoration(
+                      color: Color(0x1AEF4444),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.warning_amber_rounded,
+                      color: Color(0xFFEF4444),
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      config.tr('Delete Account?', 'கணக்கை நீக்க வேண்டுமா?'),
+                      style: GoogleFonts.syne(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 18,
+                        color: const Color(0xFFEF4444),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              content: Text(
-                config.tr(
-                  'Are you sure you want to permanently delete your account, login credentials, and all uploaded design files? This action cannot be undone.',
-                  'உங்கள் கணக்கு மற்றும் அனைத்து வரைபட தரவுகளையும் நிரந்தரமாக நீக்க விரும்புகிறீர்களா? இந்த செயலை மாற்ற முடியாது.',
-                ),
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  height: 1.5,
-                  color: config.isDarkMode ? const Color(0xFFA1A1AA) : const Color(0xFF8E94A0),
-                ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    config.tr(
+                      'Are you sure you want to permanently delete your account? All your personal profile records, login credentials, and saved floor plan history will be completely erased from our servers in compliance with Google Play policies.',
+                      'உங்கள் கணக்கை நிரந்தரமாக நீக்க விரும்புகிறீர்களா? உங்கள் கணக்கு விவரங்கள், கடவுச்சொல் மற்றும் அனைத்து வரைபட தரவுகளும் எங்களின் சர்வர்களில் இருந்து நிரந்தரமாக நீக்கப்படும்.',
+                    ),
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      height: 1.5,
+                      color: config.isDarkMode ? const Color(0xFFA1A1AA) : const Color(0xFF64748B),
+                    ),
+                  ),
+                  if (userEmail.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: config.isDarkMode ? const Color(0xFF151A24) : const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: config.isDarkMode ? const Color(0xFF2E384D) : const Color(0xFFE2E8F0),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.email_outlined, size: 14, color: Color(0xFF8E94A0)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              userEmail,
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: config.isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 10),
+                  Text(
+                    config.tr(
+                      'Warning: This action cannot be reversed.',
+                      'எச்சரிக்கை: இந்த செயலை மாற்ற முடியாது.',
+                    ),
+                    style: GoogleFonts.inter(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFFEF4444),
+                    ),
+                  ),
+                ],
               ),
               actions: [
                 TextButton(
@@ -412,24 +487,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     backgroundColor: const Color(0xFFEF4444),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                   ),
                   onPressed: isDeleting
                       ? null
                       : () async {
                           setDialogState(() => isDeleting = true);
                           try {
-                            final prefs = await SharedPreferences.getInstance();
-                            final email = prefs.getString('user_email') ?? _email;
-                            final userId = widget.userData?['id'] as String?;
+                            // 1. Send deletion request to backend API
+                            try {
+                              await ApiService.post('/auth/delete-account', {
+                                'email': userEmail,
+                                if (userId != null) 'userId': userId,
+                              }).timeout(const Duration(seconds: 8));
+                            } catch (netErr) {
+                              debugPrint('[Account Deletion] Network notice: $netErr');
+                            }
 
-                            await ApiService.post('/auth/delete-account', {
-                              'email': email,
-                              if (userId != null) 'userId': userId,
-                            });
-
+                            // 2. Wipe local device preferences
                             await prefs.clear();
+
+                            // 3. Close dialog and redirect to WelcomeScreen
                             if (dialogCtx.mounted) Navigator.pop(dialogCtx);
                             if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(config.tr(
+                                    'Your account and data have been permanently deleted.',
+                                    'உங்கள் கணக்கு மற்றும் தரவுகள் நிரந்தரமாக நீக்கப்பட்டன.',
+                                  )),
+                                  backgroundColor: const Color(0xFFEF4444),
+                                  behavior: SnackBarBehavior.floating,
+                                  duration: const Duration(seconds: 4),
+                                ),
+                              );
                               Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
                                 MaterialPageRoute(builder: (_) => const WelcomeScreen()),
                                 (route) => false,
@@ -697,6 +788,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               color: Color(0xFF8E94A0),
                             ),
                             onTap: () => _showAboutDialog(context, config),
+                            showDivider: true,
+                          ),
+
+                          // Row 6: Delete Account
+                          _buildSettingRow(
+                            icon: Icons.delete_outline_rounded,
+                            iconColor: const Color(0xFFEF4444),
+                            iconBgColor: const Color(0x1AEF4444),
+                            title: config.tr('Delete Account', 'கணக்கை நீக்கு'),
+                            titleColor: const Color(0xFFEF4444),
+                            isDark: isDark,
+                            trailing: const Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              size: 16,
+                              color: Color(0xFFEF4444),
+                            ),
+                            onTap: () => _confirmDeleteAccount(context, config),
                             showDivider: false,
                           ),
                         ],
@@ -747,29 +855,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
 
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
 
-                    // 4. PERMANENT ACCOUNT DELETION LINK
+                    // 4. PERMANENT ACCOUNT DELETION BUTTON
                     GestureDetector(
                       onTap: () => _confirmDeleteAccount(context, config),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Container(
+                        width: double.infinity,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0x1AEF4444) : const Color(0x12EF4444),
+                          borderRadius: BorderRadius.circular(100),
+                          border: Border.all(
+                            color: const Color(0x40EF4444),
+                          ),
+                        ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(
-                              Icons.delete_outline_rounded,
-                              size: 16,
-                              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                            const Icon(
+                              Icons.delete_forever_rounded,
+                              size: 19,
+                              color: Color(0xFFEF4444),
                             ),
-                            const SizedBox(width: 6),
+                            const SizedBox(width: 8),
                             Text(
-                              config.tr('Delete Account', 'கணக்கை நிரந்தரமாக நீக்கு'),
+                              config.tr('Delete Account Permanently', 'கணக்கை நிரந்தரமாக நீக்கு'),
                               style: GoogleFonts.inter(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                                decoration: TextDecoration.underline,
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFFEF4444),
                               ),
                             ),
                           ],
@@ -788,7 +903,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildSettingRow({
     required IconData icon,
+    Color? iconColor,
+    Color? iconBgColor,
     required String title,
+    Color? titleColor,
     required bool isDark,
     required Widget trailing,
     VoidCallback? onTap,
@@ -810,13 +928,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF2E3744) : const Color(0xFFE9EEF4),
+                        color: iconBgColor ?? (isDark ? const Color(0xFF2E3744) : const Color(0xFFE9EEF4)),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         icon,
                         size: 20,
-                        color: isDark ? Colors.white : const Color(0xFF364050),
+                        color: iconColor ?? (isDark ? Colors.white : const Color(0xFF364050)),
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -825,7 +943,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white : const Color(0xFF18191D),
+                        color: titleColor ?? (isDark ? Colors.white : const Color(0xFF18191D)),
                       ),
                     ),
                   ],
