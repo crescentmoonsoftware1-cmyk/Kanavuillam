@@ -174,18 +174,15 @@ Their respective privacy policies govern their individual services.
 We may update this Privacy Policy periodically.
 Updated versions will be posted within the application and on our website.
 
-## 12. Corporate Details, Support & Grievance Contact
+## 12. Support & Grievance Contact
 For privacy-related inquiries, legal concerns, or account assistance:
 
-* **Application Name:** Kanavu Illam (Automated CAD & Structural Planner)
-* **Corporate Entity:** Kanavu Illam Tech Private Limited
-* **Registered Office:** Erode, Tamil Nadu, India - 638001
+* **Application Name:** Kanavu Illam (Floor Plan CAD & Engineering Estimator)
+* **Publisher / Entity:** Kanavu Illam
+* **Grievance & Support Desk:** Kanavu Illam Support Team
 * **Customer Support Email:** support@kanavuillam.com
-* **Public Account Deletion URL:** https://kanavuillam.com/delete-account
-* **Grievance Officer (Under Indian IT Rules & Play Store Compliance):**
-  * Name: S. Ramanathan (Grievance Officer)
-  * Email: grievance@kanavuillam.com
-  * Response Time: Acknowledged within 24 hours, resolved within 15 working days.
+* **Jurisdiction / Location:** Tamil Nadu, India
+* **Response Time:** Inquiries acknowledged within 24 hours, resolved within 15 working days.
 
 By using Kanavu Illam, you consent to this Privacy Policy.
 ''';
