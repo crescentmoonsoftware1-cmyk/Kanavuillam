@@ -4,11 +4,13 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/providers/app_config_provider.dart';
 import '../core/theme/app_colors.dart';
 import '../services/api_service.dart';
 import 'payment_success_screen.dart';
+import 'web_checkout_screen.dart';
 
 class SecurePaymentScreen extends StatefulWidget {
   final double amount;
@@ -32,108 +34,194 @@ class SecurePaymentScreen extends StatefulWidget {
 
 class _SecurePaymentScreenState extends State<SecurePaymentScreen> {
   bool _isProcessing = false;
+  bool _promoApplied = false;
+  bool _isReviewerAccount = false;
+  String? _userEmail;
+  final TextEditingController _promoController = TextEditingController();
   late Razorpay _razorpay;
 
   @override
   void initState() {
     super.initState();
+    _checkReviewer();
     _razorpay = Razorpay();
     _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
     _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
     _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
   }
 
+  void _checkReviewer() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final email = (prefs.getString('user_email') ?? '').trim().toLowerCase();
+      if (mounted) {
+        setState(() {
+          _userEmail = email;
+          if (email == 'playstore@kanavuillam.com' ||
+              email == 'reviewer@kanavuillam.com' ||
+              email.contains('playstore') ||
+              email.contains('reviewer')) {
+            _isReviewerAccount = true;
+            _promoApplied = true;
+          }
+        });
+      }
+    } catch (_) {}
+  }
+
   @override
   void dispose() {
     _razorpay.clear();
+    _promoController.dispose();
     super.dispose();
+  }
+
+  void _showPromoDialog(BuildContext context, AppConfigProvider config) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        backgroundColor: config.isDarkMode ? const Color(0xFF1E2430) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          config.tr('Enter Promo / Reviewer Code', 'கூப்பன் குறியீட்டை உள்ளிடவும்'),
+          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+        ),
+        content: TextField(
+          controller: _promoController,
+          textCapitalization: TextCapitalization.characters,
+          decoration: InputDecoration(
+            hintText: 'e.g. REVIEW100 or FREE100',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: Text(config.tr('Cancel', 'ரத்துசெய்')),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.amberDefault),
+            onPressed: () {
+              final code = _promoController.text.trim().toUpperCase();
+              if (code == 'REVIEW100' || code == 'FREE100' || code == 'GOOGLE' || code == 'TEST') {
+                setState(() => _promoApplied = true);
+                Navigator.pop(dialogCtx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Promo Code Applied! 100% OFF for Reviewer Access.'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Invalid Promo Code'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            child: Text(
+              config.tr('Apply', 'பயன்படுத்து'),
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _handlePayment() async {
     setState(() => _isProcessing = true);
 
-    try {
-      // If running on web, simulate immediate successful transaction
-      if (kIsWeb) {
-        await Future.delayed(const Duration(milliseconds: 1200));
-        if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => PaymentSuccessScreen(
-                amount: widget.amount,
-                onFinish: widget.onFinish,
-              ),
-            ),
-          );
-        }
-        return;
-      }
-
-      // Live Razorpay Mobile Checkout
-      final api = ApiService();
-      final order = await api.createRazorpayOrder(widget.amount);
-
-      final isMock = order['is_mock'] == true ||
-          order['key_id'] == null ||
-          order['key_id'].toString().contains('placeholder') ||
-          order['id']?.toString().startsWith('order_mock_') == true ||
-          order['id']?.toString().startsWith('order_error_fallback_') == true;
-
-      final razorpayKey = (order['key_id'] != null &&
-              !order['key_id'].toString().contains('placeholder'))
-          ? order['key_id'].toString()
-          : null;
-
-      // When test keys or mock mode is active, complete test payment smoothly without failing native checkout
-      if (isMock || razorpayKey == null) {
-        debugPrint('[Payment] Test Mode active (Mock/Placeholder keys). Simulating successful payment.');
-        await Future.delayed(const Duration(milliseconds: 1200));
-        if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => PaymentSuccessScreen(
-                amount: widget.amount,
-                onFinish: widget.onFinish,
-              ),
-            ),
-          );
-        }
-        return;
-      }
-
-      final options = {
-        'key': razorpayKey,
-        'amount': order['amount'],
-        'name': 'Kanavu Illam',
-        'order_id': order['id'],
-        'description': 'AI Architectural & Vastu Reports',
-        'prefill': {
-          'contact': '9876543210',
-          'email': 'user@kanavuillam.com',
-        },
-        'external': {
-          'wallets': ['paytm', 'phonepe', 'gpay'],
-        },
-        'theme': {
-          'color': '#0A0A0A',
-        },
-      };
-
-      _razorpay.open(options);
-    } catch (e) {
-      debugPrint('[Payment] Checkout Exception: $e. Using test fallback.');
-      // Seamless test fallback so flow is never blocked
-      await Future.delayed(const Duration(milliseconds: 1000));
+    // 1. Reviewer Bypass: 100% Free Instant Unlock for Google Reviewer
+    if (_promoApplied || _isReviewerAccount) {
+      await Future.delayed(const Duration(milliseconds: 500));
       if (mounted) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (context) => PaymentSuccessScreen(
-              amount: widget.amount,
+              amount: 0.0,
               onFinish: widget.onFinish,
             ),
+          ),
+        );
+      }
+      return;
+    }
+
+    try {
+      if (kIsWeb) {
+        await Future.delayed(const Duration(milliseconds: 1000));
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PaymentSuccessScreen(
+                amount: widget.amount,
+                onFinish: widget.onFinish,
+              ),
+            ),
+          );
+        }
+        return;
+      }
+
+      // 2. Common User: Open Web Checkout in browser modal
+      final api = ApiService();
+      final order = await api.createRazorpayOrder(widget.amount);
+      final orderId = order['id'] ?? 'order_${DateTime.now().millisecondsSinceEpoch}';
+
+      final checkoutBaseUrl = ApiService.baseUrl.replaceAll('/api', '');
+      final checkoutUrl = '$checkoutBaseUrl/checkout?orderId=$orderId&amount=${widget.amount.toInt()}&email=${_userEmail ?? "user@kanavuillam.com"}';
+
+      debugPrint('[Payment] Opening Web Checkout: $checkoutUrl');
+
+      if (mounted) {
+        final bool? success = await Navigator.push<bool>(
+          context,
+          MaterialPageRoute(
+            builder: (_) => WebCheckoutScreen(
+              checkoutUrl: checkoutUrl,
+              orderId: orderId,
+            ),
+          ),
+        );
+
+        if (success == true) {
+          debugPrint('[Payment] Web Checkout Completed Successfully!');
+          if (mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PaymentSuccessScreen(
+                  amount: widget.amount,
+                  onFinish: widget.onFinish,
+                ),
+              ),
+            );
+          }
+          return;
+        } else {
+          debugPrint('[Payment] User closed Web Checkout without paying.');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Payment not completed. Please complete payment to unlock full reports.'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('[Payment] Web Checkout Error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Checkout connection error: $e'),
+            backgroundColor: Colors.red,
           ),
         );
       }
@@ -472,6 +560,61 @@ class _SecurePaymentScreenState extends State<SecurePaymentScreen> {
                           ),
                           config: config,
                         ),
+                        const SizedBox(height: 14),
+
+                        // Promo / Voucher Row for Google Play Reviewer or coupons
+                        InkWell(
+                          onTap: () => _showPromoDialog(context, config),
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: _promoApplied
+                                  ? const Color(0xFFF0FDF4)
+                                  : (isDark ? const Color(0xFF1E2430) : const Color(0xFFF1F5F9)),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: _promoApplied
+                                    ? const Color(0xFF86EFAC)
+                                    : (isDark ? const Color(0xFF2E384D) : const Color(0xFFE2E8F0)),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  _promoApplied ? Icons.check_circle_rounded : Icons.local_offer_outlined,
+                                  size: 18,
+                                  color: _promoApplied ? const Color(0xFF16A34A) : AppColors.amberDefault,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    _promoApplied
+                                        ? 'Reviewer Promo Applied (100% Free Access)'
+                                        : config.tr('Have a promo / reviewer code?', 'கூப்பன் குறியீடு உள்ளதா?'),
+                                    style: GoogleFonts.inter(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: _promoApplied
+                                          ? const Color(0xFF16A34A)
+                                          : (isDark ? Colors.white : const Color(0xFF1E293B)),
+                                    ),
+                                  ),
+                                ),
+                                Text(
+                                  _promoApplied
+                                      ? config.tr('Applied', 'பயன்படுத்தப்பட்டது')
+                                      : config.tr('Apply', 'பயன்படுத்து'),
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: _promoApplied ? const Color(0xFF16A34A) : AppColors.amberDefault,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
 
                         const SizedBox(height: 16),
                       ],
@@ -523,11 +666,11 @@ class _SecurePaymentScreenState extends State<SecurePaymentScreen> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              '₹${widget.amount.toInt()}',
+                              _promoApplied ? '₹0' : '₹${widget.amount.toInt()}',
                               style: GoogleFonts.syne(
                                 fontSize: 24,
                                 fontWeight: FontWeight.w700,
-                                color: primaryTextColor,
+                                color: _promoApplied ? const Color(0xFF16A34A) : primaryTextColor,
                                 letterSpacing: -0.24,
                               ),
                               maxLines: 1,
@@ -572,10 +715,12 @@ class _SecurePaymentScreenState extends State<SecurePaymentScreen> {
                               Text(
                                 _isProcessing
                                     ? config.tr('Processing...', 'செயலாக்குகிறது...')
-                                    : config.tr(
-                                        'Pay ₹${widget.amount.toInt()}',
-                                        'செலுத்து ₹${widget.amount.toInt()}',
-                                      ),
+                                    : (_promoApplied || _isReviewerAccount)
+                                        ? config.tr('Unlock All Reports (Free)', 'அறிக்கைகளை திறக்க (இலவசம்)')
+                                        : config.tr(
+                                            'Pay ₹${widget.amount.toInt()} (Web Checkout)',
+                                            'செலுத்து ₹${widget.amount.toInt()}',
+                                          ),
                                 style: GoogleFonts.inter(
                                   fontSize: 14.5,
                                   fontWeight: FontWeight.w700,

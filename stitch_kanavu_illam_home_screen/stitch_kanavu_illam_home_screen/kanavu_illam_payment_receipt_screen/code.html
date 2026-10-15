@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=390, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Kanavu Illam - Payment Receipt</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+  </style>
+</head>
+<body class="bg-slate-200 flex items-center justify-center min-h-screen p-0 m-0">
+  <!-- iPhone 390x844 Frame -->
+  <div class="w-[390px] h-[844px] max-h-[844px] overflow-hidden relative flex flex-col justify-between" style="background: linear-gradient(180deg, #E9EEF4 0%, #D8DFE9 100%);">
+    
+    <!-- Status Bar (iOS standard) -->
+    <div class="w-full pt-3 px-7 flex justify-between items-center text-xs font-semibold text-[#18191D] z-20 shrink-0">
+      <span>9:41</span>
+      <div class="flex items-center space-x-1.5">
+        <svg class="w-4 h-3 text-[#18191D]" fill="currentColor" viewBox="0 0 16 12"><path d="M1 9h2a1 1 0 001-1V4a1 1 0 00-1-1H1a1 1 0 00-1 1v4a1 1 0 001 1zm4 1h2a1 1 0 001-1V3a1 1 0 00-1-1H5a1 1 0 00-1 1v6a1 1 0 001 1zm4 1h2a1 1 0 001-1V2a1 1 0 00-1-1H9a1 1 0 00-1 1v8a1 1 0 001 1zm4 1h2a1 1 0 001-1V1a1 1 0 00-1-1h-2a1 1 0 00-1 1v10a1 1 0 001 1z"/></svg>
+        <svg class="w-3.5 h-3 text-[#18191D]" fill="currentColor" viewBox="0 0 16 12"><path d="M8 2.5a10.9 10.9 0 00-6.3 2A1 1 0 001.4 5.9l5.9 7.4a1 1 0 001.5 0l5.8-7.4a1 1 0 00-.3-1.4A10.9 10.9 0 008 2.5z"/></svg>
+        <div class="w-5 h-2.5 border border-[#18191D] rounded-sm p-0.5 flex items-center">
+          <div class="h-full w-3 bg-[#18191D] rounded-2xs"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Bar -->
+    <div class="w-full px-5 py-2.5 flex items-center justify-center shrink-0">
+      <h1 class="text-[22px] font-bold text-[#18191D]">Payment Receipt</h1>
+    </div>
+
+    <!-- Scrollable Content Area -->
+    <div class="flex-1 overflow-y-auto px-5 space-y-3 pb-2 pt-1">
+      
+      <!-- Card 1: Success Card -->
+      <div class="bg-[#FCFDFF] rounded-[28px] p-5 shadow-[0_12px_32px_rgba(27,33,47,0.10)] border border-[#E9EAEC] flex flex-col items-center">
+        <!-- 72px circle with check and amber ring -->
+        <div class="w-[72px] h-[72px] rounded-full bg-[#2E3744] ring-2 ring-[#FBA73B] flex items-center justify-center mb-3">
+          <svg class="w-9 h-9 text-white" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <span class="text-base font-bold text-[#18191D]">Payment Successful</span>
+        <span class="text-[28px] font-bold text-[#18191D] mt-0.5 mb-4">₹500.00</span>
+
+        <!-- 3 Rows -->
+        <div class="w-full space-y-2.5 pt-3 border-t border-[#E2E8F0] text-sm">
+          <div class="flex justify-between items-center">
+            <span class="text-[#8E94A0]">Transaction ID</span>
+            <span class="font-semibold text-[#18191D]">TXN-98421804</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-[#8E94A0]">Date & Time</span>
+            <span class="font-semibold text-[#18191D]">24 Oct 2026, 02:45 PM</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-[#8E94A0]">Method</span>
+            <span class="font-semibold text-[#18191D]">UPI (Google Pay)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Architecture Pipeline -->
+      <div class="bg-[#FCFDFF] rounded-[28px] p-4 shadow-[0_12px_32px_rgba(27,33,47,0.10)] border border-[#E9EAEC]">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-base font-bold text-[#18191D]">Architecture Pipeline</span>
+          <span class="text-sm font-bold text-[#18191D]">88%</span>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div class="w-full h-2 bg-[#E2E8F0] rounded-full overflow-hidden mb-3.5">
+          <div class="h-full rounded-full" style="width: 88%; background: linear-gradient(90deg, #FBA73B 0%, #E58A18 100%);"></div>
+        </div>
+
+        <!-- Checklist of 5 steps -->
+        <div class="space-y-2.5 text-xs">
+          <!-- Step 1: Done -->
+          <div class="flex items-center space-x-2.5">
+            <div class="w-5 h-5 rounded-full bg-[#2E3744] flex items-center justify-center shrink-0">
+              <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="text-[#18191D] font-medium">Reading walls & CAD dimensions</span>
+          </div>
+
+          <!-- Step 2: Done -->
+          <div class="flex items-center space-x-2.5">
+            <div class="w-5 h-5 rounded-full bg-[#2E3744] flex items-center justify-center shrink-0">
+              <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="text-[#18191D] font-medium">Synthesising 3D Villa geometry</span>
+          </div>
+
+          <!-- Step 3: Done -->
+          <div class="flex items-center space-x-2.5">
+            <div class="w-5 h-5 rounded-full bg-[#2E3744] flex items-center justify-center shrink-0">
+              <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="text-[#18191D] font-medium">Computing Vastu directional score</span>
+          </div>
+
+          <!-- Step 4: Active -->
+          <div class="flex items-center space-x-2.5">
+            <div class="w-5 h-5 rounded-full flex items-center justify-center shrink-0">
+              <svg class="animate-spin w-4 h-4 text-[#E58A18]" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3.5"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+              </svg>
+            </div>
+            <span class="text-[#18191D] font-semibold">Generating BOQ & Cost estimation</span>
+          </div>
+
+          <!-- Step 5: Pending -->
+          <div class="flex items-center space-x-2.5">
+            <div class="w-5 h-5 rounded-full border-2 border-[#D8DFE9] bg-transparent shrink-0"></div>
+            <span class="text-[#8E94A0] font-normal">Validating IS Code structural safety</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Action Button -->
+    <div class="w-full px-5 pb-7 pt-2 shrink-0">
+      <button class="w-full h-14 rounded-full flex items-center justify-center space-x-2 font-bold text-sm tracking-wide text-[#1E252D] shadow-[0_8px_24px_rgba(229,138,24,0.35)] active:scale-[0.98] transition-transform" style="background: linear-gradient(135deg, #FBA73B 0%, #E58A18 100%);">
+        <span>VIEW 3D VILLA & REPORTS</span>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+      </button>
+      
+      <!-- iOS Home Indicator -->
+      <div class="w-32 h-1 bg-[#18191D]/30 rounded-full mx-auto mt-4"></div>
+    </div>
+
+  </div>
+</body>
+</html>

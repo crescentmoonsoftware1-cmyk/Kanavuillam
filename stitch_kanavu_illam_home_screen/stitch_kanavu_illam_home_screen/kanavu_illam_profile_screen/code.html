@@ -1,0 +1,213 @@
+<!DOCTYPE html><html lang="en"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=390, height=844, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Kanavu Illam Profile Screen</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            charcoal: '#18191D',
+            slateDark: '#1B212F',
+            slateMid: '#364050',
+            slateCircle: '#2E3744',
+            slateMuted: '#8E94A0',
+            slateLight: '#E9EEF4',
+            slateBorder: '#E2E8F0',
+            cardBorder: '#E9EAEC',
+            pureCard: '#FCFDFF',
+            amberAccent: '#E58A18',
+            amberLight: '#FBA73B',
+            darkCharcoal: '#1E252D'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      width: 390px;
+      height: 844px;
+      overflow: hidden;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: linear-gradient(180deg, #E9EEF4 0%, #D8DFE9 100%);
+    }
+  </style>
+</head>
+<body class="flex flex-col items-center justify-between p-4 h-full relative select-none" style="margin: 0px; padding: 16px; width: 390px; height: 844px; max-width: 390px; max-height: 844px; min-width: 390px; min-height: 844px; overflow: hidden; font-family: &quot;Plus Jakarta Sans&quot;, sans-serif; background: linear-gradient(rgb(233, 238, 244) 0%, rgb(216, 223, 233) 100%); display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; position: relative;">
+
+  <!-- TOP WRAPPER -->
+  <div class="w-full flex flex-col items-stretch" style="width: 100%; display: flex; flex-direction: column; align-items: stretch; margin-bottom: 24px;">
+    
+    <!-- TOP DARK HEADER -->
+    <header class="w-full h-[236px] rounded-[32px] p-6 flex flex-col items-center justify-center text-center relative" style="background: linear-gradient(180deg, #364050 0%, #1B212F 100%); box-shadow: 0 16px 40px rgba(27,33,47,0.22);">
+      
+      <!-- Avatar with Amber Ring -->
+      <div class="w-[88px] h-[88px] rounded-full bg-[#2E3744] flex items-center justify-center relative shadow-inner" style="box-shadow: 0 0 0 2px #FBA73B;">
+        <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"></path>
+        </svg>
+      </div>
+
+      <!-- User Name -->
+      <h1 class="text-white text-[22px] font-bold tracking-tight mt-3 leading-tight">
+        Thomas
+      </h1>
+
+      <!-- Email / Phone -->
+      <p class="text-white/70 text-[14px] font-normal mt-1">
+        thomas.arch@kanavuillam.com
+      </p>
+    </header>
+
+    <!-- SETTINGS LIST CARD -->
+    <main class="w-full bg-[#FCFDFF] rounded-[28px] border border-[#E9EAEC] mt-4 overflow-hidden" style="box-shadow: rgba(27, 33, 47, 0.1) 0px 12px 32px; margin-top: 20px; border-radius: 28px;">
+      
+      <!-- Row 1: Edit Profile -->
+      <div class="h-[56px] px-4 flex items-center justify-between border-b border-[#E2E8F0] active:bg-[#F8FAFC] transition-colors cursor-pointer">
+        <div class="flex items-center space-x-3.5">
+          <div class="w-10 h-10 rounded-full bg-[#E9EEF4] flex items-center justify-center text-[#364050]">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+              <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </div>
+          <span class="text-[#18191D] text-[15px] font-semibold">Edit Profile</span>
+        </div>
+        <svg class="w-5 h-5 text-[#8E94A0]" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </div>
+
+      <!-- Row 2: Language -->
+      <div class="h-[56px] px-4 flex items-center justify-between border-b border-[#E2E8F0] active:bg-[#F8FAFC] transition-colors cursor-pointer">
+        <div class="flex items-center space-x-3.5">
+          <div class="w-10 h-10 rounded-full bg-[#E9EEF4] flex items-center justify-center text-[#364050]">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </svg>
+          </div>
+          <span class="text-[#18191D] text-[15px] font-semibold">Language</span>
+        </div>
+        <svg class="w-5 h-5 text-[#8E94A0]" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </div>
+
+      <!-- Row 3: Help & Support -->
+      <div class="h-[56px] px-4 flex items-center justify-between border-b border-[#E2E8F0] active:bg-[#F8FAFC] transition-colors cursor-pointer">
+        <div class="flex items-center space-x-3.5">
+          <div class="w-10 h-10 rounded-full bg-[#E9EEF4] flex items-center justify-center text-[#364050]">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+          </div>
+          <span class="text-[#18191D] text-[15px] font-semibold">Help &amp; Support</span>
+        </div>
+        <svg class="w-5 h-5 text-[#8E94A0]" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </div>
+
+      <!-- Row 4: About -->
+      <div class="h-[56px] px-4 flex items-center justify-between border-b border-[#E2E8F0] active:bg-[#F8FAFC] transition-colors cursor-pointer">
+        <div class="flex items-center space-x-3.5">
+          <div class="w-10 h-10 rounded-full bg-[#E9EEF4] flex items-center justify-center text-[#364050]">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+          </div>
+          <span class="text-[#18191D] text-[15px] font-semibold">About</span>
+        </div>
+        <svg class="w-5 h-5 text-[#8E94A0]" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </div>
+
+      <!-- Row 5: Privacy Policy -->
+      <div class="h-[56px] px-4 flex items-center justify-between active:bg-[#F8FAFC] transition-colors cursor-pointer">
+        <div class="flex items-center space-x-3.5">
+          <div class="w-10 h-10 rounded-full bg-[#E9EEF4] flex items-center justify-center text-[#364050]">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+          </div>
+          <span class="text-[#18191D] text-[15px] font-semibold">Privacy Policy</span>
+        </div>
+        <svg class="w-5 h-5 text-[#8E94A0]" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </div>
+
+    </main>
+
+    <!-- LOGOUT BUTTON -->
+    <button class="w-full h-[52px] bg-[#FCFDFF] border border-[#E2E8F0] rounded-full mt-3.5 flex items-center justify-center space-x-2 text-[#18191D] font-bold text-[15px] active:bg-[#F1F4F9] transition-colors cursor-pointer" style="height: 56px; margin-top: 16px; border-radius: 9999px; box-shadow: rgba(27, 33, 47, 0.06) 0px 6px 20px;">
+      <svg class="w-5 h-5 text-[#18191D]" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+        <polyline points="16 17 21 12 16 7"></polyline>
+        <line x1="21" y1="12" x2="9" y2="12"></line>
+      </svg>
+      <span class="">Logout</span>
+    </button>
+
+  </div>
+
+  <!-- FLOATING BOTTOM NAV -->
+  <nav class="w-full bg-[#FCFDFF] h-[72px] rounded-[32px] px-6 flex items-center justify-between z-20 mb-1" style="box-shadow: rgba(27, 33, 47, 0.12) 0px 12px 32px; border: 1px solid rgb(233, 234, 236); border-radius: 32px; width: 100%; height: 72px; margin-bottom: 4px;">
+    
+    <!-- Home Item -->
+    <div class="flex flex-col items-center justify-center cursor-pointer group">
+      <svg class="w-6 h-6 text-[#8E94A0] group-hover:text-[#364050] transition-colors" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+      </svg>
+      <span class="text-[11px] font-medium text-[#8E94A0] mt-1">Home</span>
+    </div>
+
+    <!-- History Item -->
+    <div class="flex flex-col items-center justify-center cursor-pointer group">
+      <svg class="w-6 h-6 text-[#8E94A0] group-hover:text-[#364050] transition-colors" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10"></circle>
+        <polyline points="12 6 12 12 16 14"></polyline>
+      </svg>
+      <span class="text-[11px] font-medium text-[#8E94A0] mt-1">History</span>
+    </div>
+
+    <!-- Profile Item (Active) -->
+    <div class="flex flex-col items-center justify-center cursor-pointer">
+      <div class="w-10 h-10 rounded-full flex items-center justify-center" style="background: linear-gradient(135deg, #FBA73B 0%, #E58A18 100%);">
+        <svg class="w-5 h-5 text-[#1E252D]" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"></path>
+        </svg>
+      </div>
+      <span class="text-[11px] font-bold text-[#18191D] mt-0.5">Profile</span>
+    </div>
+
+  </nav>
+
+
+
+
+
+</body></html>
