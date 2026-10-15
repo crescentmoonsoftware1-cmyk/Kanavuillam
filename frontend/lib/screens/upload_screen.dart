@@ -171,9 +171,43 @@ class _UploadScreenState extends State<UploadScreen> {
               padding: const EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 120),
               child: Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
                 Container(
-                  width: double.infinity, height: 316,
-                  decoration: BoxDecoration(color: const Color(0xFF1B212F), borderRadius: BorderRadius.circular(32), border: Border.all(color: const Color(0xFF1B212F), width: 8), boxShadow: const [BoxShadow(color: Color(0x381B212F), blurRadius: 40, offset: Offset(0, 16))]),
-                  child: ClipRRect(borderRadius: BorderRadius.circular(24), child: PageView.builder(controller: _pageController, itemBuilder: (_, index) { final step = _workflowSteps[index % _workflowSteps.length]; return _WorkflowSlide(step: step); })),
+                  width: double.infinity,
+                  height: 316,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1B212F),
+                    borderRadius: BorderRadius.circular(32),
+                    border: Border.all(color: const Color(0xFFFCFDFF), width: 6),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x381B212F),
+                        blurRadius: 40,
+                        offset: Offset(0, 16),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(26),
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                          colors: [
+                            Color(0xFF1B212F),
+                            Color(0xFF222A3A),
+                            Color(0xFF364050),
+                          ],
+                        ),
+                      ),
+                      child: PageView.builder(
+                        controller: _pageController,
+                        itemBuilder: (_, index) {
+                          final step = _workflowSteps[index % _workflowSteps.length];
+                          return _WorkflowSlide(step: step);
+                        },
+                      ),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Container(
@@ -211,7 +245,21 @@ class _UploadScreenState extends State<UploadScreen> {
       const SizedBox(height: 4),
       Text(config.tr('Tap here to browse blueprint from Gallery or Camera', 'கேலரி அல்லது கேமராவிலிருந்து வரைபடத்தைத் தேர்ந்தெடுக்கவும்'), style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w400, color: const Color(0xFF64748B), height: 1.4), textAlign: TextAlign.center),
       const SizedBox(height: 16),
-      Row(mainAxisAlignment: MainAxisAlignment.center, children: [_fmtPill('JPG'), const SizedBox(width: 8), _fmtPill('PNG'), const SizedBox(width: 8), _fmtPill('PDF'), const SizedBox(width: 8), _fmtPill('MAX 25MB')]),
+      FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _fmtPill('JPG'),
+            const SizedBox(width: 6),
+            _fmtPill('PNG'),
+            const SizedBox(width: 6),
+            _fmtPill('PDF'),
+            const SizedBox(width: 6),
+            _fmtPill('MAX 25MB'),
+          ],
+        ),
+      ),
       const SizedBox(height: 20),
       GestureDetector(
         onTap: () => _showPickSourceModal(config),
@@ -230,9 +278,17 @@ class _UploadScreenState extends State<UploadScreen> {
 
   Widget _fmtPill(String label) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3.5),
       decoration: BoxDecoration(color: const Color(0xFFF1F4F8), borderRadius: BorderRadius.circular(100)),
-      child: Text(label, style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600, color: const Color(0xFF64748B), letterSpacing: 0.4)),
+      child: Text(
+        label,
+        style: GoogleFonts.plusJakartaSans(
+          fontSize: 11.5,
+          fontWeight: FontWeight.w600,
+          color: const Color(0xFF64748B),
+          letterSpacing: 0.3,
+        ),
+      ),
     );
   }
 
@@ -275,53 +331,154 @@ class _UploadScreenState extends State<UploadScreen> {
   }
 }
 
-// Workflow carousel slide — matches prototype 1:1
-class _WorkflowSlide extends StatelessWidget {
+// ─── Workflow Carousel Slide (Horizontal 2-Column with 3D Float Animation) ────
+class _WorkflowSlide extends StatefulWidget {
   final _WorkflowStepItem step;
   const _WorkflowSlide({required this.step});
+
+  @override
+  State<_WorkflowSlide> createState() => _WorkflowSlideState();
+}
+
+class _WorkflowSlideState extends State<_WorkflowSlide> with SingleTickerProviderStateMixin {
+  late final AnimationController _floatController;
+  late final Animation<double> _floatAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _floatController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 3600),
+    )..repeat(reverse: true);
+    _floatAnim = Tween<double>(begin: 0.0, end: -6.0).animate(
+      CurvedAnimation(parent: _floatController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _floatController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Column(children: [
-      Expanded(flex: 60, child: Stack(children: [
-        Positioned.fill(child: Container(decoration: const BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, stops: [0.0, 0.45, 1.0], colors: [Color(0xFFFDEBCB), Color(0x73FBA73B), Color(0xFF1B212F)])))),
-        Positioned(left: -24, right: -24, bottom: 4, height: 56, child: Opacity(opacity: 0.30, child: CustomPaint(painter: _SkylinePainter(color: const Color(0xFF364050), secondary: false)))),
-        Positioned(left: -24, right: -24, bottom: 12, height: 45, child: Opacity(opacity: 0.25, child: CustomPaint(painter: _SkylinePainter(color: const Color(0xFFFBA73B), secondary: true)))),
-        Positioned(top: 12, left: 0, right: 0, child: Center(child: Text('Step ${step.step}', style: const TextStyle(fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFFB46205), letterSpacing: -0.2)))),
-        Positioned(top: 28, left: 0, right: 0, bottom: 0, child: Center(child: SizedBox(width: 150, height: 150, child: CustomPaint(painter: _StepIllustrationPainter(step: step.step))))),
-      ])),
-      Expanded(flex: 40, child: Container(
-        color: const Color(0xFF1B212F),
-        padding: const EdgeInsets.fromLTRB(24, 4, 24, 16),
-        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Text(step.titleEn, style: const TextStyle(fontFamily: 'Plus Jakarta Sans', fontSize: 28, fontWeight: FontWeight.w700, color: Color(0xFFFCFDFF), letterSpacing: -0.5, height: 1.1), textAlign: TextAlign.center),
-          const SizedBox(height: 8),
-          Text(step.subtitleEn, style: const TextStyle(fontFamily: 'Plus Jakarta Sans', fontSize: 14, fontWeight: FontWeight.w400, color: Color(0xB3FCFDFF), height: 1.35), textAlign: TextAlign.center, maxLines: 2),
-        ]),
-      )),
-    ]);
+    AppConfigProvider config;
+    try { config = context.watch<AppConfigProvider>(); } catch (_) { config = AppConfigProvider(); }
+    final title = config.isTamil ? widget.step.titleTa : widget.step.titleEn;
+    final subtitle = config.isTamil ? widget.step.subtitleTa : widget.step.subtitleEn;
+    final stepNumStr = widget.step.step.toString().padLeft(2, '0');
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final w = constraints.maxWidth;
+        final leftWidth = (w * 0.48).clamp(130.0, 200.0);
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // 1. Left side - Title, Subtitle and Step counter
+            SizedBox(
+              width: leftWidth,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            title,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: widget.step.step == 2 ? 22 : 25,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFFFCFDFF),
+                              letterSpacing: -0.4,
+                              height: 1.15,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          subtitle,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 12.0,
+                            fontWeight: FontWeight.w400,
+                            color: const Color(0xBFFCFDFF),
+                            height: 1.35,
+                          ),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text(
+                          stepNumStr,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFFFCFDFF),
+                            letterSpacing: -0.5,
+                            height: 1.0,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '/05',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0x99FCFDFF),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // 2. Right side - 3D Isometric Floating Illustration
+            Expanded(
+              child: AnimatedBuilder(
+                animation: _floatAnim,
+                builder: (context, child) {
+                  return Transform.translate(
+                    offset: Offset(0, _floatAnim.value),
+                    child: child,
+                  );
+                },
+                child: Center(
+                  child: FittedBox(
+                    fit: BoxFit.contain,
+                    child: SizedBox(
+                      width: 175,
+                      height: 175,
+                      child: CustomPaint(
+                        painter: _StepIllustrationPainter(step: widget.step.step),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
 
-class _SkylinePainter extends CustomPainter {
-  final Color color;
-  final bool secondary;
-  const _SkylinePainter({required this.color, required this.secondary});
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = color..style = PaintingStyle.fill;
-    final w = size.width; final h = size.height;
-    final path = Path();
-    if (!secondary) {
-      path.moveTo(0, h); path.lineTo(w*0.05,h*0.633); path.lineTo(w*0.1125,h); path.lineTo(w*0.1875,h*0.533); path.lineTo(w*0.275,h); path.lineTo(w*0.35,h*0.40); path.lineTo(w*0.4375,h); path.lineTo(w*0.525,h*0.583); path.lineTo(w*0.6125,h); path.lineTo(w*0.70,h*0.467); path.lineTo(w*0.7875,h); path.lineTo(w*0.875,h*0.50); path.lineTo(w*0.95,h); path.lineTo(w,h);
-    } else {
-      path.moveTo(w*0.025,h); path.lineTo(w*0.0875,h*0.489); path.lineTo(w*0.1625,h); path.lineTo(w*0.2375,h*0.40); path.lineTo(w*0.325,h); path.lineTo(w*0.4125,h*0.578); path.lineTo(w*0.5125,h); path.lineTo(w*0.6125,h*0.444); path.lineTo(w*0.6875,h); path.lineTo(w*0.775,h*0.533); path.lineTo(w*0.85,h); path.lineTo(w*0.95,h*0.40); path.lineTo(w,h);
-    }
-    path.close();
-    canvas.drawPath(path, paint);
-  }
-  @override
-  bool shouldRepaint(covariant _SkylinePainter old) => old.color != color || old.secondary != secondary;
-}
 
 class _StepIllustrationPainter extends CustomPainter {
   final int step;
@@ -400,15 +557,53 @@ class _StepIllustrationPainter extends CustomPainter {
     canvas.drawPath(_poly(w,h,[[0.408+bx/w,0.258+by/h],[0.441+bx/w,0.242+by/h],[0.467+bx/w,0.258+by/h],[0.433+bx/w,0.275+by/h]]),_f(_al));
     canvas.drawRect(Rect.fromLTWH(w*0.475+bx,h*0.275+by,w*0.033,h*0.192),_f(_dk));
   }
-  void _dl(Canvas canvas,double w,double h){
-    final tp=_poly(w,h,[[0.183,0.60],[0.50,0.433],[0.783,0.567],[0.467,0.733]]);
-    canvas.drawPath(tp,Paint()..shader=ui.Gradient.linear(Offset(w*0.183,h*0.60),Offset(w*0.783,h*0.733),[_dk,_ink])..style=PaintingStyle.fill);
-    canvas.drawPath(Path()..moveTo(w*0.183,h*0.60)..lineTo(w*0.183,h*0.633)..lineTo(w*0.467,h*0.767)..lineTo(w*0.783,h*0.60)..lineTo(w*0.783,h*0.567)..lineTo(w*0.467,h*0.733)..close(),_f(_ink));
-    final ox=4.0/120.0*w,oy=-8.0/120.0*h;
-    final dp=_poly(w,h,[[0.217+ox/w,0.467+oy/h],[0.533+ox/w,0.30+oy/h],[0.733+ox/w,0.40+oy/h],[0.417+ox/w,0.567+oy/h]]);
-    canvas.drawPath(dp,_f(_w)); canvas.drawPath(dp,_s(_bd,1.5));
-    final ar=Rect.fromLTWH(w*0.375+ox,h*0.10+oy,w*0.15,h*0.25);
-    canvas.drawPath(Path()..moveTo(w*0.45+ox,h*0.20+oy)..lineTo(w*0.45+ox,h*0.283+oy)..lineTo(w*0.40+ox,h*0.283+oy)..lineTo(w*0.475+ox,h*0.367+oy)..lineTo(w*0.55+ox,h*0.283+oy)..lineTo(w*0.50+ox,h*0.283+oy)..lineTo(w*0.50+ox,h*0.20+oy)..close(),_ag(ar));
+  void _dl(Canvas canvas, double w, double h) {
+    // 1. Dark 3D Isometric Base Pedestal
+    final tp = _poly(w, h, [[0.18, 0.58], [0.52, 0.40], [0.82, 0.54], [0.48, 0.72]]);
+    canvas.drawPath(
+      tp,
+      Paint()
+        ..shader = ui.Gradient.linear(Offset(w * 0.18, h * 0.58), Offset(w * 0.82, h * 0.72), [_dk, _ink])
+        ..style = PaintingStyle.fill,
+    );
+    // 3D Bevel edge of the base
+    canvas.drawPath(
+      Path()
+        ..moveTo(w * 0.18, h * 0.58)
+        ..lineTo(w * 0.18, h * 0.62)
+        ..lineTo(w * 0.48, h * 0.76)
+        ..lineTo(w * 0.82, h * 0.58)
+        ..lineTo(w * 0.82, h * 0.54)
+        ..lineTo(w * 0.48, h * 0.72)
+        ..close(),
+      _f(_ink),
+    );
+
+    // 2. White Glossy Isometric Document Sheet floating on the pedestal
+    final ox = w * 0.03, oy = -h * 0.06;
+    final dp = _poly(w, h, [[0.22 + ox / w, 0.46 + oy / h], [0.54 + ox / w, 0.29 + oy / h], [0.78 + ox / w, 0.41 + oy / h], [0.46 + ox / w, 0.58 + oy / h]]);
+    canvas.drawPath(dp, _f(_w));
+    canvas.drawPath(dp, _s(_bd, 1.5));
+
+    // Document blueprint content lines
+    canvas.drawLine(Offset(w * 0.34 + ox, h * 0.41 + oy), Offset(w * 0.60 + ox, h * 0.34 + oy), _s(_sl.withValues(alpha: 0.7), 2.5));
+    canvas.drawLine(Offset(w * 0.38 + ox, h * 0.45 + oy), Offset(w * 0.64 + ox, h * 0.38 + oy), _s(_sl.withValues(alpha: 0.7), 2.5));
+    canvas.drawLine(Offset(w * 0.42 + ox, h * 0.49 + oy), Offset(w * 0.68 + ox, h * 0.42 + oy), _s(_sl.withValues(alpha: 0.7), 2.5));
+
+    // 3. Large Downward Amber Arrow pointing directly onto the document (matching screen.png)
+    final ar = Rect.fromLTWH(w * 0.48, h * 0.08, w * 0.22, h * 0.28);
+    canvas.drawPath(
+      Path()
+        ..moveTo(w * 0.54, h * 0.08)
+        ..lineTo(w * 0.64, h * 0.08)
+        ..lineTo(w * 0.64, h * 0.20)
+        ..lineTo(w * 0.71, h * 0.20)
+        ..lineTo(w * 0.59, h * 0.32)
+        ..lineTo(w * 0.47, h * 0.20)
+        ..lineTo(w * 0.54, h * 0.20)
+        ..close(),
+      _ag(ar),
+    );
   }
   @override
   bool shouldRepaint(covariant _StepIllustrationPainter old) => old.step != step;

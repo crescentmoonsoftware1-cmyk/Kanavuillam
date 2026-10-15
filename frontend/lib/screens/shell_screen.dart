@@ -159,10 +159,38 @@ class _ShellScreenState extends State<ShellScreen> {
           'orientation': orientation,
           'amount': 500,
           'rooms': [
-            {'name': 'Living Room', 'x': 0, 'y': 0, 'w': 16, 'h': 14, 'vastu': 'Compliant'},
-            {'name': 'Master Bedroom', 'x': 16, 'y': 0, 'w': 14, 'h': 14, 'vastu': 'Compliant'},
-            {'name': 'Kitchen', 'x': 0, 'y': 14, 'w': 12, 'h': 10, 'vastu': 'Compliant'},
-            {'name': 'Pooja Room', 'x': 12, 'y': 14, 'w': 6, 'h': 8, 'vastu': 'Ideal'},
+            {
+              'name': 'Living Room',
+              'x': 0,
+              'y': 0,
+              'w': 16,
+              'h': 14,
+              'vastu': 'Compliant'
+            },
+            {
+              'name': 'Master Bedroom',
+              'x': 16,
+              'y': 0,
+              'w': 14,
+              'h': 14,
+              'vastu': 'Compliant'
+            },
+            {
+              'name': 'Kitchen',
+              'x': 0,
+              'y': 14,
+              'w': 12,
+              'h': 10,
+              'vastu': 'Compliant'
+            },
+            {
+              'name': 'Pooja Room',
+              'x': 12,
+              'y': 14,
+              'w': 6,
+              'h': 8,
+              'vastu': 'Ideal'
+            },
           ],
           'vastu_data': {
             'overall_score': 88,
@@ -225,7 +253,8 @@ class _ShellScreenState extends State<ShellScreen> {
             ? ViewerScreen(
                 key: _viewerKey,
                 projectData: _projectData!,
-                onNavigateToTab: (index) => setState(() => _selectedIndex = index),
+                onNavigateToTab: (index) =>
+                    setState(() => _selectedIndex = index),
                 onNavigateToVastu: () => setState(() => _selectedIndex = 2),
               )
             : _EmptyState(
@@ -238,7 +267,8 @@ class _ShellScreenState extends State<ShellScreen> {
         _projectData != null
             ? VastuScreen(
                 projectData: _projectData!,
-                onNavigateToTab: (index) => setState(() => _selectedIndex = index),
+                onNavigateToTab: (index) =>
+                    setState(() => _selectedIndex = index),
                 onNavigateToNext: () => setState(() => _selectedIndex = 3),
                 onBack: () => setState(() => _selectedIndex = 1),
               )
@@ -252,7 +282,8 @@ class _ShellScreenState extends State<ShellScreen> {
         _projectData != null
             ? EstimationScreen(
                 projectData: _projectData!,
-                onNavigateToTab: (index) => setState(() => _selectedIndex = index),
+                onNavigateToTab: (index) =>
+                    setState(() => _selectedIndex = index),
                 onNavigateToNext: () => setState(() => _selectedIndex = 4),
                 onBack: () => setState(() => _selectedIndex = 2),
               )
@@ -266,7 +297,8 @@ class _ShellScreenState extends State<ShellScreen> {
         _projectData != null
             ? StructuralScreen(
                 projectData: _projectData!,
-                onNavigateToTab: (index) => setState(() => _selectedIndex = index),
+                onNavigateToTab: (index) =>
+                    setState(() => _selectedIndex = index),
                 onNavigateToNext: () => setState(() => _selectedIndex = 5),
                 onBack: () => setState(() => _selectedIndex = 3),
               )
@@ -281,7 +313,8 @@ class _ShellScreenState extends State<ShellScreen> {
             ? DownloadScreen(
                 projectData: _projectData!,
                 selectedReportIds: _selectedReportIds,
-                onNavigateToTab: (index) => setState(() => _selectedIndex = index),
+                onNavigateToTab: (index) =>
+                    setState(() => _selectedIndex = index),
                 onNavigateTo3D: () => setState(() => _selectedIndex = 1),
                 userData: widget.userData,
                 capture3DScreenshots: () async {
@@ -468,7 +501,8 @@ class _ShellScreenState extends State<ShellScreen> {
                 child: Center(
                   child: Container(
                     margin: const EdgeInsets.symmetric(horizontal: 28),
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 32),
                     decoration: BoxDecoration(
                       color: config.cardColor,
                       borderRadius: BorderRadius.circular(28),
@@ -488,7 +522,8 @@ class _ShellScreenState extends State<ShellScreen> {
                           height: 56,
                           child: CircularProgressIndicator(
                             strokeWidth: 3.5,
-                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFE58A18)),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                                Color(0xFFE58A18)),
                             backgroundColor: Color(0x33E58A18),
                           ),
                         ),
@@ -500,7 +535,9 @@ class _ShellScreenState extends State<ShellScreen> {
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 17,
                             fontWeight: FontWeight.w700,
-                            color: config.isDarkMode ? Colors.white : AppColors.deepInk,
+                            color: config.isDarkMode
+                                ? Colors.white
+                                : AppColors.deepInk,
                             height: 1.4,
                           ),
                           textAlign: TextAlign.center,
@@ -641,15 +678,21 @@ class _SidebarItem extends StatelessWidget {
         duration: const Duration(milliseconds: 300),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFFFBBF24).withValues(alpha: 0.15) : Colors.transparent,
+          color: isActive
+              ? const Color(0xFFFBBF24).withValues(alpha: 0.15)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
           border: isActive
-              ? Border.all(color: const Color(0xFFFBBF24).withValues(alpha: 0.35), width: 1)
+              ? Border.all(
+                  color: const Color(0xFFFBBF24).withValues(alpha: 0.35),
+                  width: 1)
               : null,
         ),
         child: Row(
           children: [
-            Icon(icon, size: 22, color: isActive ? const Color(0xFFFCD34D) : Colors.white70),
+            Icon(icon,
+                size: 22,
+                color: isActive ? const Color(0xFFFCD34D) : Colors.white70),
             const SizedBox(width: 14),
             Expanded(
               child: Text(
@@ -842,7 +885,8 @@ class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar>
 
                     final curLeft = fromLeft + (toLeft - fromLeft) * t;
                     final curW = fromW + (toW - fromW) * t;
-                    final percentage = ((curLeft + curW / 2) / 320.0).clamp(0.0, 1.0);
+                    final percentage =
+                        ((curLeft + curW / 2) / 320.0).clamp(0.0, 1.0);
 
                     return Positioned(
                       left: 0,
@@ -852,12 +896,14 @@ class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar>
                       child: IgnorePointer(
                         child: Container(
                           decoration: BoxDecoration(
-                            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
+                            borderRadius: const BorderRadius.vertical(
+                                bottom: Radius.circular(32)),
                             gradient: RadialGradient(
                               center: Alignment((percentage * 2.0) - 1.0, 1.0),
                               radius: 0.85,
                               colors: [
-                                AppColors.amberHighlight.withValues(alpha: 0.22),
+                                AppColors.amberHighlight
+                                    .withValues(alpha: 0.22),
                                 AppColors.amber.withValues(alpha: 0.05),
                                 Colors.transparent,
                               ],
@@ -889,14 +935,18 @@ class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar>
                     final curWidth = fromW + (toW - fromW) * t;
 
                     // Squash & Skew calculation matching .liquid-squash-right / .liquid-squash-left
-                    final squashFactor = math.sin(_squashController.value * math.pi);
+                    final squashFactor =
+                        math.sin(_squashController.value * math.pi);
                     final scaleX = 1.0 + (0.18 * squashFactor);
                     final scaleY = 1.0 - (0.14 * squashFactor);
-                    final skewDeg = (_direction > 0 ? -4.0 : (_direction < 0 ? 4.0 : 0.0)) * squashFactor;
+                    final skewDeg =
+                        (_direction > 0 ? -4.0 : (_direction < 0 ? 4.0 : 0.0)) *
+                            squashFactor;
                     final skewRad = skewDeg * (math.pi / 180.0);
 
-                    final transformMatrix = Matrix4.diagonal3Values(scaleX, scaleY, 1.0)
-                      ..setEntry(0, 1, math.tan(skewRad));
+                    final transformMatrix =
+                        Matrix4.diagonal3Values(scaleX, scaleY, 1.0)
+                          ..setEntry(0, 1, math.tan(skewRad));
 
                     final shimmerT = _shimmerController.value;
                     final pulseT = _pulseController.value;
@@ -916,14 +966,16 @@ class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar>
                             right: -6,
                             bottom: -6,
                             child: Transform.scale(
-                              scale: 1.0 + (0.06 * math.sin(pulseT * 2 * math.pi)),
+                              scale:
+                                  1.0 + (0.06 * math.sin(pulseT * 2 * math.pi)),
                               child: Container(
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(30),
                                   gradient: RadialGradient(
                                     center: const Alignment(-0.3, -0.3),
                                     colors: [
-                                      AppColors.amberHighlight.withValues(alpha: 0.45),
+                                      AppColors.amberHighlight
+                                          .withValues(alpha: 0.45),
                                       AppColors.amber.withValues(alpha: 0.15),
                                       Colors.transparent,
                                     ],
@@ -948,7 +1000,8 @@ class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar>
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(28),
                                     border: Border.all(
-                                      color: AppColors.amberHighlight.withValues(alpha: 0.5),
+                                      color: AppColors.amberHighlight
+                                          .withValues(alpha: 0.5),
                                       width: 1.5,
                                     ),
                                   ),
@@ -969,7 +1022,8 @@ class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar>
                                 gradient: AppColors.amberGradient,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppColors.amber.withValues(alpha: 0.38),
+                                    color:
+                                        AppColors.amber.withValues(alpha: 0.38),
                                     blurRadius: 20,
                                     offset: const Offset(0, 6),
                                   ),
@@ -1001,18 +1055,24 @@ class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar>
                                   // .nav-shimmer-sweep (Angled water shimmer line)
                                   Positioned.fill(
                                     child: Transform.translate(
-                                      offset: Offset((shimmerT * 2.8 - 1.4) * curWidth, 0),
+                                      offset: Offset(
+                                          (shimmerT * 2.8 - 1.4) * curWidth, 0),
                                       child: Transform(
-                                        transform: Matrix4.identity()..setEntry(0, 1, math.tan(-15 * math.pi / 180)),
+                                        transform: Matrix4.identity()
+                                          ..setEntry(0, 1,
+                                              math.tan(-15 * math.pi / 180)),
                                         alignment: Alignment.center,
                                         child: Container(
                                           width: curWidth * 0.6,
                                           decoration: BoxDecoration(
                                             gradient: LinearGradient(
                                               colors: [
-                                                Colors.white.withValues(alpha: 0.0),
-                                                Colors.white.withValues(alpha: 0.55),
-                                                Colors.white.withValues(alpha: 0.0),
+                                                Colors.white
+                                                    .withValues(alpha: 0.0),
+                                                Colors.white
+                                                    .withValues(alpha: 0.55),
+                                                Colors.white
+                                                    .withValues(alpha: 0.0),
                                               ],
                                             ),
                                           ),
@@ -1033,7 +1093,8 @@ class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar>
                                           center: const Alignment(0.0, 1.2),
                                           radius: 0.8,
                                           colors: [
-                                            Colors.white.withValues(alpha: 0.35),
+                                            Colors.white
+                                                .withValues(alpha: 0.35),
                                             Colors.transparent,
                                           ],
                                         ),
@@ -1070,13 +1131,16 @@ class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar>
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: AppColors.amber.withValues(alpha: opacity * 0.65),
+                                color: AppColors.amber
+                                    .withValues(alpha: opacity * 0.65),
                                 width: 2.0,
                               ),
                               gradient: RadialGradient(
                                 colors: [
-                                  AppColors.amberHighlight.withValues(alpha: opacity * 0.30),
-                                  AppColors.amber.withValues(alpha: opacity * 0.05),
+                                  AppColors.amberHighlight
+                                      .withValues(alpha: opacity * 0.30),
+                                  AppColors.amber
+                                      .withValues(alpha: opacity * 0.05),
                                   Colors.transparent,
                                 ],
                                 stops: const [0.0, 0.6, 1.0],
@@ -1145,7 +1209,8 @@ class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar>
       child: GestureDetector(
         onTapDown: (details) {
           final slotLeft = _getSlotLeft(tabIndex);
-          final tapInBar = Offset(slotLeft + details.localPosition.dx, 10 + details.localPosition.dy);
+          final tapInBar = Offset(slotLeft + details.localPosition.dx,
+              10 + details.localPosition.dy);
           _triggerFlow(tabIndex, tapInBar);
           widget.onTap(realIndex);
         },
@@ -1164,7 +1229,8 @@ class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar>
                   icon,
                   key: ValueKey('${tabIndex}_$isSelected'),
                   size: 20,
-                  color: isSelected ? AppColors.onAmberInk : AppColors.quietGrey,
+                  color:
+                      isSelected ? AppColors.onAmberInk : AppColors.quietGrey,
                 ),
               ),
               const SizedBox(width: 5),
@@ -1174,7 +1240,8 @@ class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar>
                   fontFamily: 'Plus Jakarta Sans',
                   fontSize: isSelected ? 13 : 12,
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                  color: isSelected ? AppColors.onAmberInk : AppColors.quietGrey,
+                  color:
+                      isSelected ? AppColors.onAmberInk : AppColors.quietGrey,
                   letterSpacing: -0.2,
                 ),
                 child: Text(label),
