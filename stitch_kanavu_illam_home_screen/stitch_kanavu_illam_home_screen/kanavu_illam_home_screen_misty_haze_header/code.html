@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+
+<html lang="en" style=""><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Kanavu Illam Home Screen</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --ease-enter: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-exit: cubic-bezier(0.64, 0, 0.78, 0);
+    --ease-loop: ease-in-out;
+    --ease-settle: cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+  body {
+    background-color: #d8dfe9;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-x: hidden;
+  }
+  .phone-frame {
+    width: 390px;
+    height: 844px;
+    border-radius: 48px;
+    overflow: hidden;
+    box-shadow: 0 25px 60px rgba(27, 33, 47, 0.2);
+    background: linear-gradient(180deg, #E9EEF4 0%, #D8DFE9 100%);
+    position: relative;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    box-sizing: border-box;
+  }
+  .amber-gradient {
+    background: linear-gradient(135deg, #FBA73B 0%, #E58A18 100%);
+  }
+  .amber-glow {
+    box-shadow: 0 8px 24px rgba(229, 138, 24, 0.35);
+  }
+  .card-shadow {
+    box-shadow: 0 12px 32px rgba(27, 33, 47, 0.08);
+  }
+  .nav-shadow {
+    box-shadow: 0 10px 25px rgba(27, 33, 47, 0.1);
+  }
+
+  /* Header Card Custom Styling */
+  .header-workflow-card {
+    border: 8px solid #1B212F;
+    border-radius: 32px;
+    box-shadow: 0 16px 40px rgba(27, 33, 47, 0.22);
+    background-color: #1B212F;
+  }
+
+  /* Misty Haze Subtle Roof Silhouette Drift */
+  @keyframes hazeDriftLeft {
+    0% { transform: translateX(0px); }
+    100% { transform: translateX(-10px); }
+  }
+  @keyframes hazeDriftRight {
+    0% { transform: translateX(0px); }
+    100% { transform: translateX(10px); }
+  }
+  .anim-haze-drift-left {
+    animation: hazeDriftLeft 9s linear infinite alternate;
+    will-change: transform;
+  }
+  .anim-haze-drift-right {
+    animation: hazeDriftRight 9s linear infinite alternate;
+    will-change: transform;
+  }
+
+  /* 3D Isometric Illustration Float */
+  @keyframes illustrationFloatVertical {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-6px); }
+  }
+  .anim-illustration-float {
+    animation: illustrationFloatVertical 3.6s ease-in-out infinite;
+    will-change: transform;
+  }
+
+  /* Active Slide visibility and Transitions */
+  .workflow-slide {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 350ms ease;
+  }
+  .workflow-slide.is-active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Accessibility - Reduced Motion */
+  @media (prefers-reduced-motion: reduce) {
+    .anim-haze-drift-left,
+    .anim-haze-drift-right,
+    .anim-illustration-float {
+      animation: none !important;
+      transform: none !important;
+    }
+    .slide-label,
+    .slide-illu-container,
+    .slide-title,
+    .slide-sub {
+      transition: opacity 250ms ease !important;
+      transform: none !important;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="phone-frame">
+<!-- 1. REDESIGNED HEADER WORKFLOW CARD -->
+<header class="w-full h-[316px] header-workflow-card relative overflow-hidden select-none cursor-grab active:cursor-grabbing flex flex-col" id="headerWorkflowCard">
+<!-- Inner Stage with 24px inner radius -->
+<div class="relative w-full h-full rounded-[24px] overflow-hidden bg-[#1B212F]" id="workflowCarousel">
+<!-- STEP 1: Upload -->
+<div class="workflow-slide is-active flex flex-col justify-between w-full h-full" data-step="0">
+<!-- Top 60% Image Area with Misty Warm Haze & Drift -->
+<div class="relative w-full h-[60%] overflow-hidden flex flex-col items-center justify-start pt-3">
+<!-- Vertical misty warm haze gradient -->
+<div class="absolute inset-0 pointer-events-none" style="background: linear-gradient(180deg, #FDEBCB 0%, rgba(251, 167, 59, 0.45) 45%, #1B212F 100%);"></div>
+<!-- Architectural roof skyline silhouettes for depth (drifting sideways) -->
+<div class="absolute inset-x-0 bottom-1 flex items-end justify-center opacity-30 pointer-events-none">
+<svg class="w-[125%] h-14 anim-haze-drift-left text-[#364050]" fill="currentColor" viewbox="0 0 400 60">
+<path d="M0,60 L20,38 L45,60 L75,32 L110,60 L140,24 L175,60 L210,35 L245,60 L280,28 L315,60 L350,30 L380,60 L400,60 Z" opacity="0.6"></path>
+</svg>
+</div>
+<div class="absolute inset-x-0 bottom-3 flex items-end justify-center opacity-25 pointer-events-none">
+<svg class="w-[125%] h-10 anim-haze-drift-right text-[#FBA73B]" fill="currentColor" viewbox="0 0 400 45">
+<path d="M10,45 L35,22 L65,45 L95,18 L130,45 L165,26 L205,45 L245,20 L275,45 L310,24 L340,45 L380,18 L400,45 Z"></path>
+</svg>
+</div>
+<!-- Small Step Label centered at top -->
+<div class="slide-label relative z-20 text-[#B46205] text-[14px] font-semibold tracking-tight">Step 1</div>
+<!-- 3D Isometric Illustration (~150px) centered with ambient float & soft shadow -->
+<div class="slide-illu-container relative z-10 w-[150px] h-[150px] -mt-1 flex items-center justify-center pointer-events-none">
+<div class="relative w-full h-full flex items-center justify-center anim-illustration-float">
+<!-- Soft ground shadow beneath illustration -->
+<div class="absolute bottom-2 w-28 h-5 rounded-full bg-black/35 blur-[5px] pointer-events-none"></div>
+<!-- https://lh3.googleusercontent.com/aida/AEtjO1WRe1KQ1Ql5SXBVavMyACABkdjk7ze0knifKOGWJ1qzLNPZLKKyQcfloozL9XCtjGlwQJsGna3U99WPKVaFerIokRyktuv6rJ_buuv8XsNGSIgSUauXACHW_haMFyaTOeOPo4Uzqy6dIJ4zTZeGcuPSzhLs-8BqL297Nk2YryfL0B85oSGHXJrZbaC53j3WsaZw-AtXBX6Gel6dLp0uKZgZfje46u0wJMHxA2K24YEFTLck6EkHjQlpzA -->
+<svg class="w-full h-full" fill="none" viewbox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<lineargradient gradientunits="userSpaceOnUse" id="upDocGrad1" x1="20" x2="85" y1="35" y2="105">
+<stop offset="0%" stop-color="#FCFDFF"></stop>
+<stop offset="100%" stop-color="#D8DFE9"></stop>
+</lineargradient>
+<lineargradient gradientunits="userSpaceOnUse" id="upCloudGrad1" x1="45" x2="85" y1="20" y2="60">
+<stop offset="0%" stop-color="#FCFDFF"></stop>
+<stop offset="100%" stop-color="#CBD5E1"></stop>
+</lineargradient>
+<lineargradient gradientunits="userSpaceOnUse" id="amberGrad1" x1="50" x2="70" y1="15" y2="45">
+<stop offset="0%" stop-color="#FBA73B"></stop>
+<stop offset="100%" stop-color="#E58A18"></stop>
+</lineargradient>
+<filter height="130%" id="shadowUp1" width="130%" x="-10%" y="-10%">
+<fedropshadow dx="0" dy="8" flood-color="#1B212F" flood-opacity="0.12" stddeviation="6"></fedropshadow>
+</filter>
+</defs>
+<g filter="url(#shadowUp1)">
+<path d="M22 68 L70 42 L102 60 L54 88 Z" fill="#94A3B8" opacity="0.3"></path>
+<path d="M20 64 L68 38 L100 56 L52 84 Z" fill="url(#upDocGrad1)" stroke="#CBD5E1" stroke-width="1.5"></path>
+<path d="M34 60 L58 46 L76 56 L52 70 Z" fill="#F1F5F9" stroke="#94A3B8" stroke-dasharray="2 2" stroke-width="1.2"></path>
+<path d="M46 53 L70 39" stroke="#94A3B8" stroke-width="1.2"></path>
+<path d="M58 63 L82 49" stroke="#94A3B8" stroke-width="1.2"></path>
+<path d="M42 67 L66 81" stroke="#364050" stroke-width="1.5"></path>
+<g transform="translate(14, 0)">
+<path d="M42 46 C36 46 32 41 32 36 C32 31 36 27 41 27 C43 21 49 17 56 17 C64 17 71 22 72 29 C77 29 81 33 81 38 C81 43 77 46 72 46 Z" fill="url(#upCloudGrad1)" stroke="#CBD5E1" stroke-width="1"></path>
+<g filter="url(#shadowUp1)">
+<path d="M57 14 L68 25 H61.5 V37 H52.5 V25 H46 Z" fill="url(#amberGrad1)"></path>
+</g>
+</g>
+</g>
+</svg>
+</div>
+</div>
+</div>
+<!-- Bottom 40% Text Area on #1B212F background -->
+<div class="relative w-full h-[40%] flex flex-col items-center justify-start text-center px-6 pt-1 pb-4 z-20">
+<h2 class="slide-title text-[#FCFDFF] font-bold text-[28px] leading-tight tracking-tight">Upload</h2>
+<p class="slide-sub text-[#FCFDFF]/70 text-[14px] font-normal leading-snug mt-2 max-w-[280px]">Add 2D architectural blueprint from camera or files</p>
+</div>
+</div>
+<!-- STEP 2: AI Plan Analysis -->
+<div class="workflow-slide flex flex-col justify-between w-full h-full" data-step="1">
+<div class="relative w-full h-[60%] overflow-hidden flex flex-col items-center justify-start pt-3">
+<div class="absolute inset-0 pointer-events-none" style="background: linear-gradient(180deg, #FDEBCB 0%, rgba(251, 167, 59, 0.45) 45%, #1B212F 100%);"></div>
+<div class="absolute inset-x-0 bottom-1 flex items-end justify-center opacity-30 pointer-events-none">
+<svg class="w-[125%] h-14 anim-haze-drift-left text-[#364050]" fill="currentColor" viewbox="0 0 400 60">
+<path d="M0,60 L20,38 L45,60 L75,32 L110,60 L140,24 L175,60 L210,35 L245,60 L280,28 L315,60 L350,30 L380,60 L400,60 Z" opacity="0.6"></path>
+</svg>
+</div>
+<div class="absolute inset-x-0 bottom-3 flex items-end justify-center opacity-25 pointer-events-none">
+<svg class="w-[125%] h-10 anim-haze-drift-right text-[#FBA73B]" fill="currentColor" viewbox="0 0 400 45">
+<path d="M10,45 L35,22 L65,45 L95,18 L130,45 L165,26 L205,45 L245,20 L275,45 L310,24 L340,45 L380,18 L400,45 Z"></path>
+</svg>
+</div>
+<div class="slide-label relative z-20 text-[#B46205] text-[14px] font-semibold tracking-tight">Step 2</div>
+<div class="slide-illu-container relative z-10 w-[150px] h-[150px] -mt-1 flex items-center justify-center pointer-events-none">
+<div class="relative w-full h-full flex items-center justify-center anim-illustration-float">
+<div class="absolute bottom-2 w-28 h-5 rounded-full bg-black/35 blur-[5px] pointer-events-none"></div>
+<!-- https://lh3.googleusercontent.com/aida/AEtjO1Uq0g8X5wOMoobcvbd0892vCnYgT_xYOm7fOh2yb08eL-SLZKiCVNnrhRhbde5uBEtlaIk9Lm9z4lJVYPn1L18lcY6y_nHlLW0djDUqI9d4DUYgPaBKjvnwr25IzgZOjaptAYxAIO3OXTul0zs3ByPczLkRFCpvEROF_ncXANAK3HBULYj6vZizbBA7cF8ArfMqRqg5444OCMKBADn59Mi5WUUcRJM4qBf9v4Ep8eclXPsPH65rgDAldhc -->
+<svg class="w-full h-full" fill="none" viewbox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<lineargradient gradientunits="userSpaceOnUse" id="aiDocGrad2" x1="15" x2="80" y1="35" y2="105">
+<stop offset="0%" stop-color="#FCFDFF"></stop>
+<stop offset="100%" stop-color="#D8DFE9"></stop>
+</lineargradient>
+<lineargradient gradientunits="userSpaceOnUse" id="amberRim2" x1="45" x2="85" y1="20" y2="60">
+<stop offset="0%" stop-color="#FBA73B"></stop>
+<stop offset="100%" stop-color="#E58A18"></stop>
+</lineargradient>
+<filter height="130%" id="shadowAi2" width="130%" x="-10%" y="-10%">
+<fedropshadow dx="0" dy="8" flood-color="#1B212F" flood-opacity="0.12" stddeviation="6"></fedropshadow>
+</filter>
+</defs>
+<g filter="url(#shadowAi2)">
+<path d="M18 64 L66 38 L98 56 L50 84 Z" fill="url(#aiDocGrad2)" stroke="#CBD5E1" stroke-width="1.5"></path>
+<path d="M28 58 L52 44 L70 54 L46 68 Z" fill="none" stroke="#364050" stroke-width="1.5"></path>
+<path d="M38 52 L56 62" stroke="#94A3B8" stroke-width="1.2"></path>
+<path d="M48 46 L66 56" stroke="#94A3B8" stroke-width="1.2"></path>
+<line opacity="0.8" stroke="#94A3B8" stroke-dasharray="3 2" stroke-width="1.5" x1="30" x2="74" y1="46" y2="46"></line>
+<line opacity="0.8" stroke="#94A3B8" stroke-dasharray="3 2" stroke-width="1.5" x1="26" x2="80" y1="52" y2="52"></line>
+<line opacity="0.8" stroke="#94A3B8" stroke-dasharray="3 2" stroke-width="1.5" x1="34" x2="84" y1="58" y2="58"></line>
+<g transform="translate(12, -4)">
+<path d="M72 62 L88 78 L83 83 L67 67 Z" fill="#364050" stroke="#1B212F" stroke-width="1"></path>
+<circle cx="56" cy="46" fill="#FCFDFF" fill-opacity="0.55" r="20" stroke="url(#amberRim2)" stroke-width="4"></circle>
+<circle cx="56" cy="46" fill="none" r="14" stroke="#94A3B8" stroke-dasharray="2 2" stroke-width="1"></circle>
+<circle cx="56" cy="46" fill="#E58A18" r="3"></circle>
+<path d="M44 42 A 16 16 0 0 1 58 32" stroke="#FCFDFF" stroke-linecap="round" stroke-width="2.5"></path>
+</g>
+</g>
+</svg>
+</div>
+</div>
+</div>
+<div class="relative w-full h-[40%] flex flex-col items-center justify-start text-center px-6 pt-1 pb-4 z-20">
+<h2 class="slide-title text-[#FCFDFF] font-bold text-[28px] leading-tight tracking-tight">AI Plan Analysis</h2>
+<p class="slide-sub text-[#FCFDFF]/70 text-[14px] font-normal leading-snug mt-2 max-w-[280px]">Instant structural, spatial &amp; Vastu room analysis</p>
+</div>
+</div>
+<!-- STEP 3: Pay -->
+<div class="workflow-slide flex flex-col justify-between w-full h-full" data-step="2">
+<div class="relative w-full h-[60%] overflow-hidden flex flex-col items-center justify-start pt-3">
+<div class="absolute inset-0 pointer-events-none" style="background: linear-gradient(180deg, #FDEBCB 0%, rgba(251, 167, 59, 0.45) 45%, #1B212F 100%);"></div>
+<div class="absolute inset-x-0 bottom-1 flex items-end justify-center opacity-30 pointer-events-none">
+<svg class="w-[125%] h-14 anim-haze-drift-left text-[#364050]" fill="currentColor" viewbox="0 0 400 60">
+<path d="M0,60 L20,38 L45,60 L75,32 L110,60 L140,24 L175,60 L210,35 L245,60 L280,28 L315,60 L350,30 L380,60 L400,60 Z" opacity="0.6"></path>
+</svg>
+</div>
+<div class="absolute inset-x-0 bottom-3 flex items-end justify-center opacity-25 pointer-events-none">
+<svg class="w-[125%] h-10 anim-haze-drift-right text-[#FBA73B]" fill="currentColor" viewbox="0 0 400 45">
+<path d="M10,45 L35,22 L65,45 L95,18 L130,45 L165,26 L205,45 L245,20 L275,45 L310,24 L340,45 L380,18 L400,45 Z"></path>
+</svg>
+</div>
+<div class="slide-label relative z-20 text-[#B46205] text-[14px] font-semibold tracking-tight">Step 3</div>
+<div class="slide-illu-container relative z-10 w-[150px] h-[150px] -mt-1 flex items-center justify-center pointer-events-none">
+<div class="relative w-full h-full flex items-center justify-center anim-illustration-float">
+<div class="absolute bottom-2 w-28 h-5 rounded-full bg-black/35 blur-[5px] pointer-events-none"></div>
+<!-- https://lh3.googleusercontent.com/aida/AEtjO1WgRVEgETBP5nSfdeo9wWVP2oa6pvqODI6WKGIRgPAu-9pPxTeTv5RAul1Knnyjbnk39aRovSCiou41lEMiKgGd-SogfkN8-AjP0-S32BGRpVvf8HFNC6lfOBAhPmNulvLt-pVIYnwLJ3wltT5IY9n62eYp6SdmUSu93TK3rjUlndnqZp11DQixtAJLDnjuz8I0yaYbBIr69vPcSQxsnMh_kv5AcaAzGdZ74cmw1337DGpnEI1hKH_eFzk -->
+<svg class="w-full h-full" fill="none" viewbox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<lineargradient gradientunits="userSpaceOnUse" id="phoneBody3" x1="30" x2="80" y1="20" y2="90">
+<stop offset="0%" stop-color="#364050"></stop>
+<stop offset="100%" stop-color="#1B212F"></stop>
+</lineargradient>
+<lineargradient gradientunits="userSpaceOnUse" id="screenGrad3" x1="35" x2="75" y1="25" y2="85">
+<stop offset="0%" stop-color="#FCFDFF"></stop>
+<stop offset="100%" stop-color="#E9EEF4"></stop>
+</lineargradient>
+<lineargradient gradientunits="userSpaceOnUse" id="amberCoin3" x1="68" x2="98" y1="58" y2="88">
+<stop offset="0%" stop-color="#FBA73B"></stop>
+<stop offset="100%" stop-color="#E58A18"></stop>
+</lineargradient>
+<filter height="130%" id="shadowPay3" width="130%" x="-10%" y="-10%">
+<fedropshadow dx="0" dy="8" flood-color="#1B212F" flood-opacity="0.12" stddeviation="6"></fedropshadow>
+</filter>
+</defs>
+<g filter="url(#shadowPay3)">
+<g transform="translate(10, 4)">
+<rect fill="#1B212F" height="68" rx="10" width="46" x="22" y="24"></rect>
+<rect fill="url(#phoneBody3)" height="68" rx="10" width="46" x="20" y="20"></rect>
+<rect fill="url(#screenGrad3)" height="60" rx="7" width="40" x="23" y="24"></rect>
+<rect fill="#94A3B8" height="2" rx="1" width="12" x="37" y="27"></rect>
+<circle cx="43" cy="52" fill="#364050" r="14"></circle>
+<path d="M36 52 L41 57 L51 46" stroke="#FBA73B" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5"></path>
+<rect fill="#D8DFE9" height="4" rx="2" width="24" x="31" y="70"></rect>
+</g>
+<g transform="translate(2, 6)">
+<ellipse cx="82" cy="74" fill="#B46205" rx="13" ry="10"></ellipse>
+<ellipse cx="82" cy="71" fill="url(#amberCoin3)" rx="13" ry="10"></ellipse>
+<ellipse cx="82" cy="71" fill="none" opacity="0.6" rx="9" ry="7" stroke="#FCFDFF" stroke-width="1.2"></ellipse>
+<text fill="#1E252D" font-family="'Plus Jakarta Sans', sans-serif" font-size="9" font-weight="bold" text-anchor="middle" x="82" y="75">₹</text>
+</g>
+</g>
+</svg>
+</div>
+</div>
+</div>
+<div class="relative w-full h-[40%] flex flex-col items-center justify-start text-center px-6 pt-1 pb-4 z-20">
+<h2 class="slide-title text-[#FCFDFF] font-bold text-[28px] leading-tight tracking-tight">Pay</h2>
+<p class="slide-sub text-[#FCFDFF]/70 text-[14px] font-normal leading-snug mt-2 max-w-[280px]">Transparent pricing with instant unlock</p>
+</div>
+</div>
+<!-- STEP 4: Reports -->
+<div class="workflow-slide flex flex-col justify-between w-full h-full" data-step="3">
+<div class="relative w-full h-[60%] overflow-hidden flex flex-col items-center justify-start pt-3">
+<div class="absolute inset-0 pointer-events-none" style="background: linear-gradient(180deg, #FDEBCB 0%, rgba(251, 167, 59, 0.45) 45%, #1B212F 100%);"></div>
+<div class="absolute inset-x-0 bottom-1 flex items-end justify-center opacity-30 pointer-events-none">
+<svg class="w-[125%] h-14 anim-haze-drift-left text-[#364050]" fill="currentColor" viewbox="0 0 400 60">
+<path d="M0,60 L20,38 L45,60 L75,32 L110,60 L140,24 L175,60 L210,35 L245,60 L280,28 L315,60 L350,30 L380,60 L400,60 Z" opacity="0.6"></path>
+</svg>
+</div>
+<div class="absolute inset-x-0 bottom-3 flex items-end justify-center opacity-25 pointer-events-none">
+<svg class="w-[125%] h-10 anim-haze-drift-right text-[#FBA73B]" fill="currentColor" viewbox="0 0 400 45">
+<path d="M10,45 L35,22 L65,45 L95,18 L130,45 L165,26 L205,45 L245,20 L275,45 L310,24 L340,45 L380,18 L400,45 Z"></path>
+</svg>
+</div>
+<div class="slide-label relative z-20 text-[#B46205] text-[14px] font-semibold tracking-tight">Step 4</div>
+<div class="slide-illu-container relative z-10 w-[150px] h-[150px] -mt-1 flex items-center justify-center pointer-events-none">
+<div class="relative w-full h-full flex items-center justify-center anim-illustration-float">
+<div class="absolute bottom-2 w-28 h-5 rounded-full bg-black/35 blur-[5px] pointer-events-none"></div>
+<!-- https://lh3.googleusercontent.com/aida/AEtjO1VAZz0NTIfkFmmu4LKYGqNL7wdbquyTCjKhBQqkAo7xGHmhetOilVUKv3kp2F2TmwM3mpwB7RerVFUIa5pA3-qVnbBrECpHff30WnseUAd_uYoWjJVaiRuRpg77WEkm8KPoZIS4hJb_MfHHgJgvpPAPhbxJmDVgZkpK4a4smB1_nMpPcew3ch_7KV2OVwVggsN7mX9McXfCN0aC0-Vfvno65Ry3EwIMkihpHQSQNOkq5SZis-yo7ckdJyg -->
+<svg class="w-full h-full" fill="none" viewbox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<lineargradient gradientunits="userSpaceOnUse" id="repDoc1_4" x1="20" x2="80" y1="20" y2="80">
+<stop offset="0%" stop-color="#FCFDFF"></stop>
+<stop offset="100%" stop-color="#CBD5E1"></stop>
+</lineargradient>
+<lineargradient gradientunits="userSpaceOnUse" id="repDoc2_4" x1="20" x2="80" y1="20" y2="80">
+<stop offset="0%" stop-color="#FCFDFF"></stop>
+<stop offset="100%" stop-color="#D8DFE9"></stop>
+</lineargradient>
+<lineargradient gradientunits="userSpaceOnUse" id="amberBar4" x1="50" x2="60" y1="40" y2="70">
+<stop offset="0%" stop-color="#FBA73B"></stop>
+<stop offset="100%" stop-color="#E58A18"></stop>
+</lineargradient>
+<filter height="130%" id="shadowRep4" width="130%" x="-10%" y="-10%">
+<fedropshadow dx="0" dy="8" flood-color="#1B212F" flood-opacity="0.12" stddeviation="6"></fedropshadow>
+</filter>
+</defs>
+<g filter="url(#shadowRep4)">
+<path d="M22 66 L66 42 L94 58 L50 82 Z" fill="#94A3B8" opacity="0.4"></path>
+<path d="M20 60 L64 36 L92 52 L48 76 Z" fill="url(#repDoc1_4)" stroke="#CBD5E1" stroke-width="1.2"></path>
+<path d="M18 52 L62 28 L90 44 L46 68 Z" fill="url(#repDoc2_4)" stroke="#CBD5E1" stroke-width="1.5"></path>
+<path d="M26 49 L46 38" stroke="#364050" stroke-linecap="round" stroke-width="2"></path>
+<path d="M26 55 L38 48.5" stroke="#94A3B8" stroke-linecap="round" stroke-width="1.2"></path>
+<g transform="translate(10, 4)">
+<path d="M40 50 L64 37" stroke="#364050" stroke-width="1.2"></path>
+<path d="M42 49 L42 41 L46 39 L46 47 Z" fill="#94A3B8"></path>
+<path d="M49 45 L49 31 L54 28 L54 42 Z" fill="url(#amberBar4)"></path>
+<path d="M49 31 L52 29.5 L56 31 L54 32.5 Z" fill="#FBA73B"></path>
+<path d="M57 41 L57 33 L61 31 L61 39 Z" fill="#364050"></path>
+</g>
+</g>
+</svg>
+</div>
+</div>
+</div>
+<div class="relative w-full h-[40%] flex flex-col items-center justify-start text-center px-6 pt-1 pb-4 z-20">
+<h2 class="slide-title text-[#FCFDFF] font-bold text-[28px] leading-tight tracking-tight">Reports</h2>
+<p class="slide-sub text-[#FCFDFF]/70 text-[14px] font-normal leading-snug mt-2 max-w-[280px]">Comprehensive Vastu, Cost &amp; Structure reports</p>
+</div>
+</div>
+<!-- STEP 5: Download -->
+<div class="workflow-slide flex flex-col justify-between w-full h-full" data-step="4">
+<div class="relative w-full h-[60%] overflow-hidden flex flex-col items-center justify-start pt-3">
+<div class="absolute inset-0 pointer-events-none" style="background: linear-gradient(180deg, #FDEBCB 0%, rgba(251, 167, 59, 0.45) 45%, #1B212F 100%);"></div>
+<div class="absolute inset-x-0 bottom-1 flex items-end justify-center opacity-30 pointer-events-none">
+<svg class="w-[125%] h-14 anim-haze-drift-left text-[#364050]" fill="currentColor" viewbox="0 0 400 60">
+<path d="M0,60 L20,38 L45,60 L75,32 L110,60 L140,24 L175,60 L210,35 L245,60 L280,28 L315,60 L350,30 L380,60 L400,60 Z" opacity="0.6"></path>
+</svg>
+</div>
+<div class="absolute inset-x-0 bottom-3 flex items-end justify-center opacity-25 pointer-events-none">
+<svg class="w-[125%] h-10 anim-haze-drift-right text-[#FBA73B]" fill="currentColor" viewbox="0 0 400 45">
+<path d="M10,45 L35,22 L65,45 L95,18 L130,45 L165,26 L205,45 L245,20 L275,45 L310,24 L340,45 L380,18 L400,45 Z"></path>
+</svg>
+</div>
+<div class="slide-label relative z-20 text-[#B46205] text-[14px] font-semibold tracking-tight">Step 5</div>
+<div class="slide-illu-container relative z-10 w-[150px] h-[150px] -mt-1 flex items-center justify-center pointer-events-none">
+<div class="relative w-full h-full flex items-center justify-center anim-illustration-float">
+<div class="absolute bottom-2 w-28 h-5 rounded-full bg-black/35 blur-[5px] pointer-events-none"></div>
+<!-- https://lh3.googleusercontent.com/aida/AEtjO1Vkn-usr582EGA5pvFkgVT1aud9HNv8oC067u_407AOKpmuMA58Dc_3vGamoEJPsGghSDPff9X7briLLEoWSqnGd7Tj3G3HzUZepNWnpP2DPD6jZu9TjAx5ogK6U62X9MTZaxsFWC0rggZuEHl3SIyvhqYFVsV0POP_HmnvZmz5tsoXJKBVnLYDjNcMG9I4Yrm3is3opGK9UzQwSDXnRtcy5T6d9zsUbHBH4MQe8NbMdaCqt90KRQky5rQ -->
+<svg class="w-full h-full" fill="none" viewbox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<lineargradient gradientunits="userSpaceOnUse" id="dlDocGrad5" x1="25" x2="75" y1="20" y2="70">
+<stop offset="0%" stop-color="#FCFDFF"></stop>
+<stop offset="100%" stop-color="#D8DFE9"></stop>
+</lineargradient>
+<lineargradient gradientunits="userSpaceOnUse" id="dlTrayGrad5" x1="20" x2="90" y1="65" y2="95">
+<stop offset="0%" stop-color="#364050"></stop>
+<stop offset="100%" stop-color="#1B212F"></stop>
+</lineargradient>
+<lineargradient gradientunits="userSpaceOnUse" id="amberArrow5" x1="45" x2="65" y1="20" y2="50">
+<stop offset="0%" stop-color="#FBA73B"></stop>
+<stop offset="100%" stop-color="#E58A18"></stop>
+</lineargradient>
+<filter height="130%" id="shadowDl5" width="130%" x="-10%" y="-10%">
+<fedropshadow dx="0" dy="8" flood-color="#1B212F" flood-opacity="0.12" stddeviation="6"></fedropshadow>
+</filter>
+</defs>
+<g filter="url(#shadowDl5)">
+<path d="M22 72 L60 52 L94 68 L56 88 Z" fill="url(#dlTrayGrad5)"></path>
+<path d="M22 72 L22 76 L56 92 L94 72 L94 68 L56 88 Z" fill="#1B212F"></path>
+<path d="M42 81 L56 88 L70 81" fill="none" stroke="#94A3B8" stroke-width="1.2"></path>
+<g transform="translate(4, -8)">
+<path d="M26 56 L64 36 L88 48 L50 68 Z" fill="url(#dlDocGrad5)" stroke="#CBD5E1" stroke-width="1.5"></path>
+<path d="M80 44 L88 48 L82 49 Z" fill="#94A3B8"></path>
+<path d="M34 52 L50 44" stroke="#364050" stroke-linecap="round" stroke-width="1.8"></path>
+<path d="M34 57 L44 52" stroke="#94A3B8" stroke-linecap="round" stroke-width="1.2"></path>
+<g filter="url(#shadowDl5)">
+<path d="M54 24 V34 H48 L57 44 L66 34 H60 V24 Z" fill="url(#amberArrow5)"></path>
+</g>
+</g>
+</g>
+</svg>
+</div>
+</div>
+</div>
+<div class="relative w-full h-[40%] flex flex-col items-center justify-start text-center px-6 pt-1 pb-4 z-20">
+<h2 class="slide-title text-[#FCFDFF] font-bold text-[28px] leading-tight tracking-tight">Download</h2>
+<p class="slide-sub text-[#FCFDFF]/70 text-[14px] font-normal leading-snug mt-2 max-w-[280px]">Export high-resolution deliverables &amp; CAD files</p>
+</div>
+</div>
+</div>
+</header>
+<!-- 2. HERO UPLOAD CARD (MIDDLE) -->
+<main class="w-full bg-[#FCFDFF] rounded-[28px] card-shadow p-[24px] flex flex-col items-center justify-between select-none">
+<!-- Top Area: Upload Icon & Copy -->
+<div class="flex flex-col items-center text-center w-full">
+<!-- 48px circle with dark slate fill #1B212F, thin amber ring border #E58A18 -->
+<div class="w-[48px] h-[48px] rounded-full bg-[#1B212F] border border-[#E58A18] flex items-center justify-center mb-3">
+<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<h3 class="text-[#1E252D] text-[18px] font-bold tracking-tight mb-1">Upload 2D Floor Plan</h3>
+<p class="text-[#64748B] text-[13px] font-normal leading-snug max-w-[270px]">Tap here to browse blueprint from Gallery or Camera</p>
+</div>
+<!-- Tag Pills: JPG, PNG, PDF, MAX 25MB in #F1F4F8 with #64748B text -->
+<div class="flex items-center justify-center space-x-2 my-4">
+<span class="px-3 py-1 rounded-full bg-[#F1F4F8] text-[#64748B] text-[12px] font-semibold tracking-wide">JPG</span>
+<span class="px-3 py-1 rounded-full bg-[#F1F4F8] text-[#64748B] text-[12px] font-semibold tracking-wide">PNG</span>
+<span class="px-3 py-1 rounded-full bg-[#F1F4F8] text-[#64748B] text-[12px] font-semibold tracking-wide">PDF</span>
+<span class="px-3 py-1 rounded-full bg-[#F1F4F8] text-[#64748B] text-[12px] font-semibold tracking-wide">MAX 25MB</span>
+</div>
+<!-- CTA Button "Select Floor Plan →": 50px tall pill, gradient #FBA73B to #E58A18, #1E252D text -->
+<button class="w-full h-[50px] rounded-full amber-gradient amber-glow flex items-center justify-center space-x-2 text-[#1E252D] font-bold text-[15px] active:scale-[0.98] transition-transform">
+<span>Select Floor Plan</span>
+<svg class="w-4 h-4 text-[#1E252D]" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24">
+<path d="M14 5l7 7m0 0l-7 7m7-7H3" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+</main>
+<!-- 3. FLOATING BOTTOM NAVIGATION -->
+<style>
+  @keyframes waterFlow {
+    0% { transform: rotate(0deg) translate(-2px, -2px); }
+    50% { transform: rotate(180deg) translate(2px, 3px) scale(1.06); }
+    100% { transform: rotate(360deg) translate(-2px, -2px); }
+  }
+  @keyframes waveSurge {
+    0%, 100% { border-radius: 42% 58% 65% 35% / 45% 45% 55% 55%; transform: scale(1); }
+    33% { border-radius: 55% 45% 38% 62% / 54% 60% 40% 46%; transform: scale(1.05) rotate(2deg); }
+    66% { border-radius: 38% 62% 52% 48% / 40% 42% 58% 60%; transform: scale(0.97) rotate(-2deg); }
+  }
+  @keyframes waterShimmer {
+    0% { transform: translateX(-100%) skewX(-15deg); opacity: 0; }
+    30% { opacity: 0.65; }
+    60% { opacity: 0.65; }
+    100% { transform: translateX(180%) skewX(-15deg); opacity: 0; }
+  }
+  @keyframes organicPulse {
+    0%, 100% { transform: scale(1); opacity: 0.35; }
+    50% { transform: scale(1.28); opacity: 0; }
+  }
+  @keyframes liquidWaveFlow {
+    0% { transform: translateX(0) translateZ(0) scaleY(1); }
+    50% { transform: translateX(-25%) translateZ(0) scaleY(1.15); }
+    100% { transform: translateX(-50%) translateZ(0) scaleY(1); }
+  }
+  @keyframes rippleDisperse {
+    0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0.9; }
+    100% { transform: translate(-50%, -50%) scale(2.2); opacity: 0; }
+  }
+
+  .nav-water-flow {
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, rgba(251, 167, 59, 0.45), rgba(229, 138, 24, 0.15) 60%, transparent 80%);
+    animation: waveSurge 6s ease-in-out infinite, waterFlow 10s linear infinite;
+    pointer-events: none;
+    filter: blur(4px);
+    z-index: 0;
+  }
+  .nav-water-ripple {
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    border: 1.5px solid rgba(251, 167, 59, 0.5);
+    animation: organicPulse 3.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    pointer-events: none;
+  }
+  .nav-shimmer-sweep {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+    animation: waterShimmer 3.8s ease-in-out infinite;
+    pointer-events: none;
+  }
+  .nav-bar-fluid-backdrop {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 20px;
+    background: radial-gradient(ellipse at 25% 100%, rgba(251, 167, 59, 0.18) 0%, rgba(229, 138, 24, 0.04) 50%, transparent 80%);
+    pointer-events: none;
+    border-radius: 0 0 32px 32px;
+    overflow: hidden;
+    transition: background 550ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .nav-item-ripple:hover .hover-water-blob {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  #navGlider {
+    position: absolute;
+    top: 10px;
+    left: 0;
+    width: 96px;
+    height: 44px;
+    border-radius: 28px;
+    pointer-events: none;
+    z-index: 1;
+    transform: translateX(10px);
+    transition: transform 550ms cubic-bezier(0.34, 1.56, 0.64, 1), width 450ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    will-change: transform, width;
+  }
+  .glider-liquid-body {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 28px;
+    background: linear-gradient(135deg, #FBA73B 0%, #E58A18 100%);
+    box-shadow: 0 6px 20px rgba(229, 138, 24, 0.38), inset 0 1px 2px rgba(255, 255, 255, 0.5);
+    overflow: hidden;
+    transition: transform 380ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .glider-liquid-body.liquid-squash-right {
+    transform: scaleX(1.18) scaleY(0.86) skewX(-4deg);
+  }
+  .glider-liquid-body.liquid-squash-left {
+    transform: scaleX(1.18) scaleY(0.86) skewX(4deg);
+  }
+  .liquid-wave-strip {
+    position: absolute;
+    bottom: -6px;
+    left: 0;
+    width: 200%;
+    height: 16px;
+    opacity: 0.35;
+    background: radial-gradient(circle at 50% 120%, rgba(255, 255, 255, 0.9) 0%, transparent 70%);
+    animation: liquidWaveFlow 4s linear infinite;
+    pointer-events: none;
+  }
+  .water-click-ripple {
+    position: absolute;
+    border-radius: 50%;
+    border: 2px solid rgba(229, 138, 24, 0.65);
+    background: radial-gradient(circle, rgba(251, 167, 59, 0.3) 0%, rgba(229, 138, 24, 0.05) 60%, transparent 80%);
+    pointer-events: none;
+    z-index: 20;
+    animation: rippleDisperse 600ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  }
+</style>
+<nav class="w-[320px] h-[64px] bg-[#FCFDFF] rounded-[32px] nav-shadow px-2.5 relative flex items-center justify-between select-none overflow-hidden" id="bottomNav">
+<div class="nav-bar-fluid-backdrop" id="navBackdrop" style="background: radial-gradient(at 15.8555% 100%, rgba(251, 167, 59, 0.22) 0%, rgba(229, 138, 24, 0.05) 50%, transparent 80%);"></div>
+<div id="navGlider" style="width: 81.475px; transform: translateX(10px);">
+<div class="nav-water-flow"></div>
+<div class="nav-water-ripple"></div>
+<div class="glider-liquid-body" id="gliderBody">
+<div class="nav-shimmer-sweep"></div>
+<div class="liquid-wave-strip"></div>
+</div>
+</div>
+<!-- Home (Tab 0) -->
+<div class="nav-item-ripple relative z-10 flex items-center space-x-1.5 px-3 py-1.5 cursor-pointer rounded-full transition-all duration-300 opacity-100" data-nav="0" id="navItem0">
+<div class="hover-water-blob absolute inset-0 bg-[#FBA73B]/10 rounded-full opacity-0 scale-75 transition-all duration-300 pointer-events-none -z-10"></div>
+<div class="relative w-7 h-7 flex items-center justify-center">
+<svg class="w-5 h-5 text-[#1E252D] transition-colors duration-300" fill="currentColor" id="icon0" viewbox="0 0 24 24">
+<path d="M11.47 3.84a.75.75 0 011.06 0l8.69 8.69a.75.75 0 101.06-1.06l-8.689-8.69a2.25 2.25 0 00-3.182 0l-8.69 8.69a.75.75 0 001.061 1.06l8.69-8.69z"></path>
+<path d="M12 5.432l8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 01-.75-.75v-4.5a.75.75 0 00-.75-.75h-3a.75.75 0 00-.75.75V21a.75.75 0 01-.75.75H5.625a1.875 1.875 0 01-1.875-1.875v-6.198a2.29 2.29 0 00.091-.086L12 5.432z"></path>
+</svg>
+</div>
+<span class="text-[#1E252D] text-[13px] font-bold tracking-tight transition-colors duration-300" id="label0">Home</span>
+</div>
+<!-- History (Tab 1) -->
+<div class="nav-item-ripple relative z-10 flex items-center space-x-1.5 px-3 py-1.5 cursor-pointer rounded-full transition-all duration-300 opacity-80 hover:opacity-100" data-nav="1" id="navItem1">
+<div class="hover-water-blob absolute inset-0 bg-[#FBA73B]/10 rounded-full opacity-0 scale-75 transition-all duration-300 pointer-events-none -z-10"></div>
+<div class="relative w-7 h-7 flex items-center justify-center">
+<svg class="w-5 h-5 text-[#8E94A0] transition-colors duration-300" fill="none" id="icon1" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<span class="text-[#8E94A0] text-[12px] font-medium transition-colors duration-300" id="label1">History</span>
+</div>
+<!-- Profile (Tab 2) -->
+<div class="nav-item-ripple relative z-10 flex items-center space-x-1.5 px-3 py-1.5 cursor-pointer rounded-full transition-all duration-300 opacity-80 hover:opacity-100" data-nav="2" id="navItem2">
+<div class="hover-water-blob absolute inset-0 bg-[#FBA73B]/10 rounded-full opacity-0 scale-75 transition-all duration-300 pointer-events-none -z-10"></div>
+<div class="relative w-7 h-7 flex items-center justify-center">
+<svg class="w-5 h-5 text-[#8E94A0] transition-colors duration-300" fill="none" id="icon2" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<span class="text-[#8E94A0] text-[12px] font-medium transition-colors duration-300" id="label2">Profile</span>
+</div>
+</nav>
+</div>
+<!-- Workflow Carousel Script with Choreographed Transitions & Touch Interaction -->
+<script>
+  (function initRedesignedWorkflow() {
+    const headerCard = document.getElementById('headerWorkflowCard');
+    const slides = Array.from(document.querySelectorAll('.workflow-slide'));
+    const totalSteps = slides.length;
+    let currentIndex = 0;
+    let stepTimer = null;
+    let isTransitioning = false;
+    let isDragging = false;
+    let dragStartX = 0;
+    let currentDragDelta = 0;
+
+    const EASE_ENTER = 'cubic-bezier(0.22, 1, 0.36, 1)';
+    const EASE_EXIT = 'cubic-bezier(0.64, 0, 0.78, 0)';
+
+    function getParts(slide) {
+      return {
+        label: slide.querySelector('.slide-label'),
+        illu: slide.querySelector('.slide-illu-container'),
+        title: slide.querySelector('.slide-title'),
+        sub: slide.querySelector('.slide-sub')
+      };
+    }
+
+    // Set initial resting states
+    slides.forEach((slide, idx) => {
+      const p = getParts(slide);
+      if (idx === 0) {
+        slide.classList.add('is-active');
+        slide.style.opacity = '1';
+        slide.style.pointerEvents = 'auto';
+        p.label.style.transform = 'translateY(0px)';
+        p.label.style.opacity = '1';
+        p.illu.style.transform = 'translateX(0px)';
+        p.illu.style.opacity = '1';
+        p.title.style.transform = 'translateY(0px)';
+        p.title.style.opacity = '1';
+        p.sub.style.transform = 'translateY(0px)';
+        p.sub.style.opacity = '0.7';
+      } else {
+        slide.classList.remove('is-active');
+        slide.style.opacity = '0';
+        slide.style.pointerEvents = 'none';
+        p.label.style.transform = 'translateY(12px)';
+        p.label.style.opacity = '0';
+        p.illu.style.transform = 'translateX(40px)';
+        p.illu.style.opacity = '0';
+        p.title.style.transform = 'translateY(12px)';
+        p.title.style.opacity = '0';
+        p.sub.style.transform = 'translateY(12px)';
+        p.sub.style.opacity = '0';
+      }
+    });
+
+    function transitionTo(nextIdx, direction = 1) {
+      if (isTransitioning || nextIdx === currentIndex) return;
+      isTransitioning = true;
+
+      const currentSlide = slides[currentIndex];
+      const nextSlide = slides[(nextIdx + totalSteps) % totalSteps];
+      const currParts = getParts(currentSlide);
+      const nextParts = getParts(nextSlide);
+
+      const outDir = direction > 0 ? -1 : 1;
+      const inDir = direction > 0 ? 1 : -1;
+
+      // 1. EXIT CURRENT SLIDE
+      currParts.illu.style.transition = `transform 350ms ${EASE_EXIT}, opacity 350ms ${EASE_EXIT}`;
+      currParts.illu.style.transform = `translateX(${outDir * 24}px)`;
+      currParts.illu.style.opacity = '0';
+
+      currParts.label.style.transition = `opacity 250ms ${EASE_EXIT}`;
+      currParts.label.style.opacity = '0';
+
+      currParts.title.style.transition = `transform 300ms ${EASE_EXIT}, opacity 300ms ${EASE_EXIT}`;
+      currParts.title.style.transform = `translateX(${outDir * 16}px)`;
+      currParts.title.style.opacity = '0';
+
+      currParts.sub.style.transition = `transform 300ms ${EASE_EXIT}, opacity 300ms ${EASE_EXIT}`;
+      currParts.sub.style.transform = `translateX(${outDir * 16}px)`;
+      currParts.sub.style.opacity = '0';
+
+      currentSlide.style.transition = 'opacity 350ms ease';
+      currentSlide.style.opacity = '0';
+
+      // 2. ENTER NEXT SLIDE (over 600ms-700ms)
+      setTimeout(() => {
+        currentSlide.classList.remove('is-active');
+        currentSlide.style.pointerEvents = 'none';
+
+        nextSlide.classList.add('is-active');
+        nextSlide.style.pointerEvents = 'auto';
+
+        // Prepare incoming starting states
+        nextParts.illu.style.transition = 'none';
+        nextParts.illu.style.transform = `translateX(${inDir * 40}px)`;
+        nextParts.illu.style.opacity = '0';
+
+        nextParts.label.style.transition = 'none';
+        nextParts.label.style.transform = 'translateY(12px)';
+        nextParts.label.style.opacity = '0';
+
+        nextParts.title.style.transition = 'none';
+        nextParts.title.style.transform = 'translateY(12px)';
+        nextParts.title.style.opacity = '0';
+
+        nextParts.sub.style.transition = 'none';
+        nextParts.sub.style.transform = 'translateY(12px)';
+        nextParts.sub.style.opacity = '0';
+
+        nextSlide.style.transition = 'opacity 600ms ease';
+        nextSlide.style.opacity = '1';
+
+        // Force reflow
+        void nextSlide.offsetWidth;
+
+        // Illustration enters over 700ms
+        nextParts.illu.style.transition = `transform 700ms ${EASE_ENTER}, opacity 600ms ${EASE_ENTER}`;
+        nextParts.illu.style.transform = 'translateX(0px)';
+        nextParts.illu.style.opacity = '1';
+
+        // Step Label & Title fade up by 12px over 500ms
+        nextParts.label.style.transition = `transform 500ms ${EASE_ENTER}, opacity 500ms ${EASE_ENTER}`;
+        nextParts.label.style.transform = 'translateY(0px)';
+        nextParts.label.style.opacity = '1';
+
+        nextParts.title.style.transition = `transform 500ms ${EASE_ENTER}, opacity 500ms ${EASE_ENTER}`;
+        nextParts.title.style.transform = 'translateY(0px)';
+        nextParts.title.style.opacity = '1';
+
+        // Subtitle follows 80ms later
+        setTimeout(() => {
+          nextParts.sub.style.transition = `transform 500ms ${EASE_ENTER}, opacity 500ms ${EASE_ENTER}`;
+          nextParts.sub.style.transform = 'translateY(0px)';
+          nextParts.sub.style.opacity = '0.7';
+        }, 80);
+
+        currentIndex = (nextIdx + totalSteps) % totalSteps;
+        setTimeout(() => {
+          isTransitioning = false;
+        }, 750);
+      }, 250);
+    }
+
+    function startAutoAdvance() {
+      stopAutoAdvance();
+      stepTimer = setInterval(() => {
+        if (!isDragging) {
+          transitionTo(currentIndex + 1, 1);
+        }
+      }, 3600);
+    }
+
+    function stopAutoAdvance() {
+      if (stepTimer) clearInterval(stepTimer);
+    }
+
+    // Touch / Drag interactions
+    function onDragStart(clientX) {
+      if (isTransitioning) return;
+      isDragging = true;
+      dragStartX = clientX;
+      currentDragDelta = 0;
+      stopAutoAdvance();
+
+      const p = getParts(slides[currentIndex]);
+      p.illu.style.transition = 'none';
+      p.title.style.transition = 'none';
+      p.sub.style.transition = 'none';
+    }
+
+    function onDragMove(clientX) {
+      if (!isDragging) return;
+      const rawDelta = clientX - dragStartX;
+      currentDragDelta = rawDelta * 0.55;
+
+      const p = getParts(slides[currentIndex]);
+      p.illu.style.transform = `translateX(${currentDragDelta * 1.2}px)`;
+      p.title.style.transform = `translateX(${currentDragDelta * 0.7}px)`;
+      p.sub.style.transform = `translateX(${currentDragDelta * 0.7}px)`;
+
+      const fade = Math.max(0.4, 1 - Math.abs(currentDragDelta) / 200);
+      p.illu.style.opacity = fade.toString();
+      p.title.style.opacity = fade.toString();
+      p.sub.style.opacity = (fade * 0.7).toString();
+    }
+
+    function onDragEnd() {
+      if (!isDragging) return;
+      isDragging = false;
+
+      const cardWidth = headerCard.offsetWidth || 350;
+      const threshold = cardWidth * 0.25;
+      const p = getParts(slides[currentIndex]);
+
+      if (Math.abs(currentDragDelta) >= threshold) {
+        if (currentDragDelta < 0) {
+          transitionTo(currentIndex + 1, 1);
+        } else {
+          transitionTo(currentIndex - 1, -1);
+        }
+      } else {
+        // Spring back
+        p.illu.style.transition = `transform 350ms ${EASE_ENTER}, opacity 350ms ease`;
+        p.title.style.transition = `transform 350ms ${EASE_ENTER}, opacity 350ms ease`;
+        p.sub.style.transition = `transform 350ms ${EASE_ENTER}, opacity 350ms ease`;
+
+        p.illu.style.transform = 'translateX(0px)';
+        p.illu.style.opacity = '1';
+        p.title.style.transform = 'translateY(0px)';
+        p.title.style.opacity = '1';
+        p.sub.style.transform = 'translateY(0px)';
+        p.sub.style.opacity = '0.7';
+      }
+
+      setTimeout(startAutoAdvance, 1200);
+    }
+
+    headerCard.addEventListener('touchstart', (e) => onDragStart(e.touches[0].clientX), { passive: true });
+    headerCard.addEventListener('touchmove', (e) => onDragMove(e.touches[0].clientX), { passive: true });
+    headerCard.addEventListener('touchend', onDragEnd, { passive: true });
+
+    headerCard.addEventListener('mousedown', (e) => onDragStart(e.clientX));
+    window.addEventListener('mousemove', (e) => { if (isDragging) onDragMove(e.clientX); });
+    window.addEventListener('mouseup', () => { if (isDragging) onDragEnd(); });
+
+    startAutoAdvance();
+  })();
+
+  // 4. Liquid Water Surge Navigation Interactive Handling
+  (function initLiquidNavigation() {
+    const nav = document.getElementById('bottomNav');
+    const glider = document.getElementById('navGlider');
+    const gliderBody = document.getElementById('gliderBody');
+    const navBackdrop = document.getElementById('navBackdrop');
+    const navItems = [
+      document.getElementById('navItem0'),
+      document.getElementById('navItem1'),
+      document.getElementById('navItem2')
+    ];
+    let activeNavIndex = 0;
+    let squashTimer = null;
+
+    function createRipple(x, y) {
+      const ripple = document.createElement('div');
+      ripple.className = 'water-click-ripple';
+      const size = 52;
+      ripple.style.width = size + 'px';
+      ripple.style.height = size + 'px';
+      ripple.style.left = x + 'px';
+      ripple.style.top = y + 'px';
+      nav.appendChild(ripple);
+      setTimeout(() => {
+        ripple.remove();
+      }, 620);
+    }
+
+    function alignGlider(index, triggerSquash = false, direction = 0) {
+      const targetItem = navItems[index];
+      const navRect = nav.getBoundingClientRect();
+      const targetRect = targetItem.getBoundingClientRect();
+
+      const offsetX = targetRect.left - navRect.left;
+      const targetWidth = targetRect.width;
+
+      glider.style.width = `${targetWidth}px`;
+      glider.style.transform = `translateX(${offsetX}px)`;
+
+      if (triggerSquash && direction !== 0) {
+        clearTimeout(squashTimer);
+        gliderBody.classList.remove('liquid-squash-right', 'liquid-squash-left');
+        if (direction > 0) {
+          gliderBody.classList.add('liquid-squash-right');
+        } else {
+          gliderBody.classList.add('liquid-squash-left');
+        }
+        squashTimer = setTimeout(() => {
+          gliderBody.classList.remove('liquid-squash-right', 'liquid-squash-left');
+        }, 320);
+      }
+
+      const percentage = (offsetX + targetWidth / 2) / navRect.width * 100;
+      navBackdrop.style.background = `radial-gradient(ellipse at ${percentage}% 100%, rgba(251, 167, 59, 0.22) 0%, rgba(229, 138, 24, 0.05) 50%, transparent 80%)`;
+
+      navItems.forEach((item, i) => {
+        const icon = document.getElementById(`icon${i}`);
+        const label = document.getElementById(`label${i}`);
+        if (i === index) {
+          item.classList.remove('opacity-80');
+          item.classList.add('opacity-100');
+          icon.classList.remove('text-[#8E94A0]');
+          icon.classList.add('text-[#1E252D]');
+          label.classList.remove('text-[#8E94A0]', 'font-medium');
+          label.classList.add('text-[#1E252D]', 'font-bold');
+        } else {
+          item.classList.remove('opacity-100');
+          item.classList.add('opacity-80');
+          icon.classList.remove('text-[#1E252D]');
+          icon.classList.add('text-[#8E94A0]');
+          label.classList.remove('text-[#1E252D]', 'font-bold');
+          label.classList.add('text-[#8E94A0]', 'font-medium');
+        }
+      });
+    }
+
+    navItems.forEach((item, index) => {
+      item.addEventListener('click', (e) => {
+        if (activeNavIndex === index) return;
+        const direction = index - activeNavIndex;
+        activeNavIndex = index;
+
+        const navRect = nav.getBoundingClientRect();
+        const clickX = e.clientX ? (e.clientX - navRect.left) : (item.offsetLeft + item.offsetWidth / 2);
+        const clickY = e.clientY ? (e.clientY - navRect.top) : (item.offsetTop + item.offsetHeight / 2);
+        createRipple(clickX, clickY);
+
+        alignGlider(index, true, direction);
+      });
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => alignGlider(0), 60);
+    });
+    setTimeout(() => alignGlider(0), 80);
+  })();
+</script>
+</body></html>

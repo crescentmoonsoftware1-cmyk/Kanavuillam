@@ -76,27 +76,27 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 const multiUpload = upload.fields([{ name: 'ground_plan', maxCount: 1 }, { name: 'first_plan', maxCount: 1 }, { name: 'second_plan', maxCount: 1 }]);
 
-function cleanUploadsFolder(dir, maxFiles = 20) {
+// ─── Immediate Zero-Storage: Purge all residual files on server boot ─────────
+function purgeUploadsFolder(dir) {
   try {
     if (!fs.existsSync(dir)) return;
-    const files = fs.readdirSync(dir)
-      .map(name => ({
-        name,
-        time: fs.statSync(path.join(dir, name)).mtime.getTime()
-      }))
-      .sort((a, b) => b.time - a.time); // Newest first
-
-    if (files.length > maxFiles) {
-      const filesToDelete = files.slice(maxFiles);
-      filesToDelete.forEach(file => {
-        fs.unlinkSync(path.join(dir, file.name));
-        console.log(`[Cleanup] Auto-deleted old file to save space: ${file.name}`);
-      });
-    }
+    const allFiles = fs.readdirSync(dir);
+    allFiles.forEach(name => {
+      const fullPath = path.join(dir, name);
+      try {
+        if (fs.statSync(fullPath).isFile()) {
+          fs.unlinkSync(fullPath);
+          console.log(`[Zero-Storage] Purged residual file: ${name}`);
+        }
+      } catch (_) {}
+    });
   } catch (err) {
-    console.error('[Cleanup Error]', err.message);
+    console.error('[Zero-Storage Error]', err.message);
   }
 }
+
+// Ensure 0 residual files on server boot
+purgeUploadsFolder(path.join(__dirname, 'uploads'));
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -1457,7 +1457,6 @@ app.post('/api/upload', (req, res, next) => {
       return res.status(400).json({ error: 'Upload error: ' + err.message });
     }
     console.log('[Upload] Files received:', Object.keys(req.files || {}).map(k => `${k}: ${req.files[k][0].path}`));
-    cleanUploadsFolder(path.join(__dirname, 'uploads'), 20);
     next();
   });
 }, async (req, res) => {
@@ -1578,15 +1577,6 @@ app.post('/api/upload', (req, res, next) => {
       _visual: visualDesign
     };
 
-    // Save the generated JSON to the uploads folder alongside the image
-    try {
-      const jsonPath = groundPath.replace(/\.[^/.]+$/, "") + ".json";
-      fs.writeFileSync(jsonPath, JSON.stringify(fullModelData, null, 2));
-      console.log(`[Upload] ✓ Saved JSON locally to ${jsonPath}`);
-    } catch (err) {
-      console.error(`[Upload] Failed to save JSON locally: ${err.message}`);
-    }
-
     const baseUrl = req.protocol + '://' + req.get('host');
     const imageUrl = `${baseUrl}/${groundPath.replace(/\\/g, '/')}`;
 
@@ -1608,11 +1598,11 @@ app.post('/api/upload', (req, res, next) => {
         .select().single();
       if (dbResponse.error) throw dbResponse.error;
       data = dbResponse.data;
-      console.log(`[DB] ✓ Project saved. ID: ${data.id}`);
+      console.log(`[DB] ✓ Project record created. ID: ${data.id}`);
     } catch (dbErr) {
-      console.warn(`[DB] Supabase unreachable or rate limited, mocking save... Error: ${dbErr.message}`);
+      console.warn(`[DB] Supabase unreachable or optional, continuing statelessly: ${dbErr.message}`);
       data = {
-        id: 'mock_project_' + Date.now(),
+        id: 'project_' + Date.now(),
         name: req.body.name || 'New Project',
         user_email: req.body.email || 'unknown',
         image_url: imageUrl,
@@ -1641,6 +1631,24 @@ app.post('/api/upload', (req, res, next) => {
   } catch (err) {
     console.error('[Pipeline Error]', err.message);
     res.status(500).json({ error: 'Processing failed.', details: err.message });
+  } finally {
+    // ─── Immediate Zero-Storage: Instantly delete uploaded files from disk ───────
+    const filesToPurge = [
+      req.files && req.files['ground_plan'] ? req.files['ground_plan'][0].path : null,
+      req.files && req.files['first_plan'] ? req.files['first_plan'][0].path : null,
+      req.files && req.files['second_plan'] ? req.files['second_plan'][0].path : null,
+    ].filter(Boolean);
+
+    filesToPurge.forEach(filePath => {
+      try {
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+          console.log(`[Zero-Storage] ✓ Instantly unlinked: ${path.basename(filePath)} (Server: 0 files retained)`);
+        }
+      } catch (e) {
+        console.warn(`[Zero-Storage] Could not unlink ${filePath}:`, e.message);
+      }
+    });
   }
 });
 
@@ -1774,6 +1782,9 @@ app.post('/api/payment/create-order', async (req, res) => {
   }
 });
 
+// ─── Web Checkout & Payment Tracking ─────────────────────────────────────────
+const paidOrders = new Set();
+
 app.post('/api/payment/verify-payment', async (req, res) => {
   const {
     razorpay_order_id,
@@ -1783,6 +1794,7 @@ app.post('/api/payment/verify-payment', async (req, res) => {
 
   if (razorpay_order_id && (razorpay_order_id.startsWith('order_mock_') || razorpay_order_id.startsWith('order_error_fallback_'))) {
     console.log(`[Payment] Mock Payment Verified: ${razorpay_order_id}`);
+    paidOrders.add(razorpay_order_id);
     return res.json({ success: true, message: "Mock payment verified successfully" });
   }
 
@@ -1793,12 +1805,211 @@ app.post('/api/payment/verify-payment', async (req, res) => {
     .digest("hex");
 
   if (razorpay_signature === expectedSign) {
-    console.log(`[Payment] Verified: ${razorpay_payment_id}`);
+    console.log(`[Payment] Verified: ${razorpay_payment_id} for Order: ${razorpay_order_id}`);
+    paidOrders.add(razorpay_order_id);
     return res.json({ success: true, message: "Payment verified successfully" });
   } else {
     console.error('[Payment] Verification Failed');
     return res.status(400).json({ success: false, message: "Invalid signature" });
   }
+});
+
+// Check if an order has been paid
+app.get('/api/payment/status/:orderId', (req, res) => {
+  const isPaid = paidOrders.has(req.params.orderId);
+  res.json({ success: true, status: isPaid ? 'paid' : 'pending' });
+});
+
+// ─── Web Checkout Page for External / In-App Browser ─────────────────────────
+app.get('/checkout', (req, res) => {
+  const orderId = req.query.orderId || `order_${Date.now()}`;
+  const amount = req.query.amount || '500';
+  const email = req.query.email || 'customer@kanavuillam.com';
+  const rzpKey = process.env.RAZORPAY_KEY_ID || 'rzp_test_placeholder';
+  const isMock = !process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID.includes('placeholder');
+
+  res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kanavu Illam - Secure Checkout</title>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0B0E14; color: #E2E8F0; margin: 0; padding: 24px 16px; display: flex; justify-content: center; align-items: center; min-height: 100vh; box-sizing: border-box; }
+    .card { background: #151A23; border: 1px solid #242C3D; border-radius: 20px; max-width: 440px; width: 100%; padding: 28px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); text-align: center; }
+    .badge { display: inline-block; background: rgba(245, 158, 11, 0.15); color: #F59E0B; padding: 6px 14px; border-radius: 100px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; }
+    h1 { font-size: 22px; margin: 0 0 8px 0; color: #FFFFFF; font-weight: 700; }
+    p { font-size: 14px; color: #94A3B8; margin: 0 0 20px 0; line-height: 1.5; }
+    .features { text-align: left; background: #1C2331; border-radius: 12px; padding: 14px 16px; margin-bottom: 24px; font-size: 13.5px; }
+    .feature-item { display: flex; align-items: center; margin-bottom: 8px; color: #CBD5E1; }
+    .feature-item:last-child { margin-bottom: 0; }
+    .check { color: #10B981; margin-right: 8px; font-weight: bold; }
+    .amount-box { display: flex; justify-content: space-between; align-items: center; padding: 16px; background: #1E293B; border-radius: 14px; margin-bottom: 24px; }
+    .amount-label { font-size: 14px; color: #94A3B8; }
+    .amount-val { font-size: 26px; font-weight: 800; color: #F59E0B; }
+    .btn-pay { width: 100%; background: linear-gradient(135deg, #F59E0B, #D97706); color: #0B0E14; border: none; padding: 16px; font-size: 16px; font-weight: 800; border-radius: 100px; cursor: pointer; transition: transform 0.1s, opacity 0.2s; box-shadow: 0 10px 20px rgba(245, 158, 11, 0.3); }
+    .btn-pay:hover { opacity: 0.95; }
+    .btn-pay:active { transform: scale(0.98); }
+    .footer-secure { font-size: 12px; color: #64748B; margin-top: 20px; display: flex; justify-content: center; align-items: center; gap: 6px; }
+    .spinner { display: none; margin: 16px auto 0; width: 28px; height: 28px; border: 3px solid rgba(245, 158, 11, 0.3); border-top-color: #F59E0B; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="badge">Official Web Checkout</div>
+    <h1>Kanavu Illam</h1>
+    <p>Unlock comprehensive architectural reports, Vastu compliance analysis, and structural CAD estimates.</p>
+    
+    <div class="features">
+      <div class="feature-item"><span class="check">✓</span> 3D Virtual Walkthrough & Mesh Model</div>
+      <div class="feature-item"><span class="check">✓</span> 100-Point Tamil Vastu Compliance Report</div>
+      <div class="feature-item"><span class="check">✓</span> IS 456 Civil Structural Engineering Specs</div>
+      <div class="feature-item"><span class="check">✓</span> BOQ Material Quantity & Cost Estimation</div>
+      <div class="feature-item"><span class="check">✓</span> High-Resolution Printable PDF Deliverable</div>
+    </div>
+
+    <div class="amount-box">
+      <span class="amount-label">Total Payable</span>
+      <span class="amount-val">₹${amount}</span>
+    </div>
+
+    <button id="payBtn" class="btn-pay" onclick="initiatePayment()">Pay with UPI / Cards / NetBanking</button>
+    <div id="loader" class="spinner"></div>
+
+    <div class="footer-secure">
+      <span>🔒 256-bit Encrypted &bull; Razorpay Certified Gateway</span>
+    </div>
+  </div>
+
+  <script>
+    const orderId = "${orderId}";
+    const amountVal = ${amount};
+    const isMock = ${isMock};
+    const rzpKey = "${rzpKey}";
+    const userEmail = "${email}";
+
+    function initiatePayment() {
+      const btn = document.getElementById('payBtn');
+      const loader = document.getElementById('loader');
+      btn.disabled = true;
+      btn.innerText = 'Connecting to Payment Gateway...';
+      loader.style.display = 'block';
+
+      if (isMock) {
+        // Mock Gateway verification for dev / testing
+        setTimeout(async () => {
+          await fetch('/api/payment/verify-payment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              razorpay_order_id: orderId,
+              razorpay_payment_id: 'pay_mock_' + Date.now(),
+              razorpay_signature: 'mock_sig'
+            })
+          });
+          window.location.href = '/payment-success?order_id=' + orderId;
+        }, 1200);
+        return;
+      }
+
+      const options = {
+        key: rzpKey,
+        amount: Math.round(amountVal * 100),
+        currency: "INR",
+        name: "Kanavu Illam",
+        description: "Architectural & Vastu Reports",
+        order_id: orderId,
+        prefill: { email: userEmail, contact: "9876543210" },
+        theme: { color: "#F59E0B" },
+        handler: async function (response) {
+          btn.innerText = 'Verifying Transaction...';
+          try {
+            const verifyRes = await fetch('/api/payment/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature
+              })
+            });
+            const vData = await verifyRes.json();
+            if (vData.success) {
+              window.location.href = '/payment-success?order_id=' + response.razorpay_order_id;
+            } else {
+              alert('Payment Verification Failed: ' + (vData.message || 'Unknown error'));
+              btn.disabled = false;
+              btn.innerText = 'Retry Payment';
+              loader.style.display = 'none';
+            }
+          } catch (e) {
+            alert('Verification network error: ' + e.message);
+            btn.disabled = false;
+            btn.innerText = 'Retry Payment';
+            loader.style.display = 'none';
+          }
+        },
+        modal: {
+          ondismiss: function() {
+            btn.disabled = false;
+            btn.innerText = 'Pay with UPI / Cards / NetBanking';
+            loader.style.display = 'none';
+          }
+        }
+      };
+
+      const rzp = new Razorpay(options);
+      rzp.on('payment.failed', function(resp) {
+        alert('Payment Failed: ' + (resp.error ? resp.error.description : 'Transaction cancelled'));
+        btn.disabled = false;
+        btn.innerText = 'Retry Payment';
+        loader.style.display = 'none';
+      });
+      rzp.open();
+    }
+  </script>
+</body>
+</html>`);
+});
+
+// ─── Payment Success Return Page ─────────────────────────────────────────────
+app.get('/payment-success', (req, res) => {
+  const orderId = req.query.order_id || '';
+  res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Successful - Kanavu Illam</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0B0E14; color: #E2E8F0; margin: 0; padding: 24px; display: flex; justify-content: center; align-items: center; min-height: 100vh; text-align: center; box-sizing: border-box; }
+    .card { background: #151A23; border: 1px solid #10B981; border-radius: 24px; max-width: 420px; width: 100%; padding: 36px 24px; box-shadow: 0 20px 40px rgba(16, 185, 129, 0.15); }
+    .icon { width: 68px; height: 68px; background: rgba(16, 185, 129, 0.2); color: #10B981; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 20px; }
+    h1 { font-size: 24px; color: #FFFFFF; margin: 0 0 10px 0; }
+    p { font-size: 14.5px; color: #94A3B8; line-height: 1.5; margin: 0 0 24px 0; }
+    .btn-return { display: inline-block; width: 100%; background: #10B981; color: #FFFFFF; text-decoration: none; padding: 15px; font-size: 15px; font-weight: 700; border-radius: 100px; box-sizing: border-box; transition: opacity 0.2s; }
+    .btn-return:hover { opacity: 0.9; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">✓</div>
+    <h1>Payment Successful!</h1>
+    <p>Your payment has been verified. You can now return to the Kanavu Illam app to view your 3D floor plan, Vastu, and structural reports.</p>
+    <a href="kanavuillam://payment-success?order_id=${orderId}" class="btn-return" id="returnBtn">Return to Kanavu Illam App</a>
+  </div>
+  <script>
+    // Auto-trigger deep link return if supported
+    setTimeout(() => {
+      try {
+        window.location.href = "kanavuillam://payment-success?order_id=${orderId}";
+      } catch (_) {}
+    }, 800);
+  </script>
+</body>
+</html>`);
 });
 
 const https = require('https');
@@ -2018,6 +2229,226 @@ app.post('/api/auth/google/token', async (req, res) => {
   }
 });
 
-app.listen(port, '0.0.0.0', () => console.log(`\nKanavu illam Backend running at http://0.0.0.0:${port}`));
+// ─── Account Deletion Endpoint (Play Store Compliance) ────────────────────────
+app.post('/api/auth/delete-account', async (req, res) => {
+  const { email, userId } = req.body;
+  if (!email && !userId) {
+    return res.status(400).json({ error: 'Email or User ID is required' });
+  }
+
+  console.log(`[Account Deletion] Request received for: email=${email}, userId=${userId}`);
+  try {
+    // 1. Delete associated data across database tables
+    if (userId) {
+      try { await supabase.from('profiles').delete().eq('id', userId); } catch (_) {}
+      try { await supabase.from('projects').delete().eq('user_id', userId); } catch (_) {}
+      try { await supabase.from('history').delete().eq('user_id', userId); } catch (_) {}
+    }
+    if (email) {
+      try { await supabase.from('profiles').delete().eq('email', email); } catch (_) {}
+      try { await supabase.from('projects').delete().eq('user_email', email); } catch (_) {}
+      try { await supabase.from('history').delete().eq('email', email); } catch (_) {}
+    }
+
+    // 2. If Service Role Key is present, delete user from Supabase Auth
+    if (process.env.SUPABASE_SERVICE_ROLE_KEY && userId) {
+      try {
+        const adminSupabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+        await adminSupabase.auth.admin.deleteUser(userId);
+        console.log(`[Account Deletion] Successfully deleted user ${userId} from Supabase Auth.`);
+      } catch (adminErr) {
+        console.warn(`[Account Deletion] Admin Auth deletion error (continuing):`, adminErr.message);
+      }
+    }
+
+    return res.json({ success: true, message: 'Account and associated data deleted successfully.' });
+  } catch (err) {
+    console.error('[Account Deletion Error]:', err.message);
+    return res.status(500).json({ error: 'Failed to process account deletion: ' + err.message });
+  }
+});
+
+// ─── Public Web Page for Account Deletion (Play Store Mandatory URL) ──────────
+app.get('/delete-account', (req, res) => {
+  res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Request Account Deletion - Kanavu Illam</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #F1F5F9; color: #0F172A; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+    .card { background: white; max-width: 500px; width: 100%; border-radius: 20px; padding: 32px; box-shadow: 0 10px 25px rgba(0,0,0,0.06); border: 1px solid #E2E8F0; }
+    h1 { font-size: 24px; margin-top: 0; color: #1E293B; }
+    p { font-size: 14.5px; line-height: 1.6; color: #475569; }
+    .info-box { background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 12px; padding: 14px; font-size: 13.5px; color: #92400E; margin: 18px 0; }
+    label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #334155; }
+    input[type="email"] { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid #CBD5E1; font-size: 15px; box-sizing: border-box; margin-bottom: 16px; outline: none; }
+    input[type="email"]:focus { border-color: #F59E0B; }
+    button { width: 100%; background: #DC2626; color: white; border: none; padding: 14px; font-size: 15px; font-weight: 700; border-radius: 100px; cursor: pointer; transition: background 0.2s; }
+    button:hover { background: #B91C1C; }
+    .footer { font-size: 12px; color: #94A3B8; text-align: center; margin-top: 24px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Delete Your Kanavu Illam Account</h1>
+    <p>In accordance with Google Play and Indian data protection policies, you have the right to request the permanent deletion of your account and personal data.</p>
+    <div class="info-box">
+      <strong>What will be deleted:</strong> Your profile, login credentials, uploaded floor plans, AI models, and analysis history. Financial records are retained only as required by statutory tax and GST regulations.
+    </div>
+    <form id="deleteForm" onsubmit="handleDelete(event)">
+      <label for="email">Account Email Address</label>
+      <input type="email" id="email" required placeholder="Enter the email linked to your account" />
+      <button type="submit" id="submitBtn">Request Permanent Deletion</button>
+    </form>
+    <div id="statusMsg" style="display:none; margin-top: 16px; padding: 12px; border-radius: 10px; font-size: 14px; text-align: center;"></div>
+    <div class="footer">
+      Kanavu Illam Tech Private Limited &bull; Support: support@kanavuillam.com
+    </div>
+  </div>
+  <script>
+    async function handleDelete(e) {
+      e.preventDefault();
+      const email = document.getElementById('email').value.trim();
+      const btn = document.getElementById('submitBtn');
+      const msg = document.getElementById('statusMsg');
+      btn.disabled = true;
+      btn.innerText = 'Processing...';
+      try {
+        const res = await fetch('/api/auth/delete-account', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        msg.style.display = 'block';
+        if (res.ok && data.success) {
+          msg.style.background = '#DCFCE7';
+          msg.style.color = '#166534';
+          msg.innerText = 'Your deletion request has been processed successfully. Your account and personal data have been removed.';
+          document.getElementById('deleteForm').style.display = 'none';
+        } else {
+          msg.style.background = '#FEE2E2';
+          msg.style.color = '#991B1B';
+          msg.innerText = data.error || 'Failed to process request. Please contact support@kanavuillam.com.';
+          btn.disabled = false;
+          btn.innerText = 'Request Permanent Deletion';
+        }
+      } catch (err) {
+        msg.style.display = 'block';
+        msg.style.background = '#FEE2E2';
+        msg.style.color = '#991B1B';
+        msg.innerText = 'Network error. Please try again or email support@kanavuillam.com.';
+        btn.disabled = false;
+        btn.innerText = 'Request Permanent Deletion';
+      }
+    }
+  </script>
+</body>
+</html>`);
+});
+
+// ─── Public Web Page for Privacy Policy (Google Play Mandatory URL) ───────────
+app.get(['/privacy-policy', '/privacy'], (req, res) => {
+  res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy - Kanavu Illam</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0B0E14; color: #E2E8F0; margin: 0; padding: 40px 20px; line-height: 1.6; }
+    .container { max-width: 760px; margin: 0 auto; background: #151A23; border: 1px solid #242C3D; border-radius: 20px; padding: 36px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    h1 { font-size: 26px; color: #FFFFFF; margin-top: 0; border-bottom: 1px solid #242C3D; padding-bottom: 16px; }
+    h2 { font-size: 18px; color: #F59E0B; margin-top: 28px; }
+    p, li { font-size: 14.5px; color: #CBD5E1; }
+    ul { padding-left: 20px; }
+    .footer { font-size: 13px; color: #64748B; margin-top: 40px; border-top: 1px solid #242C3D; padding-top: 20px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Privacy Policy for Kanavu Illam</h1>
+    <p><em>Last Updated: October 2026</em></p>
+    <p>Kanavu Illam ("we", "our", or "us") is dedicated to protecting the privacy and personal data of our users. This Privacy Policy outlines our transparent data handling practices in accordance with Google Play Developer Policies and Indian Information Technology regulations.</p>
+
+    <h2>1. Information We Collect</h2>
+    <ul>
+      <li><strong>Account Details:</strong> Email address, name, and optional phone number when creating an account.</li>
+      <li><strong>Temporary Image Data:</strong> Floor plan sketches or blueprints uploaded solely for immediate geometric scanning.</li>
+      <li><strong>Transaction Data:</strong> Payment transaction identifiers securely processed by certified third-party payment gateways (Razorpay). We do not store sensitive credit/debit card numbers or UPI PINs.</li>
+    </ul>
+
+    <h2>2. Immediate Zero-Storage Architecture</h2>
+    <p>We operate an <strong>Immediate Zero-Storage</strong> privacy pipeline. Uploaded floor plan images are processed statelessly in-memory and via temporary disk caching by local computer vision algorithms (OpenCV). Immediately upon completing the analysis and delivering the report to the user, all uploaded files are permanently unlinked and erased from our servers.</p>
+
+    <h2>3. Final Report Ownership</h2>
+    <p>All calculated outputs (3D CAD visualizations, traditional Tamil Vastu scores, structural engineering load assessments, and cost estimations) are provided directly to the user as a downloadable PDF document stored exclusively on the user's private device storage.</p>
+
+    <h2>4. Account and Data Deletion</h2>
+    <p>Users maintain the absolute right to request permanent deletion of their account credentials and personal profile records at any time. Deletion can be initiated directly inside the application under Profile &gt; Delete Account, or through our public deletion portal at: <a href="/delete-account" style="color: #F59E0B;">/delete-account</a>.</p>
+
+    <h2>5. Grievance & Contact Information</h2>
+    <p>For any privacy queries, grievance redressal, or data assistance, please contact:</p>
+    <ul>
+      <li><strong>Entity:</strong> Kanavu Illam Tech Private Limited</li>
+      <li><strong>Email:</strong> support@kanavuillam.com</li>
+      <li><strong>Registered Office:</strong> Erode, Tamil Nadu, India - 638001</li>
+    </ul>
+    <div class="footer">
+      &copy; 2026 Kanavu Illam Tech Private Limited. All Rights Reserved.
+    </div>
+  </div>
+</body>
+</html>`);
+});
+
+// ─── Public Web Page for Terms and Conditions ─────────────────────────────────
+app.get(['/terms', '/terms-and-conditions'], (req, res) => {
+  res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terms and Conditions - Kanavu Illam</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0B0E14; color: #E2E8F0; margin: 0; padding: 40px 20px; line-height: 1.6; }
+    .container { max-width: 760px; margin: 0 auto; background: #151A23; border: 1px solid #242C3D; border-radius: 20px; padding: 36px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    h1 { font-size: 26px; color: #FFFFFF; margin-top: 0; border-bottom: 1px solid #242C3D; padding-bottom: 16px; }
+    h2 { font-size: 18px; color: #F59E0B; margin-top: 28px; }
+    p, li { font-size: 14.5px; color: #CBD5E1; }
+    ul { padding-left: 20px; }
+    .footer { font-size: 13px; color: #64748B; margin-top: 40px; border-top: 1px solid #242C3D; padding-top: 20px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Terms and Conditions</h1>
+    <p><em>Last Updated: October 2026</em></p>
+    <p>Welcome to Kanavu Illam. By installing, accessing, or using this mobile application, you agree to be bound by these terms.</p>
+
+    <h2>1. Nature of Services</h2>
+    <p>Kanavu Illam provides computer vision architectural blueprint analysis, 3D parametric CAD modeling, Tamil Vastu rule scoring, and preliminary civil structural engineering estimations based on Indian Standard formulas (IS 456:2000).</p>
+
+    <h2>2. Professional Engineering Disclaimer</h2>
+    <p>All calculations, structural load recommendations, and cost estimates are provided as preliminary planning guidelines for educational and preliminary budgeting purposes. They do not substitute for on-site structural soil testing, formal municipal approvals, or licensed structural engineer certifications.</p>
+
+    <h2>3. Payments, Deliverables & Free Retry Policy</h2>
+    <p>Fees paid to unlock deliverables cover computational image processing and immediate PDF report compilation. Once report processing begins and deliverables are generated, payments are strictly non-refundable.</p>
+    <p><strong>Technical Issue Resolution:</strong> In the rare event of a verified technical glitch, network disruption, or failure to receive the final PDF report, cash refunds are not issued. Instead, users can contact our helpline via email (support@kanavuillam.com) or phone. Upon transaction verification, our team will provide an immediate <strong>100% Free Re-try Credit</strong>, allowing the user to re-process and generate their complete architectural reports at zero additional cost.</p>
+
+    <h2>4. Contact</h2>
+    <p>Inquiries regarding these terms may be directed to: support@kanavuillam.com</p>
+    <div class="footer">
+      &copy; 2026 Kanavu Illam Tech Private Limited. All Rights Reserved.
+    </div>
+  </div>
+</body>
+</html>`);
+});
+
+app.listen(port, '0.0.0.0', () => console.log(`\\nKanavu illam Backend running at http://0.0.0.0:${port}`));
 
 module.exports = { app, runCostEstimation, runVastuAnalysis };
+

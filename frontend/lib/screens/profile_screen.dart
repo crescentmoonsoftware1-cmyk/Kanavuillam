@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/providers/app_config_provider.dart';
 import '../core/theme/app_colors.dart';
+import '../services/api_service.dart';
 import 'welcome_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -281,14 +282,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Kanavu Illam AI v1.0.0',
+              'Kanavu Illam v1.0.0',
               style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 14),
             ),
             const SizedBox(height: 6),
             Text(
               config.tr(
-                'AI-Powered architectural visualization, traditional Tamil Vastu compliance, cost estimation, and structural safety checks for dream homes in Tamil Nadu.',
-                'தமிழ்நாட்டின் கனவு இல்லங்களுக்கான AI கட்டிடக்கலை மாதிரி, வாஸ்து பகுப்பாய்வு, மதிப்பீட்டு செலவு மற்றும் பாதுகாப்பு சரிபார்ப்பு தளம்.',
+                'Digital architectural visualization, traditional Tamil Vastu compliance, cost estimation, and structural safety checks for dream homes in Tamil Nadu.',
+                'தமிழ்நாட்டின் கனவு இல்லங்களுக்கான டிஜிட்டல் கட்டிடக்கலை மாதிரி, வாஸ்து பகுப்பாய்வு, மதிப்பீட்டு செலவு மற்றும் பாதுகாப்பு சரிபார்ப்பு தளம்.',
               ),
               style: GoogleFonts.inter(fontSize: 12.5, height: 1.4),
             ),
@@ -364,6 +365,105 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  void _confirmDeleteAccount(BuildContext context, AppConfigProvider config) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) {
+        bool isDeleting = false;
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: config.isDarkMode ? const Color(0xFF1C2230) : const Color(0xFFFCFDFF),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              title: Text(
+                config.tr('Delete Account?', 'கணக்கை நீக்க வேண்டுமா?'),
+                style: GoogleFonts.syne(
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFFEF4444),
+                ),
+              ),
+              content: Text(
+                config.tr(
+                  'Are you sure you want to permanently delete your account, login credentials, and all uploaded design files? This action cannot be undone.',
+                  'உங்கள் கணக்கு மற்றும் அனைத்து வரைபட தரவுகளையும் நிரந்தரமாக நீக்க விரும்புகிறீர்களா? இந்த செயலை மாற்ற முடியாது.',
+                ),
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  height: 1.5,
+                  color: config.isDarkMode ? const Color(0xFFA1A1AA) : const Color(0xFF8E94A0),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isDeleting ? null : () => Navigator.pop(dialogCtx),
+                  child: Text(
+                    config.tr('Cancel', 'ரத்து செய்'),
+                    style: GoogleFonts.inter(
+                      color: config.isDarkMode ? const Color(0xFFA1A1AA) : const Color(0xFF8E94A0),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFEF4444),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+                  ),
+                  onPressed: isDeleting
+                      ? null
+                      : () async {
+                          setDialogState(() => isDeleting = true);
+                          try {
+                            final prefs = await SharedPreferences.getInstance();
+                            final email = prefs.getString('user_email') ?? _email;
+                            final userId = widget.userData?['id'] as String?;
+
+                            await ApiService.post('/auth/delete-account', {
+                              'email': email,
+                              if (userId != null) 'userId': userId,
+                            });
+
+                            await prefs.clear();
+                            if (dialogCtx.mounted) Navigator.pop(dialogCtx);
+                            if (context.mounted) {
+                              Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+                                MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+                                (route) => false,
+                              );
+                            }
+                          } catch (e) {
+                            setDialogState(() => isDeleting = false);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Failed to delete account: $e'),
+                                  backgroundColor: const Color(0xFFEF4444),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            }
+                          }
+                        },
+                  child: isDeleting
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : Text(
+                          config.tr('Delete Forever', 'நிரந்தரமாக நீக்கு'),
+                          style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+                        ),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
@@ -640,6 +740,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
                                 color: const Color(0xFFEF4444),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // 4. PERMANENT ACCOUNT DELETION LINK
+                    GestureDetector(
+                      onTap: () => _confirmDeleteAccount(context, config),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.delete_outline_rounded,
+                              size: 16,
+                              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              config.tr('Delete Account', 'கணக்கை நிரந்தரமாக நீக்கு'),
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                decoration: TextDecoration.underline,
                               ),
                             ),
                           ],

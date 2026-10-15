@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=390, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Kanavu Illam - Generating Dialog</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+  </style>
+</head>
+<body class="bg-slate-200 flex items-center justify-center min-h-screen p-0 m-0">
+  <!-- iPhone 390x844 Frame -->
+  <div class="w-[390px] h-[844px] max-h-[844px] overflow-hidden relative flex flex-col justify-between" style="background: linear-gradient(180deg, #E9EEF4 0%, #D8DFE9 100%);">
+    
+    <!-- Dimmed Home Screen Content in Background -->
+    <div class="absolute inset-0 flex flex-col justify-between p-5 pt-12 opacity-40 filter blur-[1px] pointer-events-none select-none">
+      <!-- Top Brand -->
+      <div class="flex flex-col items-center mt-2">
+        <div class="w-12 h-12 rounded-2xl bg-[#1B212F] flex items-center justify-center shadow-md">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+        </div>
+        <span class="text-base font-bold text-[#18191D] mt-2">Kanavu Illam</span>
+      </div>
+
+      <!-- Hero Card Mockup -->
+      <div class="w-full bg-[#1B212F] rounded-[32px] p-6 text-white text-center my-auto">
+        <div class="w-14 h-14 rounded-full bg-[#2E3744] ring-2 ring-[#FBA73B] mx-auto mb-3 flex items-center justify-center">
+          <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+        </div>
+        <h3 class="text-lg font-bold">Upload 2D Floor Plan</h3>
+        <p class="text-xs text-[#8E94A0] mt-1">Tap here to browse blueprint</p>
+      </div>
+
+      <!-- Floating Nav Mockup -->
+      <div class="w-full h-16 bg-[#FCFDFF] rounded-[32px] shadow-lg flex items-center justify-around px-4 mb-4">
+        <div class="w-10 h-10 rounded-full bg-[#E58A18]"></div>
+        <div class="w-8 h-8 rounded-full bg-[#D8DFE9]"></div>
+        <div class="w-8 h-8 rounded-full bg-[#D8DFE9]"></div>
+      </div>
+    </div>
+
+    <!-- 40% Dimming Overlay #1B212F -->
+    <div class="absolute inset-0 bg-[#1B212F]/40 backdrop-blur-[2px] z-30 flex items-center justify-center p-6">
+      
+      <!-- Centered Modal Dialog -->
+      <div class="w-full max-w-[330px] bg-[#FCFDFF] rounded-[28px] p-8 shadow-[0_20px_48px_rgba(27,33,47,0.30)] border border-[#E9EAEC] flex flex-col items-center text-center">
+        <!-- Amber Circular Spinner -->
+        <div class="w-16 h-16 relative flex items-center justify-center mb-5">
+          <svg class="animate-spin w-14 h-14 text-[#E58A18]" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
+            <path class="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+          </svg>
+          <div class="absolute w-7 h-7 rounded-full bg-[#2E3744] flex items-center justify-center">
+            <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+          </div>
+        </div>
+
+        <!-- Title & Subtitle -->
+        <h2 class="text-lg font-bold text-[#18191D] leading-snug">
+          Generating 3D Villa &amp; Reports...
+        </h2>
+        <p class="text-xs text-[#8E94A0] mt-2 font-normal leading-relaxed">
+          Analyzing Vastu, Structure &amp; Estimates
+        </p>
+
+        <!-- Subtle Processing Pulse Pill -->
+        <div class="mt-6 inline-flex items-center space-x-2 px-3 py-1.5 rounded-full bg-[#E9EEF4]">
+          <span class="w-2 h-2 rounded-full bg-[#E58A18] animate-ping"></span>
+          <span class="text-[11px] font-semibold text-[#364050]">AI Architectural Core Active</span>
+        </div>
+      </div>
+      
+    </div>
+
+    <!-- iOS Home Indicator -->
+    <div class="w-full pb-4 flex justify-center z-40">
+      <div class="w-32 h-1 bg-[#18191D]/30 rounded-full"></div>
+    </div>
+
+  </div>
+</body>
+</html>

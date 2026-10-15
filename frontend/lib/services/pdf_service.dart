@@ -959,7 +959,7 @@ class PdfService {
                           color: textDark)),
                   pw.SizedBox(height: 10),
                   pw.Text(
-                      'Based on AI engineering algorithms, the load-bearing distribution, column placement, and foundation specifications are evaluated.',
+                      'Based on standard structural engineering algorithms (IS 456:2000), the load-bearing distribution, column placement, and foundation specifications are evaluated.',
                       style: pw.TextStyle(
                           fontSize: 12, color: textMuted, lineSpacing: 1.5)),
                   pw.SizedBox(height: 15),

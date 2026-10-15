@@ -48,7 +48,7 @@ class _UploadScreenState extends State<UploadScreen> {
 
   static const List<_WorkflowStepItem> _workflowSteps = [
     _WorkflowStepItem(titleEn:'Upload',titleTa:'பதிவேற்றம்',subtitleEn:'Add 2D architectural blueprint from camera or files',subtitleTa:'கேமரா அல்லது கோப்புகளிலிருந்து 2D வரைபடம்',icon:Icons.cloud_upload_outlined,step:1),
-    _WorkflowStepItem(titleEn:'AI Plan Analysis',titleTa:'AI திட்ட பகுப்பாய்வு',subtitleEn:'Instant structural, spatial & Vastu room analysis',subtitleTa:'உடனடி கட்டமைப்பு மற்றும் வாஸ்து பகுப்பாய்வு',icon:Icons.document_scanner_outlined,step:2),
+    _WorkflowStepItem(titleEn:'Plan Analysis',titleTa:'திட்ட பகுப்பாய்வு',subtitleEn:'Instant structural, spatial & Vastu room analysis',subtitleTa:'உடனடி கட்டமைப்பு மற்றும் வாஸ்து பகுப்பாய்வு',icon:Icons.document_scanner_outlined,step:2),
     _WorkflowStepItem(titleEn:'Pay',titleTa:'கட்டணம்',subtitleEn:'Transparent pricing with instant unlock',subtitleTa:'வெளிப்படையான விலை நிர்ணயம்',icon:Icons.payments_outlined,step:3),
     _WorkflowStepItem(titleEn:'Reports',titleTa:'அறிக்கைகள்',subtitleEn:'Comprehensive Vastu, Cost & Structure reports',subtitleTa:'வாஸ்து, செலவு மற்றும் கட்டமைப்பு அறிக்கைகள்',icon:Icons.view_in_ar_outlined,step:4),
     _WorkflowStepItem(titleEn:'Download',titleTa:'பதிவிறக்கு',subtitleEn:'Export high-resolution deliverables & CAD files',subtitleTa:'உயர்தர PDF மற்றும் CAD கோப்புகளை பதிவிறக்கு',icon:Icons.file_download_outlined,step:5),
