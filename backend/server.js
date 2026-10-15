@@ -88,7 +88,7 @@ function purgeUploadsFolder(dir) {
           fs.unlinkSync(fullPath);
           console.log(`[Zero-Storage] Purged residual file: ${name}`);
         }
-      } catch (_) {}
+      } catch (_) { }
     });
   } catch (err) {
     console.error('[Zero-Storage Error]', err.message);
@@ -419,7 +419,7 @@ async function runVastuAnalysis(modelData, lang = 'English', orientation = 'Nort
 
   // Auto-deduce plot orientation ONLY if user did NOT explicitly choose a direction
   const validUserDirections = ['North', 'North-East', 'East', 'South-East', 'South', 'South-West', 'West', 'North-West'];
-  const userExplicitlyChose = validUserDirections.some(d => (orientation || '').toLowerCase().replace(/[\s\-_]/g,'') === d.toLowerCase().replace(/[\s\-_]/g,''));
+  const userExplicitlyChose = validUserDirections.some(d => (orientation || '').toLowerCase().replace(/[\s\-_]/g, '') === d.toLowerCase().replace(/[\s\-_]/g, ''));
   if (!orientation || orientation === 'Auto' || (!userExplicitlyChose)) {
 
     let autoOrientation = null;
@@ -2247,19 +2247,19 @@ app.post('/api/auth/delete-account', async (req, res) => {
       try {
         const { data: prof } = await supabase.from('profiles').select('id').eq('email', email).maybeSingle();
         if (prof?.id) targetUserId = prof.id;
-      } catch (_) {}
+      } catch (_) { }
     }
 
     // 2. Delete associated data across database tables
     if (targetUserId) {
-      try { await supabase.from('profiles').delete().eq('id', targetUserId); } catch (_) {}
-      try { await supabase.from('projects').delete().eq('user_id', targetUserId); } catch (_) {}
-      try { await supabase.from('history').delete().eq('user_id', targetUserId); } catch (_) {}
+      try { await supabase.from('profiles').delete().eq('id', targetUserId); } catch (_) { }
+      try { await supabase.from('projects').delete().eq('user_id', targetUserId); } catch (_) { }
+      try { await supabase.from('history').delete().eq('user_id', targetUserId); } catch (_) { }
     }
     if (email) {
-      try { await supabase.from('profiles').delete().eq('email', email); } catch (_) {}
-      try { await supabase.from('projects').delete().eq('user_email', email); } catch (_) {}
-      try { await supabase.from('history').delete().eq('email', email); } catch (_) {}
+      try { await supabase.from('profiles').delete().eq('email', email); } catch (_) { }
+      try { await supabase.from('projects').delete().eq('user_email', email); } catch (_) { }
+      try { await supabase.from('history').delete().eq('email', email); } catch (_) { }
     }
 
     // 3. If Service Role Key is present, delete user from Supabase Auth

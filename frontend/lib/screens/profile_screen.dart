@@ -23,6 +23,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _email = 'thomas.arch@kanavuillam.com';
   String _city = 'Erode, Tamil Nadu';
 
+  final ApiService _apiService = ApiService();
+  int? _projectCount = 0;
+  int? _totalAmountSpent = 0;
+  bool? _isLoadingStats = false;
+  bool _statsLoaded = false;
+
   late final TextEditingController _nameController;
   late final TextEditingController _phoneController;
   late final TextEditingController _cityController;
@@ -34,6 +40,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _phoneController = TextEditingController(text: _phone);
     _cityController = TextEditingController(text: _city);
     _loadProfileData();
+    _loadStats();
   }
 
   @override
@@ -75,6 +82,77 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _cityController.text = _city;
       });
     }
+
+    _loadStats(currentEmail);
+  }
+
+  Future<void> _loadStats([String? email]) async {
+    final prefs = await SharedPreferences.getInstance();
+    final targetEmail = (email != null && email.isNotEmpty && email != 'thomas.arch@kanavuillam.com')
+        ? email
+        : ((widget.userData?['email'] as String?) ?? prefs.getString('user_email') ?? _email);
+
+    if (targetEmail.isEmpty || targetEmail == 'unknown' || targetEmail == 'thomas.arch@kanavuillam.com') {
+      if (mounted) {
+        setState(() {
+          _projectCount = 6;
+          _totalAmountSpent = 3000;
+          _isLoadingStats = false;
+        });
+      }
+      return;
+    }
+
+    if (mounted) {
+      setState(() => _isLoadingStats = true);
+    }
+
+    try {
+      final fetched = await _apiService.getAllProjects(targetEmail);
+      int count = fetched.length;
+      int spend = 0;
+      for (final p in fetched) {
+        String rawName = p['name']?.toString() ?? '';
+        int amount = 500;
+        if (rawName.contains('|')) {
+          final parts = rawName.split('|');
+          if (parts.length > 2) {
+            amount = (double.tryParse(parts[2]) ?? 500).round();
+          }
+        }
+        spend += amount;
+      }
+
+      if (mounted) {
+        setState(() {
+          _projectCount = count;
+          _totalAmountSpent = spend;
+          _isLoadingStats = false;
+          _statsLoaded = true;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _isLoadingStats = false;
+        });
+      }
+    }
+  }
+
+  String _formatCurrency(dynamic amount) {
+    if (amount == null) return '₹0';
+    final int val = (amount is int) ? amount : (int.tryParse(amount.toString()) ?? 0);
+    if (val == 0) return '₹0';
+    final str = val.toString();
+    if (str.length <= 3) return '₹$str';
+    final last3 = str.substring(str.length - 3);
+    final rest = str.substring(0, str.length - 3);
+    final formattedRest = rest.replaceAllMapped(
+      RegExp(r'\B(?=(\d{2})+(?!\d))'),
+      (m) => ',',
+    );
+    return '₹$formattedRest,$last3';
   }
 
   Future<void> _saveProfileDetails() async {
@@ -569,6 +647,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     final isDark = config.isDarkMode;
 
+    // Trigger stats load if not yet loaded
+    if (!_statsLoaded && !(_isLoadingStats ?? false)) {
+      _statsLoaded = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadStats(_email);
+      });
+    }
+
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF14171F) : AppColors.canvasGradientTop,
       body: Container(
@@ -672,9 +758,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
 
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 14),
 
-                    // 2. SETTINGS LIST CARD (28px radius, border #E9EAEC, shadow-sm)
+                    // 2. TOTAL PROJECT COUNT & TOTAL AMOUNT SPENT STATS CARD
+                    _buildStatsCard(config, isDark),
+
+                    const SizedBox(height: 14),
+
+                    // 3. SETTINGS LIST CARD (28px radius, border #E9EAEC, shadow-sm)
                     Container(
                       width: double.infinity,
                       decoration: BoxDecoration(
@@ -989,5 +1080,185 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildStatsCard(AppConfigProvider config, bool isDark) {
+    final int count = _projectCount ?? 0;
+    final int spend = _totalAmountSpent ?? 0;
+    final bool isLoading = _isLoadingStats ?? false;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(28),
+        onTap: () => _loadStats(_email),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1C2230) : const Color(0xFFFCFDFF),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(
+              color: isDark ? const Color(0xFF2E384D) : const Color(0xFFE9EAEC),
+              width: 1.2,
+            ),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x1A1B212F),
+            blurRadius: 32,
+            offset: Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // 1. Total Projects Stat
+          Expanded(
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE58A18).withValues(alpha: isDark ? 0.2 : 0.12),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: const Color(0xFFE58A18).withValues(alpha: 0.35),
+                      width: 1,
+                    ),
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.layers_rounded,
+                      color: Color(0xFFE58A18),
+                      size: 22,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          config.tr('Total Projects', 'மொத்த திட்டங்கள்'),
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? const Color(0xFFA1A1AA) : const Color(0xFF64748B),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      isLoading
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Color(0xFFE58A18),
+                              ),
+                            )
+                          : Text(
+                              '$count',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                                color: isDark ? Colors.white : const Color(0xFF18191D),
+                                letterSpacing: -0.4,
+                              ),
+                            ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Vertical divider between stats
+          Container(
+            height: 40,
+            width: 1.2,
+            margin: const EdgeInsets.symmetric(horizontal: 10),
+            color: isDark ? const Color(0xFF2E384D) : const Color(0xFFE2E8F0),
+          ),
+
+          // 2. Total Amount Spent Stat
+          Expanded(
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981).withValues(alpha: isDark ? 0.2 : 0.12),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.35),
+                      width: 1,
+                    ),
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.account_balance_wallet_rounded,
+                      color: Color(0xFF10B981),
+                      size: 22,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          config.tr('Total Spent', 'செலவழித்த தொகை'),
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? const Color(0xFFA1A1AA) : const Color(0xFF64748B),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      isLoading
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Color(0xFF10B981),
+                              ),
+                            )
+                          : FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                _formatCurrency(spend),
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                  color: const Color(0xFF10B981),
+                                  letterSpacing: -0.4,
+                                ),
+                              ),
+                            ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),),);
   }
 }
