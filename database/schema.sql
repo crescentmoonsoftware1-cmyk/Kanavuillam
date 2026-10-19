@@ -21,3 +21,6 @@ create policy "Public Access" on projects
 alter table projects add column if not exists vastu_data jsonb;
 alter table projects add column if not exists cost_data jsonb;
 alter table projects add column if not exists elevation_data jsonb;
+
+-- Indexes for lightning-fast queries in History and Profile screens
+create index if not exists idx_projects_created_at on projects (created_at desc);

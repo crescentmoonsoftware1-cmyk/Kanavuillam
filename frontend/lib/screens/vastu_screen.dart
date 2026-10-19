@@ -252,7 +252,19 @@ class _VastuScreenState extends State<VastuScreen> {
           child: FutureBuilder<Map<String, dynamic>>(
             future: _vastuFuture,
             builder: (context, snapshot) {
-              final data = snapshot.data ?? _getFallbackData(langKey);
+              final rawData = snapshot.data ?? _getFallbackData(langKey);
+
+              // Unwrap active floor data (backend returns { "ground": { ... }, "first": { ... } })
+              Map<String, dynamic> data = rawData;
+              if (rawData.containsKey('ground') && rawData['ground'] is Map) {
+                data = Map<String, dynamic>.from(rawData['ground'] as Map);
+              } else if (rawData['rooms'] == null && rawData.isNotEmpty) {
+                final match = rawData.values.firstWhere(
+                  (v) => v is Map && (v as Map).containsKey('rooms'),
+                  orElse: () => null,
+                );
+                if (match != null) data = Map<String, dynamic>.from(match as Map);
+              }
 
               final int score =
                   (data['score'] is num) ? (data['score'] as num).toInt() : 65;
@@ -545,7 +557,8 @@ class _VastuScreenState extends State<VastuScreen> {
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 14.5,
                 fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
-                color: isActive ? AppColors.inkPrimary : const Color(0xFF64748B),
+                color:
+                    isActive ? AppColors.inkPrimary : const Color(0xFF64748B),
               ),
             ),
             const SizedBox(height: 6),
@@ -672,9 +685,7 @@ class _VastuScreenState extends State<VastuScreen> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    isTamil
-                        ? 'வீட்டின் திசை அமைப்பு'
-                        : 'House orientation',
+                    isTamil ? 'வீட்டின் திசை அமைப்பு' : 'House orientation',
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 12,
                       color: AppColors.inkQuiet,
@@ -683,8 +694,8 @@ class _VastuScreenState extends State<VastuScreen> {
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
                   color: AppColors.canvasGradientTop,
                   borderRadius: BorderRadius.circular(100),
@@ -733,8 +744,8 @@ class _VastuScreenState extends State<VastuScreen> {
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: AppColors.inkDark,
                   borderRadius: BorderRadius.circular(100),
@@ -793,8 +804,8 @@ class _VastuScreenState extends State<VastuScreen> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: AppColors.amberTint,
                     borderRadius: BorderRadius.circular(100),
@@ -818,8 +829,7 @@ class _VastuScreenState extends State<VastuScreen> {
             final String text = entry.value.toString();
             return Container(
               margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 12, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
                 color: const Color(0xFFF8FAFC),
                 borderRadius: BorderRadius.circular(16),
@@ -905,12 +915,14 @@ class _VastuScreenState extends State<VastuScreen> {
                   const Divider(height: 1, color: Color(0xFFE2E8F0)),
               itemBuilder: (context, i) {
                 final r = rooms[i] as Map;
-                final String title = r['title']?.toString() ?? 'Room';
-                final String subtitle = r['subtitle']?.toString() ?? '';
+                final String rawTitle = r['title']?.toString() ?? 'Room';
+                final String rawSubtitle = r['subtitle']?.toString() ?? '';
+                final String title = isTamil ? _getDynamicTamilRoomTitle(rawTitle) : rawTitle;
+                final String subtitle = isTamil ? _getDynamicTamilZone(rawSubtitle) : rawSubtitle;
                 final bool isCorrect = r['isCorrect'] == true;
                 final IconData icon = (r['icon'] is IconData)
                     ? r['icon'] as IconData
-                    : Icons.meeting_room_outlined;
+                    : _getDynamicRoomIcon(rawTitle);
                 final List analysis =
                     (r['analysis'] is List) ? (r['analysis'] as List) : [];
 
@@ -1478,5 +1490,83 @@ class _VastuScreenState extends State<VastuScreen> {
         );
       },
     );
+  }
+
+  IconData _getDynamicRoomIcon(String name) {
+    final lower = name.toLowerCase();
+    if (lower.contains('kitchen')) return Icons.local_fire_department_outlined;
+    if (lower.contains('bed')) return Icons.bed_outlined;
+    if (lower.contains('bath') || lower.contains('toilet') || lower.contains('wc')) {
+      return Icons.bathtub_outlined;
+    }
+    if (lower.contains('living') ||
+        lower.contains('drawing') ||
+        lower.contains('guest') ||
+        lower.contains('hall')) {
+      return Icons.chair_outlined;
+    }
+    if (lower.contains('stair') || lower.contains('step')) return Icons.stairs_outlined;
+    if (lower.contains('pooja') || lower.contains('puja') || lower.contains('prayer')) {
+      return Icons.wb_sunny_outlined;
+    }
+    if (lower.contains('utility') || lower.contains('wash') || lower.contains('store')) {
+      return Icons.local_laundry_service_outlined;
+    }
+    if (lower.contains('dining')) return Icons.restaurant_outlined;
+    return Icons.meeting_room_outlined;
+  }
+
+  String _getDynamicTamilRoomTitle(String title) {
+    final lower = title.toLowerCase();
+    if (lower.contains('kitchen')) return 'சமையலறை';
+    if (lower.contains('drawing')) return 'வரவேற்பறை (Drawing Room)';
+    if (lower.contains('living') || lower.contains('hall')) return 'வரவேற்பறை';
+    if (lower.contains('guest')) return 'விருந்தினர் அறை (Guest Room)';
+    if (lower.contains('common') && (lower.contains('bath') || lower.contains('toilet'))) {
+      return 'பொது குளியலறை';
+    }
+    if (lower.contains('attached') && (lower.contains('bath') || lower.contains('toilet'))) {
+      return 'இணைக்கப்பட்ட குளியலறை';
+    }
+    if (lower.contains('bath') || lower.contains('toilet')) {
+      final numMatch = RegExp(r'\d+').firstMatch(title);
+      return numMatch != null ? 'குளியலறை ${numMatch.group(0)}' : 'குளியலறை';
+    }
+    if (lower.contains('master') && lower.contains('bed')) return 'முதன்மை படுக்கையறை';
+    if (lower.contains('bed')) {
+      final numMatch = RegExp(r'\d+').firstMatch(title);
+      return numMatch != null ? 'படுக்கையறை ${numMatch.group(0)}' : 'படுக்கையறை';
+    }
+    if (lower.contains('pooja') || lower.contains('puja')) return 'பூஜை அறை';
+    if (lower.contains('stair')) return 'மாடிப்படி (Staircase)';
+    if (lower.contains('utility')) return 'பயன்பாட்டு அறை (Utility)';
+    if (lower.contains('passage')) return 'நடைபாதை (Passage)';
+    if (lower.contains('dining')) return 'உணவருந்தும் அறை';
+    return title;
+  }
+
+  String _getDynamicTamilZone(String zone) {
+    switch (zone) {
+      case 'North-East':
+        return 'வடகிழக்கு (ஈசான்யம்)';
+      case 'South-East':
+        return 'தென்கிழக்கு (அக்னி)';
+      case 'South-West':
+        return 'தென்மேற்கு (நிருதி)';
+      case 'North-West':
+        return 'வடமேற்கு (வாயு)';
+      case 'North':
+        return 'வடக்கு';
+      case 'South':
+        return 'தெற்கு';
+      case 'East':
+        return 'கிழக்கு';
+      case 'West':
+        return 'மேற்கு';
+      case 'Center-Center':
+        return 'மையப்பகுதி (பிரம்மஸ்தானம்)';
+      default:
+        return zone;
+    }
   }
 }
