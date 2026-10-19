@@ -5,9 +5,9 @@ const cors = require('cors');
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const app = express();
@@ -28,26 +28,63 @@ const razorpay = new Razorpay({
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-const geminiKeys = Object.keys(process.env)
-  .filter(k => k.startsWith('GEMINI_API_KEY') && process.env[k])
-  .map(k => process.env[k]);
-if (geminiKeys.length === 0) geminiKeys.push('NO_KEY');
-let currentGeminiKeyIndex = 0;
-function getGenAI() {
-  const key = geminiKeys[currentGeminiKeyIndex];
-  currentGeminiKeyIndex = (currentGeminiKeyIndex + 1) % geminiKeys.length;
-  return new GoogleGenerativeAI(key);
-}
-
 app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Proxy Image to bypass CORS on Flutter Web
+// ─── Rate Limiting (Protects AI costs, prevents denial of service) ───────────
+const generalLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 120, // 120 requests/min per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests from this IP, please try again in a minute.' }
+});
+app.use('/api/', generalLimiter);
+
+const uploadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 15, // 15 blueprint analyses per 15 minutes per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Upload rate limit reached. Please wait a few minutes before analyzing another floor plan.' }
+});
+
+// ─── Health Check Endpoints (For Railway, Docker & Uptime monitoring) ───────
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    uptime_seconds: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString()
+  });
+});
+app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
+
+// ─── Proxy Image (with SSRF protection to bypass CORS on Flutter Web) ────────
 app.get('/api/proxy-image', async (req, res) => {
   try {
     const imageUrl = req.query.url;
     if (!imageUrl) return res.status(400).send('URL required');
+
+    let parsed;
+    try {
+      parsed = new URL(imageUrl);
+    } catch (_) {
+      return res.status(400).send('Invalid URL format');
+    }
+
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return res.status(400).send('Only HTTP and HTTPS protocols are allowed');
+    }
+
+    const host = parsed.hostname.toLowerCase();
+    const blockedHosts = ['localhost', '127.0.0.1', '::1', '169.254.169.254', 'metadata.google.internal'];
+    const isPrivateIp = /^(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.|169\.254\.)/.test(host);
+
+    if (blockedHosts.includes(host) || isPrivateIp || host.endsWith('.local') || host.endsWith('.internal')) {
+      console.warn(`[SSRF Blocked] Denied proxy request to private host: ${host}`);
+      return res.status(403).send('Access to internal or private hosts is strictly forbidden');
+    }
 
     const response = await fetch(imageUrl);
     if (!response.ok) throw new Error(`Failed to fetch image: ${response.status}`);
@@ -73,7 +110,22 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
 });
-const upload = multer({ storage });
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 15 * 1024 * 1024 }, // Max 15MB per file (generous for architectural blueprints)
+  fileFilter: (req, file, cb) => {
+    const allowedMime = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+    const ext = path.extname(file.originalname || '').toLowerCase();
+    const allowedExts = ['.jpg', '.jpeg', '.png', '.webp'];
+
+    if (allowedMime.includes(file.mimetype) || allowedExts.includes(ext)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only JPEG, PNG, and WebP floor plans are allowed.'));
+    }
+  }
+});
 const multiUpload = upload.fields([{ name: 'ground_plan', maxCount: 1 }, { name: 'first_plan', maxCount: 1 }, { name: 'second_plan', maxCount: 1 }]);
 
 // ─── Immediate Zero-Storage: Purge all residual files on server boot ─────────
@@ -278,16 +330,36 @@ function generateWallsFromRooms(rooms, project, stairs = []) {
   return walls;
 }
 
-// ─── Step 1 + 2: Gemini Vision → Structured JSON ──────────────────────────────
+// ─── Step 1 + 2: Computer Vision Pipeline → Structured JSON ──────────────────
 
 function runPython(imagePath) {
   return new Promise((resolve, reject) => {
     let output = '';
+    let isSettled = false;
     const pythonCmd = process.env.PYTHON_PATH || (process.platform === 'win32' ? 'python' : 'python3');
     const proc = spawn(pythonCmd, ['processor.py', imagePath], { env: { ...process.env }, cwd: __dirname });
+
+    // 120-Second Hard Timeout Guard to prevent orphan/zombie Python processes
+    const timeoutMs = 120000;
+    const timer = setTimeout(() => {
+      if (!isSettled) {
+        isSettled = true;
+        console.error(`[Python Timeout] Killing processor.py for ${imagePath} after ${timeoutMs / 1000}s`);
+        try {
+          proc.kill('SIGKILL');
+        } catch (_) {}
+        reject(new Error('PROCESSING_TIMEOUT: Computer vision pipeline timed out after 120 seconds'));
+      }
+    }, timeoutMs);
+
     proc.stdout.on('data', d => { output += d.toString(); });
     proc.stderr.on('data', d => console.error(`[Python] ${d.toString().trim()}`));
+
     proc.on('close', code => {
+      clearTimeout(timer);
+      if (isSettled) return;
+      isSettled = true;
+
       let data = null;
       try {
         let jsonStr = '';
@@ -320,53 +392,79 @@ function runPython(imagePath) {
 
       resolve(data);
     });
+
+    proc.on('error', err => {
+      clearTimeout(timer);
+      if (!isSettled) {
+        isSettled = true;
+        reject(err);
+      }
+    });
   });
 }
 
+// ─── Step 5: Vastu Analysis Engine (Enhanced with OpenRouter & Retry Backoff) ─
 
-
-// ─── Step 5: Vastu Analysis Engine (Enhanced with OpenRouter) ────────────────
-
-async function askOpenRouter(prompt, imagePath = null, model = 'google/gemini-2.5-flash') {
+async function askOpenRouter(prompt, imagePath = null, model = 'meta-llama/llama-3.3-70b-instruct:free') {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) return null;
 
-  try {
-    let contents = [{ type: 'text', text: prompt }];
-
-    if (imagePath && fs.existsSync(imagePath)) {
-      const imageData = fs.readFileSync(imagePath).toString('base64');
-      contents.push({
-        type: 'image_url',
-        image_url: { url: `data:image/png;base64,${imageData}` }
-      });
-    }
-
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "HTTP-Referer": "http://localhost:3000",
-        "X-Title": "Kanavu illam",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        "model": model,
-        "messages": [{ "role": "user", "content": contents }],
-        "response_format": { "type": "json_object" }
-      })
+  let contents = [{ type: 'text', text: prompt }];
+  if (imagePath && fs.existsSync(imagePath)) {
+    const imageData = fs.readFileSync(imagePath).toString('base64');
+    contents.push({
+      type: 'image_url',
+      image_url: { url: `data:image/png;base64,${imageData}` }
     });
-
-    const data = await response.json();
-    if (data.choices && data.choices[0]) {
-      const content = data.choices[0].message.content || "";
-      return JSON.parse(content.replace(/```json|```/g, '').trim());
-    }
-    return null;
-  } catch (e) {
-    console.error('[OpenRouter] Error:', e.message);
-    return null;
   }
+
+  const maxRetries = 3;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "HTTP-Referer": "http://localhost:3000",
+          "X-Title": "Kanavu illam",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          "model": model,
+          "messages": [{ "role": "user", "content": contents }],
+          "response_format": { "type": "json_object" }
+        })
+      });
+
+      if (!response.ok) {
+        const isRateOrTransient = [429, 500, 502, 503, 504].includes(response.status);
+        if (isRateOrTransient && attempt < maxRetries) {
+          const delayMs = Math.pow(2, attempt - 1) * 1000; // 1s, 2s, 4s
+          console.warn(`[OpenRouter Retry] HTTP ${response.status} on attempt ${attempt}. Retrying in ${delayMs}ms...`);
+          await new Promise(r => setTimeout(r, delayMs));
+          continue;
+        }
+        throw new Error(`OpenRouter HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.choices && data.choices[0]) {
+        const content = data.choices[0].message.content || "";
+        return JSON.parse(content.replace(/```json|```/g, '').trim());
+      }
+      return null;
+    } catch (e) {
+      if (attempt < maxRetries) {
+        const delayMs = Math.pow(2, attempt - 1) * 1000;
+        console.warn(`[OpenRouter Error] Attempt ${attempt} failed: ${e.message}. Retrying in ${delayMs}ms...`);
+        await new Promise(r => setTimeout(r, delayMs));
+      } else {
+        console.error('[OpenRouter Exhausted] All retry attempts failed:', e.message);
+        return null;
+      }
+    }
+  }
+  return null;
 }
 
 async function runVastuAnalysis(modelData, lang = 'English', orientation = 'North', imagePath = null, fixedScore = null, fixedGrade = null, floorName = 'Ground') {
@@ -993,21 +1091,11 @@ Return a STRICT JSON object in this format:
   try {
     let data = null;
     if (process.env.OPENROUTER_API_KEY) {
-      data = await askOpenRouter(prompt, null, 'google/gemini-2.5-flash');
-    }
-    if (!data) {
-      const genAI = getGenAI();
-      const model = genAI.getGenerativeModel({
-        model: 'gemini-2.5-flash',
-        generationConfig: { responseMimeType: "application/json" }
-      });
-      const result = await model.generateContent(prompt);
-      const rawText = result.response.text() || "";
-      data = JSON.parse(rawText.replace(/```json|```/g, '').trim());
+      data = await askOpenRouter(prompt, null);
     }
     if (data && data.materials) return data;
   } catch (err) {
-    console.warn('[Live Market Prices] AI query error, using dynamic live market fallbacks:', err.message);
+    console.warn('[Live Market Prices] Query note:', err.message);
   }
 
   return {
@@ -1234,22 +1322,10 @@ app.post('/api/material/search', async (req, res) => {
 
     let data = null;
 
-    // Try OpenRouter first for maximum accuracy if available
+    // Try OpenRouter if available
     if (process.env.OPENROUTER_API_KEY) {
-      console.log(`[Material Search] Querying OpenRouter (gemini-2.5-flash) for: ${query}`);
-      data = await askOpenRouter(prompt, null, 'google/gemini-2.5-flash');
-    }
-
-    if (!data) {
-      console.log(`[Material Search] Using Gemini directly for: ${query}`);
-      const genAI = getGenAI();
-      const model = genAI.getGenerativeModel({
-        model: 'gemini-2.5-flash',
-        generationConfig: { responseMimeType: "application/json" }
-      });
-      const result = await model.generateContent(prompt);
-      const rawText = result.response.text() || "";
-      data = JSON.parse(rawText.replace(/```json|```/g, '').trim());
+      console.log(`[Material Search] Querying OpenRouter for: ${query}`);
+      data = await askOpenRouter(prompt, null);
     }
 
     if (Array.isArray(data)) {
@@ -1450,7 +1526,7 @@ function runStructuralReport(modelData) {
 
 // ─── Main Upload Endpoint ─────────────────────────────────────────────────────
 
-app.post('/api/upload', (req, res, next) => {
+app.post('/api/upload', uploadLimiter, (req, res, next) => {
   multiUpload(req, res, err => {
     if (err) {
       console.error('[Upload] Multer error:', err.message);
@@ -1472,16 +1548,19 @@ app.post('/api/upload', (req, res, next) => {
     // ── Steps 1 & 2: Image → Structured JSON ──────────────────────────────
     console.log('\n═══ PIPELINE START ═══');
 
-    // Process floors in parallel to drastically cut down processing time and avoid Railway timeout
-    console.log('[Step 1] Running floor plan extractions...');
-    const pythonPromises = [runPython(groundPath).then(r => validateModelData(r))];
-    if (firstPath) pythonPromises.push(runPython(firstPath).then(r => validateModelData(r)));
-    if (secondPath) pythonPromises.push(runPython(secondPath).then(r => validateModelData(r)));
-
-    const pythonResults = await Promise.all(pythonPromises);
-    const groundResult = pythonResults[0];
-    let firstResult = pythonResults.length > 1 ? pythonResults[1] : null;
-    let secondResult = pythonResults.length > 2 ? pythonResults[2] : null;
+    // Process floors sequentially to avoid RAM spikes and Linux OOM kills on cloud containers
+    console.log('[Step 1] Running floor plan extractions (memory-safe mode)...');
+    const groundResult = await runPython(groundPath).then(r => validateModelData(r));
+    let firstResult = null;
+    if (firstPath) {
+      console.log('[Step 1] Processing First Floor plan...');
+      firstResult = await runPython(firstPath).then(r => validateModelData(r));
+    }
+    let secondResult = null;
+    if (secondPath) {
+      console.log('[Step 1] Processing Second Floor plan...');
+      secondResult = await runPython(secondPath).then(r => validateModelData(r));
+    }
 
     if (!groundResult) throw new Error('Floor plan extraction failed for ground floor');
     console.log(`[Step 2] ✓ ${groundResult.rooms.length} rooms extracted for Ground Floor`);

@@ -559,7 +559,7 @@
       const cv = document.createElement('canvas');
       cv.width = 512; cv.height = 128;
       const ctx = cv.getContext('2d');
-      
+
       // Clean background pill for high contrast & visibility against floors and furniture
       ctx.fillStyle = 'rgba(15, 23, 42, 0.82)';
       if (ctx.roundRect) {
@@ -1647,22 +1647,34 @@
         const effectiveLabel = r.name || r.label || 'Unknown';
         const mat = getMat('floor', effectiveLabel);
         mat.side = THREE.DoubleSide; // Prevents winding issues causing invisible floors
-        const mesh = new THREE.Mesh(new THREE.ShapeGeometry(shape), mat);
-        mesh.rotation.x = Math.PI / 2;
-        mesh.position.y = 0.02;
-        mesh.receiveShadow = true;
-        mesh.userData = { sourceType: 'room', sourceId: r.id, roomLabel: effectiveLabel };
-        archGrp.add(mesh);
+        try {
+          const mesh = new THREE.Mesh(new THREE.ShapeGeometry(shape), mat);
+          mesh.rotation.x = Math.PI / 2;
+          mesh.position.y = 0.02;
+          mesh.receiveShadow = true;
+          mesh.userData = { sourceType: 'room', sourceId: r.id, roomLabel: effectiveLabel };
+          archGrp.add(mesh);
+        } catch (e) {
+          console.warn('[Viewer] ShapeGeometry fallback for room:', effectiveLabel, e);
+          const fallbackMesh = new THREE.Mesh(new THREE.PlaneGeometry(Math.max(2, rw), Math.max(2, rd)), mat);
+          fallbackMesh.rotation.x = -Math.PI / 2;
+          fallbackMesh.position.set(rCx, 0.02, rCz);
+          fallbackMesh.receiveShadow = true;
+          fallbackMesh.userData = { sourceType: 'room', sourceId: r.id, roomLabel: effectiveLabel };
+          archGrp.add(fallbackMesh);
+        }
 
         // Ceiling (Phase 3.3)
         if (state.arch) {
-          const ceilMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.9 });
-          ceilMat.side = THREE.DoubleSide;
-          const ceilMesh = new THREE.Mesh(new THREE.ShapeGeometry(shape), ceilMat);
-          ceilMesh.rotation.x = -Math.PI / 2;
-          ceilMesh.position.y = WALL_HEIGHT; // Cap the room
-          ceilMesh.castShadow = true; ceilMesh.receiveShadow = true;
-          ceilGrp.add(ceilMesh);
+          try {
+            const ceilMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.9 });
+            ceilMat.side = THREE.DoubleSide;
+            const ceilMesh = new THREE.Mesh(new THREE.ShapeGeometry(shape), ceilMat);
+            ceilMesh.rotation.x = -Math.PI / 2;
+            ceilMesh.position.y = WALL_HEIGHT; // Cap the room
+            ceilMesh.castShadow = true; ceilMesh.receiveShadow = true;
+            ceilGrp.add(ceilMesh);
+          } catch (_) {}
         }
 
         const sp = createTextSprite(effectiveLabel.toUpperCase(), '#38bdf8');

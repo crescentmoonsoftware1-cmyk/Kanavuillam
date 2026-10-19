@@ -1023,7 +1023,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.orangeText,
+                          color: AppColors.textTitle,
                         ),
                       ),
                     ],
@@ -1032,15 +1032,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 20),
-          AppDecor.primaryPillButton(
-            label: isTamil
-                ? 'அடுத்து: கட்டமைப்பு அறிக்கை'
-                : 'Proceed to Structural Report',
-            onTap: () => widget.onNavigateToNext?.call(),
-            icon: Icons.arrow_forward_rounded,
-          ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
         ],
       ),
     );
@@ -1117,7 +1109,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.orangeText,
+                        color: AppColors.textTitle,
                       ),
                     ),
                   ),
@@ -1166,7 +1158,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 24,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.orangeText,
+                            color: AppColors.textTitle,
                             letterSpacing: -0.3,
                           ),
                         ),
@@ -1197,7 +1189,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                           style: GoogleFonts.syne(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.primary,
+                            color: AppColors.textTitle,
                           ),
                         ),
                         content: Text(
@@ -1215,7 +1207,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                               isTamil ? 'மூடு' : 'Close',
                               style: GoogleFonts.inter(
                                 fontWeight: FontWeight.w600,
-                                color: AppColors.primary,
+                                color: AppColors.textTitle,
                               ),
                             ),
                           )
@@ -2075,7 +2067,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                   style: GoogleFonts.syne(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.primary,
+                    color: AppColors.textTitle,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -2096,7 +2088,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                       style: GoogleFonts.inter(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.primary,
+                        color: AppColors.textTitle,
                       ),
                     ),
                   ),
@@ -2180,7 +2172,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                         style: GoogleFonts.syne(
                           fontSize: 14.5,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.primary,
+                          color: AppColors.textTitle,
                         ),
                       ),
                     ],
@@ -2206,12 +2198,12 @@ class _EstimationScreenState extends State<EstimationScreen> {
                           icon: const Icon(
                             Icons.keyboard_arrow_down,
                             size: 16,
-                            color: AppColors.primary,
+                            color: AppColors.textTitle,
                           ),
                           style: GoogleFonts.inter(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.primary,
+                            color: AppColors.textTitle,
                           ),
                           items: availableBrands.map((b) {
                             return DropdownMenuItem<String>(
@@ -2221,7 +2213,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                                 style: GoogleFonts.inter(
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w600,
-                                  color: AppColors.primary,
+                                  color: AppColors.textTitle,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -2258,7 +2250,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
               style: GoogleFonts.syne(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
-                color: AppColors.primary,
+                color: AppColors.textTitle,
               ),
             ),
             const SizedBox(height: 8),
@@ -2282,7 +2274,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                       radius: 14,
                       backgroundColor: AppColors.surfaceSecondary,
                       child:
-                          Icon(item.icon, size: 14, color: AppColors.primary),
+                          Icon(item.icon, size: 14, color: AppColors.textTitle),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -2314,7 +2306,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                       style: GoogleFonts.syne(
                         fontSize: 13.5,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
+                        color: AppColors.textTitle,
                       ),
                     ),
                     const SizedBox(width: 6),

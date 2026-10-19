@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../core/providers/app_config_provider.dart';
 import '../core/theme/app_colors.dart';
+import '../core/theme/app_decor.dart';
 import '../services/pdf_service.dart';
 import '../services/api_service.dart';
 import 'package:flutter/material.dart';
@@ -60,11 +61,11 @@ class _DownloadScreenState extends State<DownloadScreen> {
     }
     final isTamil = config.isTamil;
     final isDark = config.isDarkMode;
-    final cardColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
-    final primaryTextColor = isDark ? Colors.white : AppColors.primary;
+    final cardColor = isDark ? const Color(0xFF1C1C1E) : AppColors.card;
+    final primaryTextColor = isDark ? Colors.white : AppColors.inkPrimary;
     final secondaryTextColor =
-        isDark ? const Color(0xFFA1A1AA) : AppColors.textSecondary;
-    final borderColor = isDark ? const Color(0xFF2E2E32) : AppColors.border;
+        isDark ? const Color(0xFFA1A1AA) : AppColors.inkQuiet;
+    final borderColor = isDark ? const Color(0xFF2E2E32) : AppColors.cardBorder;
 
     const String planName = 'kanavuillam_report';
     final modelData =
@@ -92,283 +93,127 @@ class _DownloadScreenState extends State<DownloadScreen> {
           gradient: isDark ? null : AppColors.canvasGradient,
         ),
         child: SafeArea(
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.only(
-                left: 20.0, right: 20.0, top: 16.0, bottom: 32.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ── 1. HEADER (Plan Name, Subtitle, Language Switcher Capsule) ─
-                SizedBox(
-                  height: 52,
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              planName,
-                              style: GoogleFonts.syne(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w600,
-                                color: primaryTextColor,
-                                letterSpacing: -0.2,
-                                height: 1.0,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 3),
-                            Text(
-                              isTamil
-                                  ? 'பதிவிறக்க அறிக்கை · $dimsText (${totalArea.toInt()} ச.அடி)'
-                                  : 'Download report · $dimsText (${totalArea.toInt()} sq ft)',
-                              style: GoogleFonts.inter(
-                                fontSize: 12.5,
-                                color: secondaryTextColor,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                      // Language Switcher Capsule (EN | தமிழ்)
-                      Container(
-                        height: 34,
-                        padding: const EdgeInsets.all(2),
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? const Color(0xFF27272A)
-                              : AppColors.surfaceSecondary,
-                          borderRadius: BorderRadius.circular(100),
-                        ),
-                        child: Row(
-                          children: [
-                            GestureDetector(
-                              onTap: () {
-                                if (isTamil) config.setTamil(false);
-                              },
-                              child: Container(
-                                height: 30,
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 11),
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  color: !isTamil
-                                      ? (isDark
-                                          ? const Color(0xFF3F3F46)
-                                          : Colors.white)
-                                      : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(100),
-                                  boxShadow: !isTamil
-                                      ? [
-                                          BoxShadow(
-                                            color: Colors.black
-                                                .withValues(alpha: 0.08),
-                                            blurRadius: 2,
-                                            offset: const Offset(0, 1),
-                                          )
-                                        ]
-                                      : null,
-                                ),
-                                child: Text(
-                                  'EN',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 11.5,
-                                    fontWeight: !isTamil
-                                        ? FontWeight.w600
-                                        : FontWeight.w400,
-                                    color: !isTamil
-                                        ? primaryTextColor
-                                        : secondaryTextColor,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () {
-                                if (!isTamil) config.setTamil(true);
-                              },
-                              child: Container(
-                                height: 30,
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 11),
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  color: isTamil
-                                      ? (isDark
-                                          ? const Color(0xFF3F3F46)
-                                          : Colors.white)
-                                      : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(100),
-                                  boxShadow: isTamil
-                                      ? [
-                                          BoxShadow(
-                                            color: Colors.black
-                                                .withValues(alpha: 0.08),
-                                            blurRadius: 2,
-                                            offset: const Offset(0, 1),
-                                          )
-                                        ]
-                                      : null,
-                                ),
-                                child: Text(
-                                  'தமிழ்',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 11.5,
-                                    fontWeight: isTamil
-                                        ? FontWeight.w600
-                                        : FontWeight.w400,
-                                    color: isTamil
-                                        ? primaryTextColor
-                                        : secondaryTextColor,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-
-                // ── 2. MAIN TABS (3D, Vastu, Cost, Structure, Download) ────────
-                SizedBox(
-                  height: 36,
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _buildMainTab(
-                          title: '3D',
-                          isActive: false,
-                          isDark: isDark,
-                          onTap: () {
-                            if (widget.onNavigateToTab != null) {
-                              widget.onNavigateToTab!(1);
-                            } else {
-                              widget.onNavigateTo3D?.call();
-                            }
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: _buildMainTab(
-                          title: isTamil ? 'வாஸ்து' : 'Vastu',
-                          isActive: false,
-                          isDark: isDark,
-                          onTap: () => widget.onNavigateToTab?.call(2),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: _buildMainTab(
-                          title: isTamil ? 'செலவு' : 'Cost',
-                          isActive: false,
-                          isDark: isDark,
-                          onTap: () => widget.onNavigateToTab?.call(3),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: _buildMainTab(
-                          title: isTamil ? 'அமைப்பு' : 'Structure',
-                          isActive: false,
-                          isDark: isDark,
-                          onTap: () => widget.onNavigateToTab?.call(4),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: _buildMainTab(
-                          title: isTamil ? 'பதிவிறக்கம்' : 'Download',
-                          isActive: true,
-                          isDark: isDark,
-                          onTap: () {},
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 14),
-
-                // ── 3. EXECUTIVE HERO CARD (Matching App UI) ─────────────────
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: isDark ? cardColor : const Color(0xFFFCFDFF),
-                    borderRadius: BorderRadius.circular(28),
-                    border: Border.all(
-                        color: isDark ? borderColor : const Color(0xFFE9EAEC)),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x1A1B212F),
-                        blurRadius: 32,
-                        offset: Offset(0, 12),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 440),
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.only(
+                    left: 20.0, right: 20.0, top: 16.0, bottom: 32.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ── 1. HEADER (Plan Name, Subtitle, Language Switcher Capsule) ─
+                    SizedBox(
+                      height: 52,
+                      child: Row(
                         children: [
-                          Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF1B212F),
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Color(0x14000000),
-                                  blurRadius: 8,
-                                  offset: Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.home_work_rounded,
-                              color: Colors.white,
-                              size: 24,
-                            ),
-                          ),
-                          const SizedBox(width: 14),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  isTamil
-                                      ? 'கனவு இல்லம் விரிவான அறிக்கை'
-                                      : 'Comprehensive Project Report',
-                                  style: GoogleFonts.syne(
-                                    fontSize: 16,
+                                  planName,
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 22,
                                     fontWeight: FontWeight.w700,
-                                    color: isDark
-                                        ? primaryTextColor
-                                        : const Color(0xFF18191D),
-                                    letterSpacing: -0.2,
+                                    color: primaryTextColor,
+                                    letterSpacing: -0.3,
+                                    height: 1.1,
                                   ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                const SizedBox(height: 3),
+                                const SizedBox(height: 2),
                                 Text(
                                   isTamil
-                                      ? 'அனைத்து அறிக்கைகளும் ஒரே தொழில்முறை PDF-ல்'
-                                      : '3D, Vastu, Cost & Structural combined in one file',
-                                  style: GoogleFonts.inter(
+                                      ? 'பதிவிறக்க அறிக்கை · $dimsText (${totalArea.toInt()} ச.அடி)'
+                                      : 'Download report · $dimsText (${totalArea.toInt()} sq ft)',
+                                  style: GoogleFonts.plusJakartaSans(
                                     fontSize: 12,
-                                    color: isDark
-                                        ? secondaryTextColor
-                                        : const Color(0xFF8E94A0),
+                                    fontWeight: FontWeight.w500,
+                                    color: secondaryTextColor,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Language Switcher Capsule (EN | தமிழ்)
+                          Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? const Color(0xFF27272A)
+                                  : AppColors.card,
+                              borderRadius: BorderRadius.circular(100),
+                              border: Border.all(
+                                color: isDark
+                                    ? const Color(0xFF3F3F46)
+                                    : AppColors.borderLight,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                GestureDetector(
+                                  onTap: () {
+                                    if (isTamil) config.setTamil(false);
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: !isTamil
+                                          ? (isDark
+                                              ? const Color(0xFF3F3F46)
+                                              : AppColors.inkDark)
+                                          : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(100),
+                                    ),
+                                    child: Text(
+                                      'EN',
+                                      style: GoogleFonts.plusJakartaSans(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: !isTamil
+                                            ? Colors.white
+                                            : (isDark
+                                                ? const Color(0xFFA1A1AA)
+                                                : AppColors.inkMuted),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: () {
+                                    if (!isTamil) config.setTamil(true);
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: isTamil
+                                          ? (isDark
+                                              ? const Color(0xFF3F3F46)
+                                              : AppColors.inkDark)
+                                          : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(100),
+                                    ),
+                                    child: Text(
+                                      'தமிழ்',
+                                      style: GoogleFonts.plusJakartaSans(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: isTamil
+                                            ? Colors.white
+                                            : (isDark
+                                                ? const Color(0xFFA1A1AA)
+                                                : AppColors.inkMuted),
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ],
@@ -376,235 +221,310 @@ class _DownloadScreenState extends State<DownloadScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
-                      // 3-Column stats row
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? const Color(0xFF27272A)
-                              : const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                              color: isDark
-                                  ? borderColor
-                                  : const Color(0xFFE2E8F0)),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            _buildHeroMeta(
-                              label: isTamil ? 'அளவு' : 'Plot Size',
-                              value: dimsText,
-                              isDark: isDark,
-                              primaryTextColor: isDark
-                                  ? primaryTextColor
-                                  : const Color(0xFF18191D),
-                              secondaryTextColor: isDark
-                                  ? secondaryTextColor
-                                  : const Color(0xFF8E94A0),
-                            ),
-                            Container(
-                                width: 1,
-                                height: 26,
-                                color: isDark
-                                    ? borderColor
-                                    : const Color(0xFFE2E8F0)),
-                            _buildHeroMeta(
-                              label: isTamil ? 'பரப்பளவு' : 'Built-up Area',
-                              value: '${totalArea.toInt()} sq ft',
-                              isDark: isDark,
-                              primaryTextColor: isDark
-                                  ? primaryTextColor
-                                  : const Color(0xFF18191D),
-                              secondaryTextColor: isDark
-                                  ? secondaryTextColor
-                                  : const Color(0xFF8E94A0),
-                            ),
-                            Container(
-                                width: 1,
-                                height: 26,
-                                color: isDark
-                                    ? borderColor
-                                    : const Color(0xFFE2E8F0)),
-                            _buildHeroMeta(
-                              label: isTamil ? 'நாள்' : 'Date',
-                              value: createdAt,
-                              isDark: isDark,
-                              primaryTextColor: isDark
-                                  ? primaryTextColor
-                                  : const Color(0xFF18191D),
-                              secondaryTextColor: isDark
-                                  ? secondaryTextColor
-                                  : const Color(0xFF8E94A0),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 14),
+                    ),
+                    const SizedBox(height: 8),
 
-                      // Full-width Amber Pill Button: Download Full PDF Report
-                      GestureDetector(
-                        onTap: _isGeneratingPdf
-                            ? null
-                            : () => _downloadAll(context, widget.projectData),
-                        child: Container(
-                          width: double.infinity,
-                          height: 52,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFFFBA73B), Color(0xFFE58A18)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(100),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Color(0x59E58A18),
-                                blurRadius: 20,
-                                offset: Offset(0, 8),
+                    // ── 2. MAIN TABS (3D, Vastu, Cost, Structure, Download) ────────
+                    SizedBox(
+                      height: 34,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        children: [
+                          _buildMainTab(
+                            title: '3D',
+                            isActive: false,
+                            isDark: isDark,
+                            onTap: () {
+                              if (widget.onNavigateToTab != null) {
+                                widget.onNavigateToTab!(1);
+                              } else {
+                                widget.onNavigateTo3D?.call();
+                              }
+                            },
+                          ),
+                          const SizedBox(width: 6),
+                          _buildMainTab(
+                            title: isTamil ? 'வாஸ்து' : 'Vastu',
+                            isActive: false,
+                            isDark: isDark,
+                            onTap: () => widget.onNavigateToTab?.call(2),
+                          ),
+                          const SizedBox(width: 6),
+                          _buildMainTab(
+                            title: isTamil ? 'செலவு' : 'Cost',
+                            isActive: false,
+                            isDark: isDark,
+                            onTap: () => widget.onNavigateToTab?.call(3),
+                          ),
+                          const SizedBox(width: 6),
+                          _buildMainTab(
+                            title: isTamil ? 'அமைப்பு' : 'Structure',
+                            isActive: false,
+                            isDark: isDark,
+                            onTap: () => widget.onNavigateToTab?.call(4),
+                          ),
+                          const SizedBox(width: 6),
+                          _buildMainTab(
+                            title: isTamil ? 'பதிவிறக்கம்' : 'Download',
+                            isActive: true,
+                            isDark: isDark,
+                            onTap: () {},
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // ── 3. EXECUTIVE HERO CARD (Matching App UI) ─────────────────
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: isDark ? cardColor : AppColors.card,
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(
+                            color: isDark ? borderColor : AppColors.cardBorder),
+                        boxShadow: AppColors.coolShadow,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: AppColors.badgeSlate,
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                alignment: Alignment.center,
+                                child: const Icon(
+                                  Icons.home_work_rounded,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      isTamil
+                                          ? 'கனவு இல்லம் விரிவான அறிக்கை'
+                                          : 'Comprehensive Project Report',
+                                      style: GoogleFonts.plusJakartaSans(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                        color: isDark
+                                            ? primaryTextColor
+                                            : AppColors.inkPrimary,
+                                        letterSpacing: -0.2,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      isTamil
+                                          ? 'அனைத்து அறிக்கைகளும் ஒரே தொழில்முறை PDF-ல்'
+                                          : '3D, Vastu, Cost & Structural combined in one file',
+                                      style: GoogleFonts.plusJakartaSans(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                        color: isDark
+                                            ? secondaryTextColor
+                                            : AppColors.inkQuiet,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ],
                           ),
-                          child: Center(
-                            child: _isGeneratingPdf
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2.2,
-                                      color: Color(0xFF1E252D),
-                                    ),
-                                  )
-                                : Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      const Icon(
-                                        Icons.file_download_outlined,
-                                        color: Color(0xFF1E252D),
-                                        size: 19,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        isTamil
-                                            ? 'முழு அறிக்கையை பதிவிறக்கு (PDF)'
-                                            : 'Download Full PDF Report',
-                                        style: GoogleFonts.inter(
-                                          fontSize: 13.5,
-                                          fontWeight: FontWeight.w700,
-                                          color: const Color(0xFF1E252D),
-                                          letterSpacing: 0.1,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                          const SizedBox(height: 16),
+                          // 3-Column stats row
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? const Color(0xFF27272A)
+                                  : AppColors.innerPanel,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                  color: isDark
+                                      ? borderColor
+                                      : AppColors.cardBorder),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                _buildHeroMeta(
+                                  label: isTamil ? 'அளவு' : 'Plot Size',
+                                  value: dimsText,
+                                  isDark: isDark,
+                                  primaryTextColor: isDark
+                                      ? primaryTextColor
+                                      : AppColors.inkPrimary,
+                                  secondaryTextColor: isDark
+                                      ? secondaryTextColor
+                                      : AppColors.inkQuiet,
+                                ),
+                                Container(
+                                    width: 1,
+                                    height: 26,
+                                    color: isDark
+                                        ? borderColor
+                                        : AppColors.cardBorder),
+                                _buildHeroMeta(
+                                  label: isTamil ? 'பரப்பளவு' : 'Built-up Area',
+                                  value: '${totalArea.toInt()} sq ft',
+                                  isDark: isDark,
+                                  primaryTextColor: isDark
+                                      ? primaryTextColor
+                                      : AppColors.inkPrimary,
+                                  secondaryTextColor: isDark
+                                      ? secondaryTextColor
+                                      : AppColors.inkQuiet,
+                                ),
+                                Container(
+                                    width: 1,
+                                    height: 26,
+                                    color: isDark
+                                        ? borderColor
+                                        : AppColors.cardBorder),
+                                _buildHeroMeta(
+                                  label: isTamil ? 'நாள்' : 'Date',
+                                  value: createdAt,
+                                  isDark: isDark,
+                                  primaryTextColor: isDark
+                                      ? primaryTextColor
+                                      : AppColors.inkPrimary,
+                                  secondaryTextColor: isDark
+                                      ? secondaryTextColor
+                                      : AppColors.inkQuiet,
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
+                          const SizedBox(height: 16),
+
+                          // Full-width Amber Pill Button: Download Full PDF Report
+                          AppDecor.primaryPillButton(
+                            label: isTamil
+                                ? 'முழு அறிக்கையை பதிவிறக்கு (PDF)'
+                                : 'Download Full PDF Report',
+                            isLoading: _isGeneratingPdf,
+                            onTap: () =>
+                                _downloadAll(context, widget.projectData),
+                            icon: Icons.file_download_outlined,
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
+                    ),
+                    const SizedBox(height: 24),
 
-                Text(
-                  isTamil
-                      ? 'அறிக்கையின் உள்ளடக்கங்கள்'
-                      : 'INCLUDED DELIVERABLES',
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color:
-                        isDark ? secondaryTextColor : const Color(0xFF8E94A0),
-                    letterSpacing: 1.0,
-                  ),
-                ),
-                const SizedBox(height: 12),
+                    Text(
+                      isTamil
+                          ? 'அறிக்கையின் உள்ளடக்கங்கள்'
+                          : 'INCLUDED DELIVERABLES',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? secondaryTextColor : AppColors.inkQuiet,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
 
-                // ── 6. DELIVERABLE CARDS ─────────────────────────────────────
-                _buildDeliverableCard(
-                  icon: Icons.view_in_ar_rounded,
-                  title: isTamil
-                      ? '3D கட்டிட மாதிரி & தோற்றங்கள்'
-                      : '3D Architectural Model & Views',
-                  subtitle: isTamil
-                      ? 'முழுமையான 3D தள வடிவமைப்பு மற்றும் ஐசோமெட்ரிக் தோற்றம்'
-                      : 'Photorealistic isometric views & multi-floor architecture',
-                  tag: isTamil ? 'உள்ளடக்கம்' : 'Included',
-                  actionLabel: isTamil ? 'PDF' : 'PDF',
-                  isLoading: _activeSingleDownload == '3D Perspective',
-                  onDownload: () => _downloadSingle(
-                      context, '3D Perspective', widget.projectData),
-                  cardColor: cardColor,
-                  borderColor: borderColor,
-                  primaryTextColor: primaryTextColor,
-                  secondaryTextColor: secondaryTextColor,
-                  isDark: isDark,
-                ),
-                const SizedBox(height: 10),
+                    // ── DELIVERABLE CARDS ─────────────────────────────────────
+                    _buildDeliverableCard(
+                      icon: Icons.view_in_ar_rounded,
+                      title: isTamil
+                          ? '3D கட்டிட மாதிரி & தோற்றங்கள்'
+                          : '3D Architectural Model & Views',
+                      subtitle: isTamil
+                          ? 'முழுமையான 3D தள வடிவமைப்பு மற்றும் ஐசோமெட்ரிக் தோற்றம்'
+                          : 'Photorealistic isometric views & multi-floor architecture',
+                      tag: isTamil ? 'உள்ளடக்கம்' : 'Included',
+                      actionLabel: isTamil ? 'PDF' : 'PDF',
+                      isLoading: _activeSingleDownload == '3D Perspective',
+                      onDownload: () => _downloadSingle(
+                          context, '3D Perspective', widget.projectData),
+                      cardColor: cardColor,
+                      borderColor: borderColor,
+                      primaryTextColor: primaryTextColor,
+                      secondaryTextColor: secondaryTextColor,
+                      isDark: isDark,
+                    ),
+                    const SizedBox(height: 10),
 
-                _buildDeliverableCard(
-                  icon: Icons.explore_rounded,
-                  title: isTamil
-                      ? 'வாஸ்து பகுப்பாய்வு & திருத்தங்கள்'
-                      : 'Vastu Shastra Compliance & Score',
-                  subtitle: isTamil
-                      ? 'அறை வாரியான திசைகள், வாஸ்து மதிப்பெண் மற்றும் பரிகாரங்கள்'
-                      : 'Directional room scores, energy matrix & remedial guidance',
-                  tag: isTamil ? 'உள்ளடக்கம்' : 'Included',
-                  actionLabel: isTamil ? 'PDF' : 'PDF',
-                  isLoading: _activeSingleDownload == 'Vastu Analysis',
-                  onDownload: () => _downloadSingle(
-                      context, 'Vastu Analysis', widget.projectData),
-                  cardColor: cardColor,
-                  borderColor: borderColor,
-                  primaryTextColor: primaryTextColor,
-                  secondaryTextColor: secondaryTextColor,
-                  isDark: isDark,
-                ),
-                const SizedBox(height: 10),
+                    _buildDeliverableCard(
+                      icon: Icons.explore_rounded,
+                      title: isTamil
+                          ? 'வாஸ்து பகுப்பாய்வு & திருத்தங்கள்'
+                          : 'Vastu Shastra Compliance & Score',
+                      subtitle: isTamil
+                          ? 'அறை வாரியான திசைகள், வாஸ்து மதிப்பெண் மற்றும் பரிகாரங்கள்'
+                          : 'Directional room scores, energy matrix & remedial guidance',
+                      tag: isTamil ? 'உள்ளடக்கம்' : 'Included',
+                      actionLabel: isTamil ? 'PDF' : 'PDF',
+                      isLoading: _activeSingleDownload == 'Vastu Analysis',
+                      onDownload: () => _downloadSingle(
+                          context, 'Vastu Analysis', widget.projectData),
+                      cardColor: cardColor,
+                      borderColor: borderColor,
+                      primaryTextColor: primaryTextColor,
+                      secondaryTextColor: secondaryTextColor,
+                      isDark: isDark,
+                    ),
+                    const SizedBox(height: 10),
 
-                _buildDeliverableCard(
-                  icon: Icons.calculate_rounded,
-                  title: isTamil
-                      ? 'செலவு மதிப்பீடு & BOQ அறிக்கை'
-                      : 'Cost Breakdown & Material BOQ',
-                  subtitle: isTamil
-                      ? 'பொருள் வாரியான செலவுகள், கூலி நிலைகள் மற்றும் நேரலை கட்டணங்கள்'
-                      : 'Stage-wise estimates, civil labor & Tamil Nadu material rates',
-                  tag: isTamil ? 'உள்ளடக்கம்' : 'Included',
-                  actionLabel: isTamil ? 'PDF' : 'PDF',
-                  isLoading: _activeSingleDownload == 'Cost Estimation',
-                  onDownload: () => _downloadSingle(
-                      context, 'Cost Estimation', widget.projectData),
-                  cardColor: cardColor,
-                  borderColor: borderColor,
-                  primaryTextColor: primaryTextColor,
-                  secondaryTextColor: secondaryTextColor,
-                  isDark: isDark,
-                ),
-                const SizedBox(height: 10),
+                    _buildDeliverableCard(
+                      icon: Icons.calculate_rounded,
+                      title: isTamil
+                          ? 'செலவு மதிப்பீடு & BOQ அறிக்கை'
+                          : 'Cost Breakdown & Material BOQ',
+                      subtitle: isTamil
+                          ? 'பொருள் வாரியான செலவுகள், கூலி நிலைகள் மற்றும் நேரலை கட்டணங்கள்'
+                          : 'Stage-wise estimates, civil labor & Tamil Nadu material rates',
+                      tag: isTamil ? 'உள்ளடக்கம்' : 'Included',
+                      actionLabel: isTamil ? 'PDF' : 'PDF',
+                      isLoading: _activeSingleDownload == 'Cost Estimation',
+                      onDownload: () => _downloadSingle(
+                          context, 'Cost Estimation', widget.projectData),
+                      cardColor: cardColor,
+                      borderColor: borderColor,
+                      primaryTextColor: primaryTextColor,
+                      secondaryTextColor: secondaryTextColor,
+                      isDark: isDark,
+                    ),
+                    const SizedBox(height: 10),
 
-                _buildDeliverableCard(
-                  icon: Icons.foundation_rounded,
-                  title: isTamil
-                      ? 'கட்டமைப்பு & கம்பிகள் விவரக்குறிப்பு'
-                      : 'Structural Design & Rebar Schedule',
-                  subtitle: isTamil
-                      ? 'தூண்கள், அடித்தளம், பீம்கள் விவரங்கள் மற்றும் IS:456 பாதுகாப்பு'
-                      : 'Footings, columns, beams, bar bending & earthquake safety',
-                  tag: isTamil ? 'உள்ளடக்கம்' : 'Included',
-                  actionLabel: isTamil ? 'PDF' : 'PDF',
-                  isLoading: _activeSingleDownload == 'Structural Report',
-                  onDownload: () => _downloadSingle(
-                      context, 'Structural Report', widget.projectData),
-                  cardColor: cardColor,
-                  borderColor: borderColor,
-                  primaryTextColor: primaryTextColor,
-                  secondaryTextColor: secondaryTextColor,
-                  isDark: isDark,
+                    _buildDeliverableCard(
+                      icon: Icons.foundation_rounded,
+                      title: isTamil
+                          ? 'கட்டமைப்பு & கம்பிகள் விவரக்குறிப்பு'
+                          : 'Structural Design & Rebar Schedule',
+                      subtitle: isTamil
+                          ? 'தூண்கள், அடித்தளம், பீம்கள் விவரங்கள் மற்றும் IS:456 பாதுகாப்பு'
+                          : 'Footings, columns, beams, bar bending & earthquake safety',
+                      tag: isTamil ? 'உள்ளடக்கம்' : 'Included',
+                      actionLabel: isTamil ? 'PDF' : 'PDF',
+                      isLoading: _activeSingleDownload == 'Structural Report',
+                      onDownload: () => _downloadSingle(
+                          context, 'Structural Report', widget.projectData),
+                      cardColor: cardColor,
+                      borderColor: borderColor,
+                      primaryTextColor: primaryTextColor,
+                      secondaryTextColor: secondaryTextColor,
+                      isDark: isDark,
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
@@ -623,27 +543,42 @@ class _DownloadScreenState extends State<DownloadScreen> {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 7),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: isActive
-              ? (isDark ? Colors.white : AppColors.primary)
-              : (isDark ? const Color(0xFF27272A) : AppColors.surfaceSecondary),
+              ? (isDark ? Colors.white : AppColors.inkDark)
+              : (isDark ? const Color(0xFF27272A) : AppColors.card),
           borderRadius: BorderRadius.circular(100),
+          border: Border.all(
+            color: isActive
+                ? (isDark ? Colors.white : AppColors.inkDark)
+                : (isDark ? const Color(0xFF3F3F46) : AppColors.borderLight),
+            width: 1.0,
+          ),
+          boxShadow: isActive
+              ? const [
+                  BoxShadow(
+                    color: Color(0x1F1B212F),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
         child: FittedBox(
           fit: BoxFit.scaleDown,
           child: Text(
             title,
             maxLines: 1,
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 12.5,
+              fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
               color: isActive
                   ? (isDark ? Colors.black : Colors.white)
                   : (isDark
                       ? const Color(0xFFA1A1AA)
-                      : AppColors.textSecondary),
+                      : AppColors.inkMuted),
             ),
           ),
         ),
@@ -664,18 +599,19 @@ class _DownloadScreenState extends State<DownloadScreen> {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.plusJakartaSans(
             fontSize: 11,
-            color: secondaryTextColor,
+            fontWeight: FontWeight.w500,
+            color: isDark ? secondaryTextColor : AppColors.inkQuiet,
           ),
         ),
         const SizedBox(height: 2),
         Text(
           value,
-          style: GoogleFonts.syne(
+          style: GoogleFonts.plusJakartaSans(
             fontSize: 13,
             fontWeight: FontWeight.w700,
-            color: primaryTextColor,
+            color: isDark ? primaryTextColor : AppColors.inkPrimary,
           ),
         ),
       ],
@@ -696,83 +632,110 @@ class _DownloadScreenState extends State<DownloadScreen> {
     required Color secondaryTextColor,
     required bool isDark,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: isDark ? cardColor : const Color(0xFFFCFDFF),
-        borderRadius: BorderRadius.circular(24),
-        border:
-            Border.all(color: isDark ? borderColor : const Color(0xFFE9EAEC)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0D1B212F),
-            blurRadius: 16,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: const BoxDecoration(
-              color: Color(0xFF2E3744),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              icon,
-              size: 20,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: GoogleFonts.inter(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w700,
-                    color: isDark ? primaryTextColor : const Color(0xFF18191D),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    color:
-                        isDark ? secondaryTextColor : const Color(0xFF8E94A0),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFDEBCB),
-              borderRadius: BorderRadius.circular(100),
-            ),
-            child: Text(
-              tag,
-              style: GoogleFonts.inter(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFFB46205),
+    return InkWell(
+      onTap: isLoading ? null : onDownload,
+      borderRadius: BorderRadius.circular(22),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: isDark ? cardColor : AppColors.card,
+          borderRadius: BorderRadius.circular(22),
+          border:
+              Border.all(color: isDark ? borderColor : AppColors.cardBorder),
+          boxShadow: AppColors.coolShadow,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: const BoxDecoration(
+                color: AppColors.badgeSlate,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Icon(
+                icon,
+                size: 20,
+                color: Colors.white,
               ),
             ),
-          ),
-        ],
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? primaryTextColor : AppColors.inkPrimary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color:
+                          isDark ? secondaryTextColor : AppColors.inkQuiet,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            if (isLoading)
+              const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.2,
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.amber),
+                ),
+              )
+            else
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? const Color(0xFF27272A)
+                      : AppColors.innerPanel,
+                  borderRadius: BorderRadius.circular(100),
+                  border: Border.all(
+                    color: isDark ? borderColor : AppColors.cardBorder,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      tag,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? primaryTextColor : AppColors.inkPrimary,
+                      ),
+                    ),
+                    const SizedBox(width: 3),
+                    Icon(
+                      Icons.file_download_outlined,
+                      size: 13,
+                      color: isDark ? primaryTextColor : AppColors.inkPrimary,
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

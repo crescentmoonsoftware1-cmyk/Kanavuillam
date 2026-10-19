@@ -179,9 +179,10 @@ class AppDecor {
         height: height,
         width: double.infinity,
         decoration: amberButton(radius: 100),
-        padding: const EdgeInsets.symmetric(horizontal: 24),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             if (isLoading)
               const SizedBox(
@@ -193,16 +194,24 @@ class AppDecor {
                 ),
               )
             else ...[
-              Text(
-                effectiveLabel,
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.onAmberInk,
-                  letterSpacing: -0.2,
+              Flexible(
+                fit: FlexFit.loose,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    effectiveLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.onAmberInk,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               Icon(
                 icon,
                 size: 20,
@@ -237,9 +246,10 @@ class AppDecor {
           color: AppColors.structuralSlate,
           borderRadius: BorderRadius.circular(100),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 24),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             if (isLoading)
               const SizedBox(
@@ -251,17 +261,25 @@ class AppDecor {
                 ),
               )
             else ...[
-              Text(
-                effectiveLabel,
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                  letterSpacing: -0.2,
+              Flexible(
+                fit: FlexFit.loose,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    effectiveLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
                 ),
               ),
               if (icon != null) ...[
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
                 Icon(
                   icon,
                   size: 20,
