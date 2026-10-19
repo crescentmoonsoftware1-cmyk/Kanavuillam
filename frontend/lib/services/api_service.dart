@@ -5,9 +5,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  // Use local backend during web development/testing, fallback to cloud for mobile production
+  // Production Railway backend URL
   static String get baseUrl =>
-      kIsWeb ? 'http://localhost:3000/api' : 'https://kanavuillam-production.up.railway.app/api';
+      'https://kanavuillam-production.up.railway.app/api';
 
   Future<Map<String, dynamic>> uploadPlan(XFile groundFile,
       XFile? firstFloorFile, XFile? secondFloorFile, String projectName,
