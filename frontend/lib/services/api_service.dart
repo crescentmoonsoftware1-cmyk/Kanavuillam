@@ -18,6 +18,10 @@ class ApiService {
 
     final prefs = await SharedPreferences.getInstance();
     request.fields['email'] = userEmail ?? prefs.getString('user_email') ?? 'unknown';
+    final savedUserId = prefs.getString('user_id');
+    if (savedUserId != null && savedUserId.isNotEmpty) {
+      request.fields['userId'] = savedUserId;
+    }
 
     // Attach ground floor
     final groundBytes = await groundFile.readAsBytes();

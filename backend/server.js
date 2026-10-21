@@ -26,7 +26,10 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET || 'placeholder_secret',
 });
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY
+);
 
 app.use(cors());
 app.use(express.json());
@@ -1665,6 +1668,7 @@ app.post('/api/upload', uploadLimiter, (req, res, next) => {
         .from('projects')
         .insert([{
           name: req.body.name || 'New Project',
+          user_id: req.body.userId || req.body.user_id || null,
           user_email: req.body.email || 'unknown',
           image_url: imageUrl,
           model_data: fullModelData,
