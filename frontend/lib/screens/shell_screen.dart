@@ -92,7 +92,10 @@ class _ShellScreenState extends State<ShellScreen> {
   void _onProjectLoaded(Map<String, dynamic> project, Set<String> selectedIds) {
     setState(() {
       _projectData = Map<String, dynamic>.from(project);
-      _projectData!['name'] = 'kanavuillam_report';
+      if (_projectData!['name'] == null ||
+          _projectData!['name'].toString().isEmpty) {
+        _projectData!['name'] = 'KI_Project';
+      }
       _selectedReportIds = selectedIds.map((e) => e.toLowerCase()).toSet();
       // Navigate to the first selected report if available, else 3D View
       if (_selectedReportIds.contains('3d')) {
@@ -150,59 +153,26 @@ class _ShellScreenState extends State<ShellScreen> {
     } catch (e) {
       debugPrint('SHELL: Upload error: $e');
       if (mounted) {
-        // Fallback demo project so user always lands seamlessly on 3D Villa & Reports
-        final fallbackProject = {
-          'id': 'proj_${DateTime.now().millisecondsSinceEpoch}',
-          'name': groundFile.name,
-          'floors': floors,
-          'built_area': 1600,
-          'orientation': orientation,
-          'amount': 500,
-          'rooms': [
-            {
-              'name': 'Living Room',
-              'x': 0,
-              'y': 0,
-              'w': 16,
-              'h': 14,
-              'vastu': 'Compliant'
-            },
-            {
-              'name': 'Master Bedroom',
-              'x': 16,
-              'y': 0,
-              'w': 14,
-              'h': 14,
-              'vastu': 'Compliant'
-            },
-            {
-              'name': 'Kitchen',
-              'x': 0,
-              'y': 14,
-              'w': 12,
-              'h': 10,
-              'vastu': 'Compliant'
-            },
-            {
-              'name': 'Pooja Room',
-              'x': 12,
-              'y': 14,
-              'w': 6,
-              'h': 8,
-              'vastu': 'Ideal'
-            },
-          ],
-          'vastu_data': {
-            'overall_score': 88,
-            'status': 'Good Compliance',
-          },
-          'cost_estimate': {
-            'total_cost': 2850000,
-            'rate_per_sqft': 1780,
-          },
-        };
-        _onProjectLoaded(fallbackProject, selectedIds);
         setState(() => _isGenerating = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Plan Analysis Error: $e'),
+            backgroundColor: AppColors.error,
+            duration: const Duration(seconds: 8),
+            action: SnackBarAction(
+              label: 'RETRY',
+              textColor: Colors.white,
+              onPressed: () => _startAIGeneration(
+                groundFile,
+                firstFile,
+                secondFile,
+                floors,
+                selectedIds,
+                orientation,
+              ),
+            ),
+          ),
+        );
       }
     } finally {
       WakelockPlus.disable();

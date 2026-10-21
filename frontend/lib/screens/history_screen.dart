@@ -85,7 +85,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       if (email == null || email.isEmpty || email == 'unknown') {
         if (mounted) {
           setState(() {
-            _projects = _sampleProjects;
+            _projects = [];
             _isLoading = false;
           });
         }
@@ -152,7 +152,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           });
         } else {
           setState(() {
-            _projects = _sampleProjects;
+            _projects = [];
             _isLoading = false;
           });
         }
@@ -160,7 +160,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     } catch (_) {
       if (mounted) {
         setState(() {
-          _projects = _sampleProjects;
+          _projects = [];
           _isLoading = false;
         });
       }
