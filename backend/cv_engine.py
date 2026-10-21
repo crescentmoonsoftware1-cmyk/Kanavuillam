@@ -61,8 +61,8 @@ ARCH_VOCAB = {
 
 def clean_and_fix_ocr_text(t_raw):
     if not t_raw: return ""
-    # Strip brackets, quotes, slashes, arithmetic symbols
-    t_clean = re.sub(r'[\[\]{}()\\/*+=_~`|!?;:"\']', ' ', t_raw)
+    # Strip brackets, quotes, slashes, arithmetic symbols, hashes, tildes
+    t_clean = re.sub(r'[#~\[\]{}()\\/*+=_`|!?;:"\'<>]', ' ', t_raw)
     
     # Strip any trailing or embedded dimension strings e.g. 14 0 x 12 0, 14 x12, 1J9 2 0, 6 3 x 9 6, 11 0 WIDE
     t_no_dim = re.sub(r'\b\d+[\s\w]*[xX*+–-][\s\w]*\d+.*$', '', t_clean, flags=re.IGNORECASE)
@@ -70,85 +70,100 @@ def clean_and_fix_ocr_text(t_raw):
     t_no_dim = re.sub(r'\bWIDE\b.*$', '', t_no_dim, flags=re.IGNORECASE)
     t_no_dim = t_no_dim.strip()
     
-    t_upper = (t_no_dim if len(t_no_dim) >= 3 else t_clean).upper().strip()
-    
-    # 0. Guest Room (explicit check before generic bedroom)
-    if re.search(r'\b(?:GUEST|GUEST\s*ROOM|GUEST\s*BED|GUESTROOM)\b', t_upper):
+    t_upper = (t_no_dim if len(t_no_dim) >= 2 else t_clean).upper().strip()
+    t_comp = re.sub(r'[^A-Z0-9]', '', t_upper)
+
+    # 0. Guest Room
+    if 'GUEST' in t_comp:
         return "Guest Room"
 
-    # 1. Bedroom Typos: "KED ROOM", "BED KOOM", "BED KUOM", "DEDROOM", "HEDROOM", "BED ROOM", "BEDROOM", "BEDR", "BDRM"
-    if re.search(r'\b(?:KED|BED|DED|HED|EED|BEO)\s*(?:ROOM|KOOM|KUOM|KOM|ROM|ROON)\b', t_upper) or re.search(r'\b(?:BEDROOM|BEDR|BDRM|EDROOM|BEDKUOM|BEDKOOM)\b', t_upper):
-        if re.search(r'\bMASTER\b|\bM\.BED\b|\bMBR\b', t_upper) or t_upper in ["KING", "QUEEN"]:
-            return "Master Bedroom"
-        elif re.search(r'\bKIDS\b|\bCHILD\b', t_upper):
-            return "Kids Bedroom"
+    # 1. Master Bedroom
+    if 'MASTER' in t_comp or 'MBR' in t_comp or re.search(r'\bM\.BED\b', t_upper):
+        return "Master Bedroom"
+
+    # 2. Kids Bedroom
+    if 'KIDS' in t_comp or 'CHILD' in t_comp:
+        return "Kids Bedroom"
+
+    # 3. Drawing / Dining Combo (common in Indian blueprints e.g. DRAWING/DINING)
+    if (('DRAW' in t_comp or 'DRTW' in t_comp) and ('DIN' in t_comp or 'DINE' in t_comp)) or re.search(r'DRAW.*DIN', t_upper):
+        return "Drawing / Dining"
+
+    # 4. Drawing Room
+    if 'DRAWING' in t_comp or 'DRAW' in t_comp:
+        return "Drawing Room"
+
+    # 5. Dining Area
+    if 'DINING' in t_comp or 'DINE' in t_comp or 'DINNING' in t_comp:
+        return "Dining Area"
+
+    # 6. Kitchen
+    if (any(k in t_comp for k in ['KITCHEN', 'KTCN', 'KTTC', 'KITC', 'KILCH', 'COOK'])
+        or re.search(r'\b(?:KITCHEN|KITN|KITCH|KITCIN|COOK|KHTCIEN|KITCHES|KILCHEN|KTCN|KTTCILN|KITC)\b', t_upper)):
+        return "Kitchen"
+
+    # 7. Common / Attached Bathrooms
+    if 'COMMON' in t_comp and ('BATH' in t_comp or 'TOIL' in t_comp or 'WC' in t_comp):
+        return "Common Bathroom"
+    if 'ATTACH' in t_comp and ('BATH' in t_comp or 'TOIL' in t_comp or 'WC' in t_comp):
+        return "Attached Bathroom"
+
+    # 8. Bath / Bathroom
+    if (any(k in t_comp for k in ['BATHROOM', 'BATH', 'BAIN', 'BATI']) or t_comp in ['BAT', 'BATI', 'MAT']):
+        return "Bathroom"
+
+    # 9. WC / Toilet
+    if (any(k in t_comp for k in ['TOILET', 'TOIL']) or t_comp in ['WC', 'WG', 'IVC', 'IV', 'WIC']):
+        return "WC"
+
+    # 10. Puja / Pooja Room
+    if (any(k in t_comp for k in ['POOJA', 'PUJA', 'MANDIR', 'PRAYER', 'TEMPLE']) or t_comp in ['PJA', 'PIA', 'PMA', 'PLJ', 'MHA']):
+        return "Puja Room"
+
+    # 11. Wash Area & Store Room
+    if any(k in t_comp for k in ['WASHAREA', 'WASH', 'WASHING']):
+        return "Wash Area"
+    if any(k in t_comp for k in ['STOREROOM', 'STORE', 'PANTRY']):
+        return "Store Room"
+
+    # 12. Veranda / Porch
+    if (any(k in t_comp for k in ['VERANDA', 'VERANDAH', 'VEKAN', 'VRND']) or t_comp in ['VEKANA', 'VFKAA', 'VRND', 'VEKAN']):
+        return "Veranda"
+    if any(k in t_comp for k in ['PORCH', 'PORTICO', 'CARPARKING', 'PARKING']):
+        if "CAR" in t_comp or "PARKING" in t_comp:
+            return "Car Parking Portico"
+        return "Porch"
+
+    # 13. Staircase
+    if any(k in t_comp for k in ['STAIR', 'STAIRCASE', 'STEPS']) or t_comp in ['UP', 'DN']:
+        return "Staircase"
+
+    # 14. Balcony
+    if 'BALCONY' in t_comp or 'BCONY' in t_comp or 'BLCNY' in t_comp:
+        return "Balcony"
+
+    # 15. Bedroom (Any word containing ROOM or BED variants)
+    if (any(k in t_comp for k in ['BED', 'KED', 'MED', 'MDROOM', 'HEIR', 'EED', 'BDRM', 'BDR'])
+        or ('ROOM' in t_comp or 'KOOM' in t_comp or 'ROON' in t_comp or 'KUOM' in t_comp)):
         m_num = re.search(r'\b(?:BEDROOM|BED\s*ROOM|BR)\s*0?([1-9])\b', t_upper)
         if m_num:
             return f"Bedroom {m_num.group(1)}"
         return "Bedroom"
 
-    # 2. Toilet & Bathroom
-    if re.search(r'COMMON.*(?:BATH|BATHROOM|BAINFOOM|BAINIOOM|BALHROOM)', t_upper) or (re.search(r'\bCOMMON\b', t_upper) and re.search(r'(?:BATH|TOILET|BAIN|BALH|WC)', t_upper)):
-        return "Common Bathroom"
-    if re.search(r'COMMON.*(?:TOILET|WC)', t_upper):
-        return "Common Toilet"
-    if re.search(r'ATTACH.*(?:BATH|BATHROOM|BAINFOOM|BAINIOOM|BALHROOM)', t_upper):
-        return "Attached Bathroom"
-    if re.search(r'ATTACH.*(?:TOILET|WC)|MBR.*TOIL', t_upper):
-        return "Attached Toilet"
-    if re.search(r'\bATTACHED\b|\bATTACH\b|\bATT\b', t_upper) and not re.search(r'BEDROOM|LIVING', t_upper):
-        return "Attached Toilet"
-    if re.search(r'\b(?:BATHROOM|BALHROOM|BAINIOOM|BAINFOOM|BATHRM|BATH)\b', t_upper):
-        return "Bathroom"
-    if re.search(r'\b(?:TOILET|STOILET|JOILET|OILET|TOLLET|TOILE|TOILEI|TLET|IOLET|IOIEPL|WC)\b', t_upper):
-        return "Toilet"
-
-    # 3. Puja / Pooja Room
-    if re.search(r'\b(?:PUJA|POOJA|PIA|MIUA|MANDIR|PRAYER|TEMPLE|PLJ|PJA|PUJ|TLJA|TIJA|TUJA)\b', t_upper):
-        return "Puja Room"
-
-    # 4. Wash Area & Store Room
-    if re.search(r'\b(?:WASH|WASH\s*AREA|WASHING|MASU|NASH|MASH|WASY|WSH)\b', t_upper):
-        return "Wash Area"
-    if re.search(r'\b(?:STORE|STORE\s*ROOM|PANTRY|TORE|TTORE|SIORE|FTORE|STRE)\b', t_upper):
-        return "Store Room"
-
-    # 5. Porch / Portico / Parking
-    if re.search(r'\b(?:PORCH|PORTICO|CAR\s*PARKING|PARKING)\b', t_upper):
-        if "CAR" in t_upper or "PARKING" in t_upper:
-            return "Car Parking Portico"
-        return "Porch"
-    if re.search(r'\b(?:ENTRY\s*STEPS|ENTRANCE\s*STEPS)\b', t_upper):
-        return "Entry Steps"
-
-    # 6. Kitchen & Dining
-    if re.search(r'\b(?:KITCHEN|KITN|KITCH|KITCIN|COOK|KHTCIEN|KITCHES|KILCHEN)\b', t_upper):
-        return "Kitchen"
-    if re.search(r'\b(?:DINING|DINE|DINNING)\b', t_upper):
-        return "Dining Area"
-
-    # 7. Hall / Living / Drawing
-    if re.search(r'\b(?:DRAWING|DRAW)\b', t_upper):
-        return "Drawing Room"
-    if re.search(r'\b(?:LIVING|SITOUT|LOUNGE)\b', t_upper):
+    # 16. Living Room / Hall
+    if 'LIVING' in t_comp or 'SITOUT' in t_comp or 'LOUNGE' in t_comp:
         return "Living Room"
-    if re.search(r'\bHALL\b', t_upper):
+    if 'HALL' in t_comp:
         return "Hall"
 
-    # 8. Open space / Balcony
-    if re.search(r'\b(?:OPEN|OTS|DUCT|UFEN|OFEN)\b', t_upper):
-        return "Open Space"
-    if re.search(r'\b(?:BALCONY|BATCOMY|BCONY|BLCNY)\b', t_upper):
-        return "Balcony"
-    if re.search(r'\b(?:STAIR|S\.CASE|SCASE|STAIRCASE)\b', t_upper):
-        return "Staircase"
-    if re.search(r'\b(?:UTILITY|UTY|UULY|UTILI|UTLTY|UTLT)\b', t_upper):
+    # 17. Utilities
+    if 'UTILITY' in t_comp or t_comp in ['UTY', 'UULY']:
         return "Utility"
-    if re.search(r'\b(?:VESTIBULE|FOYER)\b', t_upper):
+    if 'VESTIBULE' in t_comp or 'FOYER' in t_comp:
         return "Vestibule"
-    if re.search(r'\b(?:PASSAGE|CORRIDOR|LOBBY)\b', t_upper):
+    if 'PASSAGE' in t_comp or 'CORRIDOR' in t_comp or 'LOBBY' in t_comp:
         return "Passage"
-    if re.search(r'\b(?:DRESS|DRESSING)\b', t_upper):
+    if 'DRESS' in t_comp or 'DRESSING' in t_comp:
         return "Dressing Area"
 
     # Return None for any non-architectural noise text
@@ -290,13 +305,23 @@ def extract_geometry(image_path, out_dir=None):
             enhanced_gray = clahe.apply(gray_img)
             enhanced_img = cv2.cvtColor(enhanced_gray, cv2.COLOR_GRAY2BGR)
 
-            # Dual-pass OCR: Pass 1 on original image, Pass 2 on CLAHE enhanced image
+            # Multi-scale OCR: Pass 1 on original, Pass 2 on CLAHE, Pass 3 on upscaled if low resolution
             results_raw = ocr_reader.readtext(original_img, min_size=5, text_threshold=0.1, low_text=0.2)
             results_enh = ocr_reader.readtext(enhanced_img, mag_ratio=2.0, min_size=5, text_threshold=0.1, low_text=0.2)
+
+            results_up = []
+            if img_w < 1100:
+                scale_ocr = min(2.5, 1200.0 / float(img_w))
+                up_w, up_h = int(img_w * scale_ocr), int(img_h * scale_ocr)
+                upscaled_img = cv2.resize(original_img, (up_w, up_h), interpolation=cv2.INTER_LANCZOS4)
+                results_up_raw = ocr_reader.readtext(upscaled_img, min_size=6, text_threshold=0.08, low_text=0.15)
+                for bbox, text, prob in results_up_raw:
+                    rescaled_bbox = [[pt[0] / scale_ocr, pt[1] / scale_ocr] for pt in bbox]
+                    results_up.append((rescaled_bbox, text, prob))
             
             raw_ocr_items = []
             seen_ocr_keys = set()
-            for bbox, text, prob in (results_raw + results_enh):
+            for bbox, text, prob in (results_raw + results_enh + results_up):
                 t_clean = text.strip()
                 t_upper = t_clean.upper().replace(' ', '')
                 min_prob = 0.02 if len(t_upper) <= 3 else 0.08
@@ -602,11 +627,11 @@ def extract_geometry(image_path, out_dir=None):
             ocx, ocy = int(op["cx"]), int(op["cy"])
             cv2.circle(graph_mask, (ocx, ocy), max(8, int(est_scale * 1.5)), 255, -1)
 
-    # Apply Dynamic Morphological Closing scaled to standard door gaps (3.2 to 3.5 ft)
-    door_bridge_px = max(45, min(140, int(est_scale * 3.5)))
+    # Apply Dynamic Morphological Closing scaled to standard door gaps (1.8 to 2.2 ft)
+    door_bridge_px = max(10, min(55, int(est_scale * 1.8)))
     kernel_close = cv2.getStructuringElement(cv2.MORPH_RECT, (door_bridge_px, door_bridge_px))
     closed_graph_mask = cv2.morphologyEx(graph_mask, cv2.MORPH_CLOSE, kernel_close)
-    closed_graph_mask = cv2.dilate(closed_graph_mask, cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5)), iterations=1)
+    closed_graph_mask = cv2.dilate(closed_graph_mask, cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3)), iterations=1)
 
     # Draw outer bounding box frame to close any exterior gaps
     cv2.rectangle(closed_graph_mask, (int(min_x), int(min_y)), (int(max_x), int(max_y)), 255, 8)
@@ -874,9 +899,9 @@ def extract_geometry(image_path, out_dir=None):
         for t_idx, txt in enumerate(detected_texts):
             if t_idx in used_text_indices:
                 continue
-            if txt["label"] in ["Master Bedroom", "Bedroom", "Living Room", "Hall", "Kitchen", "Dining Area", "Car Parking Portico", "Porch"] and area_sqft < 45:
+            if txt["label"] in ["Master Bedroom", "Bedroom", "Living Room", "Hall", "Kitchen", "Dining Area", "Car Parking Portico", "Porch"] and area_sqft < 18:
                 continue
-            if txt["label"] in ["Bathroom", "Toilet", "WC", "Common Toilet", "Common Bathroom", "Attached Toilet", "Attached Bathroom"] and area_sqft > 130:
+            if txt["label"] in ["Bathroom", "Toilet", "WC", "Common Toilet", "Common Bathroom", "Attached Toilet", "Attached Bathroom"] and area_sqft > 150:
                 continue
             dist = cv2.pointPolygonTest(poly, (float(txt["cx"]), float(txt["cy"])), True)
             if dist >= 0 and dist > best_inside_dist:
@@ -888,7 +913,7 @@ def extract_geometry(image_path, out_dir=None):
             rd["raw_name"] = detected_texts[best_idx].get("raw")
             rd["best_text_idx"] = best_idx
 
-    # Pass 2: Border proximity (within 35px) for leftover unclaimed rooms and texts
+    # Pass 2: Border proximity (within 45px) for leftover unclaimed rooms and texts
     for rd in room_cand_list:
         if rd["assigned_label"] is not None:
             continue
@@ -899,12 +924,12 @@ def extract_geometry(image_path, out_dir=None):
         for t_idx, txt in enumerate(detected_texts):
             if t_idx in used_text_indices:
                 continue
-            if txt["label"] in ["Master Bedroom", "Bedroom", "Living Room", "Hall", "Kitchen", "Dining Area", "Car Parking Portico", "Porch"] and area_sqft < 45:
+            if txt["label"] in ["Master Bedroom", "Bedroom", "Living Room", "Hall", "Kitchen", "Dining Area", "Car Parking Portico", "Porch"] and area_sqft < 18:
                 continue
-            if txt["label"] in ["Bathroom", "Toilet", "WC", "Common Toilet", "Common Bathroom", "Attached Toilet", "Attached Bathroom"] and area_sqft > 130:
+            if txt["label"] in ["Bathroom", "Toilet", "WC", "Common Toilet", "Common Bathroom", "Attached Toilet", "Attached Bathroom"] and area_sqft > 150:
                 continue
             dist = cv2.pointPolygonTest(poly, (float(txt["cx"]), float(txt["cy"])), True)
-            if dist < 0 and (-dist) < 35.0 and (-dist) < best_outside_dist:
+            if dist < 0 and (-dist) < 45.0 and (-dist) < best_outside_dist:
                 best_outside_dist = -dist
                 best_idx = t_idx
         if best_idx != -1:
@@ -922,15 +947,15 @@ def extract_geometry(image_path, out_dir=None):
         for rd in room_cand_list:
             if rd["assigned_label"] is not None:
                 continue
-            if txt["label"] in ["Master Bedroom", "Bedroom", "Living Room", "Hall", "Kitchen", "Dining Area", "Car Parking Portico", "Porch"] and rd["area_sqft"] < 45:
+            if txt["label"] in ["Master Bedroom", "Bedroom", "Living Room", "Hall", "Kitchen", "Dining Area", "Car Parking Portico", "Porch"] and rd["area_sqft"] < 18:
                 continue
-            if txt["label"] in ["Bathroom", "Toilet", "WC", "Common Toilet", "Common Bathroom", "Attached Toilet", "Attached Bathroom"] and rd["area_sqft"] > 130:
+            if txt["label"] in ["Bathroom", "Toilet", "WC", "Common Toilet", "Common Bathroom", "Attached Toilet", "Attached Bathroom"] and rd["area_sqft"] > 150:
                 continue
             cdist = math.hypot(rd["cx"] - txt["cx"], rd["cy"] - txt["cy"])
             if cdist < best_cand_dist:
                 best_cand_dist = cdist
                 best_cand = rd
-        if best_cand and best_cand_dist < 160.0:
+        if best_cand and best_cand_dist < 180.0:
             used_text_indices.add(t_idx)
             best_cand["assigned_label"] = txt["label"]
             best_cand["raw_name"] = txt.get("raw")
@@ -978,36 +1003,42 @@ def extract_geometry(image_path, out_dir=None):
                 except Exception as e:
                     pass
 
-        # Ignore tiny unlabelled noise fragments (< 18 sqft)
-        if area_sqft < 18.0 and not assigned_label and best_text_idx == -1:
+        # Ignore tiny unlabelled noise fragments (< 6 sqft)
+        if area_sqft < 6.0:
             continue
 
-        # Filter unlabelled candidate spaces
+        # Intelligently classify any unlabelled enclosed room candidate
         if not assigned_label:
-            if detected_texts:
-                # If blueprint has detected room texts, NEVER invent phantom rooms!
-                continue
-            else:
-                rel_x = (cx - min_x) / max(1.0, (max_x - min_x))
-                rel_y = (cy - min_y) / max(1.0, (max_y - min_y))
-                if area_sqft < 65:
-                    assigned_label = "Toilet"
-                elif area_sqft > 160:
-                    assigned_label = "Living Room" if used_labels["Living Room"] == 0 else "Bedroom"
+            rel_x = (cx - min_x) / max(1.0, (max_x - min_x))
+            rel_y = (cy - min_y) / max(1.0, (max_y - min_y))
+            if area_sqft < 65:
+                if rel_x > 0.55 and 0.25 < rel_y < 0.75:
+                    assigned_label = "WC" if used_labels["WC"] == 0 else "Bathroom"
+                elif rel_x < 0.4 and rel_y > 0.7:
+                    assigned_label = "Puja Room" if used_labels["Puja Room"] == 0 else "Toilet"
+                elif 0.3 < rel_x < 0.7 and rel_y > 0.7:
+                    assigned_label = "Veranda" if used_labels["Veranda"] == 0 else "Porch"
                 else:
-                    assigned_label = "Kitchen" if used_labels["Kitchen"] == 0 else "Bedroom"
+                    assigned_label = "Bathroom" if used_labels["Bathroom"] == 0 else "Toilet"
+            elif area_sqft > 140:
+                assigned_label = "Living Room" if used_labels["Living Room"] == 0 else "Bedroom"
+            else:
+                if rel_x < 0.5 and 0.2 < rel_y < 0.6 and used_labels["Kitchen"] == 0:
+                    assigned_label = "Kitchen"
+                elif rel_x > 0.5 and rel_y > 0.65 and used_labels["Staircase"] == 0:
+                    assigned_label = "Staircase"
+                else:
+                    assigned_label = "Bedroom" if used_labels["Bedroom"] < 3 else "Dining Area"
 
         # Unique numbering and exact room naming
         used_labels[assigned_label] += 1
         cleaned_raw = clean_and_fix_ocr_text(raw_name.strip()) if (raw_name and len(raw_name.strip()) > 1) else None
         
-        # When duplicate room types exist (e.g. 2 Bedrooms, 2 Toilets), number them cleanly,
-        # but ALWAYS preserve specific titles detected from the plan (e.g. Guest Room, Common Bathroom, Drawing Room, Kitchen, Utility)
-        if cleaned_raw and cleaned_raw not in ["Room", "Bedroom", "Bathroom", "Toilet"]:
-            room_name = cleaned_raw
+        if assigned_label == "Drawing / Dining":
+            room_name = "Drawing / Dining"
         elif assigned_label in ["Bedroom", "Toilet", "Bathroom"]:
-            room_name = f"{assigned_label} {used_labels[assigned_label]}"
-        elif cleaned_raw and cleaned_raw != "Room":
+            room_name = assigned_label # will be numbered sequentially below
+        elif cleaned_raw and cleaned_raw not in ["Room", "Bedroom", "Bathroom", "Toilet"]:
             room_name = cleaned_raw
         else:
             room_name = f"{assigned_label} {used_labels[assigned_label]}" if used_labels[assigned_label] > 1 else assigned_label
@@ -1039,8 +1070,20 @@ def extract_geometry(image_path, out_dir=None):
             lbl = txt["label"]
             tx = txt["cx"] / global_scale
             ty = txt["cy"] / global_scale
-            already_fulfilled = any(r["label"] == lbl and math.hypot(r["center"]["x"] - tx, r["center"]["y"] - ty) < 10.0 for r in rooms_list)
-            if already_fulfilled:
+            # Find closest room in rooms_list
+            closest_room = None
+            closest_dist = float('inf')
+            for r in rooms_list:
+                d = math.hypot(r["center"]["x"] - tx, r["center"]["y"] - ty)
+                if d < closest_dist:
+                    closest_dist = d
+                    closest_room = r
+
+            if closest_room and closest_dist < 8.0:
+                # Update closest room's name and label rather than synthesizing a duplicate overlapping room
+                if closest_room["label"] in ["Toilet", "Bedroom", "Room"] and lbl in ["Kitchen", "Drawing / Dining", "Puja Room", "Veranda", "Bathroom", "WC"]:
+                    closest_room["label"] = lbl
+                    closest_room["name"] = lbl
                 continue
             used_labels[lbl] += 1
             cleaned_raw = clean_and_fix_ocr_text(txt.get("raw", "").strip())
@@ -1074,6 +1117,16 @@ def extract_geometry(image_path, out_dir=None):
                 "bounds": {"x": rx1, "y": ry1, "w": rw_ft, "h": rh_ft},
                 "center": {"x": round(tx, 2), "y": round(ty, 2)}
             })
+
+    # Clean sequential room numbering (e.g. Bedroom 1, Bedroom 2, Bedroom 3 from top-left across and down)
+    for lbl_type in ["Bedroom", "Bathroom", "Toilet"]:
+        type_rooms = [r for r in rooms_list if r["label"] == lbl_type]
+        if len(type_rooms) > 1:
+            type_rooms.sort(key=lambda r: (r["bounds"]["y"], r["bounds"]["x"]))
+            for num_idx, tr in enumerate(type_rooms, 1):
+                tr["name"] = f"{lbl_type} {num_idx}"
+        elif len(type_rooms) == 1:
+            type_rooms[0]["name"] = lbl_type
 
     # Fallback to structural grid partition if contours yield 0 rooms
     if len(rooms_list) == 0:

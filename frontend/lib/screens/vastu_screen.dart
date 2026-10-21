@@ -1518,7 +1518,10 @@ class _VastuScreenState extends State<VastuScreen> {
 
   String _getDynamicTamilRoomTitle(String title) {
     final lower = title.toLowerCase();
-    if (lower.contains('kitchen')) return 'சமையலறை';
+    if (lower.contains('kitchen')) return 'சமையலறை (Kitchen)';
+    if (lower.contains('drawing') && lower.contains('dining')) {
+      return 'வரவேற்பறை / உணவருந்தும் அறை';
+    }
     if (lower.contains('drawing')) return 'வரவேற்பறை (Drawing Room)';
     if (lower.contains('living') || lower.contains('hall')) return 'வரவேற்பறை';
     if (lower.contains('guest')) return 'விருந்தினர் அறை (Guest Room)';
@@ -1528,6 +1531,7 @@ class _VastuScreenState extends State<VastuScreen> {
     if (lower.contains('attached') && (lower.contains('bath') || lower.contains('toilet'))) {
       return 'இணைக்கப்பட்ட குளியலறை';
     }
+    if (lower.contains('wc')) return 'கழிவறை (WC)';
     if (lower.contains('bath') || lower.contains('toilet')) {
       final numMatch = RegExp(r'\d+').firstMatch(title);
       return numMatch != null ? 'குளியலறை ${numMatch.group(0)}' : 'குளியலறை';
@@ -1538,10 +1542,12 @@ class _VastuScreenState extends State<VastuScreen> {
       return numMatch != null ? 'படுக்கையறை ${numMatch.group(0)}' : 'படுக்கையறை';
     }
     if (lower.contains('pooja') || lower.contains('puja')) return 'பூஜை அறை';
+    if (lower.contains('veranda') || lower.contains('porch')) return 'முகப்பு / வராண்டா';
     if (lower.contains('stair')) return 'மாடிப்படி (Staircase)';
     if (lower.contains('utility')) return 'பயன்பாட்டு அறை (Utility)';
     if (lower.contains('passage')) return 'நடைபாதை (Passage)';
     if (lower.contains('dining')) return 'உணவருந்தும் அறை';
+    if (lower.contains('balcony')) return 'பால்கனி (Balcony)';
     return title;
   }
 
