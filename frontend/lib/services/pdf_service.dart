@@ -35,7 +35,8 @@ class PdfService {
                   : {
                       'User-Agent':
                           'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-                    });
+                    }).timeout(const Duration(seconds: 5),
+              onTimeout: () => http.Response('timeout', 408));
           if (res.statusCode == 200) return res.bodyBytes;
 
           // Fallback to direct url if proxy fails
@@ -45,7 +46,8 @@ class PdfService {
                   : {
                       'User-Agent':
                           'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-                    });
+                    }).timeout(const Duration(seconds: 5),
+              onTimeout: () => http.Response('timeout', 408));
           if (directRes.statusCode == 200) return directRes.bodyBytes;
 
           debugPrint(
@@ -65,7 +67,8 @@ class PdfService {
                   : {
                       'User-Agent':
                           'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-                    });
+                    }).timeout(const Duration(seconds: 6),
+              onTimeout: () => http.Response('timeout', 408));
           if (res.statusCode == 200) return res.bodyBytes;
           debugPrint(
               'Failed to fetch from fallback API. Status: ${res.statusCode}');
@@ -245,15 +248,39 @@ class PdfService {
       logoImageBytes = logoData.buffer.asUint8List();
     } catch (_) {}
 
-    final timesFont = await PdfGoogleFonts.tinosRegular();
-    final timesFontBold = await PdfGoogleFonts.tinosBold();
-    final tamilFont = await PdfGoogleFonts.notoSansTamilRegular();
-    final tamilFontBold = await PdfGoogleFonts.notoSansTamilBold();
+    pw.Font timesFont;
+    pw.Font timesFontBold;
+    pw.Font? tamilFont;
+    pw.Font? tamilFontBold;
+
+    try {
+      timesFont = await PdfGoogleFonts.tinosRegular()
+          .timeout(const Duration(seconds: 6));
+      timesFontBold = await PdfGoogleFonts.tinosBold()
+          .timeout(const Duration(seconds: 6));
+    } catch (_) {
+      timesFont = pw.Font.helvetica();
+      timesFontBold = pw.Font.helveticaBold();
+    }
+
+    try {
+      tamilFont = await PdfGoogleFonts.notoSansTamilRegular()
+          .timeout(const Duration(seconds: 6));
+      tamilFontBold = await PdfGoogleFonts.notoSansTamilBold()
+          .timeout(const Duration(seconds: 6));
+    } catch (_) {
+      tamilFont = null;
+      tamilFontBold = null;
+    }
 
     final pdfTheme = pw.ThemeData.withFont(
       base: timesFont,
       bold: timesFontBold,
-      fontFallback: [tamilFont, timesFontBold, tamilFontBold],
+      fontFallback: [
+        if (tamilFont != null) tamilFont,
+        timesFontBold,
+        if (tamilFontBold != null) tamilFontBold,
+      ],
     );
 
     final pdf = pw.Document(theme: pdfTheme);

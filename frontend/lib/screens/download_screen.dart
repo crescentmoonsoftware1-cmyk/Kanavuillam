@@ -14,6 +14,7 @@ import 'feedback_screen.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import '../utils/file_download_helper.dart';
 
 class DownloadScreen extends StatefulWidget {
   final Map<String, dynamic> projectData;
@@ -741,8 +742,17 @@ class _DownloadScreenState extends State<DownloadScreen> {
   }
 
   Future<Uint8List> _createPdf(String title, String content) async {
-    final tamilFont = await PdfGoogleFonts.notoSansTamilRegular();
-    final tamilFontBold = await PdfGoogleFonts.notoSansTamilBold();
+    pw.Font tamilFont;
+    pw.Font tamilFontBold;
+    try {
+      tamilFont = await PdfGoogleFonts.notoSansTamilRegular()
+          .timeout(const Duration(seconds: 6));
+      tamilFontBold = await PdfGoogleFonts.notoSansTamilBold()
+          .timeout(const Duration(seconds: 6));
+    } catch (_) {
+      tamilFont = pw.Font.helvetica();
+      tamilFontBold = pw.Font.helveticaBold();
+    }
 
     final pdfTheme = pw.ThemeData.withFont(
       base: tamilFont,
@@ -962,7 +972,8 @@ class _DownloadScreenState extends State<DownloadScreen> {
           final res = await http.post(
               Uri.parse('$backendBase/api/analyze-vastu/${data['id']}'),
               headers: {'Content-Type': 'application/json'},
-              body: json.encode({'lang': 'Tamil'}));
+              body: json.encode({'lang': 'Tamil'}))
+              .timeout(const Duration(seconds: 8));
           if (res.statusCode == 200) {
             final newVastu = json.decode(res.body);
             final completeData = Map<String, dynamic>.from(data);
@@ -1003,7 +1014,10 @@ class _DownloadScreenState extends State<DownloadScreen> {
       if (widget.selectedReportIds.isEmpty ||
           widget.selectedReportIds.contains('3d')) {
         try {
-          screenshots3D = await widget.capture3DScreenshots?.call() ?? {};
+          screenshots3D = await (widget.capture3DScreenshots?.call() ??
+                  Future.value(<String, Uint8List>{}))
+              .timeout(const Duration(seconds: 5),
+                  onTimeout: () => <String, Uint8List>{});
           debugPrint(
               '[PDF] 3D screenshots captured: ${screenshots3D.keys.length}');
         } catch (e) {
@@ -1016,13 +1030,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
           screenshots3D: screenshots3D);
 
       if (!mounted) return;
-      if (kIsWeb) {
-        await Printing.sharePdf(bytes: bytes, filename: filename);
-        if (!mounted) return;
-        _showSnack(context, 'Download initiated!', isSuccess: true);
-      } else {
-        await _downloadFileMobilePdf(context, filename, bytes);
-      }
+      await FileDownloadHelper.downloadAndSavePdf(context, filename, bytes);
 
       if (!mounted) return;
       final prefsInst = await SharedPreferences.getInstance();
@@ -1069,7 +1077,8 @@ class _DownloadScreenState extends State<DownloadScreen> {
           final res = await http.post(
               Uri.parse('$backendBase/api/analyze-vastu/${data['id']}'),
               headers: {'Content-Type': 'application/json'},
-              body: json.encode({'lang': 'Tamil'}));
+              body: json.encode({'lang': 'Tamil'}))
+              .timeout(const Duration(seconds: 8));
           if (res.statusCode == 200) {
             final newVastu = json.decode(res.body);
             final completeData = Map<String, dynamic>.from(data);
@@ -1118,13 +1127,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
       final bytes = await _createPdf(docTitle, content);
 
       if (!mounted) return;
-      if (kIsWeb) {
-        await Printing.sharePdf(bytes: bytes, filename: filename);
-        if (!mounted) return;
-        _showSnack(context, 'Download initiated!', isSuccess: true);
-      } else {
-        await _downloadFileMobilePdf(context, filename, bytes);
-      }
+      await FileDownloadHelper.downloadAndSavePdf(context, filename, bytes);
 
       if (!mounted) return;
       final prefs = await SharedPreferences.getInstance();
@@ -1149,15 +1152,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
 
   Future<void> _downloadFileMobilePdf(
       BuildContext ctx, String filename, Uint8List bytes) async {
-    try {
-      // Use native share sheet — no storage permission needed.
-      // User can tap "Save to Files" / "Downloads" from the share menu.
-      await Printing.sharePdf(bytes: bytes, filename: filename);
-    } catch (e) {
-      if (ctx.mounted) {
-        _showSnack(ctx, 'Download failed: $e', isError: true);
-      }
-    }
+    await FileDownloadHelper.downloadAndSavePdf(ctx, filename, bytes);
   }
 
   void _showSnack(BuildContext ctx, String msg,
