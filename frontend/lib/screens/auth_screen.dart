@@ -116,6 +116,8 @@ class _AuthScreenState extends State<AuthScreen> {
             _nameController.text.trim();
         final phone = (meta?['phone'] as String?) ?? '';
 
+        final userId = (user?['id'] as String?) ?? '';
+        if (userId.isNotEmpty) await prefs.setString('user_id', userId);
         await prefs.setString('user_email', email);
         if (name.isNotEmpty) await prefs.setString('user_name', name);
         if (phone.isNotEmpty) await prefs.setString('user_phone', phone);
@@ -197,6 +199,8 @@ class _AuthScreenState extends State<AuthScreen> {
             googleUser.displayName ??
             email.split('@').first;
 
+        final userId = (user?['id'] as String?) ?? '';
+        if (userId.isNotEmpty) await prefs.setString('user_id', userId);
         await prefs.setString('user_email', email);
         await prefs.setString('user_name', name);
 
