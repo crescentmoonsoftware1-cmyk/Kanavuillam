@@ -398,6 +398,18 @@ class _AuthScreenState extends State<AuthScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    // Brand Logo
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0, bottom: 20.0),
+                      child: Image.asset(
+                        'assets/images/logo.png',
+                        height: 95,
+                        fit: BoxFit.contain,
+                        filterQuality: FilterQuality.high,
+                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                      ),
+                    ),
+
                     // Main Elevated Card
                     Container(
                       width: double.infinity,
