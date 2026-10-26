@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,7 +11,9 @@ import 'auth_screen.dart';
 import 'shell_screen.dart';
 
 /// High-fidelity Welcome Screen based on stitch_kanavu_illam_home_screen/kanavu_illam_welcome_screen
-/// Automatically detects existing logged-in session and seamlessly routes to ShellScreen
+/// Features smooth logo zoom & fade animation, followed by animated kural tagline.
+/// Automatically detects existing logged-in session and seamlessly routes to ShellScreen,
+/// or presents the Get Started action for new users.
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
 
@@ -32,9 +35,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       final prefs = await SharedPreferences.getInstance();
       final email = prefs.getString('user_email');
 
+      // Allow full logo zoom and kural entrance animations to finish smoothly (~2400ms)
+      await Future.delayed(const Duration(milliseconds: 2400));
+
       if (email != null && email.trim().isNotEmpty) {
-        // User is already logged in! Display the poetic brand splash for 1.2s, then enter Home
-        await Future.delayed(const Duration(milliseconds: 1200));
         if (mounted) {
           final userId = prefs.getString('user_id');
           final userName =
@@ -42,8 +46,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           final userPhone = prefs.getString('user_phone') ?? '';
 
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (_) => ShellScreen(
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) =>
+                  ShellScreen(
                 userData: {
                   'id': userId,
                   'email': email,
@@ -53,6 +58,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   },
                 },
               ),
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) {
+                return FadeTransition(opacity: animation, child: child);
+              },
+              transitionDuration: const Duration(milliseconds: 600),
             ),
           );
           return;
@@ -98,7 +108,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 const EdgeInsets.symmetric(horizontal: 32.0, vertical: 24.0),
             child: Column(
               children: [
-                // UPPER SECTION: Centered Logo + Poetic Tagline
+                // UPPER SECTION: Centered Animated Logo + Animated Poetic Kural Tagline
                 Expanded(
                   child: Center(
                     child: SingleChildScrollView(
@@ -106,7 +116,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // Centered Brand Logo
+                          // 1. Centered Brand Logo with smooth Zoom & Fade animation
                           Image.asset(
                             'assets/images/logo.png',
                             width: 240,
@@ -127,74 +137,100 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                 ),
                               );
                             },
-                          ),
+                          )
+                              .animate()
+                              .fadeIn(
+                                duration: 1000.ms,
+                                curve: Curves.easeOutCubic,
+                              )
+                              .scale(
+                                begin: const Offset(0.72, 0.72),
+                                end: const Offset(1.0, 1.0),
+                                duration: 1200.ms,
+                                curve: Curves.easeOutBack,
+                              ),
 
                           const SizedBox(height: 24),
 
-                          // Poetic Serif Tagline (Cormorant Garamond italic)
-                          Text(
-                            isTamil
-                                ? 'கனவு விதைத்த நிலத்தில்'
-                                : 'Kanavu vidhaitha nilaththil',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.cormorantGaramond(
-                              fontSize: 29,
-                              fontWeight: FontWeight.w600,
-                              fontStyle: FontStyle.italic,
-                              color: isDark
-                                  ? const Color(0xFFBDC7DB)
-                                  : AppColors.steelBinder,
-                              height: 1.25,
-                            ),
-                          ),
-                          Text(
-                            isTamil ? 'இல்லம் எழும்' : 'Illam ezhum',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.cormorantGaramond(
-                              fontSize: 29,
-                              fontWeight: FontWeight.w700,
-                              fontStyle: FontStyle.italic,
-                              color: AppColors.amberDeep,
-                              height: 1.25,
-                            ),
-                          ),
+                          // 2. Poetic Kural Tagline with smooth entrance animation
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                isTamil
+                                    ? 'கனவு விதைத்த நிலத்தில்'
+                                    : 'Kanavu vidhaitha nilaththil',
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.cormorantGaramond(
+                                  fontSize: 29,
+                                  fontWeight: FontWeight.w600,
+                                  fontStyle: FontStyle.italic,
+                                  color: isDark
+                                      ? const Color(0xFFBDC7DB)
+                                      : AppColors.steelBinder,
+                                  height: 1.25,
+                                ),
+                              ),
+                              Text(
+                                isTamil ? 'இல்லம் எழும்' : 'Illam ezhum',
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.cormorantGaramond(
+                                  fontSize: 29,
+                                  fontWeight: FontWeight.w700,
+                                  fontStyle: FontStyle.italic,
+                                  color: AppColors.amberDeep,
+                                  height: 1.25,
+                                ),
+                              ),
+                            ],
+                          )
+                              .animate()
+                              .fadeIn(
+                                delay: 1000.ms,
+                                duration: 1000.ms,
+                                curve: Curves.easeOutCubic,
+                              )
+                              .slideY(
+                                begin: 0.35,
+                                end: 0.0,
+                                delay: 1000.ms,
+                                duration: 1000.ms,
+                                curve: Curves.easeOutCubic,
+                              ),
                         ],
                       ),
                     ),
                   ),
                 ),
 
-                // LOWER SECTION: Primary Amber CTA or Smooth Loading Indicator
+                // LOWER SECTION: Primary Amber CTA for new users or subtle placeholder while checking
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8.0),
-                  child: _isCheckingSession
-                      ? const SizedBox(
-                          height: 52,
-                          child: Center(
-                            child: SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  AppColors.amberDefault,
-                                ),
-                              ),
-                            ),
+                  child: AnimatedCrossFade(
+                    duration: const Duration(milliseconds: 400),
+                    crossFadeState: _isCheckingSession
+                        ? CrossFadeState.showFirst
+                        : CrossFadeState.showSecond,
+                    firstChild: const SizedBox(
+                      height: 52,
+                      width: double.infinity,
+                    ),
+                    secondChild: AppDecor.primaryPillButton(
+                      label: config.tr('Get Started', 'தொடங்குக'),
+                      icon: Icons.arrow_forward_rounded,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const AuthScreen(isLogin: true),
                           ),
-                        )
-                      : AppDecor.primaryPillButton(
-                          label: config.tr('Get Started', 'தொடங்குக'),
-                          icon: Icons.arrow_forward_rounded,
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const AuthScreen(isLogin: true),
-                              ),
-                            );
-                          },
-                        ),
+                        );
+                      },
+                    )
+                        .animate()
+                        .fadeIn(duration: 500.ms)
+                        .slideY(begin: 0.25, end: 0.0),
+                  ),
                 ),
               ],
             ),

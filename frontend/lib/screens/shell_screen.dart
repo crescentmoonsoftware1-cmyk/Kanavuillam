@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -58,6 +59,7 @@ class _ShellScreenState extends State<ShellScreen> {
   bool _isGenerating = false;
   Map<String, dynamic>? _projectData;
   Set<String> _selectedReportIds = {};
+  DateTime? _lastBackPressTime;
 
   // GlobalKey to access ViewerScreen's state for screenshot capture
   final GlobalKey<ViewerScreenState> _viewerKey =
@@ -67,6 +69,7 @@ class _ShellScreenState extends State<ShellScreen> {
   void initState() {
     super.initState();
     _syncUserToPrefs();
+    _restoreActiveProject();
   }
 
   Future<void> _syncUserToPrefs() async {
@@ -89,6 +92,45 @@ class _ShellScreenState extends State<ShellScreen> {
     }
   }
 
+  Future<void> _restoreActiveProject() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedJson = prefs.getString('last_active_project_data');
+      final savedIds = prefs.getStringList('last_active_selected_ids');
+      if (savedJson != null && savedJson.isNotEmpty) {
+        final decoded = json.decode(savedJson) as Map<String, dynamic>;
+        if (mounted) {
+          setState(() {
+            _projectData = decoded;
+            if (savedIds != null && savedIds.isNotEmpty) {
+              _selectedReportIds = savedIds.toSet();
+            } else {
+              _selectedReportIds = {'3d', 'vastu', 'cost', 'structural'};
+            }
+          });
+          debugPrint('[ShellScreen] Restored last active project from phone storage');
+        }
+      }
+    } catch (e) {
+      debugPrint('[ShellScreen] Restore active project notice: $e');
+    }
+  }
+
+  Future<void> _saveActiveProjectToStorage() async {
+    try {
+      if (_projectData != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(
+            'last_active_project_data', json.encode(_projectData));
+        await prefs.setStringList(
+            'last_active_selected_ids', _selectedReportIds.toList());
+        debugPrint('[ShellScreen] Active project auto-saved to phone storage');
+      }
+    } catch (e) {
+      debugPrint('[ShellScreen] Auto-save notice: $e');
+    }
+  }
+
   void _onProjectLoaded(Map<String, dynamic> project, Set<String> selectedIds) {
     setState(() {
       _projectData = Map<String, dynamic>.from(project);
@@ -107,6 +149,8 @@ class _ShellScreenState extends State<ShellScreen> {
         _selectedIndex = 1;
       }
     });
+
+    _saveActiveProjectToStorage();
   }
 
   Future<void> _startAIGeneration(
@@ -426,6 +470,195 @@ class _ShellScreenState extends State<ShellScreen> {
     );
   }
 
+  void _handleBackNavigation() {
+    // 1. If Drawer is open, close it
+    if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
+      _scaffoldKey.currentState?.closeDrawer();
+      return;
+    }
+
+    // 2. Report Back-Stack flow:
+    // Download (5) -> Structure (4)
+    if (_selectedIndex == 5) {
+      setState(() => _selectedIndex = 4);
+      return;
+    }
+    // Structure (4) -> Cost (3)
+    if (_selectedIndex == 4) {
+      setState(() => _selectedIndex = 3);
+      return;
+    }
+    // Cost (3) -> Vastu (2)
+    if (_selectedIndex == 3) {
+      setState(() => _selectedIndex = 2);
+      return;
+    }
+    // Vastu (2) -> 3D View (1)
+    if (_selectedIndex == 2) {
+      setState(() => _selectedIndex = 1);
+      return;
+    }
+
+    // 3. In 3D View (Tab 1): APP MUST NOT CLOSE!
+    // Show Safety Dialog
+    if (_selectedIndex == 1) {
+      _show3DPreventExitDialog();
+      return;
+    }
+
+    // 4. In History (6) or Profile (7): Go back to Home (0)
+    if (_selectedIndex == 6 || _selectedIndex == 7) {
+      setState(() => _selectedIndex = 0);
+      return;
+    }
+
+    // 5. In Home (0): Double-Tap to Exit
+    if (_selectedIndex == 0) {
+      final now = DateTime.now();
+      if (_lastBackPressTime == null ||
+          now.difference(_lastBackPressTime!) > const Duration(seconds: 2)) {
+        _lastBackPressTime = now;
+        AppConfigProvider config;
+        try {
+          config = context.read<AppConfigProvider>();
+        } catch (_) {
+          config = AppConfigProvider();
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              config.tr(
+                'Press back again to exit Kanavu Illam',
+                'வெளியேற மீண்டும் அழுத்தவும்',
+              ),
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            backgroundColor: const Color(0xFF1E252D),
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+      // If pressed twice within 2 seconds: Allow app close
+      Navigator.of(context).pop();
+    }
+  }
+
+  void _show3DPreventExitDialog() {
+    AppConfigProvider config;
+    try {
+      config = context.read<AppConfigProvider>();
+    } catch (_) {
+      config = AppConfigProvider();
+    }
+    final isDark = config.isDarkMode;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogCtx) => AlertDialog(
+        backgroundColor:
+            isDark ? const Color(0xFF1B212F) : const Color(0xFFFCFDFF),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE58A18).withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.warning_amber_rounded,
+                color: Color(0xFFE58A18),
+                size: 32,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              config.tr('Report Safety Alert', 'அறிக்கை பாதுகாப்பு எச்சரிக்கை'),
+              style: GoogleFonts.syne(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: isDark ? Colors.white : const Color(0xFF1E252D),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 10),
+            Text(
+              config.tr(
+                'You have paid for this plan! Please download your full PDF report before leaving so your data is safely saved on your device.',
+                'நீங்கள் இந்த வரைபடத்திற்கு கட்டணம் செலுத்தியுள்ளீர்கள்! உங்கள் சாதனத்தில் அறிக்கை பத்திரமாக இருக்க, வெளியேறும் முன் PDF அறிக்கையை பதிவிறக்கம் செய்யவும்.',
+              ),
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                height: 1.45,
+                color: isDark
+                    ? const Color(0xFFA1A1AA)
+                    : const Color(0xFF64748B),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 22),
+            // Button 1: Download PDF Now (Primary Amber)
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.amberDefault,
+                  foregroundColor: AppColors.onAmberInk,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(100)),
+                  elevation: 0,
+                ),
+                icon: const Icon(Icons.download_rounded, size: 18),
+                label: Text(
+                  config.tr('Download PDF Now', 'PDF-ஐ பதிவிறக்கு'),
+                  style: GoogleFonts.inter(
+                      fontSize: 14, fontWeight: FontWeight.w700),
+                ),
+                onPressed: () {
+                  Navigator.pop(dialogCtx);
+                  setState(() => _selectedIndex = 5);
+                },
+              ),
+            ),
+            const SizedBox(height: 10),
+            // Button 2: Stay on 3D View
+            SizedBox(
+              width: double.infinity,
+              height: 46,
+              child: OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor:
+                      isDark ? Colors.white : const Color(0xFF1E252D),
+                  side: BorderSide(
+                    color: isDark
+                        ? const Color(0xFF2E384D)
+                        : const Color(0xFFE2E8F0),
+                  ),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(100)),
+                ),
+                child: Text(
+                  config.tr('Stay on 3D View', '3D-லேயே தொடரவும்'),
+                  style: GoogleFonts.inter(
+                      fontSize: 13.5, fontWeight: FontWeight.w600),
+                ),
+                onPressed: () => Navigator.pop(dialogCtx),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     AppConfigProvider config;
@@ -435,102 +668,211 @@ class _ShellScreenState extends State<ShellScreen> {
       config = AppConfigProvider();
     }
 
-    return Scaffold(
-      key: _scaffoldKey,
-      extendBody: true,
-      extendBodyBehindAppBar: true,
-      backgroundColor: config.bgColor,
-      drawer: Drawer(
-        backgroundColor: config.cardColor,
-        child: _Sidebar(
-          selectedIndex: _selectedIndex,
-          visibleIndices: _visibleIndices,
-          onTap: (i) {
-            Navigator.pop(context);
-            Future.delayed(const Duration(milliseconds: 100), () {
-              if (mounted) setState(() => _selectedIndex = i);
-            });
-          },
-        ),
-      ),
-      appBar: null,
-      body: Stack(
-        children: [
-          Column(
-            children: [
-              _buildNavigationHeader(),
-              Expanded(
-                child: _buildBody(),
-              ),
-            ],
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _handleBackNavigation();
+      },
+      child: Scaffold(
+        key: _scaffoldKey,
+        extendBody: true,
+        extendBodyBehindAppBar: true,
+        backgroundColor: config.bgColor,
+        drawer: Drawer(
+          backgroundColor: config.cardColor,
+          child: _Sidebar(
+            selectedIndex: _selectedIndex,
+            visibleIndices: _visibleIndices,
+            onTap: (i) {
+              Navigator.pop(context);
+              Future.delayed(const Duration(milliseconds: 100), () {
+                if (mounted) setState(() => _selectedIndex = i);
+              });
+            },
           ),
-          if (_isGenerating)
-            Positioned.fill(
-              child: Container(
-                color: Colors.black.withValues(alpha: 0.65),
-                child: Center(
+        ),
+        appBar: null,
+        body: Stack(
+          children: [
+            Column(
+              children: [
+                _buildNavigationHeader(),
+                Expanded(
+                  child: _buildBody(),
+                ),
+              ],
+            ),
+            if (_isGenerating)
+              Positioned.fill(
+                child: Container(
+                  color: Colors.black.withValues(alpha: 0.65),
+                  child: Center(
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 28),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 32),
+                      decoration: BoxDecoration(
+                        color: config.cardColor,
+                        borderRadius: BorderRadius.circular(28),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.2),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const SizedBox(
+                            width: 56,
+                            height: 56,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 3.5,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                  Color(0xFFE58A18)),
+                              backgroundColor: Color(0x33E58A18),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          Text(
+                            config.isTamil
+                                ? '3D வில்லா & அறிக்கைகள் உருவாகிறது...\nதயவுசெய்து காத்திருக்கவும்'
+                                : 'Generating 3D Villa & Reports...\nPlease wait a moment',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w700,
+                              color: config.isDarkMode
+                                  ? Colors.white
+                                  : AppColors.deepInk,
+                              height: 1.4,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+            // Floating "Resume Active Plan" Banner on Home Screen when active project exists
+            if (_selectedIndex == 0 && _projectData != null && !_isGenerating)
+              Positioned(
+                left: 20,
+                right: 20,
+                bottom: 84, // Cleanly above the floating capsule nav bar
+                child: GestureDetector(
+                  onTap: () => setState(() => _selectedIndex = 1),
                   child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 28),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 32),
+                        horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
-                      color: config.cardColor,
-                      borderRadius: BorderRadius.circular(28),
+                      color: config.isDarkMode
+                          ? const Color(0xFF1E2430)
+                          : const Color(0xFF1B212F),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: const Color(0xFFE58A18),
+                        width: 1.2,
+                      ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.2),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
+                          color: Colors.black.withValues(alpha: 0.28),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4),
                         ),
                       ],
                     ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
+                    child: Row(
                       children: [
-                        const SizedBox(
-                          width: 56,
-                          height: 56,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 3.5,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                                Color(0xFFE58A18)),
-                            backgroundColor: Color(0x33E58A18),
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: const BoxDecoration(
+                            color: Color(0x2EE58A18),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.view_in_ar_rounded,
+                            size: 18,
+                            color: Color(0xFFE58A18),
                           ),
                         ),
-                        const SizedBox(height: 20),
-                        Text(
-                          config.isTamil
-                              ? '3D வில்லா & அறிக்கைகள் உருவாகிறது...\nதயவுசெய்து காத்திருக்கவும்'
-                              : 'Generating 3D Villa & Reports...\nPlease wait a moment',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w700,
-                            color: config.isDarkMode
-                                ? Colors.white
-                                : AppColors.deepInk,
-                            height: 1.4,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                config.tr('Resume Active Plan',
+                                    'நடப்பு வரைபடம் தொடரவும்'),
+                                style: GoogleFonts.syne(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              Text(
+                                config.tr('Tap to view 3D, Vastu & Reports',
+                                    '3D, வாஸ்து மற்றும் அறிக்கைகளை காண்க'),
+                                style: GoogleFonts.inter(
+                                  fontSize: 11,
+                                  color: const Color(0xFF94A3B8),
+                                ),
+                              ),
+                            ],
                           ),
-                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: AppColors.amberDefault,
+                            borderRadius: BorderRadius.circular(100),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                config.tr('View', 'காண்க'),
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.onAmberInk,
+                                ),
+                              ),
+                              const SizedBox(width: 3),
+                              const Icon(
+                                Icons.arrow_forward_rounded,
+                                size: 13,
+                                color: AppColors.onAmberInk,
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
                   ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
+        bottomNavigationBar: (_isGenerating ||
+                (_selectedIndex != 0 &&
+                    _selectedIndex != 6 &&
+                    _selectedIndex != 7))
+            ? null
+            : _FloatingCapsuleNavBar(
+                selectedIndex: _selectedIndex,
+                onTap: (index) {
+                  setState(() => _selectedIndex = index);
+                },
+              ),
       ),
-      bottomNavigationBar: (_isGenerating ||
-              (_selectedIndex != 0 &&
-                  _selectedIndex != 6 &&
-                  _selectedIndex != 7))
-          ? null
-          : _FloatingCapsuleNavBar(
-              selectedIndex: _selectedIndex,
-              onTap: (index) {
-                setState(() => _selectedIndex = index);
-              },
-            ),
     );
   }
 }
