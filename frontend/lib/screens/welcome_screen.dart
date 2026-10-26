@@ -1,15 +1,71 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_decor.dart';
 import '../core/providers/app_config_provider.dart';
 import 'auth_screen.dart';
+import 'shell_screen.dart';
 
 /// High-fidelity Welcome Screen based on stitch_kanavu_illam_home_screen/kanavu_illam_welcome_screen
-class WelcomeScreen extends StatelessWidget {
+/// Automatically detects existing logged-in session and seamlessly routes to ShellScreen
+class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
+
+  @override
+  State<WelcomeScreen> createState() => _WelcomeScreenState();
+}
+
+class _WelcomeScreenState extends State<WelcomeScreen> {
+  bool _isCheckingSession = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkSavedSession();
+  }
+
+  Future<void> _checkSavedSession() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final email = prefs.getString('user_email');
+
+      if (email != null && email.trim().isNotEmpty) {
+        // User is already logged in! Display the poetic brand splash for 1.2s, then enter Home
+        await Future.delayed(const Duration(milliseconds: 1200));
+        if (mounted) {
+          final userId = prefs.getString('user_id');
+          final userName =
+              prefs.getString('user_name') ?? email.split('@').first;
+          final userPhone = prefs.getString('user_phone') ?? '';
+
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (_) => ShellScreen(
+                userData: {
+                  'id': userId,
+                  'email': email,
+                  'user_metadata': {
+                    'name': userName,
+                    'phone': userPhone,
+                  },
+                },
+              ),
+            ),
+          );
+          return;
+        }
+      }
+    } catch (e) {
+      debugPrint('[WelcomeScreen] Auto-login check note: $e');
+    }
+
+    if (mounted) {
+      setState(() => _isCheckingSession = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,10 +94,10 @@ class WelcomeScreen extends StatelessWidget {
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 24.0),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 32.0, vertical: 24.0),
             child: Column(
               children: [
-
                 // UPPER SECTION: Centered Logo + Poetic Tagline
                 Expanded(
                   child: Center(
@@ -108,21 +164,37 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                 ),
 
-                // LOWER SECTION: Primary Amber CTA
+                // LOWER SECTION: Primary Amber CTA or Smooth Loading Indicator
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8.0),
-                  child: AppDecor.primaryPillButton(
-                    label: config.tr('Get Started', 'தொடங்குக'),
-                    icon: Icons.arrow_forward_rounded,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const AuthScreen(isLogin: true),
+                  child: _isCheckingSession
+                      ? const SizedBox(
+                          height: 52,
+                          child: Center(
+                            child: SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  AppColors.amberDefault,
+                                ),
+                              ),
+                            ),
+                          ),
+                        )
+                      : AppDecor.primaryPillButton(
+                          label: config.tr('Get Started', 'தொடங்குக'),
+                          icon: Icons.arrow_forward_rounded,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const AuthScreen(isLogin: true),
+                              ),
+                            );
+                          },
                         ),
-                      );
-                    },
-                  ),
                 ),
               ],
             ),
