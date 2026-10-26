@@ -207,7 +207,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
     }
     if (totalArea <= 0) totalArea = 1200.0; // Default Standard Plan
 
-    const planName = 'kanavuillam_report';
+    const planName = 'Kanavu Illam';
 
     final String dimsText =
         (w > 0 && l > 0) ? '${w.toInt()}\' × ${l.toInt()}\'' : 'Standard Floor';
@@ -395,25 +395,25 @@ class _EstimationScreenState extends State<EstimationScreen> {
                             isActive: false,
                             onTap: () => widget.onNavigateToTab?.call(1),
                           ),
-                          const SizedBox(width: 6),
+                          const SizedBox(width: 5),
                           _buildMainTab(
                             title: isTamil ? 'வாஸ்து' : 'Vastu',
                             isActive: false,
                             onTap: () => widget.onNavigateToTab?.call(2),
                           ),
-                          const SizedBox(width: 6),
+                          const SizedBox(width: 5),
                           _buildMainTab(
                             title: isTamil ? 'செலவு' : 'Cost',
                             isActive: true,
                             onTap: () {},
                           ),
-                          const SizedBox(width: 6),
+                          const SizedBox(width: 5),
                           _buildMainTab(
                             title: isTamil ? 'அமைப்பு' : 'Structure',
                             isActive: false,
                             onTap: () => widget.onNavigateToTab?.call(4),
                           ),
-                          const SizedBox(width: 6),
+                          const SizedBox(width: 5),
                           _buildMainTab(
                             title: isTamil ? 'பதிவிறக்கம்' : 'Download',
                             isActive: false,
@@ -717,7 +717,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
     return GestureDetector(
       onTap: isActive ? null : onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
         decoration: BoxDecoration(
           color: isActive ? AppColors.inkDark : AppColors.card,
           borderRadius: BorderRadius.circular(100),

@@ -68,7 +68,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
         isDark ? const Color(0xFFA1A1AA) : AppColors.inkQuiet;
     final borderColor = isDark ? const Color(0xFF2E2E32) : AppColors.cardBorder;
 
-    const String planName = 'kanavuillam_report';
+    const String planName = 'Kanavu Illam';
     final modelData =
         widget.projectData['model_data'] as Map<String, dynamic>? ?? {};
     final project = modelData['project'] as Map<String, dynamic>? ?? {};
@@ -97,22 +97,21 @@ class _DownloadScreenState extends State<DownloadScreen> {
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 440),
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.only(
-                    left: 20.0, right: 20.0, top: 16.0, bottom: 32.0),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // ── 1. HEADER (Plan Name, Subtitle, Language Switcher Capsule) ─
-                    SizedBox(
-                      height: 52,
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4.0),
                       child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
                                   planName,
@@ -244,28 +243,28 @@ class _DownloadScreenState extends State<DownloadScreen> {
                               }
                             },
                           ),
-                          const SizedBox(width: 6),
+                          const SizedBox(width: 5),
                           _buildMainTab(
                             title: isTamil ? 'வாஸ்து' : 'Vastu',
                             isActive: false,
                             isDark: isDark,
                             onTap: () => widget.onNavigateToTab?.call(2),
                           ),
-                          const SizedBox(width: 6),
+                          const SizedBox(width: 5),
                           _buildMainTab(
                             title: isTamil ? 'செலவு' : 'Cost',
                             isActive: false,
                             isDark: isDark,
                             onTap: () => widget.onNavigateToTab?.call(3),
                           ),
-                          const SizedBox(width: 6),
+                          const SizedBox(width: 5),
                           _buildMainTab(
                             title: isTamil ? 'அமைப்பு' : 'Structure',
                             isActive: false,
                             isDark: isDark,
                             onTap: () => widget.onNavigateToTab?.call(4),
                           ),
-                          const SizedBox(width: 6),
+                          const SizedBox(width: 5),
                           _buildMainTab(
                             title: isTamil ? 'பதிவிறக்கம்' : 'Download',
                             isActive: true,
@@ -275,12 +274,20 @@ class _DownloadScreenState extends State<DownloadScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
 
-                    // ── 3. EXECUTIVE HERO CARD (Matching App UI) ─────────────────
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
+                    // ── SCROLLABLE BODY ─────────────────────────────────────────
+                    Expanded(
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        padding: const EdgeInsets.only(bottom: 32.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // ── 3. EXECUTIVE HERO CARD (Matching App UI) ─────────────────
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         color: isDark ? cardColor : AppColors.card,
                         borderRadius: BorderRadius.circular(28),
@@ -527,10 +534,14 @@ class _DownloadScreenState extends State<DownloadScreen> {
                 ),
               ),
             ),
-          ),
+          ],
         ),
       ),
-    );
+    ),
+  ),
+),
+),
+);
   }
 
   // ── Main Tab Pill Builder ──────────────────────────────────────────────────
@@ -544,7 +555,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: isActive
@@ -567,20 +578,17 @@ class _DownloadScreenState extends State<DownloadScreen> {
                 ]
               : null,
         ),
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(
-            title,
-            maxLines: 1,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 12.5,
-              fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
-              color: isActive
-                  ? (isDark ? Colors.black : Colors.white)
-                  : (isDark
-                      ? const Color(0xFFA1A1AA)
-                      : AppColors.inkMuted),
-            ),
+        child: Text(
+          title,
+          maxLines: 1,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 12.0,
+            fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
+            color: isActive
+                ? (isDark ? Colors.black : Colors.white)
+                : (isDark
+                    ? const Color(0xFFA1A1AA)
+                    : AppColors.inkMuted),
           ),
         ),
       ),

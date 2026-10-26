@@ -240,8 +240,12 @@ class _VastuScreenState extends State<VastuScreen> {
     final config = context.watch<AppConfigProvider>();
     final isTamil = config.isTamil;
     final langKey = isTamil ? 'TA' : 'EN';
-    final planName =
-        widget.projectData['name']?.toString() ?? 'kanavuillam_report';
+    final rawPlanName = widget.projectData['name']?.toString() ?? '';
+    final planName = (rawPlanName.isEmpty ||
+            rawPlanName.contains('|') ||
+            rawPlanName.toLowerCase().contains('kanavuillam'))
+        ? 'Kanavu Illam'
+        : rawPlanName;
 
     return Scaffold(
       body: Container(
@@ -439,25 +443,25 @@ class _VastuScreenState extends State<VastuScreen> {
                                 isActive: false,
                                 onTap: () => widget.onNavigateToTab?.call(1),
                               ),
-                              const SizedBox(width: 6),
+                              const SizedBox(width: 5),
                               _buildMainTabChip(
                                 title: isTamil ? 'வாஸ்து' : 'Vastu',
                                 isActive: true,
                                 onTap: () {},
                               ),
-                              const SizedBox(width: 6),
+                              const SizedBox(width: 5),
                               _buildMainTabChip(
                                 title: isTamil ? 'செலவு' : 'Cost',
                                 isActive: false,
                                 onTap: () => widget.onNavigateToTab?.call(3),
                               ),
-                              const SizedBox(width: 6),
+                              const SizedBox(width: 5),
                               _buildMainTabChip(
                                 title: isTamil ? 'அமைப்பு' : 'Structure',
                                 isActive: false,
                                 onTap: () => widget.onNavigateToTab?.call(4),
                               ),
-                              const SizedBox(width: 6),
+                              const SizedBox(width: 5),
                               _buildMainTabChip(
                                 title: isTamil ? 'பதிவிறக்கம்' : 'Download',
                                 isActive: false,
@@ -587,7 +591,7 @@ class _VastuScreenState extends State<VastuScreen> {
     return GestureDetector(
       onTap: isActive ? null : onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
         decoration: BoxDecoration(
           color: isActive ? AppColors.inkDark : AppColors.card,
           borderRadius: BorderRadius.circular(100),
