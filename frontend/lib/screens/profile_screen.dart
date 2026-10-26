@@ -945,43 +945,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                     ),
-
-                    const SizedBox(height: 12),
-
-                    // 4. PERMANENT ACCOUNT DELETION BUTTON
-                    GestureDetector(
-                      onTap: () => _confirmDeleteAccount(context, config),
-                      child: Container(
-                        width: double.infinity,
-                        height: 50,
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0x1AEF4444) : const Color(0x12EF4444),
-                          borderRadius: BorderRadius.circular(100),
-                          border: Border.all(
-                            color: const Color(0x40EF4444),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.delete_forever_rounded,
-                              size: 19,
-                              color: Color(0xFFEF4444),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              config.tr('Delete Account Permanently', 'கணக்கை நிரந்தரமாக நீக்கு'),
-                              style: GoogleFonts.inter(
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFFEF4444),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                    const SizedBox(height: 16),
                   ],
                 ),
               ),
