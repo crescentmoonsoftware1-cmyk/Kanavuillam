@@ -2505,7 +2505,7 @@ app.get('/delete-account', (req, res) => {
     <h1>Delete Your Kanavu Illam Account</h1>
     <p>In accordance with Google Play and Indian data protection policies, you have the right to request the permanent deletion of your account and personal data.</p>
     <div class="info-box">
-      <strong>What will be deleted:</strong> Your profile, login credentials, uploaded floor plans, AI models, and analysis history. Financial records are retained only as required by statutory tax and GST regulations.
+      <strong>What will be deleted:</strong> Your profile, login credentials, uploaded floor plans, 3D architectural models, and analysis history. Financial records are retained only as required by statutory tax and GST regulations.
     </div>
     <form id="deleteForm" onsubmit="handleDelete(event)">
       <label for="email">Account Email Address</label>

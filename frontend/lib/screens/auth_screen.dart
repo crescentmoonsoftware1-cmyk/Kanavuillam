@@ -27,7 +27,7 @@ class _AuthScreenState extends State<AuthScreen> {
   late bool _isLogin;
   bool _obscurePassword = true;
   bool _isLoading = false;
-  bool _termsAccepted = true;
+  bool _termsAccepted = false;
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
@@ -57,8 +57,8 @@ class _AuthScreenState extends State<AuthScreen> {
         SnackBar(
           content: Text(
             config.tr(
-              'Please accept Terms & Conditions to continue.',
-              'தொடர விதிமுறைகளை ஒப்புக்கொள்ளவும்.',
+              'Please accept Terms & Conditions and Privacy Policy to continue.',
+              'தொடர விதிமுறைகள் மற்றும் தனியுரிமைக் கொள்கையை ஒப்புக்கொள்ளவும்.',
             ),
           ),
           backgroundColor: AppColors.error,
@@ -325,6 +325,76 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 
+  void _showPrivacyDialog(BuildContext context, AppConfigProvider config) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        final isDark = config.isDarkMode;
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.82,
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1D2128) : AppColors.card,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            border: Border.all(
+              color: isDark ? const Color(0xFF2C323D) : AppColors.cardBorder,
+            ),
+          ),
+          padding: const EdgeInsets.fromLTRB(24, 20, 16, 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    config.tr(
+                      'Privacy Policy',
+                      'தனியுரிமைக் கொள்கை',
+                    ),
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : AppColors.deepInk,
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      Icons.close,
+                      color: isDark ? const Color(0xFF9EACB9) : AppColors.quietGrey,
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              Divider(
+                color: isDark ? const Color(0xFF2C323D) : AppColors.cardBorder,
+                height: 24,
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.only(right: 8, bottom: 16),
+                  child: Text(
+                    LegalTexts.privacyPolicy,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13.5,
+                      height: 1.6,
+                      color: isDark
+                          ? const Color(0xFFCDD6E0)
+                          : AppColors.readingSlate,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildInputField({
     required TextEditingController controller,
     required String hintText,
@@ -546,10 +616,11 @@ class _AuthScreenState extends State<AuthScreen> {
                               ),
                             ],
 
-                            // Terms & Conditions Checkbox (Sign Up only)
+                            // Terms & Privacy Policy Checkbox (Sign Up only)
                             if (!_isLogin) ...[
                               const SizedBox(height: 14),
                               Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
                                   InkWell(
                                     onTap: () {
@@ -581,23 +652,49 @@ class _AuthScreenState extends State<AuthScreen> {
                                     ),
                                   ),
                                   const SizedBox(width: 10),
-                                  Text(
-                                    config.tr('I agree to ', 'ஒப்புக்கொள்கிறேன்: '),
-                                    style: GoogleFonts.plusJakartaSans(
-                                      fontSize: 14,
-                                      color: isDark ? const Color(0xFFBDC7DB) : AppColors.steelBinder,
-                                    ),
-                                  ),
-                                  GestureDetector(
-                                    onTap: () => _showTermsDialog(context, config),
-                                    child: Text(
-                                      config.tr('Terms', 'விதிமுறைகள்'),
-                                      style: GoogleFonts.plusJakartaSans(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                        color: isDark ? Colors.white : AppColors.deepInk,
-                                        decoration: TextDecoration.underline,
-                                      ),
+                                  Expanded(
+                                    child: Wrap(
+                                      crossAxisAlignment: WrapCrossAlignment.center,
+                                      children: [
+                                        Text(
+                                          config.tr('I agree to ', 'ஒப்புக்கொள்கிறேன்: '),
+                                          style: GoogleFonts.plusJakartaSans(
+                                            fontSize: 13,
+                                            color: isDark ? const Color(0xFFBDC7DB) : AppColors.steelBinder,
+                                          ),
+                                        ),
+                                        GestureDetector(
+                                          onTap: () => _showTermsDialog(context, config),
+                                          child: Text(
+                                            config.tr('Terms', 'விதிமுறைகள்'),
+                                            style: GoogleFonts.plusJakartaSans(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.bold,
+                                              color: isDark ? Colors.white : AppColors.deepInk,
+                                              decoration: TextDecoration.underline,
+                                            ),
+                                          ),
+                                        ),
+                                        Text(
+                                          config.tr(' & ', ' & '),
+                                          style: GoogleFonts.plusJakartaSans(
+                                            fontSize: 13,
+                                            color: isDark ? const Color(0xFFBDC7DB) : AppColors.steelBinder,
+                                          ),
+                                        ),
+                                        GestureDetector(
+                                          onTap: () => _showPrivacyDialog(context, config),
+                                          child: Text(
+                                            config.tr('Privacy Policy', 'தனியுரிமைக் கொள்கை'),
+                                            style: GoogleFonts.plusJakartaSans(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.bold,
+                                              color: isDark ? Colors.white : AppColors.deepInk,
+                                              decoration: TextDecoration.underline,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ],
@@ -695,6 +792,55 @@ class _AuthScreenState extends State<AuthScreen> {
                                     ),
                                   ],
                                 ),
+                              ),
+                            ),
+
+                            // Google Sign-In affirmative consent notice
+                            Padding(
+                              padding: const EdgeInsets.only(top: 12.0),
+                              child: Wrap(
+                                alignment: WrapAlignment.center,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                children: [
+                                  Text(
+                                    config.tr('By continuing with Google, you agree to our ', 'Google மூலம் தொடர்வதன் மூலம், நீங்கள் எங்களின் '),
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 11.5,
+                                      color: isDark ? const Color(0xFF94A3B8) : AppColors.quietGrey,
+                                    ),
+                                  ),
+                                  GestureDetector(
+                                    onTap: () => _showTermsDialog(context, config),
+                                    child: Text(
+                                      config.tr('Terms', 'விதிமுறைகள்'),
+                                      style: GoogleFonts.plusJakartaSans(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: isDark ? Colors.white : AppColors.deepInk,
+                                        decoration: TextDecoration.underline,
+                                      ),
+                                    ),
+                                  ),
+                                  Text(
+                                    config.tr(' and ', ' மற்றும் '),
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 11.5,
+                                      color: isDark ? const Color(0xFF94A3B8) : AppColors.quietGrey,
+                                    ),
+                                  ),
+                                  GestureDetector(
+                                    onTap: () => _showPrivacyDialog(context, config),
+                                    child: Text(
+                                      config.tr('Privacy Policy', 'தனியுரிமைக் கொள்கை'),
+                                      style: GoogleFonts.plusJakartaSans(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: isDark ? Colors.white : AppColors.deepInk,
+                                        decoration: TextDecoration.underline,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],

@@ -21,44 +21,45 @@
   <div class="container">
     <h1>Privacy Policy for Kanavu Illam</h1>
     <p><em>Effective Date: October 27, 2026</em></p>
-    <p>Kanavu Illam ("we", "our", or "us"), operated by Kanavu Illam Technologies, Tamil Nadu, India, is committed to safeguarding your personal data and privacy. This Privacy Policy details how we collect, process, store, and protect your information across our mobile application and web services in full compliance with the <strong>Digital Personal Data Protection Act, 2023 (DPDP Act)</strong>, the <strong>Information Technology Act, 2000</strong>, the <strong>SPDI Rules, 2011</strong>, and <strong>Google Play Developer Data Safety Policies</strong>.</p>
+    <p>Kanavu Illam ("we", "our", or "us"), operated by Kanavu Illam Technologies, Coimbatore, Tamil Nadu, India, is committed to safeguarding your personal data and privacy. This Privacy Policy details how we collect, process, store, and protect your information across our mobile application and web services in full compliance with the <strong>Digital Personal Data Protection Act, 2023 (DPDP Act)</strong>, the <strong>Information Technology Act, 2000</strong>, the <strong>SPDI Rules, 2011</strong>, and <strong>Google Play Developer Data Safety Policies</strong>.</p>
 
     <h2>1. Information We Collect and Purpose of Processing</h2>
     <p>We collect only the minimum necessary data to authenticate accounts, analyze floor plans, and generate architectural reports:</p>
     <ul>
-      <li><strong>Account Credentials:</strong> Full name and email address provided via Google Sign-In (OAuth) or Supabase authentication, used strictly to create, authenticate, and manage your account.</li>
-      <li><strong>Uploaded Floor Plan Images:</strong> 2D architectural blueprint drawings or sketches uploaded by you. These are used solely for automated geometric contour detection, room boundary segmentation, and text reading.</li>
+      <li><strong>Account Credentials & Profile Data:</strong> Full name, email address, phone number, and optional delivery/site address provided directly by you or via Google Sign-In (OAuth) or Supabase authentication. These are used strictly to create, authenticate, and manage your account and deliver requested services.</li>
+      <li><strong>Uploaded Floor Plan Drawings:</strong> 2D architectural blueprint drawings or sketches uploaded by you. These are used solely for automated geometric contour detection, room boundary segmentation, and text reading.</li>
       <li><strong>Derived Architectural Project Data:</strong> 3D parametric CAD coordinates, room dimensions, traditional Tamil Vastu rule scores, estimated material bill of quantities (BOQ), and preliminary structural guidance generated from your uploads. These are saved to your account so you can view, review, and export them at any time in your History tab.</li>
-      <li><strong>Payment and Transaction Records:</strong> When you unlock premium deliverables, our payment partner (Razorpay) provides us with the transaction ID, order ID, payment status, timestamp, and amount. These records are used strictly for order fulfillment, fraud prevention, accounting, and statutory tax (GST) compliance. <em>We never receive, process, or store credit/debit card numbers, CVVs, or UPI PINs on our servers.</em></li>
+      <li><strong>Payment and Invoicing Records:</strong> When you purchase or unlock deliverables, our payment partner (such as Razorpay) provides transaction metadata including transaction ID, order ID, payment status, timestamp, amount, and the user's billing email. These records are retained strictly for order fulfillment, fraud prevention, accounting, and statutory tax (GST) compliance. <em>We never receive, process, or store credit/debit card numbers, CVVs, or UPI PINs on our servers.</em></li>
       <li><strong>Technical Telemetry & Device Logs:</strong> IP address, device operating system version, and standard access logs collected ephemerally for rate limiting, DDoS defense, and server health diagnostics.</li>
-      <li><strong>Local Storage:</strong> Authentication session tokens and language preferences (English/Tamil) stored locally on your device via secure application storage (SharedPreferences).</li>
+      <li><strong>Local Storage:</strong> Authentication session tokens and language preferences (English/Tamil) stored locally on your device via local app storage (e.g., SharedPreferences).</li>
     </ul>
 
     <h2>2. Immediate Zero-Storage Architecture for Raw Blueprints</h2>
     <div class="highlight-box">
-      <strong>Zero-Storage Guarantee:</strong> Uploaded floor plan image files are temporarily stored on secure server disk strictly during automated processing by computer-vision and OCR models (trained YOLO object detection and EasyOCR). Immediately upon completing the analysis, the raw image files are permanently unlinked and erased from the server disk. No raw floor plan image files are retained on our servers.
+      <strong>Zero-Storage Architecture:</strong> Uploaded floor plan image files are stored temporarily on server disk strictly during automated processing by computer-vision software (YOLO, OpenCV, and EasyOCR) and are deleted immediately after processing, or at server restart if interrupted. We do not store raw blueprint image files on our servers, and no permanent blueprint image URLs are retained in our database.
     </div>
 
     <h2>3. Project Results & Cloud Data Storage</h2>
     <p>Unlike raw blueprint images, the derived architectural models (room polygons, 3D vectors, Vastu scores, and cost estimations) are stored securely in our cloud database (Supabase) under your unique user ID. This enables you to access your projects across app sessions in your History screen. These project results remain stored under your account until you choose to delete them or permanently delete your account.</p>
 
-    <h2>4. Third-Party Service Providers & Data Transfers</h2>
-    <p>We work with trusted infrastructure providers that adhere to industry security standards (ISO 27001 / SOC 2):</p>
+    <h2>4. Third-Party Service Providers & Cloud Hosting Locations</h2>
+    <p>We work with trusted infrastructure and service providers:</p>
     <ul>
-      <li><strong>Supabase Inc.:</strong> Cloud database hosting, user authentication, and Row Level Security (RLS).</li>
+      <li><strong>Supabase Inc.:</strong> Cloud database hosting and user authentication.</li>
       <li><strong>Railway Corp.:</strong> Secure cloud backend hosting and API pipeline execution.</li>
       <li><strong>Vercel Inc.:</strong> Hosting our static web portals and compliance documentation.</li>
       <li><strong>Google LLC:</strong> Google OAuth 2.0 user authentication.</li>
-      <li><strong>Razorpay Software Private Limited:</strong> RBI-authorized payment processing. All payment transaction data is localized and stored in India in compliance with Reserve Bank of India (RBI) mandates.</li>
-      <li><strong>OpenRouter Inc.:</strong> Ephemeral text queries for live regional construction material prices. <em>Your floor plan drawings, personal identifiers, and private account details are never sent to OpenRouter or external LLMs.</em></li>
+      <li><strong>Razorpay Software Private Limited:</strong> RBI-authorized payment processing. All payment transaction data is localized and stored within India in compliance with Reserve Bank of India (RBI) mandates.</li>
+      <li><strong>OpenRouter Inc.:</strong> Ephemeral text queries for live regional construction material prices. <em>Your floor plan drawings, personal identifiers, and private account details are never sent to OpenRouter or external language models.</em></li>
     </ul>
+    <p>Our cloud backend and database services are hosted in enterprise data centers. Depending on operational routing, technical data and project calculations may be transferred to or processed on secure servers located outside India, subject to standard encryption and contractual data safeguards.</p>
 
     <h2>5. Data Retention & Account Deletion Policy</h2>
     <p>We retain your personal profile and project history only for as long as your account is active:</p>
     <ul>
       <li><strong>User-Initiated Deletion:</strong> You have the absolute right to delete your account at any time. You can trigger deletion within the app under <strong>Profile &gt; Delete Account</strong>, or via our public web deletion page at <a href="delete-account.html">Request Account Deletion</a>.</li>
       <li><strong>What is Purged:</strong> Deleting your account immediately and permanently removes your profile, authentication credentials, project records, 3D models, and history logs from our database.</li>
-      <li><strong>Statutory Retention Exception:</strong> Anonymized payment transaction logs are retained strictly for the statutory duration required by Indian tax, GST, and financial audit regulations.</li>
+      <li><strong>Statutory Retention Exception:</strong> Payment and billing records (including transaction IDs and associated billing email) are retained strictly for the statutory duration required by Indian accounting, tax, and GST audit regulations.</li>
     </ul>
 
     <h2>6. User Rights (DPDP Act, 2023)</h2>
@@ -74,7 +75,7 @@
     <p>Kanavu Illam is designed and intended strictly for adults aged 18 years and above. We do not knowingly solicit or collect personal information from individuals under the age of 18.</p>
 
     <h2>8. Security Safeguards & Breach Management</h2>
-    <p>We protect your data using industry-grade measures including TLS 1.3 encryption for data in transit, strict PostgreSQL Row Level Security (RLS) ensuring that users can only access their own records, private container networking, and rate-limited API endpoints. In the unlikely event of a verified data incident, we will notify affected users and regulatory bodies within the statutory timeline.</p>
+    <p>We protect your data using industry-standard measures including TLS encryption for data in transit, access controls enforced by our backend and database policies ensuring authorized access to project records, secure session authentication tokens, and rate-limited API endpoints. In the unlikely event of a verified data incident, we will notify affected users and regulatory bodies within the statutory timeline.</p>
 
     <h2>9. Grievance Redressal & Contact Information</h2>
     <p>In compliance with Rule 3(2) of the Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021 and the DPDP Act, 2023, the details of our Grievance Officer are:</p>
@@ -82,9 +83,9 @@
       <li><strong>Publisher / Entity:</strong> Kanavu Illam Technologies</li>
       <li><strong>Grievance Officer:</strong> Chandramouli S</li>
       <li><strong>Designation:</strong> Grievance Officer</li>
-      <li><strong>Address:</strong> Kanavu Illam Technologies, Tamil Nadu, India</li>
+      <li><strong>Address:</strong> Kanavu Illam Technologies, Coimbatore, Tamil Nadu 641001, India</li>
       <li><strong>Grievance Email:</strong> <a href="mailto:grievance@kanavuillam.com">grievance@kanavuillam.com</a> (cc: <a href="mailto:support@kanavuillam.com">support@kanavuillam.com</a>)</li>
-      <li><strong>Statutory SLA:</strong> Acknowledgment within 24 hours; resolution within 15–30 days.</li>
+      <li><strong>Statutory SLA:</strong> Acknowledgment within 24 hours; resolution within 15 days.</li>
     </ul>
 
     <div class="footer">
