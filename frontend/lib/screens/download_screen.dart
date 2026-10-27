@@ -975,24 +975,17 @@ class _DownloadScreenState extends State<DownloadScreen> {
         _showSnack(context, 'Translating Vastu to Tamil... Please wait.',
             isSuccess: true);
         try {
-          final backendBase =
-              ApiService.baseUrl.replaceAll(RegExp(r'/api$'), '');
-          final res = await http.post(
-              Uri.parse('$backendBase/api/analyze-vastu/${data['id']}'),
-              headers: {'Content-Type': 'application/json'},
-              body: json.encode({'lang': 'Tamil'}))
-              .timeout(const Duration(seconds: 8));
-          if (res.statusCode == 200) {
-            final newVastu = json.decode(res.body);
-            final completeData = Map<String, dynamic>.from(data);
-            completeData['vastu_data'] = newVastu;
-            if (completeData['model_data'] != null) {
-              completeData['model_data'] =
-                  Map<String, dynamic>.from(completeData['model_data']);
-              completeData['model_data']['_vastu'] = newVastu;
-            }
-            data = completeData;
+          final newVastu = await ApiService()
+              .analyzeVastu(data['id'].toString(), lang: 'Tamil')
+              .timeout(const Duration(seconds: 15));
+          final completeData = Map<String, dynamic>.from(data);
+          completeData['vastu_data'] = newVastu;
+          if (completeData['model_data'] != null) {
+            completeData['model_data'] =
+                Map<String, dynamic>.from(completeData['model_data']);
+            completeData['model_data']['_vastu'] = newVastu;
           }
+          data = completeData;
         } catch (e) {
           debugPrint('Error fetching Tamil vastu: $e');
         }
@@ -1080,24 +1073,17 @@ class _DownloadScreenState extends State<DownloadScreen> {
         _showSnack(context, 'Translating Vastu to Tamil... Please wait.',
             isSuccess: true);
         try {
-          final backendBase =
-              ApiService.baseUrl.replaceAll(RegExp(r'/api$'), '');
-          final res = await http.post(
-              Uri.parse('$backendBase/api/analyze-vastu/${data['id']}'),
-              headers: {'Content-Type': 'application/json'},
-              body: json.encode({'lang': 'Tamil'}))
-              .timeout(const Duration(seconds: 8));
-          if (res.statusCode == 200) {
-            final newVastu = json.decode(res.body);
-            final completeData = Map<String, dynamic>.from(data);
-            completeData['vastu_data'] = newVastu;
-            if (completeData['model_data'] != null) {
-              completeData['model_data'] =
-                  Map<String, dynamic>.from(completeData['model_data']);
-              completeData['model_data']['_vastu'] = newVastu;
-            }
-            data = completeData;
+          final newVastu = await ApiService()
+              .analyzeVastu(data['id'].toString(), lang: 'Tamil')
+              .timeout(const Duration(seconds: 15));
+          final completeData = Map<String, dynamic>.from(data);
+          completeData['vastu_data'] = newVastu;
+          if (completeData['model_data'] != null) {
+            completeData['model_data'] =
+                Map<String, dynamic>.from(completeData['model_data']);
+            completeData['model_data']['_vastu'] = newVastu;
           }
+          data = completeData;
         } catch (e) {
           debugPrint('Error fetching Tamil vastu: $e');
         }

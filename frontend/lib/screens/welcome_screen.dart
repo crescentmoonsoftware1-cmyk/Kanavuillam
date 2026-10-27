@@ -35,8 +35,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       final prefs = await SharedPreferences.getInstance();
       final email = prefs.getString('user_email');
 
-      // Allow full logo zoom and kural entrance animations to finish smoothly (~2400ms)
-      await Future.delayed(const Duration(milliseconds: 2400));
+      // Smooth, responsive entrance animation (~900ms)
+      await Future.delayed(const Duration(milliseconds: 900));
 
       if (email != null && email.trim().isNotEmpty) {
         if (mounted) {

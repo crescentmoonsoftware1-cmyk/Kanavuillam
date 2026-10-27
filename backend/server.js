@@ -75,6 +75,7 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
       'http://127.0.0.1:3000',
       // Add your production domains below or set ALLOWED_ORIGINS env var
       'https://kanavuillam.vercel.app',
+      'https://kanavuillam-web.vercel.app',
       'https://kanavuillam.com',
       'https://www.kanavuillam.com'
     ];
@@ -2173,11 +2174,11 @@ app.get('/checkout', (req, res) => {
   </div>
 
   <script>
-    const orderId = "${orderId}";
-    const amountVal = ${amount};
-    const isMock = ${isMock};
-    const rzpKey = "${rzpKey}";
-    const userEmail = "${email}";
+    const orderId = ${JSON.stringify(orderId)};
+    const amountVal = ${Number(amount) || 0};
+    const isMock = ${Boolean(isMock)};
+    const rzpKey = ${JSON.stringify(rzpKey)};
+    const userEmail = ${JSON.stringify(email)};
 
     function initiatePayment() {
       const btn = document.getElementById('payBtn');
@@ -2302,7 +2303,7 @@ app.get('/payment-success', (req, res) => {
 });
 
 // ─── Token Refresh Endpoint ───────────────────────────────────────────────────
-app.post('/api/auth/refresh', async (req, res) => {
+app.post('/api/auth/refresh', authLimiter, async (req, res) => {
   const { refresh_token } = req.body;
   if (!refresh_token) return res.status(400).json({ error: 'refresh_token is required' });
   try {
@@ -2378,7 +2379,7 @@ app.get('/api/auth/google', async (req, res) => {
   }
 });
 
-app.post('/api/auth/google/token', async (req, res) => {
+app.post('/api/auth/google/token', authLimiter, async (req, res) => {
   const { idToken, email, name } = req.body;
   if (!idToken) return res.status(400).json({ error: 'ID token required' });
   try {
