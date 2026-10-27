@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_decor.dart';
 import '../core/providers/app_config_provider.dart';
+import '../services/api_service.dart';
 import 'auth_screen.dart';
 import 'shell_screen.dart';
 
@@ -27,6 +28,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   @override
   void initState() {
     super.initState();
+    // Silently wake up backend from cold sleep early
+    ApiService.warmupBackend();
     _checkSavedSession();
   }
 
@@ -35,8 +38,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       final prefs = await SharedPreferences.getInstance();
       final email = prefs.getString('user_email');
 
-      // Smooth, responsive entrance animation (~900ms)
-      await Future.delayed(const Duration(milliseconds: 900));
+      // Crisp, snappy entrance animation (~350ms)
+      await Future.delayed(const Duration(milliseconds: 350));
 
       if (email != null && email.trim().isNotEmpty) {
         if (mounted) {

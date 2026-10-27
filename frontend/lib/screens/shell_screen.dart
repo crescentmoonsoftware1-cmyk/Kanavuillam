@@ -55,6 +55,7 @@ class ShellScreen extends StatefulWidget {
 class _ShellScreenState extends State<ShellScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _selectedIndex = 0;
+  final Set<int> _loadedTabs = {0};
   bool _isGenerating = false;
   Map<String, dynamic>? _projectData;
   Set<String> _selectedReportIds = {};
@@ -147,6 +148,9 @@ class _ShellScreenState extends State<ShellScreen> {
       } else {
         _selectedIndex = 1;
       }
+      _loadedTabs.clear();
+      _loadedTabs.add(0);
+      _loadedTabs.add(_selectedIndex);
     });
 
     _saveActiveProjectToStorage();
@@ -253,7 +257,20 @@ class _ShellScreenState extends State<ShellScreen> {
     return indices;
   }
 
+  void _switchTab(int newIndex) {
+    if (_selectedIndex == 1 && newIndex != 1) {
+      _viewerKey.currentState?.pauseRenderer();
+    } else if (newIndex == 1) {
+      _viewerKey.currentState?.resumeRenderer();
+    }
+    setState(() {
+      _selectedIndex = newIndex;
+      _loadedTabs.add(newIndex);
+    });
+  }
+
   Widget _buildBody() {
+    _loadedTabs.add(_selectedIndex);
     return IndexedStack(
       index: _selectedIndex,
       children: [
@@ -262,89 +279,101 @@ class _ShellScreenState extends State<ShellScreen> {
           onStartGeneration: _startAIGeneration,
           isExternalLoading: _isGenerating,
         ),
-        _projectData != null
-            ? ViewerScreen(
-                key: _viewerKey,
-                projectData: _projectData!,
-                onNavigateToTab: (index) =>
-                    setState(() => _selectedIndex = index),
-                onNavigateToVastu: () => setState(() => _selectedIndex = 2),
-              )
-            : _EmptyState(
-                icon: Icons.view_in_ar_rounded,
-                title: '3D View',
-                subtitle:
-                    'Upload a floor plan on the Home Map screen\nto generate your 3D model.',
-                accentColor: _accent,
-              ),
-        _projectData != null
-            ? VastuScreen(
-                projectData: _projectData!,
-                onNavigateToTab: (index) =>
-                    setState(() => _selectedIndex = index),
-                onNavigateToNext: () => setState(() => _selectedIndex = 3),
-                onBack: () => setState(() => _selectedIndex = 1),
-              )
-            : _EmptyState(
-                icon: Icons.self_improvement_outlined,
-                title: 'Vastu Report',
-                subtitle:
-                    'Generate a project first to view\nyour Vastu analysis.',
-                accentColor: _accent,
-              ),
-        _projectData != null
-            ? EstimationScreen(
-                projectData: _projectData!,
-                onNavigateToTab: (index) =>
-                    setState(() => _selectedIndex = index),
-                onNavigateToNext: () => setState(() => _selectedIndex = 4),
-                onBack: () => setState(() => _selectedIndex = 2),
-              )
-            : _EmptyState(
-                icon: Icons.calculate_outlined,
-                title: 'Estimation',
-                subtitle:
-                    'Generate a project first to view\nyour cost estimate.',
-                accentColor: _accent,
-              ),
-        _projectData != null
-            ? StructuralScreen(
-                projectData: _projectData!,
-                onNavigateToTab: (index) =>
-                    setState(() => _selectedIndex = index),
-                onNavigateToNext: () => setState(() => _selectedIndex = 5),
-                onBack: () => setState(() => _selectedIndex = 3),
-              )
-            : _EmptyState(
-                icon: Icons.foundation_outlined,
-                title: 'Structural Report',
-                subtitle:
-                    'Generate a project first to view\nthe structural analysis.',
-                accentColor: _accent,
-              ),
-        _projectData != null
-            ? DownloadScreen(
-                projectData: _projectData!,
-                selectedReportIds: _selectedReportIds,
-                onNavigateToTab: (index) =>
-                    setState(() => _selectedIndex = index),
-                onNavigateTo3D: () => setState(() => _selectedIndex = 1),
-                userData: widget.userData,
-                capture3DScreenshots: () async {
-                  return await _viewerKey.currentState
-                          ?.captureAllFloorScreenshots() ??
-                      {};
-                },
-              )
-            : _EmptyState(
-                icon: Icons.download_outlined,
-                title: 'Download Report',
-                subtitle:
-                    'Generate a project first to\ndownload your full report.',
-                accentColor: _accent,
-              ),
-        HistoryScreen(userData: widget.userData),
-        ProfileScreen(userData: widget.userData),
+        _loadedTabs.contains(1)
+            ? (_projectData != null
+                ? ViewerScreen(
+                    key: _viewerKey,
+                    projectData: _projectData!,
+                    onNavigateToTab: _switchTab,
+                    onNavigateToVastu: () => _switchTab(2),
+                  )
+                : _EmptyState(
+                    icon: Icons.view_in_ar_rounded,
+                    title: '3D View',
+                    subtitle:
+                        'Upload a floor plan on the Home Map screen\nto generate your 3D model.',
+                    accentColor: _accent,
+                  ))
+            : const SizedBox.shrink(),
+        _loadedTabs.contains(2)
+            ? (_projectData != null
+                ? VastuScreen(
+                    projectData: _projectData!,
+                    onNavigateToTab: _switchTab,
+                    onNavigateToNext: () => _switchTab(3),
+                    onBack: () => _switchTab(1),
+                  )
+                : _EmptyState(
+                    icon: Icons.self_improvement_outlined,
+                    title: 'Vastu Report',
+                    subtitle:
+                        'Generate a project first to view\nyour Vastu analysis.',
+                    accentColor: _accent,
+                  ))
+            : const SizedBox.shrink(),
+        _loadedTabs.contains(3)
+            ? (_projectData != null
+                ? EstimationScreen(
+                    projectData: _projectData!,
+                    onNavigateToTab: _switchTab,
+                    onNavigateToNext: () => _switchTab(4),
+                    onBack: () => _switchTab(2),
+                  )
+                : _EmptyState(
+                    icon: Icons.calculate_outlined,
+                    title: 'Estimation',
+                    subtitle:
+                        'Generate a project first to view\nyour cost estimate.',
+                    accentColor: _accent,
+                  ))
+            : const SizedBox.shrink(),
+        _loadedTabs.contains(4)
+            ? (_projectData != null
+                ? StructuralScreen(
+                    projectData: _projectData!,
+                    onNavigateToTab: _switchTab,
+                    onNavigateToNext: () => _switchTab(5),
+                    onBack: () => _switchTab(3),
+                  )
+                : _EmptyState(
+                    icon: Icons.foundation_outlined,
+                    title: 'Structural Report',
+                    subtitle:
+                        'Generate a project first to view\nthe structural analysis.',
+                    accentColor: _accent,
+                  ))
+            : const SizedBox.shrink(),
+        _loadedTabs.contains(5)
+            ? (_projectData != null
+                ? DownloadScreen(
+                    projectData: _projectData!,
+                    selectedReportIds: _selectedReportIds,
+                    onNavigateToTab: _switchTab,
+                    onNavigateTo3D: () => _switchTab(1),
+                    userData: widget.userData,
+                    capture3DScreenshots: () async {
+                      if (!_loadedTabs.contains(1)) {
+                        _switchTab(1);
+                      }
+                      return await _viewerKey.currentState
+                              ?.captureAllFloorScreenshots() ??
+                          {};
+                    },
+                  )
+                : _EmptyState(
+                    icon: Icons.download_outlined,
+                    title: 'Download Report',
+                    subtitle:
+                        'Generate a project first to\ndownload your full report.',
+                    accentColor: _accent,
+                  ))
+            : const SizedBox.shrink(),
+        _loadedTabs.contains(6)
+            ? HistoryScreen(userData: widget.userData)
+            : const SizedBox.shrink(),
+        _loadedTabs.contains(7)
+            ? ProfileScreen(userData: widget.userData)
+            : const SizedBox.shrink(),
       ],
     );
   }
@@ -359,22 +388,22 @@ class _ShellScreenState extends State<ShellScreen> {
     // 2. Report Back-Stack flow:
     // Download (5) -> Structure (4)
     if (_selectedIndex == 5) {
-      setState(() => _selectedIndex = 4);
+      _switchTab(4);
       return;
     }
     // Structure (4) -> Cost (3)
     if (_selectedIndex == 4) {
-      setState(() => _selectedIndex = 3);
+      _switchTab(3);
       return;
     }
     // Cost (3) -> Vastu (2)
     if (_selectedIndex == 3) {
-      setState(() => _selectedIndex = 2);
+      _switchTab(2);
       return;
     }
     // Vastu (2) -> 3D View (1)
     if (_selectedIndex == 2) {
-      setState(() => _selectedIndex = 1);
+      _switchTab(1);
       return;
     }
 
@@ -387,7 +416,7 @@ class _ShellScreenState extends State<ShellScreen> {
 
     // 4. In History (6) or Profile (7): Go back to Home (0)
     if (_selectedIndex == 6 || _selectedIndex == 7) {
-      setState(() => _selectedIndex = 0);
+      _switchTab(0);
       return;
     }
 
@@ -566,7 +595,7 @@ class _ShellScreenState extends State<ShellScreen> {
             onTap: (i) {
               Navigator.pop(context);
               Future.delayed(const Duration(milliseconds: 100), () {
-                if (mounted) setState(() => _selectedIndex = i);
+                if (mounted) _switchTab(i);
               });
             },
           ),
@@ -640,9 +669,7 @@ class _ShellScreenState extends State<ShellScreen> {
                 bottom: 0,
                 child: _FloatingCapsuleNavBar(
                   selectedIndex: _selectedIndex,
-                  onTap: (index) {
-                    setState(() => _selectedIndex = index);
-                  },
+                  onTap: _switchTab,
                 ),
               ),
           ],

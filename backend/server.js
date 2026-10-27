@@ -1931,7 +1931,8 @@ app.get('/api/cost/:id', authenticateToken, async (req, res) => {
 
 app.get('/api/projects', authenticateToken, async (req, res) => {
   const user = req.user;
-  let query = supabase.from('projects').select('*').order('created_at', { ascending: false });
+  // Optimize payload: only return lightweight list metadata, omit massive model_data JSON
+  let query = supabase.from('projects').select('id, name, created_at, image_url, status').order('created_at', { ascending: false });
 
   if (user.id) {
     query = query.or(`user_id.eq.${user.id},user_email.eq.${user.email}`);

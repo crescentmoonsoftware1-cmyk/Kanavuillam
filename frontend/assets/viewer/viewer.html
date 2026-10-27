@@ -510,7 +510,19 @@
         renderer.setSize(innerWidth, innerHeight);
       });
 
+      let isPaused = false;
+      window.pauseRenderer = function () {
+        isPaused = true;
+      };
+      window.resumeRenderer = function () {
+        if (isPaused) {
+          isPaused = false;
+          renderer.render(scene, camera);
+        }
+      };
+
       renderer.setAnimationLoop(() => {
+        if (isPaused) return;
         controls.update();
         if (animatedFans && animatedFans.length > 0) {
           animatedFans.forEach(fan => {
@@ -2275,6 +2287,8 @@
       if (d?.type === 'set_door_style' && d.style) window.setDoorStyle(d.style);
       if (d?.type === 'set_window_style' && d.style) window.setWindowStyle(d.style);
       if (d?.type === 'set_furniture_visible') window.setFurnitureVisible(d.visible);
+      if (d?.type === 'pause_renderer') window.pauseRenderer();
+      if (d?.type === 'resume_renderer') window.resumeRenderer();
       if (d?.type === 'capture_screenshot') {
         const dataUrl = window.captureScreenshot(d.mode || 'top');
         window.parent.postMessage(JSON.stringify({ type: 'screenshot_result', data: dataUrl }), '*');

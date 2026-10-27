@@ -216,6 +216,36 @@ class ViewerScreenState extends State<ViewerScreen> {
     }
   }
 
+  void pauseRenderer() {
+    if (!_isWebViewReady) return;
+    try {
+      if (kIsWeb) {
+        final msg = json.encode({'type': 'pause_renderer'});
+        _webIFrame?.contentWindow?.postMessage(msg.toJS, '*'.toJS);
+      } else {
+        _mobileController.runJavaScript("if(window.pauseRenderer) window.pauseRenderer();");
+      }
+    } catch (_) {}
+  }
+
+  void resumeRenderer() {
+    if (!_isWebViewReady) return;
+    try {
+      if (kIsWeb) {
+        final msg = json.encode({'type': 'resume_renderer'});
+        _webIFrame?.contentWindow?.postMessage(msg.toJS, '*'.toJS);
+      } else {
+        _mobileController.runJavaScript("if(window.resumeRenderer) window.resumeRenderer();");
+      }
+    } catch (_) {}
+  }
+
+  @override
+  void dispose() {
+    pauseRenderer();
+    super.dispose();
+  }
+
   Future<void> setCameraMode(String mode) async {
     if (!_isWebViewReady) return;
     try {

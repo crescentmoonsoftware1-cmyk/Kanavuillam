@@ -22,12 +22,19 @@ class HistoryScreen extends StatefulWidget {
 
 class _HistoryScreenState extends State<HistoryScreen> {
   final ApiService _apiService = ApiService();
-  bool _isLoading = true;
+  static List<Map<String, dynamic>>? _cachedProjects;
+  late bool _isLoading;
   List<Map<String, dynamic>> _projects = [];
 
   @override
   void initState() {
     super.initState();
+    if (_cachedProjects != null) {
+      _projects = _cachedProjects!;
+      _isLoading = false;
+    } else {
+      _isLoading = true;
+    }
     _loadUserHistory();
   }
 
@@ -146,11 +153,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
             };
           }).toList();
 
+          _cachedProjects = mapped;
           setState(() {
             _projects = mapped;
             _isLoading = false;
           });
         } else {
+          _cachedProjects = [];
           setState(() {
             _projects = [];
             _isLoading = false;

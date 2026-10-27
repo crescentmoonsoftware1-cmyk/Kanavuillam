@@ -9,6 +9,14 @@ class ApiService {
   static String get baseUrl =>
       'https://kanavuillam-production.up.railway.app/api';
 
+  /// Asynchronously pings the server to wake it up from cloud cold sleep
+  static void warmupBackend() {
+    try {
+      final healthUri = Uri.parse('${baseUrl.replaceAll(RegExp(r'/api$'), '')}/api/health');
+      http.get(healthUri).timeout(const Duration(seconds: 4)).catchError((_) => http.Response('', 500));
+    } catch (_) {}
+  }
+
   /// Refresh the Supabase access token if it expires within the next 5 minutes.
   static Future<void> _refreshTokenIfNeeded() async {
     final prefs = await SharedPreferences.getInstance();
