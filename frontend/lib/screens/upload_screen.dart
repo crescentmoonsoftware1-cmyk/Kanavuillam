@@ -164,7 +164,7 @@ class _UploadScreenState extends State<UploadScreen> {
         height: double.infinity,
         decoration: const BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xFFE9EEF4), Color(0xFFD8DFE9)])),
         child: Stack(children: [
-          Positioned.fill(child: SafeArea(child: Center(child: ConstrainedBox(
+          Positioned.fill(child: SafeArea(bottom: false, child: Center(child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 440),
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),

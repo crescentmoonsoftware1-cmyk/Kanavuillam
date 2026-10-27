@@ -630,19 +630,24 @@ class _ShellScreenState extends State<ShellScreen> {
                 ),
               ),
 
+            if (!_isGenerating &&
+                (_selectedIndex == 0 ||
+                    _selectedIndex == 6 ||
+                    _selectedIndex == 7))
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: _FloatingCapsuleNavBar(
+                  selectedIndex: _selectedIndex,
+                  onTap: (index) {
+                    setState(() => _selectedIndex = index);
+                  },
+                ),
+              ),
           ],
         ),
-        bottomNavigationBar: (_isGenerating ||
-                (_selectedIndex != 0 &&
-                    _selectedIndex != 6 &&
-                    _selectedIndex != 7))
-            ? null
-            : _FloatingCapsuleNavBar(
-                selectedIndex: _selectedIndex,
-                onTap: (index) {
-                  setState(() => _selectedIndex = index);
-                },
-              ),
+        bottomNavigationBar: null,
       ),
     );
   }
@@ -842,13 +847,13 @@ class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar> {
 
     return SafeArea(
       top: false,
-      child: Container(
-        height: 74,
+      child: Align(
         alignment: Alignment.bottomCenter,
-        padding: const EdgeInsets.only(bottom: 14),
-        child: SizedBox(
-          width: barWidth,
-          height: barHeight,
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: SizedBox(
+            width: barWidth,
+            height: barHeight,
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(100),
@@ -950,7 +955,8 @@ class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar> {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 
   Widget _buildTabItem({

@@ -188,6 +188,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           gradient: isDark ? null : AppColors.canvasGradient,
         ),
         child: SafeArea(
+          bottom: false,
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 440),

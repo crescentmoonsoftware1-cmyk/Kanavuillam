@@ -662,6 +662,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           gradient: isDark ? null : AppColors.canvasGradient,
         ),
         child: SafeArea(
+          bottom: false,
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 440),
