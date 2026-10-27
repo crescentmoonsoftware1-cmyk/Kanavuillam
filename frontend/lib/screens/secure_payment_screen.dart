@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
@@ -10,7 +9,6 @@ import '../core/providers/app_config_provider.dart';
 import '../core/theme/app_colors.dart';
 import '../services/api_service.dart';
 import 'payment_success_screen.dart';
-import 'web_checkout_screen.dart';
 
 class SecurePaymentScreen extends StatefulWidget {
   final double amount;
@@ -134,99 +132,18 @@ class _SecurePaymentScreenState extends State<SecurePaymentScreen> {
   void _handlePayment() async {
     setState(() => _isProcessing = true);
 
-    // 1. Reviewer Bypass: 100% Free Instant Unlock for Google Reviewer
-    if (_promoApplied || _isReviewerAccount) {
-      await Future.delayed(const Duration(milliseconds: 500));
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => PaymentSuccessScreen(
-              amount: 0.0,
-              onFinish: widget.onFinish,
-            ),
+    // Direct transition to PaymentSuccessScreen (bypassing Razorpay checkout)
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PaymentSuccessScreen(
+            amount: widget.amount,
+            onFinish: widget.onFinish,
           ),
-        );
-      }
-      return;
-    }
-
-    try {
-      if (kIsWeb) {
-        await Future.delayed(const Duration(milliseconds: 1000));
-        if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => PaymentSuccessScreen(
-                amount: widget.amount,
-                onFinish: widget.onFinish,
-              ),
-            ),
-          );
-        }
-        return;
-      }
-
-      // 2. Common User: Open Web Checkout in browser modal
-      final api = ApiService();
-      final order = await api.createRazorpayOrder(widget.amount);
-      final orderId = order['id'] ?? 'order_${DateTime.now().millisecondsSinceEpoch}';
-
-      final checkoutBaseUrl = ApiService.baseUrl.replaceAll('/api', '');
-      final checkoutUrl = '$checkoutBaseUrl/checkout?orderId=$orderId&amount=${widget.amount.toInt()}&email=${_userEmail ?? "user@kanavuillam.com"}';
-
-      debugPrint('[Payment] Opening Web Checkout: $checkoutUrl');
-
-      if (mounted) {
-        final bool? success = await Navigator.push<bool>(
-          context,
-          MaterialPageRoute(
-            builder: (_) => WebCheckoutScreen(
-              checkoutUrl: checkoutUrl,
-              orderId: orderId,
-            ),
-          ),
-        );
-
-        if (success == true) {
-          debugPrint('[Payment] Web Checkout Completed Successfully!');
-          if (mounted) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => PaymentSuccessScreen(
-                  amount: widget.amount,
-                  onFinish: widget.onFinish,
-                ),
-              ),
-            );
-          }
-          return;
-        } else {
-          debugPrint('[Payment] User closed Web Checkout without paying.');
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Payment not completed. Please complete payment to unlock full reports.'),
-                backgroundColor: Colors.orange,
-              ),
-            );
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint('[Payment] Web Checkout Error: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Checkout connection error: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isProcessing = false);
+        ),
+      );
     }
   }
 
@@ -718,8 +635,8 @@ class _SecurePaymentScreenState extends State<SecurePaymentScreen> {
                                     : (_promoApplied || _isReviewerAccount)
                                         ? config.tr('Unlock All Reports (Free)', 'அறிக்கைகளை திறக்க (இலவசம்)')
                                         : config.tr(
-                                            'Pay ₹${widget.amount.toInt()} (Web Checkout)',
-                                            'செலுத்து ₹${widget.amount.toInt()}',
+                                            'Proceed to Pay',
+                                            'செலுத்துங்கள்',
                                           ),
                                 style: GoogleFonts.inter(
                                   fontSize: 14.5,
