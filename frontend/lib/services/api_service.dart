@@ -9,7 +9,46 @@ class ApiService {
   static String get baseUrl =>
       'https://kanavuillam-production.up.railway.app/api';
 
+  /// Refresh the Supabase access token if it expires within the next 5 minutes.
+  static Future<void> _refreshTokenIfNeeded() async {
+    final prefs = await SharedPreferences.getInstance();
+    final expiresAt = prefs.getInt('token_expires_at') ?? 0;
+    final nowSecs = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    // Refresh if less than 5 minutes remain
+    if (expiresAt > 0 && expiresAt - nowSecs < 300) {
+      final refreshToken = prefs.getString('refresh_token');
+      if (refreshToken != null && refreshToken.isNotEmpty) {
+        try {
+          final response = await http.post(
+            Uri.parse('${baseUrl.replaceAll(RegExp(r'/api$'), '')}/api/auth/refresh'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'refresh_token': refreshToken}),
+          ).timeout(const Duration(seconds: 10));
+          if (response.statusCode == 200) {
+            final data = jsonDecode(response.body) as Map<String, dynamic>?;
+            final session = data?['session'] as Map<String, dynamic>?;
+            final newToken = session?['access_token'] as String?;
+            final newRefresh = session?['refresh_token'] as String?;
+            final newExpiry = session?['expires_at'];
+            if (newToken != null && newToken.isNotEmpty) {
+              await prefs.setString('auth_token', newToken);
+            }
+            if (newRefresh != null && newRefresh.isNotEmpty) {
+              await prefs.setString('refresh_token', newRefresh);
+            }
+            if (newExpiry != null) {
+              await prefs.setInt('token_expires_at', (newExpiry is int ? newExpiry : int.tryParse(newExpiry.toString()) ?? 0));
+            }
+          }
+        } catch (_) {
+          // Network failure: proceed with existing token
+        }
+      }
+    }
+  }
+
   static Future<Map<String, String>> _authHeaders([Map<String, String>? extra]) async {
+    await _refreshTokenIfNeeded();
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('auth_token');
     final headers = <String, String>{
@@ -29,12 +68,8 @@ class ApiService {
     request.fields['name'] = projectName;
     request.fields['orientation'] = orientation;
 
+    await _refreshTokenIfNeeded();
     final prefs = await SharedPreferences.getInstance();
-    request.fields['email'] = userEmail ?? prefs.getString('user_email') ?? 'unknown';
-    final savedUserId = prefs.getString('user_id');
-    if (savedUserId != null && savedUserId.isNotEmpty) {
-      request.fields['userId'] = savedUserId;
-    }
     final token = prefs.getString('auth_token');
     if (token != null && token.isNotEmpty) {
       request.headers['Authorization'] = 'Bearer $token';

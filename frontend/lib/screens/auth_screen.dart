@@ -123,8 +123,16 @@ class _AuthScreenState extends State<AuthScreen> {
         if (phone.isNotEmpty) await prefs.setString('user_phone', phone);
         final session = response['session'] as Map<String, dynamic>?;
         final token = session?['access_token'] as String?;
+        final refreshToken = session?['refresh_token'] as String?;
         if (token != null && token.isNotEmpty) {
           await prefs.setString('auth_token', token);
+        }
+        if (refreshToken != null && refreshToken.isNotEmpty) {
+          await prefs.setString('refresh_token', refreshToken);
+        }
+        final expiresAt = session?['expires_at'];
+        if (expiresAt != null) {
+          await prefs.setInt('token_expires_at', (expiresAt is int ? expiresAt : int.tryParse(expiresAt.toString()) ?? 0));
         }
 
         if (mounted) {

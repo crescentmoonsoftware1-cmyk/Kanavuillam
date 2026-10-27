@@ -22,6 +22,9 @@ RUN npm install
 # Copy the rest of the backend files
 COPY backend/ .
 
+# Set production environment so all security checks are active
+ENV NODE_ENV=production
+
 # Expose the port the app runs on
 EXPOSE 3000
 

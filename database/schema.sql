@@ -139,3 +139,78 @@ create policy "Users can view own payments" on payments
     or (auth.jwt() ->> 'email') = user_email
   );
 
+-- ==============================================================================
+-- 13. PROFILES TABLE (User display name, phone, avatar)
+-- ==============================================================================
+
+create table if not exists profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  email text not null,
+  full_name text,
+  phone text,
+  avatar_url text,
+  created_at timestamptz default timezone('utc'::text, now()) not null,
+  updated_at timestamptz default timezone('utc'::text, now()) not null
+);
+
+alter table profiles enable row level security;
+
+create policy "Users can view own profile" on profiles
+  for select
+  to authenticated
+  using (auth.uid() = id);
+
+create policy "Users can update own profile" on profiles
+  for update
+  to authenticated
+  using (auth.uid() = id);
+
+create policy "Users can insert own profile" on profiles
+  for insert
+  to authenticated
+  with check (auth.uid() = id);
+
+create policy "Service role full access on profiles" on profiles
+  for all
+  to service_role
+  using (true)
+  with check (true);
+
+-- ==============================================================================
+-- 14. HISTORY TABLE (Activity log for projects/actions)
+-- ==============================================================================
+
+create table if not exists history (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade,
+  user_email text,
+  action text not null,
+  details jsonb,
+  created_at timestamptz default timezone('utc'::text, now()) not null
+);
+
+alter table history enable row level security;
+
+create policy "Users can view own history" on history
+  for select
+  to authenticated
+  using (
+    auth.uid() = user_id 
+    or (auth.jwt() ->> 'email') = user_email
+  );
+
+create policy "Users can insert own history" on history
+  for insert
+  to authenticated
+  with check (
+    auth.uid() = user_id 
+    or (auth.jwt() ->> 'email') = user_email
+  );
+
+create policy "Service role full access on history" on history
+  for all
+  to service_role
+  using (true)
+  with check (true);
+
+

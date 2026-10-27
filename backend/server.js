@@ -50,14 +50,8 @@ async function authenticateToken(req, res, next) {
       console.warn('[Auth Middleware] Verification error:', err.message);
     }
   }
-
-  // Fallback for designated reviewer accounts or dev testing
-  const fallbackEmail = req.query?.email || req.body?.email;
-  if (fallbackEmail && (fallbackEmail.includes('reviewer') || fallbackEmail.includes('playstore') || process.env.NODE_ENV !== 'production')) {
-    req.user = { email: fallbackEmail.toLowerCase().trim(), id: req.body?.userId || null };
-    return next();
-  }
-
+  // No fallback: all protected routes require a valid JWT.
+  // Play Store reviewers must log in with a real account.
   return res.status(401).json({ error: 'Unauthorized: A valid authentication token is required.' });
 }
 
@@ -75,7 +69,15 @@ async function optionalAuth(req, res, next) {
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim().toLowerCase())
-  : ['http://localhost:3000', 'http://localhost:5000', 'http://127.0.0.1:3000'];
+  : [
+      'http://localhost:3000',
+      'http://localhost:5000',
+      'http://127.0.0.1:3000',
+      // Add your production domains below or set ALLOWED_ORIGINS env var
+      'https://kanavuillam.vercel.app',
+      'https://kanavuillam.com',
+      'https://www.kanavuillam.com'
+    ];
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -116,6 +118,15 @@ const aiLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'AI request limit reached. Please wait a few minutes before trying again.' }
+});
+
+// Strict limiter for auth endpoints to prevent brute-force attacks
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // 10 login/signup attempts per 15 minutes per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many authentication attempts. Please wait 15 minutes before trying again.' }
 });
 
 // ─── Health Check Endpoints (For Railway, Docker & Uptime monitoring) ───────
@@ -1389,7 +1400,7 @@ function runCostEstimation(modelData, customLiveRates = null) {
 }
 
 // ─── Live Market Prices Endpoint ─────────────────────────────────────────────
-app.post('/api/material/live-prices', async (req, res) => {
+app.post('/api/material/live-prices', aiLimiter, optionalAuth, async (req, res) => {
   const location = req.body.location || 'Tamil Nadu, India';
   try {
     const prices = await fetchLiveMarketPrices(location);
@@ -1623,7 +1634,7 @@ function runStructuralReport(modelData) {
 
 // ─── Main Upload Endpoint ─────────────────────────────────────────────────────
 
-app.post('/api/upload', uploadLimiter, optionalAuth, (req, res, next) => {
+app.post('/api/upload', uploadLimiter, authenticateToken, (req, res, next) => {
   multiUpload(req, res, err => {
     if (err) {
       console.error('[Upload] Multer error:', err.message);
@@ -1755,8 +1766,9 @@ app.post('/api/upload', uploadLimiter, optionalAuth, (req, res, next) => {
 
     // Zero-Storage: uploaded floor plans are unlinked from disk immediately; image_url is null
     const imageUrl = null;
-    const projectUserId = req.user?.id || req.body.userId || req.body.user_id || null;
-    const projectUserEmail = req.user?.email || req.body.email || 'unknown';
+    // Use only authenticated identity — never trust request body for ownership
+    const projectUserId = req.user.id || null;
+    const projectUserEmail = req.user.email || null;
 
     let data;
     try {
@@ -1783,7 +1795,8 @@ app.post('/api/upload', uploadLimiter, optionalAuth, (req, res, next) => {
       data = {
         id: 'project_' + Date.now(),
         name: req.body.name || 'New Project',
-        user_email: req.body.email || 'unknown',
+        user_id: projectUserId,
+        user_email: projectUserEmail,
         image_url: imageUrl,
         model_data: fullModelData,
         vastu_data: vastu,
@@ -1850,10 +1863,9 @@ app.post('/api/analyze-vastu/:id', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Project not found' });
     }
 
-    const isOwner = !project.user_email || project.user_email === 'unknown' ||
+    const isOwner =
       (project.user_id && project.user_id === req.user.id) ||
-      (project.user_email && project.user_email.toLowerCase() === (req.user.email || '').toLowerCase()) ||
-      (req.user.email && (req.user.email.includes('reviewer') || req.user.email.includes('playstore')));
+      (project.user_email && project.user_email.toLowerCase() === (req.user.email || '').toLowerCase());
 
     if (!isOwner) {
       return res.status(403).json({ error: 'Forbidden: You do not have permission to analyze this project.' });
@@ -1886,10 +1898,9 @@ app.get('/api/vastu/:id', authenticateToken, async (req, res) => {
   const { data, error } = await supabase.from('projects').select('user_id, user_email, model_data').eq('id', req.params.id).single();
   if (error || !data) return res.status(404).json({ error: 'Project not found' });
 
-  const isOwner = !data.user_email || data.user_email === 'unknown' ||
+  const isOwner =
     (data.user_id && data.user_id === req.user.id) ||
-    (data.user_email && data.user_email.toLowerCase() === (req.user.email || '').toLowerCase()) ||
-    (req.user.email && (req.user.email.includes('reviewer') || req.user.email.includes('playstore')));
+    (data.user_email && data.user_email.toLowerCase() === (req.user.email || '').toLowerCase());
   if (!isOwner) return res.status(403).json({ error: 'Forbidden: Access denied to this project.' });
 
   if (data.model_data?._vastu) return res.json(data.model_data._vastu);
@@ -1905,10 +1916,9 @@ app.get('/api/cost/:id', authenticateToken, async (req, res) => {
   const { data, error } = await supabase.from('projects').select('user_id, user_email, model_data').eq('id', req.params.id).single();
   if (error || !data) return res.status(404).json({ error: 'Project not found' });
 
-  const isOwner = !data.user_email || data.user_email === 'unknown' ||
+  const isOwner =
     (data.user_id && data.user_id === req.user.id) ||
-    (data.user_email && data.user_email.toLowerCase() === (req.user.email || '').toLowerCase()) ||
-    (req.user.email && (req.user.email.includes('reviewer') || req.user.email.includes('playstore')));
+    (data.user_email && data.user_email.toLowerCase() === (req.user.email || '').toLowerCase());
   if (!isOwner) return res.status(403).json({ error: 'Forbidden: Access denied to this project.' });
 
   if (data.model_data?._cost) return res.json(data.model_data._cost);
@@ -1941,10 +1951,9 @@ app.get('/api/project/:id', authenticateToken, async (req, res) => {
   const { data, error } = await supabase.from('projects').select('*').eq('id', projectId).single();
   if (error || !data) return res.status(404).json({ error: 'Project not found' });
 
-  const isOwner = !data.user_email || data.user_email === 'unknown' ||
+  const isOwner =
     (data.user_id && data.user_id === user.id) ||
-    (data.user_email && data.user_email.toLowerCase() === (user.email || '').toLowerCase()) ||
-    (user.email && (user.email.includes('reviewer') || user.email.includes('playstore')));
+    (data.user_email && data.user_email.toLowerCase() === (user.email || '').toLowerCase());
 
   if (!isOwner) return res.status(403).json({ error: 'Forbidden: Access denied to this project.' });
 
@@ -1983,12 +1992,14 @@ app.post('/api/payment/create-order', optionalAuth, async (req, res) => {
     const order = await razorpay.orders.create(options);
     console.log(`[Payment] Order Created: ${order.id} for ₹${SERVER_PRICE_INR}`);
 
-    // Persist pending order in Supabase payments table
+    // Persist pending order in Supabase payments table, linked to project if provided
+    const projectId = req.body.project_id || null;
     try {
       await supabase.from('payments').insert([{
         order_id: order.id,
         user_id: req.user?.id || null,
         user_email: req.user?.email || null,
+        project_id: projectId,
         amount: SERVER_PRICE_INR,
         currency: 'INR',
         status: 'pending'
@@ -2092,10 +2103,17 @@ app.get('/api/payment/status/:orderId', async (req, res) => {
 });
 
 // ─── Web Checkout Page for External / In-App Browser ─────────────────────────
+// HTML-escape helper to prevent reflected XSS in server-rendered pages
+function escapeHtml(str) {
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;');
+}
+
 app.get('/checkout', (req, res) => {
-  const orderId = req.query.orderId || `order_${Date.now()}`;
-  const amount = req.query.amount || '500';
-  const email = req.query.email || 'customer@kanavuillam.com';
+  // Validate and sanitise every query-string value before embedding in HTML/JS
+  const rawAmount = parseFloat(req.query.amount);
+  const amount = (!isNaN(rawAmount) && rawAmount > 0) ? rawAmount : 500;
+  const orderId = escapeHtml(req.query.orderId || `order_${Date.now()}`);
+  const email = escapeHtml(req.query.email || 'customer@kanavuillam.com');
   const rzpKey = process.env.RAZORPAY_KEY_ID || 'rzp_test_placeholder';
   const isMock = !process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID.includes('placeholder');
 
@@ -2283,7 +2301,20 @@ app.get('/payment-success', (req, res) => {
 </html>`);
 });
 
-app.post('/api/auth/signup', async (req, res) => {
+// ─── Token Refresh Endpoint ───────────────────────────────────────────────────
+app.post('/api/auth/refresh', async (req, res) => {
+  const { refresh_token } = req.body;
+  if (!refresh_token) return res.status(400).json({ error: 'refresh_token is required' });
+  try {
+    const { data, error } = await supabase.auth.refreshSession({ refresh_token });
+    if (error || !data?.session) throw error || new Error('Refresh failed');
+    res.json({ session: data.session, user: data.user });
+  } catch (err) {
+    res.status(401).json({ error: 'Session refresh failed. Please log in again.' });
+  }
+});
+
+app.post('/api/auth/signup', authLimiter, async (req, res) => {
   const { email, password, name, phone } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
   try {
@@ -2309,7 +2340,7 @@ app.post('/api/auth/signup', async (req, res) => {
   }
 });
 
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', authLimiter, async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
   try {
@@ -2374,7 +2405,7 @@ app.post('/api/auth/google/token', async (req, res) => {
 });
 
 // ─── Account Deletion Endpoint (JWT Authenticated, Play Store Compliant) ─────
-app.post('/api/auth/delete-account', async (req, res) => {
+app.post('/api/auth/delete-account', authLimiter, async (req, res) => {
   const authHeader = req.headers.authorization;
   let targetUserId = null;
   let targetEmail = null;
@@ -2401,17 +2432,29 @@ app.post('/api/auth/delete-account', async (req, res) => {
   }
 
   console.log(`[Account Deletion] Authenticated deletion for: userId=${targetUserId}, email=${targetEmail}`);
+  const deletionErrors = [];
   try {
     // 3. Delete associated data across database tables
     if (targetUserId) {
-      try { await supabase.from('profiles').delete().eq('id', targetUserId); } catch (_) { }
-      try { await supabase.from('projects').delete().eq('user_id', targetUserId); } catch (_) { }
-      try { await supabase.from('history').delete().eq('user_id', targetUserId); } catch (_) { }
+      const { error: e1 } = await supabase.from('profiles').delete().eq('id', targetUserId);
+      if (e1 && e1.code !== 'PGRST116') deletionErrors.push(`profiles[id]: ${e1.message}`);
+      const { error: e2 } = await supabase.from('projects').delete().eq('user_id', targetUserId);
+      if (e2) deletionErrors.push(`projects[user_id]: ${e2.message}`);
+      const { error: e3 } = await supabase.from('history').delete().eq('user_id', targetUserId);
+      if (e3 && e3.code !== 'PGRST116') deletionErrors.push(`history[user_id]: ${e3.message}`);
     }
     if (targetEmail) {
-      try { await supabase.from('profiles').delete().eq('email', targetEmail); } catch (_) { }
-      try { await supabase.from('projects').delete().eq('user_email', targetEmail); } catch (_) { }
-      try { await supabase.from('history').delete().eq('email', targetEmail); } catch (_) { }
+      const { error: e4 } = await supabase.from('profiles').delete().eq('email', targetEmail);
+      if (e4 && e4.code !== 'PGRST116') deletionErrors.push(`profiles[email]: ${e4.message}`);
+      const { error: e5 } = await supabase.from('projects').delete().eq('user_email', targetEmail);
+      if (e5) deletionErrors.push(`projects[user_email]: ${e5.message}`);
+      const { error: e6 } = await supabase.from('history').delete().eq('email', targetEmail);
+      if (e6 && e6.code !== 'PGRST116') deletionErrors.push(`history[email]: ${e6.message}`);
+    }
+
+    if (deletionErrors.length > 0) {
+      console.error('[Account Deletion] Data deletion errors:', deletionErrors);
+      return res.status(500).json({ error: 'Partial deletion failure. Please contact support.', details: deletionErrors });
     }
 
     // 4. If Service Role Key is present, delete user from Supabase Auth
@@ -2422,6 +2465,7 @@ app.post('/api/auth/delete-account', async (req, res) => {
         console.log(`[Account Deletion] Successfully deleted user ${targetUserId} from Supabase Auth.`);
       } catch (adminErr) {
         console.warn(`[Account Deletion] Admin Auth deletion error:`, adminErr.message);
+        return res.status(500).json({ error: 'Failed to delete account from auth provider. Please contact support.' });
       }
     }
 
