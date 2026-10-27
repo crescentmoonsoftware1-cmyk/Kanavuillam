@@ -238,6 +238,7 @@ class _VastuScreenState extends State<VastuScreen> {
   @override
   Widget build(BuildContext context) {
     final config = context.watch<AppConfigProvider>();
+    final isDark = config.isDarkMode;
     final isTamil = config.isTamil;
     final langKey = isTamil ? 'TA' : 'EN';
     final rawPlanName = widget.projectData['name']?.toString() ?? '';
@@ -249,8 +250,8 @@ class _VastuScreenState extends State<VastuScreen> {
 
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppColors.canvasGradient,
+        decoration: BoxDecoration(
+          gradient: config.canvasGradient,
         ),
         child: SafeArea(
           child: FutureBuilder<Map<String, dynamic>>(
@@ -326,7 +327,7 @@ class _VastuScreenState extends State<VastuScreen> {
                                       style: GoogleFonts.plusJakartaSans(
                                         fontSize: 22,
                                         fontWeight: FontWeight.w700,
-                                        color: AppColors.inkPrimary,
+                                        color: isDark ? Colors.white : AppColors.inkPrimary,
                                         letterSpacing: -0.3,
                                         height: 1.1,
                                       ),
@@ -341,7 +342,7 @@ class _VastuScreenState extends State<VastuScreen> {
                                       style: GoogleFonts.plusJakartaSans(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w500,
-                                        color: AppColors.inkQuiet,
+                                        color: isDark ? const Color(0xFF94A3B8) : AppColors.inkQuiet,
                                       ),
                                     ),
                                   ],
@@ -351,10 +352,10 @@ class _VastuScreenState extends State<VastuScreen> {
                               Container(
                                 padding: const EdgeInsets.all(2),
                                 decoration: BoxDecoration(
-                                  color: AppColors.card,
+                                  color: isDark ? const Color(0xFF1E293B) : AppColors.card,
                                   borderRadius: BorderRadius.circular(100),
                                   border:
-                                      Border.all(color: AppColors.borderLight),
+                                      Border.all(color: isDark ? const Color(0xFF334155) : AppColors.borderLight),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
@@ -374,7 +375,7 @@ class _VastuScreenState extends State<VastuScreen> {
                                             horizontal: 10, vertical: 4),
                                         decoration: BoxDecoration(
                                           color: !isTamil
-                                              ? AppColors.inkDark
+                                              ? (isDark ? Colors.white : AppColors.inkDark)
                                               : Colors.transparent,
                                           borderRadius:
                                               BorderRadius.circular(100),
@@ -385,8 +386,8 @@ class _VastuScreenState extends State<VastuScreen> {
                                             fontSize: 12,
                                             fontWeight: FontWeight.w600,
                                             color: !isTamil
-                                                ? Colors.white
-                                                : AppColors.inkMuted,
+                                                ? (isDark ? Colors.black : Colors.white)
+                                                : (isDark ? const Color(0xFF94A3B8) : AppColors.inkMuted),
                                           ),
                                         ),
                                       ),
@@ -406,7 +407,7 @@ class _VastuScreenState extends State<VastuScreen> {
                                             horizontal: 10, vertical: 4),
                                         decoration: BoxDecoration(
                                           color: isTamil
-                                              ? AppColors.inkDark
+                                              ? (isDark ? Colors.white : AppColors.inkDark)
                                               : Colors.transparent,
                                           borderRadius:
                                               BorderRadius.circular(100),
@@ -417,8 +418,8 @@ class _VastuScreenState extends State<VastuScreen> {
                                             fontSize: 12,
                                             fontWeight: FontWeight.w600,
                                             color: isTamil
-                                                ? Colors.white
-                                                : AppColors.inkMuted,
+                                                ? (isDark ? Colors.black : Colors.white)
+                                                : (isDark ? const Color(0xFF94A3B8) : AppColors.inkMuted),
                                           ),
                                         ),
                                       ),
@@ -441,30 +442,35 @@ class _VastuScreenState extends State<VastuScreen> {
                               _buildMainTabChip(
                                 title: '3D',
                                 isActive: false,
+                                isDark: isDark,
                                 onTap: () => widget.onNavigateToTab?.call(1),
                               ),
                               const SizedBox(width: 5),
                               _buildMainTabChip(
                                 title: isTamil ? 'வாஸ்து' : 'Vastu',
                                 isActive: true,
+                                isDark: isDark,
                                 onTap: () {},
                               ),
                               const SizedBox(width: 5),
                               _buildMainTabChip(
                                 title: isTamil ? 'செலவு' : 'Cost',
                                 isActive: false,
+                                isDark: isDark,
                                 onTap: () => widget.onNavigateToTab?.call(3),
                               ),
                               const SizedBox(width: 5),
                               _buildMainTabChip(
                                 title: isTamil ? 'அமைப்பு' : 'Structure',
                                 isActive: false,
+                                isDark: isDark,
                                 onTap: () => widget.onNavigateToTab?.call(4),
                               ),
                               const SizedBox(width: 5),
                               _buildMainTabChip(
                                 title: isTamil ? 'பதிவிறக்கம்' : 'Download',
                                 isActive: false,
+                                isDark: isDark,
                                 onTap: () => widget.onNavigateToTab?.call(5),
                               ),
                             ],
@@ -481,16 +487,19 @@ class _VastuScreenState extends State<VastuScreen> {
                                 index: 0,
                                 title: isTamil ? 'மதிப்பெண்' : 'Score',
                                 isActive: _currentSubTab == 0,
+                                isDark: isDark,
                               ),
                               _buildSubTabItem(
                                 index: 1,
                                 title: isTamil ? 'அறைகள்' : 'Rooms',
                                 isActive: _currentSubTab == 1,
+                                isDark: isDark,
                               ),
                               _buildSubTabItem(
                                 index: 2,
                                 title: isTamil ? 'பரிகாரங்கள்' : 'Fixes',
                                 isActive: _currentSubTab == 2,
+                                isDark: isDark,
                               ),
                             ],
                           ),
@@ -501,9 +510,10 @@ class _VastuScreenState extends State<VastuScreen> {
                         Expanded(
                           child: Container(
                             decoration: BoxDecoration(
-                              color: AppColors.card,
+                              color: isDark ? const Color(0xFF131B2E) : AppColors.card,
                               borderRadius: BorderRadius.circular(28),
-                              border: Border.all(color: AppColors.borderLight),
+                              border: Border.all(
+                                  color: isDark ? const Color(0xFF1E293B) : AppColors.borderLight),
                               boxShadow: const [
                                 BoxShadow(
                                   color: Color(0x141B212F),
@@ -526,6 +536,7 @@ class _VastuScreenState extends State<VastuScreen> {
                                 rooms: rooms,
                                 fixes: fixes,
                                 isTamil: isTamil,
+                                isDark: isDark,
                               ),
                             ),
                           ),
@@ -547,6 +558,7 @@ class _VastuScreenState extends State<VastuScreen> {
     required int index,
     required String title,
     required bool isActive,
+    bool isDark = false,
   }) {
     return Expanded(
       child: GestureDetector(
@@ -561,8 +573,9 @@ class _VastuScreenState extends State<VastuScreen> {
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 14.5,
                 fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
-                color:
-                    isActive ? AppColors.inkPrimary : const Color(0xFF64748B),
+                color: isActive
+                    ? (isDark ? Colors.white : AppColors.inkPrimary)
+                    : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
               ),
             ),
             const SizedBox(height: 6),
@@ -587,15 +600,21 @@ class _VastuScreenState extends State<VastuScreen> {
     required String title,
     required bool isActive,
     required VoidCallback onTap,
+    bool isDark = false,
   }) {
     return GestureDetector(
       onTap: isActive ? null : onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
         decoration: BoxDecoration(
-          color: isActive ? AppColors.inkDark : AppColors.card,
+          color: isActive
+              ? (isDark ? Colors.white : AppColors.inkDark)
+              : (isDark ? const Color(0xFF1E293B) : AppColors.card),
           borderRadius: BorderRadius.circular(100),
-          border: isActive ? null : Border.all(color: AppColors.borderLight),
+          border: isActive
+              ? null
+              : Border.all(
+                  color: isDark ? const Color(0xFF334155) : AppColors.borderLight),
           boxShadow: isActive
               ? const [
                   BoxShadow(
@@ -612,7 +631,9 @@ class _VastuScreenState extends State<VastuScreen> {
           style: GoogleFonts.plusJakartaSans(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: isActive ? Colors.white : AppColors.inkMuted,
+            color: isActive
+                ? (isDark ? Colors.black : Colors.white)
+                : (isDark ? const Color(0xFF94A3B8) : AppColors.inkMuted),
           ),
         ),
       ),
@@ -632,10 +653,11 @@ class _VastuScreenState extends State<VastuScreen> {
     required List rooms,
     required List fixes,
     required bool isTamil,
+    bool isDark = false,
   }) {
     switch (subTab) {
       case 1:
-        return _buildRoomsView(rooms, isTamil);
+        return _buildRoomsView(rooms, isTamil, isDark: isDark);
       case 2:
         return _buildFixesView(
           strengths: strengths,
@@ -643,6 +665,7 @@ class _VastuScreenState extends State<VastuScreen> {
           fixes: fixes,
           score: score,
           isTamil: isTamil,
+          isDark: isDark,
         );
       case 0:
       default:
@@ -653,6 +676,7 @@ class _VastuScreenState extends State<VastuScreen> {
           pointsLost: pointsLost,
           whyPointsReduced: whyPointsReduced,
           isTamil: isTamil,
+          isDark: isDark,
         );
     }
   }
@@ -665,6 +689,7 @@ class _VastuScreenState extends State<VastuScreen> {
     required int pointsLost,
     required List whyPointsReduced,
     required bool isTamil,
+    bool isDark = false,
   }) {
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
@@ -684,7 +709,7 @@ class _VastuScreenState extends State<VastuScreen> {
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.inkPrimary,
+                      color: isDark ? Colors.white : AppColors.inkPrimary,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -692,7 +717,7 @@ class _VastuScreenState extends State<VastuScreen> {
                     isTamil ? 'வீட்டின் திசை அமைப்பு' : 'House orientation',
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 12,
-                      color: AppColors.inkQuiet,
+                      color: isDark ? const Color(0xFF94A3B8) : AppColors.inkQuiet,
                     ),
                   ),
                 ],
@@ -701,7 +726,7 @@ class _VastuScreenState extends State<VastuScreen> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.canvasGradientTop,
+                  color: isDark ? const Color(0xFF1E293B) : AppColors.canvasGradientTop,
                   borderRadius: BorderRadius.circular(100),
                 ),
                 child: Text(
@@ -709,7 +734,7 @@ class _VastuScreenState extends State<VastuScreen> {
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.inkMuted,
+                    color: isDark ? const Color(0xFFCBD5E1) : AppColors.inkMuted,
                   ),
                 ),
               ),
@@ -732,7 +757,7 @@ class _VastuScreenState extends State<VastuScreen> {
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 56,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.inkPrimary,
+                      color: isDark ? Colors.white : AppColors.inkPrimary,
                       height: 1.0,
                     ),
                   ),
@@ -742,7 +767,7 @@ class _VastuScreenState extends State<VastuScreen> {
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.inkQuiet,
+                      color: isDark ? const Color(0xFF94A3B8) : AppColors.inkQuiet,
                     ),
                   ),
                 ],
@@ -751,7 +776,7 @@ class _VastuScreenState extends State<VastuScreen> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: AppColors.inkDark,
+                  color: isDark ? const Color(0xFFE58A18) : AppColors.inkDark,
                   borderRadius: BorderRadius.circular(100),
                 ),
                 child: Text(
@@ -772,7 +797,7 @@ class _VastuScreenState extends State<VastuScreen> {
             width: double.infinity,
             height: 10,
             decoration: BoxDecoration(
-              color: const Color(0xFFE2E8F0),
+              color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
               borderRadius: BorderRadius.circular(100),
             ),
             alignment: Alignment.centerLeft,
@@ -791,9 +816,9 @@ class _VastuScreenState extends State<VastuScreen> {
           // Score Reduced Header
           Container(
             padding: const EdgeInsets.symmetric(vertical: 12),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               border: Border(
-                top: BorderSide(color: Color(0xFFE2E8F0)),
+                top: BorderSide(color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
               ),
             ),
             child: Row(
@@ -804,7 +829,7 @@ class _VastuScreenState extends State<VastuScreen> {
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.inkPrimary,
+                    color: isDark ? Colors.white : AppColors.inkPrimary,
                   ),
                 ),
                 Container(
@@ -835,7 +860,7 @@ class _VastuScreenState extends State<VastuScreen> {
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
+                color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Row(
@@ -843,8 +868,8 @@ class _VastuScreenState extends State<VastuScreen> {
                   Container(
                     width: 28,
                     height: 28,
-                    decoration: const BoxDecoration(
-                      color: AppColors.canvasGradientTop,
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF334155) : AppColors.canvasGradientTop,
                       shape: BoxShape.circle,
                     ),
                     alignment: Alignment.center,
@@ -853,7 +878,7 @@ class _VastuScreenState extends State<VastuScreen> {
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.inkMuted,
+                        color: isDark ? Colors.white : AppColors.inkMuted,
                       ),
                     ),
                   ),
@@ -864,7 +889,7 @@ class _VastuScreenState extends State<VastuScreen> {
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w500,
-                        color: AppColors.inkPrimary,
+                        color: isDark ? const Color(0xFFE2E8F0) : AppColors.inkPrimary,
                         height: 1.35,
                       ),
                     ),
@@ -879,7 +904,7 @@ class _VastuScreenState extends State<VastuScreen> {
   }
 
   // ── 2. ROOMS SUBTAB (1:1 with Stitch Prototype) ───────────────────────────
-  Widget _buildRoomsView(List rooms, bool isTamil) {
+  Widget _buildRoomsView(List rooms, bool isTamil, {bool isDark = false}) {
     final int correctCount =
         rooms.where((r) => r is Map && r['isCorrect'] == true).length;
 
@@ -895,7 +920,7 @@ class _VastuScreenState extends State<VastuScreen> {
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.inkPrimary,
+                  color: isDark ? Colors.white : AppColors.inkPrimary,
                 ),
               ),
               Text(
@@ -905,7 +930,7 @@ class _VastuScreenState extends State<VastuScreen> {
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.inkReading,
+                  color: isDark ? const Color(0xFF94A3B8) : AppColors.inkReading,
                 ),
               ),
             ],
@@ -916,7 +941,7 @@ class _VastuScreenState extends State<VastuScreen> {
               physics: const BouncingScrollPhysics(),
               itemCount: rooms.length,
               separatorBuilder: (_, __) =>
-                  const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                  Divider(height: 1, color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
               itemBuilder: (context, i) {
                 final r = rooms[i] as Map;
                 final String rawTitle = r['title']?.toString() ?? 'Room';
@@ -939,6 +964,7 @@ class _VastuScreenState extends State<VastuScreen> {
                       isCorrect: isCorrect,
                       analysisList: analysis,
                       isTamil: isTamil,
+                      isDark: isDark,
                     );
                   },
                   child: Padding(
@@ -949,12 +975,12 @@ class _VastuScreenState extends State<VastuScreen> {
                         Container(
                           width: 46,
                           height: 46,
-                          decoration: const BoxDecoration(
-                            color: AppColors.canvasGradientTop,
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF1E293B) : AppColors.canvasGradientTop,
                             shape: BoxShape.circle,
                           ),
                           child:
-                              Icon(icon, size: 22, color: AppColors.inkMuted),
+                              Icon(icon, size: 22, color: isDark ? const Color(0xFF94A3B8) : AppColors.inkMuted),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -966,7 +992,7 @@ class _VastuScreenState extends State<VastuScreen> {
                                 style: GoogleFonts.plusJakartaSans(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w700,
-                                  color: AppColors.inkPrimary,
+                                  color: isDark ? Colors.white : AppColors.inkPrimary,
                                 ),
                               ),
                               const SizedBox(height: 2),
@@ -974,7 +1000,7 @@ class _VastuScreenState extends State<VastuScreen> {
                                 subtitle,
                                 style: GoogleFonts.plusJakartaSans(
                                   fontSize: 13,
-                                  color: AppColors.inkQuiet,
+                                  color: isDark ? const Color(0xFF94A3B8) : AppColors.inkQuiet,
                                 ),
                               ),
                             ],
@@ -986,8 +1012,8 @@ class _VastuScreenState extends State<VastuScreen> {
                               horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
                             color: isCorrect
-                                ? AppColors.canvasGradientTop
-                                : AppColors.amberTint,
+                                ? (isDark ? const Color(0xFF064E3B).withValues(alpha: 0.5) : AppColors.canvasGradientTop)
+                                : (isDark ? const Color(0xFF451A03).withValues(alpha: 0.5) : AppColors.amberTint),
                             borderRadius: BorderRadius.circular(100),
                           ),
                           child: Row(
@@ -999,8 +1025,8 @@ class _VastuScreenState extends State<VastuScreen> {
                                     : Icons.warning_amber_rounded,
                                 size: 13,
                                 color: isCorrect
-                                    ? AppColors.inkMuted
-                                    : AppColors.amberDark,
+                                    ? (isDark ? const Color(0xFF4ADE80) : AppColors.inkMuted)
+                                    : (isDark ? const Color(0xFFFBBF24) : AppColors.amberDark),
                               ),
                               const SizedBox(width: 4),
                               Text(
@@ -1011,18 +1037,18 @@ class _VastuScreenState extends State<VastuScreen> {
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w700,
                                   color: isCorrect
-                                      ? AppColors.inkMuted
-                                      : AppColors.amberDark,
+                                      ? (isDark ? const Color(0xFF4ADE80) : AppColors.inkMuted)
+                                      : (isDark ? const Color(0xFFFBBF24) : AppColors.amberDark),
                                 ),
                               ),
                             ],
                           ),
                         ),
                         const SizedBox(width: 6),
-                        const Icon(
+                        Icon(
                           Icons.chevron_right_rounded,
                           size: 18,
-                          color: AppColors.inkQuiet,
+                          color: isDark ? const Color(0xFF64748B) : AppColors.inkQuiet,
                         ),
                       ],
                     ),
@@ -1043,6 +1069,7 @@ class _VastuScreenState extends State<VastuScreen> {
     required List fixes,
     required int score,
     required bool isTamil,
+    bool isDark = false,
   }) {
     return Padding(
       padding: const EdgeInsets.all(20.0),
@@ -1058,6 +1085,7 @@ class _VastuScreenState extends State<VastuScreen> {
                 _buildAnalysisFilterChip(
                   label: isTamil ? 'அனைத்தும்' : 'All',
                   isSelected: _analysisFilter == 0,
+                  isDark: isDark,
                   onTap: () => setState(() => _analysisFilter = 0),
                 ),
                 const SizedBox(width: 6),
@@ -1066,6 +1094,7 @@ class _VastuScreenState extends State<VastuScreen> {
                       ? 'பலங்கள் (${strengths.length})'
                       : 'Strengths (${strengths.length})',
                   isSelected: _analysisFilter == 1,
+                  isDark: isDark,
                   onTap: () => setState(() => _analysisFilter = 1),
                 ),
                 const SizedBox(width: 6),
@@ -1074,6 +1103,7 @@ class _VastuScreenState extends State<VastuScreen> {
                       ? 'குறைபாடுகள் (${violations.length})'
                       : 'Violations (${violations.length})',
                   isSelected: _analysisFilter == 2,
+                  isDark: isDark,
                   onTap: () => setState(() => _analysisFilter = 2),
                 ),
                 const SizedBox(width: 6),
@@ -1082,6 +1112,7 @@ class _VastuScreenState extends State<VastuScreen> {
                       ? 'பரிகாரங்கள் (${fixes.length})'
                       : 'Fixes (${fixes.length})',
                   isSelected: _analysisFilter == 3,
+                  isDark: isDark,
                   onTap: () => setState(() => _analysisFilter = 3),
                 ),
               ],
@@ -1101,7 +1132,7 @@ class _VastuScreenState extends State<VastuScreen> {
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.5,
-                      color: AppColors.inkReading,
+                      color: isDark ? const Color(0xFF94A3B8) : AppColors.inkReading,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -1113,14 +1144,16 @@ class _VastuScreenState extends State<VastuScreen> {
                             Container(
                               width: 30,
                               height: 30,
-                              decoration: const BoxDecoration(
-                                color: AppColors.canvasGradientTop,
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? const Color(0xFF064E3B).withValues(alpha: 0.5)
+                                    : AppColors.canvasGradientTop,
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.check_rounded,
                                 size: 16,
-                                color: AppColors.inkMuted,
+                                color: isDark ? const Color(0xFF4ADE80) : AppColors.inkMuted,
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -1130,7 +1163,7 @@ class _VastuScreenState extends State<VastuScreen> {
                                 style: GoogleFonts.plusJakartaSans(
                                   fontSize: 13.5,
                                   fontWeight: FontWeight.w500,
-                                  color: AppColors.inkPrimary,
+                                  color: isDark ? const Color(0xFFE2E8F0) : AppColors.inkPrimary,
                                   height: 1.4,
                                 ),
                               ),
@@ -1139,7 +1172,7 @@ class _VastuScreenState extends State<VastuScreen> {
                         ),
                       )),
                   const SizedBox(height: 12),
-                  const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                  Divider(height: 1, color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
                   const SizedBox(height: 16),
                 ],
 
@@ -1151,7 +1184,7 @@ class _VastuScreenState extends State<VastuScreen> {
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.5,
-                      color: AppColors.inkReading,
+                      color: isDark ? const Color(0xFF94A3B8) : AppColors.inkReading,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -1163,14 +1196,16 @@ class _VastuScreenState extends State<VastuScreen> {
                             Container(
                               width: 30,
                               height: 30,
-                              decoration: const BoxDecoration(
-                                color: AppColors.amberTint,
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? const Color(0xFF451A03).withValues(alpha: 0.5)
+                                    : AppColors.amberTint,
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.warning_amber_rounded,
                                 size: 16,
-                                color: AppColors.amberDark,
+                                color: isDark ? const Color(0xFFFBBF24) : AppColors.amberDark,
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -1180,7 +1215,7 @@ class _VastuScreenState extends State<VastuScreen> {
                                 style: GoogleFonts.plusJakartaSans(
                                   fontSize: 13.5,
                                   fontWeight: FontWeight.w500,
-                                  color: AppColors.inkPrimary,
+                                  color: isDark ? const Color(0xFFE2E8F0) : AppColors.inkPrimary,
                                   height: 1.4,
                                 ),
                               ),
@@ -1189,7 +1224,7 @@ class _VastuScreenState extends State<VastuScreen> {
                         ),
                       )),
                   const SizedBox(height: 12),
-                  const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                  Divider(height: 1, color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
                   const SizedBox(height: 16),
                 ],
 
@@ -1201,7 +1236,7 @@ class _VastuScreenState extends State<VastuScreen> {
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.5,
-                      color: AppColors.inkReading,
+                      color: isDark ? const Color(0xFF94A3B8) : AppColors.inkReading,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -1216,9 +1251,10 @@ class _VastuScreenState extends State<VastuScreen> {
                       margin: const EdgeInsets.only(bottom: 10),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
+                        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.borderLight),
+                        border: Border.all(
+                            color: isDark ? const Color(0xFF334155) : AppColors.borderLight),
                       ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1226,8 +1262,8 @@ class _VastuScreenState extends State<VastuScreen> {
                           Container(
                             width: 26,
                             height: 26,
-                            decoration: const BoxDecoration(
-                              color: AppColors.inkDark,
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFFE58A18) : AppColors.inkDark,
                               shape: BoxShape.circle,
                             ),
                             alignment: Alignment.center,
@@ -1253,7 +1289,7 @@ class _VastuScreenState extends State<VastuScreen> {
                                         style: GoogleFonts.plusJakartaSans(
                                           fontSize: 13,
                                           fontWeight: FontWeight.w700,
-                                          color: AppColors.inkPrimary,
+                                          color: isDark ? Colors.white : AppColors.inkPrimary,
                                         ),
                                       ),
                                     ),
@@ -1262,7 +1298,7 @@ class _VastuScreenState extends State<VastuScreen> {
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 6, vertical: 2),
                                         decoration: BoxDecoration(
-                                          color: AppColors.amberTint,
+                                          color: isDark ? const Color(0xFF451A03) : AppColors.amberTint,
                                           borderRadius:
                                               BorderRadius.circular(6),
                                         ),
@@ -1271,7 +1307,7 @@ class _VastuScreenState extends State<VastuScreen> {
                                           style: GoogleFonts.plusJakartaSans(
                                             fontSize: 11,
                                             fontWeight: FontWeight.w700,
-                                            color: AppColors.amberDark,
+                                            color: isDark ? const Color(0xFFFBBF24) : AppColors.amberDark,
                                           ),
                                         ),
                                       ),
@@ -1282,7 +1318,7 @@ class _VastuScreenState extends State<VastuScreen> {
                                   fix,
                                   style: GoogleFonts.plusJakartaSans(
                                     fontSize: 12.5,
-                                    color: AppColors.inkReading,
+                                    color: isDark ? const Color(0xFF94A3B8) : AppColors.inkReading,
                                     height: 1.35,
                                   ),
                                 ),
@@ -1306,22 +1342,30 @@ class _VastuScreenState extends State<VastuScreen> {
     required String label,
     required bool isSelected,
     required VoidCallback onTap,
+    bool isDark = false,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.inkDark : AppColors.card,
+          color: isSelected
+              ? (isDark ? Colors.white : AppColors.inkDark)
+              : (isDark ? const Color(0xFF1E293B) : AppColors.card),
           borderRadius: BorderRadius.circular(100),
-          border: isSelected ? null : Border.all(color: AppColors.borderLight),
+          border: isSelected
+              ? null
+              : Border.all(
+                  color: isDark ? const Color(0xFF334155) : AppColors.borderLight),
         ),
         child: Text(
           label,
           style: GoogleFonts.plusJakartaSans(
             fontSize: 12,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-            color: isSelected ? Colors.white : AppColors.inkMuted,
+            color: isSelected
+                ? (isDark ? Colors.black : Colors.white)
+                : (isDark ? const Color(0xFF94A3B8) : AppColors.inkMuted),
           ),
         ),
       ),
@@ -1336,6 +1380,7 @@ class _VastuScreenState extends State<VastuScreen> {
     required bool isCorrect,
     required List analysisList,
     required bool isTamil,
+    bool isDark = false,
   }) {
     final List defaultAnalysis = isCorrect
         ? (isTamil
@@ -1369,9 +1414,9 @@ class _VastuScreenState extends State<VastuScreen> {
       isScrollControlled: true,
       builder: (ctx) {
         return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF131B2E) : Colors.white,
+            borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(32),
               topRight: Radius.circular(32),
             ),
@@ -1386,7 +1431,7 @@ class _VastuScreenState extends State<VastuScreen> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.borderLight,
+                  color: isDark ? const Color(0xFF334155) : AppColors.borderLight,
                   borderRadius: BorderRadius.circular(100),
                 ),
               ),
@@ -1407,7 +1452,7 @@ class _VastuScreenState extends State<VastuScreen> {
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 20,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.inkPrimary,
+                              color: isDark ? Colors.white : AppColors.inkPrimary,
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -1416,8 +1461,8 @@ class _VastuScreenState extends State<VastuScreen> {
                                 horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
                               color: isCorrect
-                                  ? AppColors.canvasGradientTop
-                                  : AppColors.amberTint,
+                                  ? (isDark ? const Color(0xFF064E3B).withValues(alpha: 0.5) : AppColors.canvasGradientTop)
+                                  : (isDark ? const Color(0xFF451A03).withValues(alpha: 0.5) : AppColors.amberTint),
                               borderRadius: BorderRadius.circular(100),
                             ),
                             child: Text(
@@ -1428,8 +1473,8 @@ class _VastuScreenState extends State<VastuScreen> {
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
                                 color: isCorrect
-                                    ? AppColors.inkMuted
-                                    : AppColors.amberDark,
+                                    ? (isDark ? const Color(0xFF4ADE80) : AppColors.inkMuted)
+                                    : (isDark ? const Color(0xFFFBBF24) : AppColors.amberDark),
                               ),
                             ),
                           ),
@@ -1440,7 +1485,7 @@ class _VastuScreenState extends State<VastuScreen> {
                         subtitle,
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 13,
-                          color: AppColors.inkQuiet,
+                          color: isDark ? const Color(0xFF94A3B8) : AppColors.inkQuiet,
                         ),
                       ),
                     ],
@@ -1472,7 +1517,7 @@ class _VastuScreenState extends State<VastuScreen> {
                             item.toString(),
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 14,
-                              color: AppColors.inkPrimary,
+                              color: isDark ? const Color(0xFFE2E8F0) : AppColors.inkPrimary,
                               height: 1.4,
                             ),
                           ),

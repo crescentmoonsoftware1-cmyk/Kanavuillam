@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 
 import '../core/providers/app_config_provider.dart';
 import '../core/theme/app_colors.dart';
-import '../core/theme/app_decor.dart';
 import '../services/api_service.dart';
 import '../widgets/material_search_widget.dart';
 
@@ -174,6 +173,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
       config = AppConfigProvider();
     }
     final isTamil = config.isTamil;
+    final isDark = config.isDarkMode;
 
     // Failsafe state checks across hot reloads
     dynamic curTab = _currentSubTab;
@@ -264,8 +264,8 @@ class _EstimationScreenState extends State<EstimationScreen> {
 
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppColors.canvasGradient,
+        decoration: BoxDecoration(
+          gradient: config.canvasGradient,
         ),
         child: SafeArea(
           child: Center(
@@ -292,7 +292,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                                   style: GoogleFonts.plusJakartaSans(
                                     fontSize: 22,
                                     fontWeight: FontWeight.w700,
-                                    color: AppColors.inkPrimary,
+                                    color: isDark ? Colors.white : AppColors.inkPrimary,
                                     letterSpacing: -0.3,
                                     height: 1.1,
                                   ),
@@ -307,7 +307,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                                   style: GoogleFonts.plusJakartaSans(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
-                                    color: AppColors.inkQuiet,
+                                    color: isDark ? const Color(0xFF94A3B8) : AppColors.inkQuiet,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -319,9 +319,10 @@ class _EstimationScreenState extends State<EstimationScreen> {
                           Container(
                             padding: const EdgeInsets.all(2),
                             decoration: BoxDecoration(
-                              color: AppColors.card,
+                              color: isDark ? const Color(0xFF1E293B) : AppColors.card,
                               borderRadius: BorderRadius.circular(100),
-                              border: Border.all(color: AppColors.borderLight),
+                              border: Border.all(
+                                  color: isDark ? const Color(0xFF334155) : AppColors.borderLight),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -335,7 +336,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                                         horizontal: 10, vertical: 4),
                                     decoration: BoxDecoration(
                                       color: !isTamil
-                                          ? AppColors.inkDark
+                                          ? (isDark ? Colors.white : AppColors.inkDark)
                                           : Colors.transparent,
                                       borderRadius: BorderRadius.circular(100),
                                     ),
@@ -345,8 +346,8 @@ class _EstimationScreenState extends State<EstimationScreen> {
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
                                         color: !isTamil
-                                            ? Colors.white
-                                            : AppColors.inkMuted,
+                                            ? (isDark ? Colors.black : Colors.white)
+                                            : (isDark ? const Color(0xFF94A3B8) : AppColors.inkMuted),
                                       ),
                                     ),
                                   ),
@@ -360,7 +361,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                                         horizontal: 10, vertical: 4),
                                     decoration: BoxDecoration(
                                       color: isTamil
-                                          ? AppColors.inkDark
+                                          ? (isDark ? Colors.white : AppColors.inkDark)
                                           : Colors.transparent,
                                       borderRadius: BorderRadius.circular(100),
                                     ),
@@ -370,8 +371,8 @@ class _EstimationScreenState extends State<EstimationScreen> {
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
                                         color: isTamil
-                                            ? Colors.white
-                                            : AppColors.inkMuted,
+                                            ? (isDark ? Colors.black : Colors.white)
+                                            : (isDark ? const Color(0xFF94A3B8) : AppColors.inkMuted),
                                       ),
                                     ),
                                   ),
@@ -394,30 +395,35 @@ class _EstimationScreenState extends State<EstimationScreen> {
                           _buildMainTab(
                             title: '3D',
                             isActive: false,
+                            isDark: isDark,
                             onTap: () => widget.onNavigateToTab?.call(1),
                           ),
                           const SizedBox(width: 5),
                           _buildMainTab(
                             title: isTamil ? 'வாஸ்து' : 'Vastu',
                             isActive: false,
+                            isDark: isDark,
                             onTap: () => widget.onNavigateToTab?.call(2),
                           ),
                           const SizedBox(width: 5),
                           _buildMainTab(
                             title: isTamil ? 'செலவு' : 'Cost',
                             isActive: true,
+                            isDark: isDark,
                             onTap: () {},
                           ),
                           const SizedBox(width: 5),
                           _buildMainTab(
                             title: isTamil ? 'அமைப்பு' : 'Structure',
                             isActive: false,
+                            isDark: isDark,
                             onTap: () => widget.onNavigateToTab?.call(4),
                           ),
                           const SizedBox(width: 5),
                           _buildMainTab(
                             title: isTamil ? 'பதிவிறக்கம்' : 'Download',
                             isActive: false,
+                            isDark: isDark,
                             onTap: () => widget.onNavigateToTab?.call(5),
                           ),
                         ],
@@ -430,9 +436,10 @@ class _EstimationScreenState extends State<EstimationScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(
-                        color: AppColors.card,
+                        color: isDark ? const Color(0xFF131B2E) : AppColors.card,
                         borderRadius: BorderRadius.circular(28),
-                        border: Border.all(color: AppColors.borderLight),
+                        border: Border.all(
+                            color: isDark ? const Color(0xFF1E293B) : AppColors.borderLight),
                         boxShadow: const [
                           BoxShadow(
                             color: Color(0x141B212F),
@@ -459,7 +466,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                                       style: GoogleFonts.plusJakartaSans(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF64748B),
+                                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                                       ),
                                     ),
                                     const SizedBox(height: 4),
@@ -472,7 +479,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                                         style: GoogleFonts.plusJakartaSans(
                                           fontSize: 28,
                                           fontWeight: FontWeight.w800,
-                                          color: const Color(0xFF0F172A),
+                                          color: isDark ? Colors.white : const Color(0xFF0F172A),
                                           letterSpacing: -0.5,
                                           height: 1.15,
                                         ),
@@ -483,7 +490,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: 10, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFF1F5F9),
+                                        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
                                         borderRadius:
                                             BorderRadius.circular(100),
                                       ),
@@ -494,7 +501,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                                         style: GoogleFonts.plusJakartaSans(
                                           fontSize: 11.5,
                                           fontWeight: FontWeight.w500,
-                                          color: const Color(0xFF64748B),
+                                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                                         ),
                                       ),
                                     ),
@@ -510,16 +517,16 @@ class _EstimationScreenState extends State<EstimationScreen> {
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 10, vertical: 5),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFFF1F5F9),
+                                      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
                                       borderRadius: BorderRadius.circular(100),
                                     ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        const Icon(
+                                        Icon(
                                           Icons.architecture,
                                           size: 14,
-                                          color: Color(0xFF0F172A),
+                                          color: isDark ? Colors.white : const Color(0xFF0F172A),
                                         ),
                                         const SizedBox(width: 5),
                                         Text(
@@ -527,7 +534,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                                           style: GoogleFonts.plusJakartaSans(
                                             fontSize: 11.5,
                                             fontWeight: FontWeight.w600,
-                                            color: const Color(0xFF0F172A),
+                                            color: isDark ? Colors.white : const Color(0xFF0F172A),
                                           ),
                                         ),
                                       ],
@@ -540,11 +547,15 @@ class _EstimationScreenState extends State<EstimationScreen> {
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: 10, vertical: 5),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFF0FDF4),
+                                        color: isDark
+                                            ? const Color(0xFF064E3B).withValues(alpha: 0.5)
+                                            : const Color(0xFFF0FDF4),
                                         borderRadius:
                                             BorderRadius.circular(100),
                                         border: Border.all(
-                                            color: const Color(0xFF86EFAC)),
+                                            color: isDark
+                                                ? const Color(0xFF059669)
+                                                : const Color(0xFF86EFAC)),
                                       ),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
@@ -554,7 +565,9 @@ class _EstimationScreenState extends State<EstimationScreen> {
                                                 ? Icons.sync
                                                 : Icons.sensors,
                                             size: 14,
-                                            color: const Color(0xFF16A34A),
+                                            color: isDark
+                                                ? const Color(0xFF4ADE80)
+                                                : const Color(0xFF16A34A),
                                           ),
                                           const SizedBox(width: 5),
                                           Text(
@@ -564,7 +577,9 @@ class _EstimationScreenState extends State<EstimationScreen> {
                                             style: GoogleFonts.plusJakartaSans(
                                               fontSize: 11.5,
                                               fontWeight: FontWeight.w600,
-                                              color: const Color(0xFF16A34A),
+                                              color: isDark
+                                                  ? const Color(0xFF4ADE80)
+                                                  : const Color(0xFF16A34A),
                                             ),
                                           ),
                                         ],
@@ -576,7 +591,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                             ],
                           ),
                           const SizedBox(height: 12),
-                          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                          Divider(height: 1, color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
                           const SizedBox(height: 12),
                           // 3 Dropdown Pills in a row
                           Row(
@@ -585,6 +600,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                                 child: _buildFactorDropdown(
                                   label: isTamil ? 'ஒப்பந்தம்' : 'Contract',
                                   value: _selectedContractMode,
+                                  isDark: isDark,
                                   items: {
                                     'turnkey': 'Turnkey',
                                     'labor': 'Labor Only',
@@ -608,6 +624,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                                 child: _buildFactorDropdown(
                                   label: isTamil ? 'மண்' : 'Soil',
                                   value: _selectedSoil,
+                                  isDark: isDark,
                                   items: {
                                     'normal': 'Normal',
                                     'soft_silt': 'Silt (+12%)',
@@ -630,6 +647,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                                 child: _buildFactorDropdown(
                                   label: isTamil ? 'இடம்' : 'Location',
                                   value: _selectedLocation,
+                                  isDark: isDark,
                                   items: {
                                     'metro': 'Metro',
                                     'tier2': 'Town (Std)',
@@ -656,10 +674,10 @@ class _EstimationScreenState extends State<EstimationScreen> {
 
                     // ── 4. SUB TABS (Tiers, Stages, BOQ, Materials) WITH UNDERLINE ──
                     Container(
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         border: Border(
                           bottom: BorderSide(
-                            color: Color(0xFFE2E8F0),
+                            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
                             width: 1.5,
                           ),
                         ),
@@ -670,21 +688,25 @@ class _EstimationScreenState extends State<EstimationScreen> {
                             index: 0,
                             title: isTamil ? 'தொகுப்புகள்' : 'Tiers',
                             isActive: _currentSubTab == 0,
+                            isDark: isDark,
                           ),
                           _buildSubTabItem(
                             index: 1,
                             title: isTamil ? 'நிலைகள்' : 'Stages',
                             isActive: _currentSubTab == 1,
+                            isDark: isDark,
                           ),
                           _buildSubTabItem(
                             index: 2,
                             title: 'BOQ',
                             isActive: _currentSubTab == 2,
+                            isDark: isDark,
                           ),
                           _buildSubTabItem(
                             index: 3,
                             title: isTamil ? 'பொருட்கள்' : 'Materials',
                             isActive: _currentSubTab == 3,
+                            isDark: isDark,
                           ),
                         ],
                       ),
@@ -700,6 +722,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                         laborCost: laborCost,
                         effectivePerSqft: effectivePerSqft,
                         isTamil: isTamil,
+                        isDark: isDark,
                       ),
                     ),
                   ],
@@ -717,15 +740,21 @@ class _EstimationScreenState extends State<EstimationScreen> {
     required String title,
     required bool isActive,
     required VoidCallback onTap,
+    bool isDark = false,
   }) {
     return GestureDetector(
       onTap: isActive ? null : onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
         decoration: BoxDecoration(
-          color: isActive ? AppColors.inkDark : AppColors.card,
+          color: isActive
+              ? (isDark ? Colors.white : AppColors.inkDark)
+              : (isDark ? const Color(0xFF1E293B) : AppColors.card),
           borderRadius: BorderRadius.circular(100),
-          border: isActive ? null : Border.all(color: AppColors.borderLight),
+          border: isActive
+              ? null
+              : Border.all(
+                  color: isDark ? const Color(0xFF334155) : AppColors.borderLight),
           boxShadow: isActive
               ? const [
                   BoxShadow(
@@ -742,7 +771,9 @@ class _EstimationScreenState extends State<EstimationScreen> {
           style: GoogleFonts.plusJakartaSans(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: isActive ? Colors.white : AppColors.inkMuted,
+            color: isActive
+                ? (isDark ? Colors.black : Colors.white)
+                : (isDark ? const Color(0xFF94A3B8) : AppColors.inkMuted),
           ),
         ),
       ),
@@ -754,6 +785,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
     required int index,
     required String title,
     required bool isActive,
+    bool isDark = false,
   }) {
     return Expanded(
       child: GestureDetector(
@@ -771,8 +803,8 @@ class _EstimationScreenState extends State<EstimationScreen> {
                   fontSize: 14,
                   fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
                   color: isActive
-                      ? const Color(0xFF0F172A)
-                      : const Color(0xFF64748B),
+                      ? (isDark ? Colors.white : const Color(0xFF0F172A))
+                      : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -800,15 +832,17 @@ class _EstimationScreenState extends State<EstimationScreen> {
     required Map<String, String> items,
     Map<String, String>? menuItems,
     required ValueChanged<String?> onChanged,
+    bool isDark = false,
   }) {
     final dropdownItems = menuItems ?? items;
     return Container(
       height: 36,
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(100),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(
+            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
@@ -817,11 +851,11 @@ class _EstimationScreenState extends State<EstimationScreen> {
           isExpanded: true,
           elevation: 4,
           borderRadius: BorderRadius.circular(16),
-          dropdownColor: Colors.white,
-          icon: const Icon(
+          dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+          icon: Icon(
             Icons.keyboard_arrow_down_rounded,
             size: 16,
-            color: AppColors.inkQuiet,
+            color: isDark ? const Color(0xFF94A3B8) : AppColors.inkQuiet,
           ),
           selectedItemBuilder: (BuildContext context) {
             return items.entries.map((e) {
@@ -832,7 +866,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.inkPrimary,
+                    color: isDark ? Colors.white : AppColors.inkPrimary,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -848,7 +882,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.inkPrimary,
+                  color: isDark ? Colors.white : AppColors.inkPrimary,
                 ),
               ),
             );
@@ -867,6 +901,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
     required double laborCost,
     required double effectivePerSqft,
     required bool isTamil,
+    bool isDark = false,
   }) {
     switch (_currentSubTab) {
       case 1:
@@ -875,17 +910,20 @@ class _EstimationScreenState extends State<EstimationScreen> {
           materialCost: materialCost,
           laborCost: laborCost,
           isTamil: isTamil,
+          isDark: isDark,
         );
       case 2:
         return _buildBOQTab(
           totalArea: totalArea,
           totalCost: calculatedTotal,
           isTamil: isTamil,
+          isDark: isDark,
         );
       case 3:
         return _buildMaterialsTab(
           totalArea: totalArea,
           isTamil: isTamil,
+          isDark: isDark,
         );
       case 0:
       default:
@@ -894,6 +932,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
           calculatedTotal: calculatedTotal,
           effectivePerSqft: effectivePerSqft,
           isTamil: isTamil,
+          isDark: isDark,
         );
     }
   }
@@ -906,6 +945,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
     required double calculatedTotal,
     required double effectivePerSqft,
     required bool isTamil,
+    bool isDark = false,
   }) {
     final estimates = {
       'basic': totalArea *
@@ -942,6 +982,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                 ? '• சிவப்பு செங்கல் / சாலிட் பிளாக்ஸ்\n• செராமிக் டைல்ஸ் 2x2\n• ஃப்ளஷ் கதவுகள் & UPVC ஜன்னல்கள்\n• ஃபினோலெக்ஸ் ஒயரிங் & CPVC பைப்\n• டிராக்டர் எமல்ஷன் பெயிண்ட்'
                 : '• Red Bricks / Solid Blocks\n• Ceramic Tiles 2x2\n• Flush Doors & UPVC Windows\n• Finolex Wiring & CPVC Plumbing\n• Tractor Emulsion Paint',
             isTamil: isTamil,
+            isDark: isDark,
           ),
           const SizedBox(height: 12),
           _buildTierCard(
@@ -958,6 +999,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                 : '• AAC Blocks / Wirecut Bricks\n• Vitrified Tiles 4x2 (Kajaria/Somany)\n• Heavy UPVC Windows with Mesh\n• Polycab Wires & Astral Plumbing\n• Asian Paints Apex Exterior & Emulsion',
             isRecommended: true,
             isTamil: isTamil,
+            isDark: isDark,
           ),
           const SizedBox(height: 12),
           _buildTierCard(
@@ -973,6 +1015,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                 ? '• போரோதெர்ம் தெர்மல் பிளாக்ஸ்\n• இத்தாலியன் மார்பிள் லுக் GVT டைல்ஸ்\n• தேக்கு மர முதன்மை கதவு & பிரீமியம் ஜன்னல்\n• கோஹ்லர் / ஜாக்குவார் சொகுசு பிட்டிங்ஸ்\n• ஏசியன் ராயல் லக்ஸரி & ஸ்மார்ட் ஸ்விட்ச்'
                 : '• Porotherm Thermal Clay Blocks\n• GVT / Italian Look Marble\n• Teak Wood Main Door & System Aluminum\n• Kohler / Jaquar Luxury Sanitaryware\n• Asian Royale Luxury & Smart Switches',
             isTamil: isTamil,
+            isDark: isDark,
           ),
           const SizedBox(height: 14),
 
@@ -980,7 +1023,12 @@ class _EstimationScreenState extends State<EstimationScreen> {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
-            decoration: AppDecor.card(radius: 24),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF131B2E) : AppColors.card,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                  color: isDark ? const Color(0xFF1E293B) : AppColors.cardBorder),
+            ),
             child: Row(
               children: [
                 Expanded(
@@ -993,7 +1041,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                             : 'Total Builtup Area',
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 11.5,
-                          color: AppColors.textMuted,
+                          color: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -1002,7 +1050,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textTitle,
+                          color: isDark ? Colors.white : AppColors.textTitle,
                         ),
                       ),
                     ],
@@ -1018,7 +1066,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                             : 'Effective Sq.Ft Rate',
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 11.5,
-                          color: AppColors.textMuted,
+                          color: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -1027,7 +1075,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textTitle,
+                          color: isDark ? Colors.white : AppColors.textTitle,
                         ),
                       ),
                     ],
@@ -1051,6 +1099,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
     required String specs,
     bool isRecommended = false,
     required bool isTamil,
+    bool isDark = false,
   }) {
     final bool isSelected = _selectedTier == id;
 
@@ -1060,11 +1109,23 @@ class _EstimationScreenState extends State<EstimationScreen> {
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(20),
-        decoration: AppDecor.card(
-          radius: 28,
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF131B2E) : AppColors.card,
+          borderRadius: BorderRadius.circular(28),
           border: isSelected
-              ? AppDecor.selectedBorder
-              : Border.all(color: AppColors.cardBorder, width: 1.0),
+              ? Border.all(color: const Color(0xFFE58A18), width: 2.0)
+              : Border.all(
+                  color: isDark ? const Color(0xFF1E293B) : AppColors.cardBorder,
+                  width: 1.0),
+          boxShadow: isDark
+              ? null
+              : const [
+                  BoxShadow(
+                    color: Color(0x141B212F),
+                    blurRadius: 32,
+                    offset: Offset(0, 12),
+                  ),
+                ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1080,7 +1141,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 17,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textTitle,
+                          color: isDark ? Colors.white : AppColors.textTitle,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -1089,7 +1150,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                           '· $subtitle',
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 12,
-                            color: AppColors.textMuted,
+                            color: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -1104,16 +1165,17 @@ class _EstimationScreenState extends State<EstimationScreen> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: AppColors.innerPanel,
+                      color: isDark ? const Color(0xFF1E293B) : AppColors.innerPanel,
                       borderRadius: BorderRadius.circular(100),
-                      border: Border.all(color: AppColors.cardBorder),
+                      border: Border.all(
+                          color: isDark ? const Color(0xFF334155) : AppColors.cardBorder),
                     ),
                     child: Text(
                       isTamil ? 'பரிந்துரை' : 'Popular',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textTitle,
+                        color: isDark ? const Color(0xFFFBBF24) : AppColors.textTitle,
                       ),
                     ),
                   ),
@@ -1125,7 +1187,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                     border: Border.all(
                       color: isSelected
                           ? AppColors.orangeHighlight
-                          : AppColors.cardBorder,
+                          : (isDark ? const Color(0xFF334155) : AppColors.cardBorder),
                       width: 1.5,
                     ),
                   ),
@@ -1162,7 +1224,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 24,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.textTitle,
+                            color: isDark ? Colors.white : AppColors.textTitle,
                             letterSpacing: -0.3,
                           ),
                         ),
@@ -1173,7 +1235,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textBody,
+                          color: isDark ? const Color(0xFF94A3B8) : AppColors.textBody,
                         ),
                       ),
                     ],
@@ -1185,7 +1247,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                     showDialog(
                       context: context,
                       builder: (ctx) => AlertDialog(
-                        backgroundColor: Colors.white,
+                        backgroundColor: isDark ? const Color(0xFF131B2E) : Colors.white,
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20)),
                         title: Text(
@@ -1193,7 +1255,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                           style: GoogleFonts.syne(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.textTitle,
+                            color: isDark ? Colors.white : AppColors.textTitle,
                           ),
                         ),
                         content: Text(
@@ -1201,7 +1263,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                           style: GoogleFonts.inter(
                             fontSize: 13,
                             height: 1.6,
-                            color: AppColors.textPrimary,
+                            color: isDark ? const Color(0xFFE2E8F0) : AppColors.textPrimary,
                           ),
                         ),
                         actions: [
@@ -1211,7 +1273,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                               isTamil ? 'மூடு' : 'Close',
                               style: GoogleFonts.inter(
                                 fontWeight: FontWeight.w600,
-                                color: AppColors.textTitle,
+                                color: isDark ? const Color(0xFF38BDF8) : AppColors.textTitle,
                               ),
                             ),
                           )
@@ -1223,17 +1285,18 @@ class _EstimationScreenState extends State<EstimationScreen> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                     decoration: BoxDecoration(
-                      color: AppColors.innerPanel,
+                      color: isDark ? const Color(0xFF1E293B) : AppColors.innerPanel,
                       borderRadius: BorderRadius.circular(100),
-                      border: Border.all(color: AppColors.cardBorder),
+                      border: Border.all(
+                          color: isDark ? const Color(0xFF334155) : AppColors.cardBorder),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.info_outline,
                           size: 13,
-                          color: AppColors.textBody,
+                          color: isDark ? const Color(0xFF94A3B8) : AppColors.textBody,
                         ),
                         const SizedBox(width: 5),
                         Text(
@@ -1241,7 +1304,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.textBody,
+                            color: isDark ? const Color(0xFFE2E8F0) : AppColors.textBody,
                           ),
                         ),
                       ],
@@ -1264,49 +1327,50 @@ class _EstimationScreenState extends State<EstimationScreen> {
     required double materialCost,
     required double laborCost,
     required bool isTamil,
+    bool isDark = false,
   }) {
     final stages = [
       {
         'name':
             isTamil ? '1. அடித்தளம் & மண் வேலை' : '1. Earthwork & Foundation',
         'pct': 0.15,
-        'color': const Color(0xFF000000),
+        'color': isDark ? const Color(0xFF60A5FA) : const Color(0xFF000000),
       },
       {
         'name': isTamil
             ? '2. RCC கட்டமைப்பு & தூண்கள்'
             : '2. RCC Framing & Columns',
         'pct': 0.30,
-        'color': const Color(0xFF262626),
+        'color': isDark ? const Color(0xFF38BDF8) : const Color(0xFF262626),
       },
       {
         'name':
             isTamil ? '3. செங்கல் சுவர் கட்டுமானம்' : '3. Brickwork & Walls',
         'pct': 0.18,
-        'color': const Color(0xFF4A4A4A),
+        'color': isDark ? const Color(0xFFF59E0B) : const Color(0xFF4A4A4A),
       },
       {
         'name': isTamil ? '4. பூச்சு & தளப்பணி' : '4. Plastering & Weathering',
         'pct': 0.12,
-        'color': const Color(0xFF6E6E6E),
+        'color': isDark ? const Color(0xFF10B981) : const Color(0xFF6E6E6E),
       },
       {
         'name': isTamil ? '5. தரை டைல்ஸ் பதித்தல்' : '5. Flooring & Tiling',
         'pct': 0.10,
-        'color': const Color(0xFF9E9E9E),
+        'color': isDark ? const Color(0xFFA855F7) : const Color(0xFF9E9E9E),
       },
       {
         'name':
             isTamil ? '6. குழாய் & மின்சார பணி' : '6. Plumbing & Electrical',
         'pct': 0.09,
-        'color': const Color(0xFFC4C4C4),
+        'color': isDark ? const Color(0xFFEC4899) : const Color(0xFFC4C4C4),
       },
       {
         'name': isTamil
             ? '7. வர்ணம் பூசுதல் & ஒப்படைப்பு'
             : '7. Painting & Handover',
         'pct': 0.06,
-        'color': const Color(0xFFE2E8F0),
+        'color': isDark ? const Color(0xFF94A3B8) : const Color(0xFFE2E8F0),
       },
     ];
 
@@ -1323,16 +1387,19 @@ class _EstimationScreenState extends State<EstimationScreen> {
         width: double.infinity,
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? const Color(0xFF131B2E) : Colors.white,
           borderRadius: BorderRadius.circular(28),
-          border: Border.all(color: const Color(0xFFF1F5F9)),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x0A000000),
-              blurRadius: 20,
-              offset: Offset(0, 4),
-            ),
-          ],
+          border: Border.all(
+              color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+          boxShadow: isDark
+              ? null
+              : const [
+                  BoxShadow(
+                    color: Color(0x0A000000),
+                    blurRadius: 20,
+                    offset: Offset(0, 4),
+                  ),
+                ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1343,11 +1410,11 @@ class _EstimationScreenState extends State<EstimationScreen> {
               children: [
                 Expanded(
                   child: Text(
-                    isTamil ? 'கட்டுமான' : 'Stage',
+                    isTamil ? 'கட்டுமான நிலைகள்' : 'Construction Stages',
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
-                      color: const Color(0xFF0F172A),
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
                       height: 1.15,
                     ),
                   ),
@@ -1361,7 +1428,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: const Color(0xFF64748B),
+                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                     ),
                   ),
                 ),
@@ -1417,7 +1484,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 13.5,
                               fontWeight: FontWeight.w600,
-                              color: const Color(0xFF0F172A),
+                              color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0F172A),
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -1430,17 +1497,17 @@ class _EstimationScreenState extends State<EstimationScreen> {
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 14.5,
                             fontWeight: FontWeight.w700,
-                            color: const Color(0xFF0F172A),
+                            color: isDark ? Colors.white : const Color(0xFF0F172A),
                           ),
                         ),
                       ],
                     ),
                   ),
                   if (!isLast)
-                    const Divider(
+                    Divider(
                       height: 22,
                       thickness: 1,
-                      color: Color(0xFFF1F5F9),
+                      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
                     ),
                 ],
               );
@@ -1458,6 +1525,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
     required double totalArea,
     required double totalCost,
     required bool isTamil,
+    bool isDark = false,
   }) {
     final boqStages = [
       {
@@ -1684,13 +1752,13 @@ class _EstimationScreenState extends State<EstimationScreen> {
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
                   decoration: BoxDecoration(
                     color: isStageActive
-                        ? const Color(0xFF0F172A)
-                        : Colors.white,
+                        ? (isDark ? Colors.white : const Color(0xFF0F172A))
+                        : (isDark ? const Color(0xFF1E293B) : Colors.white),
                     borderRadius: BorderRadius.circular(100),
                     border: Border.all(
                       color: isStageActive
-                          ? const Color(0xFF0F172A)
-                          : const Color(0xFFE2E8F0),
+                          ? (isDark ? Colors.white : const Color(0xFF0F172A))
+                          : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
                     ),
                   ),
                   child: Text(
@@ -1700,8 +1768,8 @@ class _EstimationScreenState extends State<EstimationScreen> {
                       fontWeight:
                           isStageActive ? FontWeight.w700 : FontWeight.w600,
                       color: isStageActive
-                          ? Colors.white
-                          : const Color(0xFF475569),
+                          ? (isDark ? Colors.black : Colors.white)
+                          : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
                     ),
                   ),
                 ),
@@ -1717,16 +1785,19 @@ class _EstimationScreenState extends State<EstimationScreen> {
             width: double.infinity,
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: isDark ? const Color(0xFF131B2E) : Colors.white,
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: const Color(0xFFF1F5F9)),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x0A000000),
-                  blurRadius: 20,
-                  offset: Offset(0, 4),
-                )
-              ],
+              border: Border.all(
+                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+              boxShadow: isDark
+                  ? null
+                  : const [
+                      BoxShadow(
+                        color: Color(0x0A000000),
+                        blurRadius: 20,
+                        offset: Offset(0, 4),
+                      )
+                    ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1741,7 +1812,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 15.5,
                           fontWeight: FontWeight.w800,
-                          color: const Color(0xFF0F172A),
+                          color: isDark ? Colors.white : const Color(0xFF0F172A),
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -1752,7 +1823,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 15.5,
                         fontWeight: FontWeight.w800,
-                        color: const Color(0xFF0F172A),
+                        color: isDark ? Colors.white : const Color(0xFF0F172A),
                       ),
                     ),
                   ],
@@ -1764,7 +1835,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
+                    color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -1776,7 +1847,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w600,
-                            color: const Color(0xFF64748B),
+                            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -1789,7 +1860,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w600,
-                            color: const Color(0xFF64748B),
+                            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -1803,7 +1874,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w600,
-                            color: const Color(0xFF64748B),
+                            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -1820,7 +1891,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                     physics: const BouncingScrollPhysics(),
                     itemCount: items.length,
                     separatorBuilder: (_, __) =>
-                        const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                        Divider(height: 1, color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
                     itemBuilder: (context, i) {
                       final it = items[i];
                       double qty = (it['qty'] as num).toDouble();
@@ -1839,7 +1910,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                                 style: GoogleFonts.plusJakartaSans(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w700,
-                                  color: const Color(0xFF0F172A),
+                                  color: isDark ? Colors.white : const Color(0xFF0F172A),
                                 ),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
@@ -1854,7 +1925,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                                     style: GoogleFonts.plusJakartaSans(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w500,
-                                      color: const Color(0xFF64748B),
+                                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -1865,7 +1936,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                                     style: GoogleFonts.plusJakartaSans(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w500,
-                                      color: const Color(0xFF64748B),
+                                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -1881,7 +1952,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                                 style: GoogleFonts.plusJakartaSans(
                                   fontSize: 13.5,
                                   fontWeight: FontWeight.w800,
-                                  color: const Color(0xFF0F172A),
+                                  color: isDark ? Colors.white : const Color(0xFF0F172A),
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -1895,7 +1966,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                 ),
 
                 // Bottom Pagination Row
-                const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                Divider(height: 1, color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
                 const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1909,10 +1980,10 @@ class _EstimationScreenState extends State<EstimationScreen> {
                         width: 38,
                         height: 38,
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: isDark ? const Color(0xFF1E293B) : Colors.white,
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: const Color(0xFFE2E8F0),
+                            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
                             width: 1.2,
                           ),
                         ),
@@ -1920,8 +1991,8 @@ class _EstimationScreenState extends State<EstimationScreen> {
                           Icons.arrow_back,
                           size: 16,
                           color: safeIdx > 0
-                              ? const Color(0xFF0F172A)
-                              : const Color(0xFFCBD5E1),
+                              ? (isDark ? Colors.white : const Color(0xFF0F172A))
+                              : (isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1)),
                         ),
                       ),
                     ),
@@ -1932,7 +2003,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w700,
-                            color: const Color(0xFF0F172A),
+                            color: isDark ? Colors.white : const Color(0xFF0F172A),
                           ),
                         ),
                         const SizedBox(height: 5),
@@ -1945,8 +2016,8 @@ class _EstimationScreenState extends State<EstimationScreen> {
                               margin: const EdgeInsets.symmetric(horizontal: 2),
                               decoration: BoxDecoration(
                                 color: isDotActive
-                                    ? const Color(0xFF0F172A)
-                                    : const Color(0xFFCBD5E1),
+                                    ? const Color(0xFFE58A18)
+                                    : (isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
                                 borderRadius: isDotActive
                                     ? BorderRadius.circular(100)
                                     : null,
@@ -1969,8 +2040,8 @@ class _EstimationScreenState extends State<EstimationScreen> {
                         height: 38,
                         decoration: BoxDecoration(
                           color: safeIdx < boqStages.length - 1
-                              ? const Color(0xFF0F172A)
-                              : const Color(0xFFE2E8F0),
+                              ? const Color(0xFFE58A18)
+                              : (isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -1996,6 +2067,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
   Widget _buildMaterialsTab({
     required double totalArea,
     required bool isTamil,
+    bool isDark = false,
   }) {
     final Map<String, Map<String, dynamic>> activeMaterials = {
       'cement': {
@@ -2071,7 +2143,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                   style: GoogleFonts.syne(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textTitle,
+                    color: isDark ? Colors.white : AppColors.textTitle,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -2084,7 +2156,9 @@ class _EstimationScreenState extends State<EstimationScreen> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: AppColors.surfaceSecondary,
+                      color: isDark
+                          ? const Color(0xFF1E293B)
+                          : AppColors.surfaceSecondary,
                       borderRadius: BorderRadius.circular(100),
                     ),
                     child: Text(
@@ -2092,7 +2166,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                       style: GoogleFonts.inter(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textTitle,
+                        color: isDark ? Colors.white : AppColors.textTitle,
                       ),
                     ),
                   ),
@@ -2125,17 +2199,19 @@ class _EstimationScreenState extends State<EstimationScreen> {
               margin: const EdgeInsets.only(bottom: 10),
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: isDark ? const Color(0xFF131B2E) : Colors.white,
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
                   color: _customMaterialPrices.containsKey(key)
                       ? AppColors.primary
-                      : AppColors.borderLight,
+                      : (isDark
+                          ? const Color(0xFF1E293B)
+                          : AppColors.borderLight),
                   width: _customMaterialPrices.containsKey(key) ? 1.5 : 1.0,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.02),
+                    color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.02),
                     blurRadius: 6,
                     offset: const Offset(0, 2),
                   )
@@ -2155,7 +2231,9 @@ class _EstimationScreenState extends State<EstimationScreen> {
                               style: GoogleFonts.inter(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
-                                color: AppColors.textPrimary,
+                                color: isDark
+                                    ? Colors.white
+                                    : AppColors.textPrimary,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -2165,7 +2243,9 @@ class _EstimationScreenState extends State<EstimationScreen> {
                               '${qty.toInt()} ${m['unit']} · ₹${price.toInt()}/${m['unit']}',
                               style: GoogleFonts.inter(
                                 fontSize: 11.5,
-                                color: AppColors.textTertiary,
+                                color: isDark
+                                    ? const Color(0xFF94A3B8)
+                                    : AppColors.textTertiary,
                               ),
                             ),
                           ],
@@ -2176,7 +2256,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                         style: GoogleFonts.syne(
                           fontSize: 14.5,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textTitle,
+                          color: isDark ? Colors.white : AppColors.textTitle,
                         ),
                       ),
                     ],
@@ -2186,7 +2266,9 @@ class _EstimationScreenState extends State<EstimationScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10),
                       decoration: BoxDecoration(
-                        color: AppColors.background,
+                        color: isDark
+                            ? const Color(0xFF1E293B)
+                            : AppColors.background,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: DropdownButtonHideUnderline(
@@ -2197,17 +2279,21 @@ class _EstimationScreenState extends State<EstimationScreen> {
                               : availableBrands.first['name'],
                           isDense: true,
                           isExpanded: true,
-                          dropdownColor: Colors.white,
+                          dropdownColor: isDark
+                              ? const Color(0xFF1E293B)
+                              : Colors.white,
                           borderRadius: BorderRadius.circular(14),
-                          icon: const Icon(
+                          icon: Icon(
                             Icons.keyboard_arrow_down,
                             size: 16,
-                            color: AppColors.textTitle,
+                            color: isDark
+                                ? Colors.white70
+                                : AppColors.textTitle,
                           ),
                           style: GoogleFonts.inter(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.textTitle,
+                            color: isDark ? Colors.white : AppColors.textTitle,
                           ),
                           items: availableBrands.map((b) {
                             return DropdownMenuItem<String>(
@@ -2217,7 +2303,9 @@ class _EstimationScreenState extends State<EstimationScreen> {
                                 style: GoogleFonts.inter(
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w600,
-                                  color: AppColors.textTitle,
+                                  color: isDark
+                                      ? Colors.white
+                                      : AppColors.textTitle,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -2254,7 +2342,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
               style: GoogleFonts.syne(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textTitle,
+                color: isDark ? Colors.white : AppColors.textTitle,
               ),
             ),
             const SizedBox(height: 8),
@@ -2268,17 +2356,23 @@ class _EstimationScreenState extends State<EstimationScreen> {
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: isDark ? const Color(0xFF131B2E) : Colors.white,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.borderLight),
+                  border: Border.all(
+                      color: isDark
+                          ? const Color(0xFF1E293B)
+                          : AppColors.borderLight),
                 ),
                 child: Row(
                   children: [
                     CircleAvatar(
                       radius: 14,
-                      backgroundColor: AppColors.surfaceSecondary,
-                      child:
-                          Icon(item.icon, size: 14, color: AppColors.textTitle),
+                      backgroundColor: isDark
+                          ? const Color(0xFF1E293B)
+                          : AppColors.surfaceSecondary,
+                      child: Icon(item.icon,
+                          size: 14,
+                          color: isDark ? Colors.white : AppColors.textTitle),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -2290,7 +2384,9 @@ class _EstimationScreenState extends State<EstimationScreen> {
                             style: GoogleFonts.inter(
                               fontSize: 12.5,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
+                              color: isDark
+                                  ? Colors.white
+                                  : AppColors.textPrimary,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -2299,7 +2395,9 @@ class _EstimationScreenState extends State<EstimationScreen> {
                             '${qty.toInt()} ${item.unit} · ₹${price.toInt()}/${item.unit}',
                             style: GoogleFonts.inter(
                               fontSize: 11,
-                              color: AppColors.textTertiary,
+                              color: isDark
+                                  ? const Color(0xFF94A3B8)
+                                  : AppColors.textTertiary,
                             ),
                           ),
                         ],
@@ -2310,7 +2408,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                       style: GoogleFonts.syne(
                         fontSize: 13.5,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textTitle,
+                        color: isDark ? Colors.white : AppColors.textTitle,
                       ),
                     ),
                     const SizedBox(width: 6),

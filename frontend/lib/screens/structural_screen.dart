@@ -54,6 +54,7 @@ class _StructuralScreenState extends State<StructuralScreen> {
       config = AppConfigProvider();
     }
     final isTamil = config.isTamil;
+    final isDark = config.isDarkMode;
 
     // Failsafe state check across hot reloads
     dynamic curTab = _currentSubTab;
@@ -175,8 +176,8 @@ class _StructuralScreenState extends State<StructuralScreen> {
 
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppColors.canvasGradient,
+        decoration: BoxDecoration(
+          gradient: config.canvasGradient,
         ),
         child: SafeArea(
           child: Center(
@@ -203,7 +204,7 @@ class _StructuralScreenState extends State<StructuralScreen> {
                                   style: GoogleFonts.plusJakartaSans(
                                     fontSize: 22,
                                     fontWeight: FontWeight.w700,
-                                    color: AppColors.inkPrimary,
+                                    color: isDark ? Colors.white : AppColors.inkPrimary,
                                     letterSpacing: -0.3,
                                     height: 1.1,
                                   ),
@@ -218,7 +219,7 @@ class _StructuralScreenState extends State<StructuralScreen> {
                                   style: GoogleFonts.plusJakartaSans(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
-                                    color: AppColors.inkQuiet,
+                                    color: isDark ? const Color(0xFF94A3B8) : AppColors.inkQuiet,
                                   ),
                                 ),
                               ],
@@ -228,9 +229,9 @@ class _StructuralScreenState extends State<StructuralScreen> {
                           Container(
                             padding: const EdgeInsets.all(2),
                             decoration: BoxDecoration(
-                              color: AppColors.card,
+                              color: isDark ? const Color(0xFF1E293B) : AppColors.card,
                               borderRadius: BorderRadius.circular(100),
-                              border: Border.all(color: AppColors.borderLight),
+                              border: Border.all(color: isDark ? const Color(0xFF334155) : AppColors.borderLight),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -244,7 +245,7 @@ class _StructuralScreenState extends State<StructuralScreen> {
                                         horizontal: 10, vertical: 4),
                                     decoration: BoxDecoration(
                                       color: !isTamil
-                                          ? AppColors.inkDark
+                                          ? (isDark ? const Color(0xFF334155) : AppColors.inkDark)
                                           : Colors.transparent,
                                       borderRadius: BorderRadius.circular(100),
                                     ),
@@ -255,7 +256,7 @@ class _StructuralScreenState extends State<StructuralScreen> {
                                         fontWeight: FontWeight.w600,
                                         color: !isTamil
                                             ? Colors.white
-                                            : AppColors.inkMuted,
+                                            : (isDark ? const Color(0xFF94A3B8) : AppColors.inkMuted),
                                       ),
                                     ),
                                   ),
@@ -269,7 +270,7 @@ class _StructuralScreenState extends State<StructuralScreen> {
                                         horizontal: 10, vertical: 4),
                                     decoration: BoxDecoration(
                                       color: isTamil
-                                          ? AppColors.inkDark
+                                          ? (isDark ? const Color(0xFF334155) : AppColors.inkDark)
                                           : Colors.transparent,
                                       borderRadius: BorderRadius.circular(100),
                                     ),
@@ -280,7 +281,7 @@ class _StructuralScreenState extends State<StructuralScreen> {
                                         fontWeight: FontWeight.w600,
                                         color: isTamil
                                             ? Colors.white
-                                            : AppColors.inkMuted,
+                                            : (isDark ? const Color(0xFF94A3B8) : AppColors.inkMuted),
                                       ),
                                     ),
                                   ),
@@ -304,30 +305,35 @@ class _StructuralScreenState extends State<StructuralScreen> {
                             title: '3D',
                             isActive: false,
                             onTap: () => widget.onNavigateToTab?.call(1),
+                            isDark: isDark,
                           ),
                           const SizedBox(width: 5),
                           _buildMainTab(
                             title: isTamil ? 'வாஸ்து' : 'Vastu',
                             isActive: false,
                             onTap: () => widget.onNavigateToTab?.call(2),
+                            isDark: isDark,
                           ),
                           const SizedBox(width: 5),
                           _buildMainTab(
                             title: isTamil ? 'செலவு' : 'Cost',
                             isActive: false,
                             onTap: () => widget.onNavigateToTab?.call(3),
+                            isDark: isDark,
                           ),
                           const SizedBox(width: 5),
                           _buildMainTab(
                             title: isTamil ? 'அமைப்பு' : 'Structure',
                             isActive: true,
                             onTap: () {},
+                            isDark: isDark,
                           ),
                           const SizedBox(width: 5),
                           _buildMainTab(
                             title: isTamil ? 'பதிவிறக்கம்' : 'Download',
                             isActive: false,
                             onTap: () => widget.onNavigateToTab?.call(5),
+                            isDark: isDark,
                           ),
                         ],
                       ),
@@ -339,16 +345,19 @@ class _StructuralScreenState extends State<StructuralScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(
-                        color: AppColors.card,
+                        color: isDark ? const Color(0xFF131B2E) : AppColors.card,
                         borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: AppColors.borderLight),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x141B212F),
-                            blurRadius: 24,
-                            offset: Offset(0, 8),
-                          ),
-                        ],
+                        border: Border.all(
+                            color: isDark ? const Color(0xFF1E293B) : AppColors.borderLight),
+                        boxShadow: isDark
+                            ? null
+                            : const [
+                                BoxShadow(
+                                  color: Color(0x141B212F),
+                                  blurRadius: 24,
+                                  offset: Offset(0, 8),
+                                ),
+                              ],
                       ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -363,7 +372,7 @@ class _StructuralScreenState extends State<StructuralScreen> {
                                   style: GoogleFonts.plusJakartaSans(
                                     fontSize: 12.5,
                                     fontWeight: FontWeight.w500,
-                                    color: const Color(0xFF64748B),
+                                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                                   ),
                                 ),
                                 const SizedBox(height: 4),
@@ -378,7 +387,7 @@ class _StructuralScreenState extends State<StructuralScreen> {
                                         style: GoogleFonts.plusJakartaSans(
                                           fontSize: 22,
                                           fontWeight: FontWeight.w800,
-                                          color: const Color(0xFF0F172A),
+                                          color: isDark ? Colors.white : const Color(0xFF0F172A),
                                           height: 1.1,
                                         ),
                                       ),
@@ -387,7 +396,7 @@ class _StructuralScreenState extends State<StructuralScreen> {
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 8, vertical: 3),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFFF1F5F9),
+                                          color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
                                           borderRadius:
                                               BorderRadius.circular(100),
                                         ),
@@ -396,7 +405,7 @@ class _StructuralScreenState extends State<StructuralScreen> {
                                           style: GoogleFonts.plusJakartaSans(
                                             fontSize: 11.5,
                                             fontWeight: FontWeight.w600,
-                                            color: const Color(0xFF64748B),
+                                            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                                           ),
                                         ),
                                       ),
@@ -409,10 +418,10 @@ class _StructuralScreenState extends State<StructuralScreen> {
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 10, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFF8FAFC),
+                                    color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
                                     borderRadius: BorderRadius.circular(100),
                                     border: Border.all(
-                                        color: const Color(0xFFE2E8F0)),
+                                        color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
                                   ),
                                   child: DropdownButtonHideUnderline(
                                     child: DropdownButton<String>(
@@ -422,14 +431,15 @@ class _StructuralScreenState extends State<StructuralScreen> {
                                           ? _selectedFloor
                                           : 'ground',
                                       isDense: true,
-                                      icon: const Icon(
+                                      dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                                      icon: Icon(
                                           Icons.keyboard_arrow_down_rounded,
                                           size: 16,
-                                          color: Color(0xFF0F172A)),
+                                          color: isDark ? Colors.white70 : const Color(0xFF0F172A)),
                                       style: GoogleFonts.plusJakartaSans(
                                         fontSize: 11.5,
                                         fontWeight: FontWeight.w700,
-                                        color: const Color(0xFF0F172A),
+                                        color: isDark ? Colors.white : const Color(0xFF0F172A),
                                       ),
                                       items: (isMultiFloor
                                               ? rootStructural.keys.toList()
@@ -460,16 +470,16 @@ class _StructuralScreenState extends State<StructuralScreen> {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 10, vertical: 5),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFF1F5F9),
+                                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
                                   borderRadius: BorderRadius.circular(100),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(
+                                    Icon(
                                       Icons.verified_outlined,
                                       size: 13,
-                                      color: Color(0xFF0F172A),
+                                      color: isDark ? Colors.white70 : const Color(0xFF0F172A),
                                     ),
                                     const SizedBox(width: 4),
                                     Text(
@@ -477,7 +487,7 @@ class _StructuralScreenState extends State<StructuralScreen> {
                                       style: GoogleFonts.plusJakartaSans(
                                         fontSize: 11.5,
                                         fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF0F172A),
+                                        color: isDark ? Colors.white : const Color(0xFF0F172A),
                                       ),
                                     ),
                                   ],
@@ -488,18 +498,24 @@ class _StructuralScreenState extends State<StructuralScreen> {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 10, vertical: 5),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFF0FDF4),
+                                  color: isDark
+                                      ? const Color(0xFF064E3B).withValues(alpha: 0.5)
+                                      : const Color(0xFFF0FDF4),
                                   borderRadius: BorderRadius.circular(100),
                                   border: Border.all(
-                                      color: const Color(0xFF86EFAC)),
+                                      color: isDark
+                                          ? const Color(0xFF059669)
+                                          : const Color(0xFF86EFAC)),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(
+                                    Icon(
                                       Icons.shield_outlined,
                                       size: 13,
-                                      color: Color(0xFF16A34A),
+                                      color: isDark
+                                          ? const Color(0xFF4ADE80)
+                                          : const Color(0xFF16A34A),
                                     ),
                                     const SizedBox(width: 4),
                                     Text(
@@ -507,7 +523,9 @@ class _StructuralScreenState extends State<StructuralScreen> {
                                       style: GoogleFonts.plusJakartaSans(
                                         fontSize: 11.5,
                                         fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF16A34A),
+                                        color: isDark
+                                            ? const Color(0xFF4ADE80)
+                                            : const Color(0xFF16A34A),
                                       ),
                                     ),
                                   ],
@@ -522,10 +540,10 @@ class _StructuralScreenState extends State<StructuralScreen> {
 
                     // ── 4. 5-SEGMENT SUB TABS WITH UNDERLINE ─────────────────
                     Container(
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         border: Border(
                           bottom: BorderSide(
-                            color: Color(0xFFE2E8F0),
+                            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
                             width: 1.5,
                           ),
                         ),
@@ -536,26 +554,31 @@ class _StructuralScreenState extends State<StructuralScreen> {
                             index: 0,
                             title: isTamil ? 'திட்டம்' : 'Plan',
                             isActive: safeTab == 0,
+                            isDark: isDark,
                           ),
                           _buildSubTabItem(
                             index: 1,
                             title: '3D',
                             isActive: safeTab == 1,
+                            isDark: isDark,
                           ),
                           _buildSubTabItem(
                             index: 2,
                             title: isTamil ? 'அட்டவணை' : 'Schedule',
                             isActive: safeTab == 2,
+                            isDark: isDark,
                           ),
                           _buildSubTabItem(
                             index: 3,
                             title: isTamil ? 'பாதுகாப்பு' : 'Safety',
                             isActive: safeTab == 3,
+                            isDark: isDark,
                           ),
                           _buildSubTabItem(
                             index: 4,
                             title: isTamil ? 'அளவுகள்' : 'Quantity',
                             isActive: safeTab == 4,
+                            isDark: isDark,
                           ),
                         ],
                       ),
@@ -590,15 +613,21 @@ class _StructuralScreenState extends State<StructuralScreen> {
     required String title,
     required bool isActive,
     required VoidCallback onTap,
+    bool isDark = false,
   }) {
     return GestureDetector(
       onTap: isActive ? null : onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
         decoration: BoxDecoration(
-          color: isActive ? AppColors.inkDark : AppColors.card,
+          color: isActive
+              ? (isDark ? const Color(0xFFE58A18) : AppColors.inkDark)
+              : (isDark ? const Color(0xFF131B2E) : AppColors.card),
           borderRadius: BorderRadius.circular(100),
-          border: isActive ? null : Border.all(color: AppColors.borderLight),
+          border: isActive
+              ? null
+              : Border.all(
+                  color: isDark ? const Color(0xFF1E293B) : AppColors.borderLight),
           boxShadow: isActive
               ? const [
                   BoxShadow(
@@ -615,7 +644,9 @@ class _StructuralScreenState extends State<StructuralScreen> {
           style: GoogleFonts.plusJakartaSans(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: isActive ? Colors.white : AppColors.inkMuted,
+            color: isActive
+                ? Colors.white
+                : (isDark ? const Color(0xFF94A3B8) : AppColors.inkMuted),
           ),
         ),
       ),
@@ -627,6 +658,7 @@ class _StructuralScreenState extends State<StructuralScreen> {
     required int index,
     required String title,
     required bool isActive,
+    bool isDark = false,
   }) {
     return Expanded(
       child: GestureDetector(
@@ -644,8 +676,8 @@ class _StructuralScreenState extends State<StructuralScreen> {
                   fontSize: 13,
                   fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
                   color: isActive
-                      ? const Color(0xFF0F172A)
-                      : const Color(0xFF64748B),
+                      ? (isDark ? Colors.white : const Color(0xFF0F172A))
+                      : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -656,7 +688,9 @@ class _StructuralScreenState extends State<StructuralScreen> {
               width: double.infinity,
               margin: const EdgeInsets.symmetric(horizontal: 4),
               decoration: BoxDecoration(
-                color: isActive ? const Color(0xFF0F172A) : Colors.transparent,
+                color: isActive
+                    ? (isDark ? const Color(0xFFE58A18) : const Color(0xFF0F172A))
+                    : Colors.transparent,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -780,19 +814,30 @@ class _BlueprintCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppConfigProvider config;
+    try {
+      config = context.watch<AppConfigProvider>();
+    } catch (_) {
+      config = AppConfigProvider();
+    }
+    final isDark = config.isDarkMode;
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: AppColors.card,
+        color: isDark ? const Color(0xFF131B2E) : AppColors.card,
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: AppColors.borderLight),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x141B212F),
-            blurRadius: 32,
-            offset: Offset(0, 12),
-          ),
-        ],
+        border: Border.all(
+            color: isDark ? const Color(0xFF1E293B) : AppColors.borderLight),
+        boxShadow: isDark
+            ? null
+            : const [
+                BoxShadow(
+                  color: Color(0x141B212F),
+                  blurRadius: 32,
+                  offset: Offset(0, 12),
+                ),
+              ],
       ),
       clipBehavior: Clip.hardEdge,
       child: Column(
@@ -800,16 +845,20 @@ class _BlueprintCard extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: const BoxDecoration(
-              color: Color(0xFFF8FAFC),
-              border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+              border: Border(
+                bottom: BorderSide(
+                  color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                ),
+              ),
             ),
             child: Text(
               title,
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
-                color: AppColors.inkPrimary,
+                color: isDark ? Colors.white : AppColors.inkPrimary,
                 letterSpacing: 0.2,
               ),
               textAlign: TextAlign.center,
@@ -839,13 +888,21 @@ class _FloorPlanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppConfigProvider config;
+    try {
+      config = context.watch<AppConfigProvider>();
+    } catch (_) {
+      config = AppConfigProvider();
+    }
+    final isDark = config.isDarkMode;
+
     return _BlueprintCard(
       title: 'BEAM LAYOUT PLAN (2D BLUEPRINT)',
       child: Container(
         height: 380,
         width: double.infinity,
         padding: const EdgeInsets.all(12),
-        color: Colors.white,
+        color: isDark ? const Color(0xFF0F172A) : Colors.white,
         child: CustomPaint(
           painter:
               _BlueprintPainter(rooms: rooms, walls: walls, pw: pw, ph: ph),
@@ -865,6 +922,14 @@ class _BeamScheduleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppConfigProvider config;
+    try {
+      config = context.watch<AppConfigProvider>();
+    } catch (_) {
+      config = AppConfigProvider();
+    }
+    final isDark = config.isDarkMode;
+
     final rows = (schedule != null && schedule!.isNotEmpty)
         ? schedule!
         : [
@@ -890,13 +955,15 @@ class _BeamScheduleCard extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         child: Table(
           border: TableBorder.all(
-            color: const Color(0xFFCBD5E1),
+            color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
             borderRadius: BorderRadius.circular(10),
           ),
           children: [
-            const TableRow(
-              decoration: BoxDecoration(color: Color(0xFFF1F5F9)),
-              children: [
+            TableRow(
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+              ),
+              children: const [
                 _Cell('MARK', b: true),
                 _Cell('SIZE', b: true),
                 _Cell('TOP', b: true),
@@ -928,38 +995,48 @@ class _ColumnScheduleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppConfigProvider config;
+    try {
+      config = context.watch<AppConfigProvider>();
+    } catch (_) {
+      config = AppConfigProvider();
+    }
+    final isDark = config.isDarkMode;
+
     return _BlueprintCard(
       title: 'COLUMN SCHEDULE & REINFORCEMENT DETAILS',
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Table(
           border: TableBorder.all(
-            color: const Color(0xFFCBD5E1),
+            color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
             borderRadius: BorderRadius.circular(10),
           ),
-          children: const [
+          children: [
             TableRow(
-              decoration: BoxDecoration(color: Color(0xFFF1F5F9)),
-              children: [
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+              ),
+              children: const [
                 _Cell('MARK', b: true),
                 _Cell('SIZE', b: true),
                 _Cell('MAIN STEEL', b: true),
                 _Cell('LATERAL TIES', b: true),
               ],
             ),
-            TableRow(children: [
+            const TableRow(children: [
               _Cell('C1 (Outer)'),
               _Cell('9"x12"'),
               _Cell('4-16mm + 2-12mm'),
               _Cell('8mm@6" c/c'),
             ]),
-            TableRow(children: [
+            const TableRow(children: [
               _Cell('C2 (Grid)'),
               _Cell('9"x12"'),
               _Cell('6-16mm Fe500'),
               _Cell('8mm@5" c/c'),
             ]),
-            TableRow(children: [
+            const TableRow(children: [
               _Cell('C3 (Balcony)'),
               _Cell('9"x9"'),
               _Cell('4-12mm Fe500'),
@@ -978,20 +1055,30 @@ class _Cell extends StatelessWidget {
   const _Cell(this.text, {this.b = false});
 
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-        child: Text(
-          text,
-          style: GoogleFonts.inter(
-            fontSize: 11.5,
-            color: const Color(0xFF0F172A),
-            fontWeight: b ? FontWeight.w700 : FontWeight.w500,
-          ),
-          textAlign: TextAlign.center,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
+  Widget build(BuildContext context) {
+    AppConfigProvider config;
+    try {
+      config = context.watch<AppConfigProvider>();
+    } catch (_) {
+      config = AppConfigProvider();
+    }
+    final isDark = config.isDarkMode;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+      child: Text(
+        text,
+        style: GoogleFonts.inter(
+          fontSize: 11.5,
+          color: isDark ? Colors.white : const Color(0xFF0F172A),
+          fontWeight: b ? FontWeight.w700 : FontWeight.w500,
         ),
-      );
+        textAlign: TextAlign.center,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1025,64 +1112,89 @@ class _Section extends StatelessWidget {
   const _Section({required this.mark, required this.w, required this.h});
 
   @override
-  Widget build(BuildContext context) => Column(
-        children: [
-          Container(
-            width: 70,
-            height: 90,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border.all(color: Colors.black, width: 2),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Stack(
-              children: [
-                // Stirrup
-                Positioned(
-                  top: 7,
-                  left: 7,
-                  right: 7,
-                  bottom: 7,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.black54, width: 1.5),
-                    ),
+  Widget build(BuildContext context) {
+    AppConfigProvider config;
+    try {
+      config = context.watch<AppConfigProvider>();
+    } catch (_) {
+      config = AppConfigProvider();
+    }
+    final isDark = config.isDarkMode;
+
+    return Column(
+      children: [
+        Container(
+          width: 70,
+          height: 90,
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+            border: Border.all(
+                color: isDark ? const Color(0xFF94A3B8) : Colors.black, width: 2),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Stack(
+            children: [
+              // Stirrup
+              Positioned(
+                top: 7,
+                left: 7,
+                right: 7,
+                bottom: 7,
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                        color: isDark ? Colors.white54 : Colors.black54,
+                        width: 1.5),
                   ),
                 ),
-                // Top bars
-                Positioned(top: 9, left: 9, child: _rebarDot()),
-                Positioned(top: 9, right: 9, child: _rebarDot()),
-                // Bottom bars
-                Positioned(bottom: 9, left: 9, child: _rebarDot()),
-                Positioned(bottom: 9, right: 9, child: _rebarDot()),
-              ],
-            ),
+              ),
+              // Top bars
+              Positioned(
+                  top: 9,
+                  left: 9,
+                  child: _rebarDot(isDark ? Colors.amber : Colors.black)),
+              Positioned(
+                  top: 9,
+                  right: 9,
+                  child: _rebarDot(isDark ? Colors.amber : Colors.black)),
+              // Bottom bars
+              Positioned(
+                  bottom: 9,
+                  left: 9,
+                  child: _rebarDot(isDark ? Colors.amber : Colors.black)),
+              Positioned(
+                  bottom: 9,
+                  right: 9,
+                  child: _rebarDot(isDark ? Colors.amber : Colors.black)),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            mark,
-            style: GoogleFonts.inter(
-              fontWeight: FontWeight.w700,
-              fontSize: 12,
-              color: const Color(0xFF0F172A),
-            ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          mark,
+          style: GoogleFonts.inter(
+            fontWeight: FontWeight.w700,
+            fontSize: 12,
+            color: isDark ? Colors.white : const Color(0xFF0F172A),
           ),
-          Text(
-            '${w.toInt()}" × ${h.toInt()}"',
-            style: GoogleFonts.inter(
-              fontSize: 11,
-              color: AppColors.textTertiary,
-            ),
+        ),
+        Text(
+          '${w.toInt()}" × ${h.toInt()}"',
+          style: GoogleFonts.inter(
+            fontSize: 11,
+            color: isDark ? const Color(0xFF94A3B8) : AppColors.textTertiary,
           ),
-        ],
-      );
+        ),
+      ],
+    );
+  }
 }
 
-Widget _rebarDot() => Container(
+Widget _rebarDot([Color color = Colors.black]) => Container(
       width: 7,
       height: 7,
-      decoration: const BoxDecoration(
-        color: Colors.black,
+      decoration: BoxDecoration(
+        color: color,
         shape: BoxShape.circle,
       ),
     );
@@ -1102,6 +1214,14 @@ class _RccSlabCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppConfigProvider config;
+    try {
+      config = context.watch<AppConfigProvider>();
+    } catch (_) {
+      config = AppConfigProvider();
+    }
+    final isDark = config.isDarkMode;
+
     return _BlueprintCard(
       title: 'RCC FLOOR SLAB CROSS-SECTION & LOAD DETAILS',
       child: Padding(
@@ -1112,7 +1232,7 @@ class _RccSlabCard extends StatelessWidget {
             Container(
               height: 220,
               width: double.infinity,
-              color: Colors.white,
+              color: isDark ? const Color(0xFF0F172A) : Colors.white,
               child: CustomPaint(
                 painter: _SlabCrossSectionTechnicalPainter(),
                 size: Size.infinite,
@@ -1143,6 +1263,14 @@ class _FootingDetailsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppConfigProvider config;
+    try {
+      config = context.watch<AppConfigProvider>();
+    } catch (_) {
+      config = AppConfigProvider();
+    }
+    final isDark = config.isDarkMode;
+
     return _BlueprintCard(
       title: 'ISOLATED TRAPEZOIDAL FOOTING PLAN & ELEVATION',
       child: Padding(
@@ -1157,7 +1285,7 @@ class _FootingDetailsCard extends StatelessWidget {
                     'TOP VIEW (PLAN)',
                     style: GoogleFonts.inter(
                       fontWeight: FontWeight.w700,
-                      color: const Color(0xFF0F172A),
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
                       fontSize: 11,
                     ),
                   ),
@@ -1180,7 +1308,7 @@ class _FootingDetailsCard extends StatelessWidget {
                     'SIDE VIEW (ELEVATION)',
                     style: GoogleFonts.inter(
                       fontWeight: FontWeight.w700,
-                      color: const Color(0xFF0F172A),
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
                       fontSize: 11,
                     ),
                   ),
@@ -1211,6 +1339,14 @@ class _StructuralSafetyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppConfigProvider config;
+    try {
+      config = context.watch<AppConfigProvider>();
+    } catch (_) {
+      config = AppConfigProvider();
+    }
+    final isDark = config.isDarkMode;
+
     final double areaSqFt = pw * ph;
     final double areaSqm = areaSqFt * 0.092903;
     final double maxSpanFt = math.max(pw, ph) * 0.45;
@@ -1241,9 +1377,12 @@ class _StructuralSafetyCard extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
               decoration: BoxDecoration(
-                color: const Color(0xFFF0FDF4),
+                color: isDark
+                    ? const Color(0xFF064E3B).withValues(alpha: 0.5)
+                    : const Color(0xFFF0FDF4),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFF86EFAC)),
+                border: Border.all(
+                    color: isDark ? const Color(0xFF059669) : const Color(0xFF86EFAC)),
               ),
               alignment: Alignment.center,
               child: FittedBox(
@@ -1253,7 +1392,7 @@ class _StructuralSafetyCard extends StatelessWidget {
                   style: GoogleFonts.syne(
                     fontWeight: FontWeight.w800,
                     fontSize: 16,
-                    color: const Color(0xFF15803D),
+                    color: isDark ? const Color(0xFF4ADE80) : const Color(0xFF15803D),
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -1360,6 +1499,14 @@ class _DetailRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppConfigProvider config;
+    try {
+      config = context.watch<AppConfigProvider>();
+    } catch (_) {
+      config = AppConfigProvider();
+    }
+    final isDark = config.isDarkMode;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
@@ -1371,7 +1518,7 @@ class _DetailRow extends StatelessWidget {
               label,
               style: GoogleFonts.inter(
                 fontWeight: FontWeight.w500,
-                color: const Color(0xFF64748B),
+                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                 fontSize: 13,
               ),
               maxLines: 2,
@@ -1386,7 +1533,7 @@ class _DetailRow extends StatelessWidget {
               textAlign: TextAlign.right,
               style: GoogleFonts.inter(
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF0F172A),
+                color: isDark ? Colors.white : const Color(0xFF0F172A),
                 fontSize: 13,
               ),
               maxLines: 3,
@@ -1547,17 +1694,6 @@ List<Offset> _getWallPts(dynamic w, double sX, double sY) {
     y2 = (w['end_y'] as num?)?.toDouble() ?? 0;
   }
   return [Offset(x1 * sX, y1 * sY), Offset(x2 * sX, y2 * sY)];
-}
-
-void _drawBubble(Canvas canvas, Offset p, String text, bool top) {
-  final center = top ? Offset(p.dx, -35) : Offset(-35, p.dy);
-  canvas.drawCircle(
-      center,
-      12,
-      Paint()
-        ..color = Colors.black
-        ..style = PaintingStyle.stroke);
-  _text(canvas, text, center.dx, center.dy, 10, Colors.black, FontWeight.bold);
 }
 
 void _text(Canvas c, String t, double x, double y, double fs, Color col,

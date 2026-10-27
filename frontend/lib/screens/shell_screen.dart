@@ -700,9 +700,17 @@ class _Sidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppConfigProvider config;
+    try {
+      config = context.watch<AppConfigProvider>();
+    } catch (_) {
+      config = AppConfigProvider();
+    }
+    final isDark = config.isDarkMode;
+
     return Container(
       width: 280,
-      color: const Color(0xFF0F172A),
+      color: isDark ? const Color(0xFF0F172A) : const Color(0xFFFCFDFF),
       padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -715,10 +723,10 @@ class _Sidebar extends StatelessWidget {
                 fit: BoxFit.contain,
               ),
               const SizedBox(width: 10),
-              const Text(
+              Text(
                 'Kanavu Illam',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: isDark ? Colors.white : const Color(0xFF0F172A),
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -740,11 +748,15 @@ class _Sidebar extends StatelessWidget {
                   isActive: isActive,
                   onTap: () => onTap(realIndex),
                   delay: i * 50,
+                  isDark: isDark,
                 );
               },
             ),
           ),
-          const Divider(color: Colors.white24, thickness: 1),
+          Divider(
+            color: isDark ? Colors.white24 : const Color(0xFFE2E8F0),
+            thickness: 1,
+          ),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -761,10 +773,10 @@ class _Sidebar extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 10),
-              const Text(
+              Text(
                 'Kanavu Illam v1.0',
                 style: TextStyle(
-                  color: Colors.white70,
+                  color: isDark ? Colors.white70 : const Color(0xFF64748B),
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
@@ -783,6 +795,7 @@ class _SidebarItem extends StatelessWidget {
   final bool isActive;
   final VoidCallback onTap;
   final int delay;
+  final bool isDark;
 
   const _SidebarItem({
     required this.icon,
@@ -790,6 +803,7 @@ class _SidebarItem extends StatelessWidget {
     required this.isActive,
     required this.onTap,
     required this.delay,
+    this.isDark = true,
   });
 
   @override
@@ -801,20 +815,28 @@ class _SidebarItem extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: isActive
-              ? const Color(0xFFFBBF24).withValues(alpha: 0.15)
+              ? (isDark
+                  ? const Color(0xFFFBBF24).withValues(alpha: 0.15)
+                  : const Color(0xFFE58A18).withValues(alpha: 0.12))
               : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
           border: isActive
               ? Border.all(
-                  color: const Color(0xFFFBBF24).withValues(alpha: 0.35),
+                  color: isDark
+                      ? const Color(0xFFFBBF24).withValues(alpha: 0.35)
+                      : const Color(0xFFE58A18).withValues(alpha: 0.30),
                   width: 1)
               : null,
         ),
         child: Row(
           children: [
-            Icon(icon,
-                size: 22,
-                color: isActive ? const Color(0xFFFCD34D) : Colors.white70),
+            Icon(
+              icon,
+              size: 22,
+              color: isActive
+                  ? (isDark ? const Color(0xFFFCD34D) : const Color(0xFFD97706))
+                  : (isDark ? Colors.white70 : const Color(0xFF64748B)),
+            ),
             const SizedBox(width: 14),
             Expanded(
               child: Text(
@@ -822,7 +844,9 @@ class _SidebarItem extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
-                  color: isActive ? Colors.white : Colors.white70,
+                  color: isActive
+                      ? (isDark ? Colors.white : const Color(0xFF0F172A))
+                      : (isDark ? Colors.white70 : const Color(0xFF64748B)),
                   letterSpacing: 0.1,
                 ),
                 maxLines: 1,

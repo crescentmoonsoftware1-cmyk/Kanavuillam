@@ -93,7 +93,7 @@ class _UploadScreenState extends State<UploadScreen> {
   void _showPickSourceModal(AppConfigProvider config) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.card,
+      backgroundColor: config.cardColor,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
       builder: (ctx) => SafeArea(
         child: Padding(
@@ -101,9 +101,9 @@ class _UploadScreenState extends State<UploadScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(width: 44, height: 4, decoration: BoxDecoration(color: AppColors.cardBorder, borderRadius: BorderRadius.circular(2))),
+              Container(width: 44, height: 4, decoration: BoxDecoration(color: config.borderColor, borderRadius: BorderRadius.circular(2))),
               const SizedBox(height: 20),
-              Text(config.tr('Choose 2D Plan Source', 'வரைபடத்தைத் தேர்ந்தெடுக்கவும்'), style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textTitle)),
+              Text(config.tr('Choose 2D Plan Source', 'வரைபடத்தைத் தேர்ந்தெடுக்கவும்'), style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w700, color: config.primaryTextColor)),
               const SizedBox(height: 24),
               Row(children: [
                 Expanded(child: _buildSourceOption(icon: Icons.photo_library_outlined, title: config.tr('Gallery', 'கேலரி'), subtitle: config.tr('Photos & Scans', 'புகைப்படங்கள்'), onTap: () { Navigator.pop(ctx); _pickBlueprint(ImageSource.gallery); }, config: config)),
@@ -119,18 +119,23 @@ class _UploadScreenState extends State<UploadScreen> {
   }
 
   Widget _buildSourceOption({required IconData icon, required String title, required String subtitle, required VoidCallback onTap, required AppConfigProvider config}) {
+    final isDark = config.isDarkMode;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(22),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 14),
-        decoration: BoxDecoration(color: AppColors.innerPanel, borderRadius: BorderRadius.circular(22), border: Border.all(color: AppColors.cardBorder)),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF222938) : AppColors.innerPanel,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: config.borderColor),
+        ),
         child: Column(children: [
           AppDecor.darkIconTile(icon: icon, size: 48, iconSize: 22),
           const SizedBox(height: 12),
-          Text(title, style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textTitle)),
+          Text(title, style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w700, color: config.primaryTextColor)),
           const SizedBox(height: 4),
-          Text(subtitle, style: GoogleFonts.plusJakartaSans(fontSize: 11, color: AppColors.textMuted), textAlign: TextAlign.center),
+          Text(subtitle, style: GoogleFonts.plusJakartaSans(fontSize: 11, color: config.secondaryTextColor), textAlign: TextAlign.center),
         ]),
       ),
     );
@@ -162,7 +167,7 @@ class _UploadScreenState extends State<UploadScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xFFE9EEF4), Color(0xFFD8DFE9)])),
+        decoration: BoxDecoration(gradient: config.canvasGradient),
         child: Stack(children: [
           Positioned.fill(child: SafeArea(bottom: false, child: Center(child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 440),
@@ -176,7 +181,10 @@ class _UploadScreenState extends State<UploadScreen> {
                   decoration: BoxDecoration(
                     color: const Color(0xFF1B212F),
                     borderRadius: BorderRadius.circular(32),
-                    border: Border.all(color: const Color(0xFFFCFDFF), width: 6),
+                    border: Border.all(
+                      color: config.isDarkMode ? const Color(0xFF2E384D) : const Color(0xFFFCFDFF),
+                      width: config.isDarkMode ? 2.5 : 6,
+                    ),
                     boxShadow: const [
                       BoxShadow(
                         color: Color(0x381B212F),
@@ -213,7 +221,14 @@ class _UploadScreenState extends State<UploadScreen> {
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(color: const Color(0xFFFCFDFF), borderRadius: BorderRadius.circular(28), boxShadow: const [BoxShadow(color: Color(0x141B212F), blurRadius: 32, offset: Offset(0, 12))]),
+                  decoration: BoxDecoration(
+                    color: config.cardColor,
+                    borderRadius: BorderRadius.circular(28),
+                    border: Border.all(color: config.borderColor, width: 1),
+                    boxShadow: config.isDarkMode
+                        ? const [BoxShadow(color: Color(0x33000000), blurRadius: 24, offset: Offset(0, 8))]
+                        : const [BoxShadow(color: Color(0x141B212F), blurRadius: 32, offset: Offset(0, 12))],
+                  ),
                   child: _groundFile == null ? _buildUploadPrompt(config) : _buildFilePreview(config),
                 ),
               ]),
@@ -241,22 +256,22 @@ class _UploadScreenState extends State<UploadScreen> {
     return Column(children: [
       Container(width: 48, height: 48, decoration: BoxDecoration(color: const Color(0xFF1B212F), shape: BoxShape.circle, border: Border.all(color: const Color(0xFFE58A18), width: 1)), child: const Icon(Icons.cloud_upload_outlined, color: Colors.white, size: 22)),
       const SizedBox(height: 12),
-      Text(config.tr('Upload 2D Floor Plan', '2D வரைபடத்தைப் பதிவேற்றவும்'), style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w700, color: const Color(0xFF1E252D), letterSpacing: -0.2), textAlign: TextAlign.center),
+      Text(config.tr('Upload 2D Floor Plan', '2D வரைபடத்தைப் பதிவேற்றவும்'), style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w700, color: config.primaryTextColor, letterSpacing: -0.2), textAlign: TextAlign.center),
       const SizedBox(height: 4),
-      Text(config.tr('Tap here to browse blueprint from Gallery or Camera', 'கேலரி அல்லது கேமராவிலிருந்து வரைபடத்தைத் தேர்ந்தெடுக்கவும்'), style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w400, color: const Color(0xFF64748B), height: 1.4), textAlign: TextAlign.center),
+      Text(config.tr('Tap here to browse blueprint from Gallery or Camera', 'கேலரி அல்லது கேமராவிலிருந்து வரைபடத்தைத் தேர்ந்தெடுக்கவும்'), style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w400, color: config.secondaryTextColor, height: 1.4), textAlign: TextAlign.center),
       const SizedBox(height: 16),
       FittedBox(
         fit: BoxFit.scaleDown,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _fmtPill('JPG'),
+            _fmtPill('JPG', config),
             const SizedBox(width: 6),
-            _fmtPill('PNG'),
+            _fmtPill('PNG', config),
             const SizedBox(width: 6),
-            _fmtPill('PDF'),
+            _fmtPill('PDF', config),
             const SizedBox(width: 6),
-            _fmtPill('MAX 25MB'),
+            _fmtPill('MAX 25MB', config),
           ],
         ),
       ),
@@ -276,16 +291,19 @@ class _UploadScreenState extends State<UploadScreen> {
     ]);
   }
 
-  Widget _fmtPill(String label) {
+  Widget _fmtPill(String label, AppConfigProvider config) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3.5),
-      decoration: BoxDecoration(color: const Color(0xFFF1F4F8), borderRadius: BorderRadius.circular(100)),
+      decoration: BoxDecoration(
+        color: config.isDarkMode ? const Color(0xFF242C3D) : const Color(0xFFF1F4F8),
+        borderRadius: BorderRadius.circular(100),
+      ),
       child: Text(
         label,
         style: GoogleFonts.plusJakartaSans(
           fontSize: 11.5,
           fontWeight: FontWeight.w600,
-          color: const Color(0xFF64748B),
+          color: config.isDarkMode ? const Color(0xFFCBD5E1) : const Color(0xFF64748B),
           letterSpacing: 0.3,
         ),
       ),

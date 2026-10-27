@@ -275,18 +275,14 @@ class _DirectionScreenState extends State<DirectionScreen>
       config = AppConfigProvider();
     }
 
+    final isDark = config.isDarkMode;
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFE9EEF4), Color(0xFFD8DFE9)],
-          ),
-        ),
+        decoration: BoxDecoration(gradient: config.canvasGradient),
         child: Stack(
           children: [
             // ── 1. UNDERLYING UPLOAD SCREEN LAYER ──────────────────────────
@@ -317,14 +313,10 @@ class _DirectionScreenState extends State<DirectionScreen>
                                       width: 40,
                                       height: 40,
                                       decoration: BoxDecoration(
-                                        color: Colors.white.withValues(
-                                          alpha: 0.8,
-                                        ),
+                                        color: isDark ? const Color(0xFF222938) : Colors.white.withValues(alpha: 0.8),
                                         shape: BoxShape.circle,
                                         border: Border.all(
-                                          color: const Color(
-                                            0xFFCBD5E1,
-                                          ).withValues(alpha: 0.6),
+                                          color: config.borderColor,
                                         ),
                                         boxShadow: const [
                                           BoxShadow(
@@ -334,11 +326,11 @@ class _DirectionScreenState extends State<DirectionScreen>
                                           ),
                                         ],
                                       ),
-                                      child: const Center(
+                                      child: Center(
                                         child: Icon(
                                           Icons.arrow_back_ios_new_rounded,
                                           size: 16,
-                                          color: Color(0xFF364050),
+                                          color: isDark ? Colors.white : const Color(0xFF364050),
                                         ),
                                       ),
                                     ),
@@ -378,20 +370,14 @@ class _DirectionScreenState extends State<DirectionScreen>
                             width: double.infinity,
                             padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFCFDFF),
+                              color: config.cardColor,
                               borderRadius: BorderRadius.circular(28),
                               border: Border.all(
-                                color: const Color(0xFFCBD5E1).withValues(
-                                  alpha: 0.8,
-                                ),
+                                color: config.borderColor,
                               ),
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Color(0x181B212F),
-                                  blurRadius: 28,
-                                  offset: Offset(0, 10),
-                                ),
-                              ],
+                              boxShadow: isDark
+                                  ? const [BoxShadow(color: Color(0x33000000), blurRadius: 24, offset: Offset(0, 8))]
+                                  : const [BoxShadow(color: Color(0x181B212F), blurRadius: 28, offset: Offset(0, 10))],
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -403,13 +389,13 @@ class _DirectionScreenState extends State<DirectionScreen>
                                       width: 48,
                                       height: 48,
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFF1F4F8),
+                                        color: isDark ? const Color(0xFF222938) : const Color(0xFFF1F4F8),
                                         borderRadius: BorderRadius.circular(16),
                                       ),
-                                      child: const Icon(
+                                      child: Icon(
                                         Icons.description_outlined,
                                         size: 24,
-                                        color: Color(0xFF364050),
+                                        color: isDark ? const Color(0xFFFBA73B) : const Color(0xFF364050),
                                       ),
                                     ),
                                     const SizedBox(width: 14),
@@ -423,7 +409,7 @@ class _DirectionScreenState extends State<DirectionScreen>
                                             style: GoogleFonts.plusJakartaSans(
                                               fontSize: 14,
                                               fontWeight: FontWeight.w700,
-                                              color: const Color(0xFF18191D),
+                                              color: config.primaryTextColor,
                                             ),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
@@ -433,7 +419,7 @@ class _DirectionScreenState extends State<DirectionScreen>
                                             '${_formatFileSize()} • ${config.tr("Uploaded successfully", "வெற்றிகரமாக பதிவேற்றப்பட்டது")}',
                                             style: GoogleFonts.plusJakartaSans(
                                               fontSize: 12,
-                                              color: const Color(0xFF64748B),
+                                              color: config.secondaryTextColor,
                                             ),
                                           ),
                                         ],
@@ -544,7 +530,7 @@ class _DirectionScreenState extends State<DirectionScreen>
                                     height: 48,
                                     width: double.infinity,
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFFF1F4F8),
+                                      color: isDark ? const Color(0xFF222938) : const Color(0xFFF1F4F8),
                                       borderRadius: BorderRadius.circular(100),
                                     ),
                                     child: Center(
@@ -556,7 +542,7 @@ class _DirectionScreenState extends State<DirectionScreen>
                                         style: GoogleFonts.plusJakartaSans(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w600,
-                                          color: const Color(0xFF64748B),
+                                          color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF64748B),
                                         ),
                                       ),
                                     ),
@@ -702,10 +688,10 @@ class _DirectionScreenState extends State<DirectionScreen>
                           child: Container(
                             width: 350,
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFCFDFF),
+                              color: config.cardColor,
                               borderRadius: BorderRadius.circular(32),
                               border: Border.all(
-                                color: const Color(0xFFE9EAEC),
+                                color: config.borderColor,
                                 width: 1,
                               ),
                               boxShadow: const [
@@ -822,6 +808,7 @@ class _DirectionScreenState extends State<DirectionScreen>
                                                 'சூரிய உதயம் / வளம்',
                                               ),
                                               icon: Icons.wb_sunny_outlined,
+                                              config: config,
                                             ),
                                           ),
                                           const SizedBox(width: 10),
@@ -837,6 +824,7 @@ class _DirectionScreenState extends State<DirectionScreen>
                                                 'குபேர மூலை / செல்வம்',
                                               ),
                                               icon: Icons.explore_outlined,
+                                              config: config,
                                             ),
                                           ),
                                         ],
@@ -856,6 +844,7 @@ class _DirectionScreenState extends State<DirectionScreen>
                                                 'வாயு மூலை / காற்று',
                                               ),
                                               icon: Icons.air_rounded,
+                                              config: config,
                                             ),
                                           ),
                                           const SizedBox(width: 10),
@@ -872,6 +861,7 @@ class _DirectionScreenState extends State<DirectionScreen>
                                               ),
                                               icon: Icons
                                                   .local_fire_department_outlined,
+                                              config: config,
                                             ),
                                           ),
                                         ],
@@ -886,24 +876,22 @@ class _DirectionScreenState extends State<DirectionScreen>
                                           vertical: 10,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFFF1F5F9),
+                                          color: isDark ? const Color(0xFF222938) : const Color(0xFFF1F5F9),
                                           borderRadius: BorderRadius.circular(
                                             16,
                                           ),
                                           border: Border.all(
-                                            color: const Color(
-                                              0xFFCBD5E1,
-                                            ).withValues(alpha: 0.5),
+                                            color: config.borderColor,
                                           ),
                                         ),
                                         child: Row(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: [
-                                            const Icon(
+                                            Icon(
                                               Icons.info_outline_rounded,
                                               size: 16,
-                                              color: Color(0xFF64748B),
+                                              color: isDark ? const Color(0xFFFBA73B) : const Color(0xFF64748B),
                                             ),
                                             const SizedBox(width: 8),
                                             Expanded(
@@ -915,7 +903,7 @@ class _DirectionScreenState extends State<DirectionScreen>
                                                 style:
                                                     GoogleFonts.plusJakartaSans(
                                                   fontSize: 11.5,
-                                                  color: const Color(
+                                                  color: isDark ? const Color(0xFFCBD5E1) : const Color(
                                                     0xFF364050,
                                                   ),
                                                   height: 1.35,
@@ -1004,8 +992,10 @@ class _DirectionScreenState extends State<DirectionScreen>
     required String name,
     required String caption,
     required IconData icon,
+    required AppConfigProvider config,
   }) {
     final isSelected = _selectedDirection == direction;
+    final isDark = config.isDarkMode;
 
     return GestureDetector(
       onTap: () => setState(() => _selectedDirection = direction),
@@ -1014,11 +1004,12 @@ class _DirectionScreenState extends State<DirectionScreen>
         height: 96,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFFDEBCB) : const Color(0xFFF4F7FB),
+          color: isSelected
+              ? (isDark ? const Color(0xFF3A2E1C) : const Color(0xFFFDEBCB))
+              : (isDark ? const Color(0xFF222938) : const Color(0xFFF4F7FB)),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color:
-                isSelected ? const Color(0xFFE58A18) : const Color(0xFFE2E8F0),
+            color: isSelected ? const Color(0xFFE58A18) : config.borderColor,
             width: isSelected ? 1.5 : 1.0,
           ),
           boxShadow: isSelected
@@ -1087,7 +1078,7 @@ class _DirectionScreenState extends State<DirectionScreen>
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF18191D),
+                        color: isSelected ? const Color(0xFFFBA73B) : config.primaryTextColor,
                         height: 1.1,
                       ),
                     ),
@@ -1099,8 +1090,8 @@ class _DirectionScreenState extends State<DirectionScreen>
                         fontWeight:
                             isSelected ? FontWeight.w600 : FontWeight.w400,
                         color: isSelected
-                            ? const Color(0xFFB46205)
-                            : const Color(0xFF8E94A0),
+                            ? const Color(0xFFFBA73B)
+                            : config.secondaryTextColor,
                         height: 1.1,
                       ),
                       maxLines: 1,
