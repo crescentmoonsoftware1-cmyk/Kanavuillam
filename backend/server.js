@@ -2569,45 +2569,89 @@ app.get(['/privacy-policy', '/privacy'], (req, res) => {
   <title>Privacy Policy - Kanavu Illam</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0B0E14; color: #E2E8F0; margin: 0; padding: 40px 20px; line-height: 1.6; }
-    .container { max-width: 760px; margin: 0 auto; background: #151A23; border: 1px solid #242C3D; border-radius: 20px; padding: 36px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    .container { max-width: 820px; margin: 0 auto; background: #151A23; border: 1px solid #242C3D; border-radius: 20px; padding: 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
     h1 { font-size: 26px; color: #FFFFFF; margin-top: 0; border-bottom: 1px solid #242C3D; padding-bottom: 16px; }
     h2 { font-size: 18px; color: #F59E0B; margin-top: 28px; }
     p, li { font-size: 14.5px; color: #CBD5E1; }
     ul { padding-left: 20px; }
+    a { color: #F59E0B; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .highlight-box { background: rgba(245, 158, 11, 0.08); border-left: 4px solid #F59E0B; padding: 14px 18px; margin: 18px 0; border-radius: 0 10px 10px 0; font-size: 14px; color: #E2E8F0; }
     .footer { font-size: 13px; color: #64748B; margin-top: 40px; border-top: 1px solid #242C3D; padding-top: 20px; text-align: center; }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>Privacy Policy for Kanavu Illam</h1>
-    <p><em>Last Updated: October 2026</em></p>
-    <p>Kanavu Illam ("we", "our", or "us") is dedicated to protecting the privacy and personal data of our users. This Privacy Policy outlines our transparent data handling practices in accordance with Google Play Developer Policies and Indian Information Technology regulations.</p>
+    <p><em>Effective Date: October 27, 2026</em></p>
+    <p>Kanavu Illam ("we", "our", or "us"), operated by Kanavu Illam Technologies, Tamil Nadu, India, is committed to safeguarding your personal data and privacy. This Privacy Policy details how we collect, process, store, and protect your information across our mobile application and web services in full compliance with the <strong>Digital Personal Data Protection Act, 2023 (DPDP Act)</strong>, the <strong>Information Technology Act, 2000</strong>, the <strong>SPDI Rules, 2011</strong>, and <strong>Google Play Developer Data Safety Policies</strong>.</p>
 
-    <h2>1. Information We Collect</h2>
+    <h2>1. Information We Collect and Purpose of Processing</h2>
+    <p>We collect only the minimum necessary data to authenticate accounts, analyze floor plans, and generate architectural reports:</p>
     <ul>
-      <li><strong>Account Details:</strong> Email address, name, and optional phone number when creating an account.</li>
-      <li><strong>Temporary Image Data:</strong> Floor plan sketches or blueprints uploaded solely for immediate geometric scanning.</li>
-      <li><strong>Transaction Data:</strong> Payment transaction identifiers securely processed by certified third-party payment gateways (Razorpay). We do not store sensitive credit/debit card numbers or UPI PINs.</li>
+      <li><strong>Account Credentials:</strong> Full name and email address provided via Google Sign-In (OAuth) or Supabase authentication, used strictly to create, authenticate, and manage your account.</li>
+      <li><strong>Uploaded Floor Plan Images:</strong> 2D architectural blueprint drawings or sketches uploaded by you. These are used solely for automated geometric contour detection, room boundary segmentation, and text reading.</li>
+      <li><strong>Derived Architectural Project Data:</strong> 3D parametric CAD coordinates, room dimensions, traditional Tamil Vastu rule scores, estimated material bill of quantities (BOQ), and preliminary structural guidance generated from your uploads. These are saved to your account so you can view, review, and export them at any time in your History tab.</li>
+      <li><strong>Payment and Transaction Records:</strong> When you unlock premium deliverables, our payment partner (Razorpay) provides us with the transaction ID, order ID, payment status, timestamp, and amount. These records are used strictly for order fulfillment, fraud prevention, accounting, and statutory tax (GST) compliance. <em>We never receive, process, or store credit/debit card numbers, CVVs, or UPI PINs on our servers.</em></li>
+      <li><strong>Technical Telemetry & Device Logs:</strong> IP address, device operating system version, and standard access logs collected ephemerally for rate limiting, DDoS defense, and server health diagnostics.</li>
+      <li><strong>Local Storage:</strong> Authentication session tokens and language preferences (English/Tamil) stored locally on your device via secure application storage (SharedPreferences).</li>
     </ul>
 
-    <h2>2. Immediate Zero-Storage Architecture</h2>
-    <p>We operate an <strong>Immediate Zero-Storage</strong> privacy pipeline. Uploaded floor plan images are processed statelessly in-memory and via temporary disk caching by local computer vision algorithms (OpenCV). Immediately upon completing the analysis and delivering the report to the user, all uploaded files are permanently unlinked and erased from our servers.</p>
+    <h2>2. Immediate Zero-Storage Architecture for Raw Blueprints</h2>
+    <div class="highlight-box">
+      <strong>Zero-Storage Guarantee:</strong> Uploaded floor plan image files are temporarily stored on secure server disk strictly during automated processing by computer-vision and OCR models (trained YOLO object detection and EasyOCR). Immediately upon completing the analysis, the raw image files are permanently unlinked and erased from the server disk. No raw floor plan image files are retained on our servers.
+    </div>
 
-    <h2>3. Final Report Ownership</h2>
-    <p>All calculated outputs (3D CAD visualizations, traditional Tamil Vastu scores, structural engineering load assessments, and cost estimations) are provided directly to the user as a downloadable PDF document stored exclusively on the user's private device storage.</p>
+    <h2>3. Project Results & Cloud Data Storage</h2>
+    <p>Unlike raw blueprint images, the derived architectural models (room polygons, 3D vectors, Vastu scores, and cost estimations) are stored securely in our cloud database (Supabase) under your unique user ID. This enables you to access your projects across app sessions in your History screen. These project results remain stored under your account until you choose to delete them or permanently delete your account.</p>
 
-    <h2>4. Account and Data Deletion</h2>
-    <p>Users maintain the absolute right to request permanent deletion of their account credentials and personal profile records at any time. Deletion can be initiated directly inside the application under Profile &gt; Delete Account, or through our public deletion portal at: <a href="/delete-account" style="color: #F59E0B;">/delete-account</a>.</p>
-
-    <h2>5. Grievance & Contact Information</h2>
-    <p>For any privacy queries, grievance redressal, or data assistance, please contact:</p>
+    <h2>4. Third-Party Service Providers & Data Transfers</h2>
+    <p>We work with trusted infrastructure providers that adhere to industry security standards (ISO 27001 / SOC 2):</p>
     <ul>
-      <li><strong>Entity:</strong> Kanavu Illam</li>
-      <li><strong>Email:</strong> support@kanavuillam.com</li>
-      <li><strong>Registered Office:</strong> Tamil Nadu, India</li>
+      <li><strong>Supabase Inc.:</strong> Cloud database hosting, user authentication, and Row Level Security (RLS).</li>
+      <li><strong>Railway Corp.:</strong> Secure cloud backend hosting and API pipeline execution.</li>
+      <li><strong>Vercel Inc.:</strong> Hosting our static web portals and compliance documentation.</li>
+      <li><strong>Google LLC:</strong> Google OAuth 2.0 user authentication.</li>
+      <li><strong>Razorpay Software Private Limited:</strong> RBI-authorized payment processing. All payment transaction data is localized and stored in India in compliance with Reserve Bank of India (RBI) mandates.</li>
+      <li><strong>OpenRouter Inc.:</strong> Ephemeral text queries for live regional construction material prices. <em>Your floor plan drawings, personal identifiers, and private account details are never sent to OpenRouter or external LLMs.</em></li>
     </ul>
+
+    <h2>5. Data Retention & Account Deletion Policy</h2>
+    <p>We retain your personal profile and project history only for as long as your account is active:</p>
+    <ul>
+      <li><strong>User-Initiated Deletion:</strong> You have the absolute right to delete your account at any time. You can trigger deletion within the app under <strong>Profile &gt; Delete Account</strong>, or via our public web deletion page at <a href="/delete-account">Request Account Deletion</a>.</li>
+      <li><strong>What is Purged:</strong> Deleting your account immediately and permanently removes your profile, authentication credentials, project records, 3D models, and history logs from our database.</li>
+      <li><strong>Statutory Retention Exception:</strong> Anonymized payment transaction logs are retained strictly for the statutory duration required by Indian tax, GST, and financial audit regulations.</li>
+    </ul>
+
+    <h2>6. User Rights (DPDP Act, 2023)</h2>
+    <p>In accordance with the Digital Personal Data Protection Act, you possess the right to:</p>
+    <ul>
+      <li>Access a summary of your personal data processed by us.</li>
+      <li>Request correction or updating of inaccurate or incomplete personal data.</li>
+      <li>Withdraw your consent at any time and request erasure of your data.</li>
+      <li>Nominate another individual in accordance with applicable legal provisions.</li>
+    </ul>
+
+    <h2>7. Age Eligibility (18+ Requirement)</h2>
+    <p>Kanavu Illam is designed and intended strictly for adults aged 18 years and above. We do not knowingly solicit or collect personal information from individuals under the age of 18.</p>
+
+    <h2>8. Security Safeguards & Breach Management</h2>
+    <p>We protect your data using industry-grade measures including TLS 1.3 encryption for data in transit, strict PostgreSQL Row Level Security (RLS) ensuring that users can only access their own records, private container networking, and rate-limited API endpoints. In the unlikely event of a verified data incident, we will notify affected users and regulatory bodies within the statutory timeline.</p>
+
+    <h2>9. Grievance Redressal & Contact Information</h2>
+    <p>In compliance with Rule 3(2) of the Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021 and the DPDP Act, 2023, the details of our Grievance Officer are:</p>
+    <ul>
+      <li><strong>Publisher / Entity:</strong> Kanavu Illam Technologies</li>
+      <li><strong>Grievance Officer:</strong> Chandramouli S</li>
+      <li><strong>Designation:</strong> Grievance Officer</li>
+      <li><strong>Address:</strong> Kanavu Illam Technologies, Tamil Nadu, India</li>
+      <li><strong>Grievance Email:</strong> <a href="mailto:grievance@kanavuillam.com">grievance@kanavuillam.com</a> (cc: <a href="mailto:support@kanavuillam.com">support@kanavuillam.com</a>)</li>
+      <li><strong>Statutory SLA:</strong> Acknowledgment within 24 hours; resolution within 15–30 days.</li>
+    </ul>
+
     <div class="footer">
-      &copy; 2026 Kanavu Illam. All Rights Reserved.
+      &copy; 2026 Kanavu Illam Technologies. All Rights Reserved. &bull; <a href="/terms">Terms & Conditions</a> &bull; <a href="/delete-account">Account Deletion</a>
     </div>
   </div>
 </body>
@@ -2624,34 +2668,73 @@ app.get(['/terms', '/terms-and-conditions'], (req, res) => {
   <title>Terms and Conditions - Kanavu Illam</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0B0E14; color: #E2E8F0; margin: 0; padding: 40px 20px; line-height: 1.6; }
-    .container { max-width: 760px; margin: 0 auto; background: #151A23; border: 1px solid #242C3D; border-radius: 20px; padding: 36px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    .container { max-width: 820px; margin: 0 auto; background: #151A23; border: 1px solid #242C3D; border-radius: 20px; padding: 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
     h1 { font-size: 26px; color: #FFFFFF; margin-top: 0; border-bottom: 1px solid #242C3D; padding-bottom: 16px; }
     h2 { font-size: 18px; color: #F59E0B; margin-top: 28px; }
     p, li { font-size: 14.5px; color: #CBD5E1; }
     ul { padding-left: 20px; }
+    a { color: #F59E0B; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .highlight-box { background: rgba(245, 158, 11, 0.08); border-left: 4px solid #F59E0B; padding: 14px 18px; margin: 18px 0; border-radius: 0 10px 10px 0; font-size: 14px; color: #E2E8F0; }
     .footer { font-size: 13px; color: #64748B; margin-top: 40px; border-top: 1px solid #242C3D; padding-top: 20px; text-align: center; }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>Terms and Conditions</h1>
-    <p><em>Last Updated: October 2026</em></p>
-    <p>Welcome to Kanavu Illam. By installing, accessing, or using this mobile application, you agree to be bound by these terms.</p>
+    <p><em>Effective Date: October 27, 2026</em></p>
+    <p>Welcome to Kanavu Illam, an architectural planning software application operated by Kanavu Illam Technologies, Tamil Nadu, India ("we", "our", or "us"). By accessing, installing, or using our mobile application or web services, you agree to be bound by these Terms and Conditions. If you do not agree, please do not use the service.</p>
 
-    <h2>1. Nature of Services</h2>
-    <p>Kanavu Illam provides computer vision architectural blueprint analysis, 3D parametric CAD modeling, Tamil Vastu rule scoring, and preliminary civil structural engineering estimations based on Indian Standard formulas (IS 456:2000).</p>
+    <h2>1. Eligibility & User Accounts</h2>
+    <p>You must be at least 18 years of age to enter into a legally binding contract under the Indian Contract Act, 1872. By using this service, you represent and warrant that you meet this age requirement. You are responsible for maintaining the confidentiality of your login credentials and for all activities that occur under your account.</p>
 
-    <h2>2. Professional Engineering Disclaimer</h2>
-    <p>All calculations, structural load recommendations, and cost estimates are provided as preliminary planning guidelines for educational and preliminary budgeting purposes. They do not substitute for on-site structural soil testing, formal municipal approvals, or licensed structural engineer certifications.</p>
+    <h2>2. Nature of Services & Computer-Vision Disclaimer</h2>
+    <p>Kanavu Illam provides automated architectural analysis tools, including 2D-to-3D parametric CAD modeling, traditional Tamil Vastu rule compliance scoring, and preliminary civil structural and cost estimations.</p>
+    <div class="highlight-box">
+      <strong>Important Accuracy Disclaimer:</strong> Floor plans are read automatically using computer-vision software (including trained YOLO contour detection and EasyOCR models), which may misread labels, hand-drawn lines, walls, or dimensions. Users must manually verify all dimensions, room boundaries, and site orientations before relying on any output.
+    </div>
+    <ul>
+      <li><strong>Vastu Compliance:</strong> Vastu scoring follows traditional cultural rule systems and is provided purely for informational and cultural reference. It does not constitute licensed architectural design, civil engineering, or legal advice.</li>
+      <li><strong>Cost Estimations (BOQ):</strong> Material prices, labor costs, and rate breakdowns are indicative planning estimates based on regional benchmarks and may vary depending on local suppliers, site conditions, and market fluctuations.</li>
+      <li><strong>Structural Guidelines:</strong> Structural assessments and column/beam sizing are preliminary planning guidelines calculated based on commonly used Indian Standard planning formulas (IS 456 and IS 1893 conventions). They do not substitute for on-site geotechnical soil testing, formal municipal building approvals, or certified drawings signed by a licensed structural engineer.</li>
+    </ul>
 
-    <h2>3. Payments & Deliverables Policy</h2>
-    <p>Fees paid to unlock deliverables cover computational image processing and immediate PDF report compilation. Once report processing begins and deliverables are generated, payments are strictly non-refundable.</p>
-    <p><strong>Technical Issue Resolution:</strong> In the rare event of a verified technical glitch, network disruption, or failure to receive the final PDF report, cash refunds are not issued. Users can contact our support team via email (<a href="mailto:support@kanavuillam.com">support@kanavuillam.com</a>) for technical assistance and manual report delivery.</p>
+    <h2>3. Pricing, Deliverables & Refund Policy</h2>
+    <ul>
+      <li><strong>Pricing:</strong> Access to generate complete architectural deliverables is ₹500 per floor plan scan, inclusive of applicable taxes.</li>
+      <li><strong>Payments:</strong> All transactions are processed securely through RBI-authorized payment aggregators (Razorpay). We do not store sensitive payment card details or UPI PINs on our servers.</li>
+      <li><strong>Non-Refundable Computational Processing:</strong> Fees paid cover immediate computational server execution and customized PDF compilation. Once analysis has commenced and deliverables are generated, payments are strictly non-refundable.</li>
+      <li><strong>Technical Failure & One Free Re-try:</strong> In the rare event of a verified technical failure (such as a pipeline crash, system error, or failure to deliver the final PDF report), cash refunds are not issued. If your report fails to generate or deliver due to a technical error, contact <a href="mailto:support@kanavuillam.com">support@kanavuillam.com</a> within 7 days of purchase with your transaction Order ID. Upon quick verification, our support team will enable <strong>one free re-processing of the same floor plan</strong> at zero additional charge.</li>
+    </ul>
 
-    <h2>4. Contact</h2>
-    <p>Inquiries regarding these terms may be directed to: support@kanavuillam.com</p>
+    <h2>4. Intellectual Property & Limited License</h2>
+    <p>Kanavu Illam Technologies retains all rights, title, and interest in and to the application, software, algorithms, 3D parametric viewer, branding, UI designs, and underlying code. Upon successful generation and payment, you are granted a perpetual, personal, non-exclusive license to view, download, print, and share your generated PDF report.</p>
+
+    <h2>5. Limitation of Liability</h2>
+    <p>To the maximum extent permitted under applicable Indian law, Kanavu Illam Technologies, its founders, and employees shall not be liable for any indirect, incidental, punitive, or consequential damages, construction defects, contractor disputes, foundation settlement, structural collapse, or cost overruns resulting from the use of or reliance on automated reports.</p>
+    <div class="highlight-box">
+      <strong>Liability Cap:</strong> In all circumstances, our maximum aggregate liability arising out of or related to your use of the application or reports shall be strictly capped at the amount actually paid by you for the specific service (maximum ₹500).
+    </div>
+
+    <h2>6. Termination & Acceptable Use</h2>
+    <p>You agree not to misuse the platform, reverse engineer the computer-vision algorithms, upload malicious or unlawful content, or attempt unauthorized access to our servers. We reserve the right to suspend or terminate accounts that violate these terms.</p>
+
+    <h2>7. Governing Law & Jurisdiction</h2>
+    <p>These Terms shall be governed by and construed in accordance with the laws of the Republic of India. Any disputes, claims, or controversies arising out of or relating to these Terms or the use of the service shall be subject to the exclusive jurisdiction of the competent courts in Tamil Nadu, India.</p>
+
+    <h2>8. Changes to Terms</h2>
+    <p>We reserve the right to modify these Terms at any time. Any changes will be published on this page with an updated Effective Date. Continued use of the application following the posting of revised Terms constitutes your acceptance.</p>
+
+    <h2>9. Contact Information</h2>
+    <p>For questions or assistance regarding these terms, please contact:</p>
+    <ul>
+      <li><strong>Entity:</strong> Kanavu Illam Technologies</li>
+      <li><strong>Address:</strong> Tamil Nadu, India</li>
+      <li><strong>Email:</strong> <a href="mailto:support@kanavuillam.com">support@kanavuillam.com</a></li>
+    </ul>
+
     <div class="footer">
-      &copy; 2026 Kanavu Illam. All Rights Reserved.
+      &copy; 2026 Kanavu Illam Technologies. All Rights Reserved. &bull; <a href="/privacy">Privacy Policy</a> &bull; <a href="/delete-account">Account Deletion</a>
     </div>
   </div>
 </body>

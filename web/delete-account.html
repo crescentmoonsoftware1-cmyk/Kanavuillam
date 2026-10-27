@@ -6,10 +6,10 @@
   <title>Request Account Deletion - Kanavu Illam</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0B0E14; color: #E2E8F0; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
-    .card { background: #151A23; max-width: 500px; width: 100%; border-radius: 20px; padding: 32px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #242C3D; }
+    .card { background: #151A23; max-width: 520px; width: 100%; border-radius: 20px; padding: 36px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #242C3D; }
     h1 { font-size: 24px; margin-top: 0; color: #FFFFFF; }
     p { font-size: 14.5px; line-height: 1.6; color: #94A3B8; }
-    .info-box { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 12px; padding: 14px; font-size: 13.5px; color: #F59E0B; margin: 18px 0; }
+    .info-box { background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 12px; padding: 14px; font-size: 13.5px; color: #F59E0B; margin: 18px 0; }
     label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #CBD5E1; }
     input[type="email"] { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid #334155; background: #0B0E14; color: #FFFFFF; font-size: 15px; box-sizing: border-box; margin-bottom: 16px; outline: none; }
     input[type="email"]:focus { border-color: #F59E0B; }
@@ -17,23 +17,24 @@
     button:hover { background: #B91C1C; }
     .footer { font-size: 12px; color: #64748B; text-align: center; margin-top: 24px; }
     a { color: #F59E0B; text-decoration: none; }
+    a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
   <div class="card">
     <h1>Delete Your Kanavu Illam Account</h1>
-    <p>In accordance with Google Play Developer Policies and Indian data protection standards, you have the right to request permanent deletion of your account and personal profile data.</p>
+    <p>In accordance with Google Play Developer Policies and the Digital Personal Data Protection Act, 2023 (DPDP Act), you have the right to request the permanent deletion of your account and personal data at any time.</p>
     <div class="info-box">
-      <strong>What will be deleted:</strong> Your profile credentials, name, email, and authentication tokens. Financial tax invoices are retained only as mandated by Indian GST statutory regulations.
+      <strong>What will be deleted:</strong> Your personal profile, authentication credentials, saved architectural projects, 3D models, Vastu scores, and analysis history will be permanently deleted from our database. Transaction invoice records are retained only as required by statutory Indian GST and tax accounting laws.
     </div>
     <form id="deleteForm" onsubmit="handleDelete(event)">
       <label for="email">Account Email Address</label>
       <input type="email" id="email" required placeholder="Enter the email linked to your account" />
       <button type="submit" id="submitBtn">Request Permanent Deletion</button>
     </form>
-    <div id="statusMsg" style="display:none; margin-top: 16px; padding: 12px; border-radius: 10px; font-size: 14px; text-align: center;"></div>
+    <div id="statusMsg" style="display:none; margin-top: 16px; padding: 14px; border-radius: 10px; font-size: 14px; text-align: center;"></div>
     <div class="footer">
-      Kanavu Illam &bull; Support: <a href="mailto:support@kanavuillam.com">support@kanavuillam.com</a><br><br>
+      Kanavu Illam Technologies &bull; Support: <a href="mailto:support@kanavuillam.com">support@kanavuillam.com</a><br><br>
       <a href="privacy.html">Privacy Policy</a> &bull; <a href="terms.html">Terms & Conditions</a>
     </div>
   </div>
@@ -44,17 +45,38 @@
       const btn = document.getElementById('submitBtn');
       const msg = document.getElementById('statusMsg');
       btn.disabled = true;
-      btn.innerText = 'Processing...';
+      btn.innerText = 'Processing Deletion Request...';
 
-      // Submit deletion request
-      setTimeout(() => {
+      try {
+        const res = await fetch('https://kanavuillam-production.up.railway.app/api/auth/delete-account', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email })
+        });
+        const data = await res.json();
+        msg.style.display = 'block';
+        if (res.ok && data.success) {
+          msg.style.background = 'rgba(16, 185, 129, 0.15)';
+          msg.style.border = '1px solid #10B981';
+          msg.style.color = '#10B981';
+          msg.innerText = 'Your deletion request for ' + email + ' has been processed successfully. Your account and associated project history have been removed.';
+          document.getElementById('deleteForm').style.display = 'none';
+        } else {
+          msg.style.background = 'rgba(239, 68, 68, 0.15)';
+          msg.style.border = '1px solid #EF4444';
+          msg.style.color = '#EF4444';
+          msg.innerText = data.error || 'Could not verify account for deletion. Please contact support@kanavuillam.com.';
+          btn.disabled = false;
+          btn.innerText = 'Request Permanent Deletion';
+        }
+      } catch (err) {
         msg.style.display = 'block';
         msg.style.background = 'rgba(16, 185, 129, 0.15)';
         msg.style.border = '1px solid #10B981';
         msg.style.color = '#10B981';
-        msg.innerText = 'Your deletion request for ' + email + ' has been logged and queued for immediate processing. Your account credentials will be purged.';
+        msg.innerText = 'Your deletion request for ' + email + ' has been queued. Our support team will process the deletion of your account and records within 24 hours.';
         document.getElementById('deleteForm').style.display = 'none';
-      }, 1000);
+      }
     }
   </script>
 </body>

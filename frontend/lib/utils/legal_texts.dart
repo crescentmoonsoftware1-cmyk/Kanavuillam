@@ -1,188 +1,113 @@
 class LegalTexts {
   static const String termsAndConditions = '''
-# Terms and Conditions for Kanavu illam
+# Terms and Conditions for Kanavu Illam
 
-Last Updated: June 2026
+Effective Date: October 27, 2026
 
-Welcome to Kanavu illam. By downloading, accessing, or using our mobile application, you agree to be bound by these Terms and Conditions.
+Welcome to Kanavu Illam, an architectural planning software application operated by Kanavu Illam Technologies, Tamil Nadu, India ("we", "our", or "us"). By accessing, installing, or using our mobile application or web services, you agree to be bound by these Terms and Conditions.
 
-## 1. Acceptance of Terms
-By accessing or using Kanavu illam, you acknowledge that you have read, understood, and agree to comply with these Terms and Conditions.
+## 1. Eligibility & User Accounts
+* You must be at least 18 years of age to enter into a legally binding contract under the Indian Contract Act, 1872.
+* By using this service, you represent and warrant that you meet this age requirement.
+* You are responsible for maintaining the confidentiality of your login credentials and for all activities that occur under your account.
 
-## 2. Description of Services
-Kanavu illam provides:
-* Computer Vision floor plan analysis and CAD geometry extraction.
-* 3D architectural visualization and virtual walkthroughs.
-* Vastu Shastra compliance analysis.
-* Construction quantity and cost estimation based on standard civil engineering formulas.
-* PDF report generation and export services.
+## 2. Description of Services & Computer-Vision Disclaimer
+Kanavu Illam provides automated architectural analysis tools, including 2D-to-3D parametric CAD modeling, traditional Tamil Vastu rule compliance scoring, and preliminary civil structural and cost estimations.
 
-The information provided is intended for informational and planning purposes only and should not replace professional architectural, engineering, legal, or construction advice.
+**Important Accuracy Disclaimer:**
+Floor plans are read automatically using computer-vision software (including trained YOLO contour detection and EasyOCR models), which may misread labels, hand-drawn lines, walls, or dimensions. Users must manually verify all dimensions, room boundaries, and site orientations before relying on any output.
 
-## 3. User Accounts
-Users may be required to create an account to access certain features.
-You agree to:
-* Provide accurate information.
-* Maintain the confidentiality of your login credentials.
-* Accept responsibility for all activities occurring under your account.
+* **Vastu Compliance:** Vastu scoring follows traditional cultural rule systems and is provided purely for informational and cultural reference. It does not constitute licensed architectural design, civil engineering, or legal advice.
+* **Cost Estimations (BOQ):** Material prices, labor costs, and rate breakdowns are indicative planning estimates based on regional benchmarks and may vary depending on local suppliers, site conditions, and market fluctuations.
+* **Structural Guidelines:** Structural assessments and column/beam sizing are preliminary planning guidelines calculated based on commonly used Indian Standard planning formulas (IS 456 and IS 1893 conventions). They do not substitute for on-site geotechnical soil testing, formal municipal building approvals, or certified drawings signed by a licensed structural engineer.
 
-## 4. User Content
-Users retain ownership of uploaded images, sketches, floor plans, and documents.
-By uploading content, you grant Kanavu illam a limited license to process, analyze, store, and generate reports necessary for providing app services.
-You agree not to upload:
-* Illegal content.
-* Copyright-infringing material.
-* Harmful, malicious, or offensive content.
+## 3. Pricing, Deliverables & Refund Policy
+* **Pricing:** Access to generate complete architectural deliverables is ₹500 per floor plan scan, inclusive of applicable taxes.
+* **Payments:** All transactions are processed securely through RBI-authorized payment aggregators (Razorpay). We do not store sensitive payment card details or UPI PINs on our servers.
+* **Non-Refundable Computational Processing:** Fees paid cover immediate computational server execution and customized PDF compilation. Once analysis has commenced and deliverables are generated, payments are strictly non-refundable.
+* **Technical Failure & One Free Re-try:** In the rare event of a verified technical failure (such as a pipeline crash, system error, or failure to deliver the final PDF report), cash refunds are not issued. If your report fails to generate or deliver due to a technical error, contact support@kanavuillam.com within 7 days of purchase with your transaction Order ID. Upon quick verification, our support team will enable **one free re-processing of the same floor plan** at zero additional charge.
 
-## 5. Automated Computational Outputs
-Automated calculations, structural guidelines, Vastu compliance scores, visualizations, and cost estimates are provided on an "as-is" basis.
-We do not guarantee:
-* Engineering accuracy.
-* Structural safety.
-* Construction feasibility.
-* Legal compliance.
-* Exact material or labor costs.
-Users should consult qualified professionals before making construction or investment decisions.
+## 4. User Content & Intellectual Property
+* Users retain ownership of their uploaded architectural sketches and blueprints.
+* Kanavu Illam Technologies retains all rights, title, and interest in and to the application, software, algorithms, 3D parametric viewer, branding, UI designs, and underlying code.
+* Upon successful generation and payment, you are granted a perpetual, personal, non-exclusive license to view, download, print, and share your generated PDF report.
 
-## 6. Payments and Deliverables Policy
-* Generating reports requires a one-time fee of ₹500 per floor plan scan.
-* Payments are completed securely via approved payment providers (Razorpay).
-* Once computational processing begins and the PDF deliverable is generated, fees are strictly non-refundable.
-* **Technical Glitch / Support:** In the event of a verified technical failure, network disruption, or failure to receive the final PDF report, cash refunds are not issued. Users can contact our support team (via email at support@kanavuillam.com or phone) for technical assistance and manual report delivery.
+## 5. Limitation of Liability
+To the maximum extent permitted under applicable Indian law, Kanavu Illam Technologies, its founders, and employees shall not be liable for any indirect, incidental, punitive, or consequential damages, construction defects, contractor disputes, foundation settlement, structural collapse, or cost overruns resulting from the use of or reliance on automated reports.
 
-## 7. Intellectual Property
-All application content, branding, software, algorithms, UI designs, and generated system components remain the property of Kanavu illam unless otherwise stated.
-Unauthorized copying, modification, or distribution is prohibited.
+**Liability Cap:**
+In all circumstances, our maximum aggregate liability arising out of or related to your use of the application or reports shall be strictly capped at the amount actually paid by you for the specific service (maximum ₹500).
 
-## 8. Limitation of Liability
-Kanavu illam shall not be liable for:
-* Construction losses.
-* Design defects.
-* Cost overruns.
-* Property damages.
-* Business interruptions.
-* Indirect or consequential damages arising from app usage.
+## 6. Termination & Acceptable Use
+You agree not to misuse the platform, reverse engineer the computer-vision algorithms, upload malicious or unlawful content, or attempt unauthorized access to our servers. We reserve the right to suspend or terminate accounts that violate these terms.
 
-## 9. Service Availability
-We reserve the right to modify, suspend, or discontinue any feature at any time without prior notice.
+## 7. Governing Law & Jurisdiction
+These Terms shall be governed by and construed in accordance with the laws of the Republic of India. Any disputes, claims, or controversies arising out of or relating to these Terms or the use of the service shall be subject to the exclusive jurisdiction of the competent courts in Tamil Nadu, India.
 
-## 10. Termination
-We may suspend or terminate accounts that violate these Terms or misuse the platform.
-
-## 11. Governing Law
-These Terms shall be governed by and interpreted in accordance with the laws of India.
-
-## 12. Contact Information
-For support or legal inquiries:
-Email: support@kanavuillam.com
-
-By using Kanavu illam, you agree to these Terms and Conditions.
+## 8. Contact Information
+For questions or assistance regarding these terms:
+* **Entity:** Kanavu Illam Technologies
+* **Address:** Tamil Nadu, India
+* **Email:** support@kanavuillam.com
 ''';
 
   static const String privacyPolicy = '''
-# Privacy Policy for Kanavu illam
+# Privacy Policy for Kanavu Illam
 
-Last Updated: June 2026
+Effective Date: October 27, 2026
 
-Kanavu illam values your privacy. This Privacy Policy explains how we collect, use, store, and protect your information.
+Kanavu Illam ("we", "our", or "us"), operated by Kanavu Illam Technologies, Tamil Nadu, India, is committed to safeguarding your personal data and privacy. This Privacy Policy details how we collect, process, store, and protect your information across our mobile application and web services in full compliance with the Digital Personal Data Protection Act, 2023 (DPDP Act), the Information Technology Act, 2000, the SPDI Rules, 2011, and Google Play Developer Data Safety Policies.
 
-## 1. Information We Collect
+## 1. Information We Collect and Purpose of Processing
+* **Account Credentials:** Full name and email address provided via Google Sign-In (OAuth) or Supabase authentication, used strictly to create, authenticate, and manage your account.
+* **Uploaded Floor Plan Images:** 2D architectural blueprint drawings or sketches uploaded by you. These are used solely for automated geometric contour detection, room boundary segmentation, and text reading.
+* **Derived Architectural Project Data:** 3D parametric CAD coordinates, room dimensions, traditional Tamil Vastu rule scores, estimated material bill of quantities (BOQ), and preliminary structural guidance generated from your uploads. These are saved to your account so you can view, review, and export them at any time in your History tab.
+* **Payment and Transaction Records:** When you unlock premium deliverables, our payment partner (Razorpay) provides us with the transaction ID, order ID, payment status, timestamp, and amount. These records are used strictly for order fulfillment, fraud prevention, accounting, and statutory tax (GST) compliance. We never receive, process, or store credit/debit card numbers, CVVs, or UPI PINs on our servers.
+* **Technical Telemetry & Device Logs:** IP address, device operating system version, and standard access logs collected ephemerally for rate limiting, DDoS defense, and server health diagnostics.
+* **Local Storage:** Authentication session tokens and language preferences (English/Tamil) stored locally on your device via secure application storage (SharedPreferences).
 
-    Personal Information
-* Name
-* Email address
-* User account details
-* Profile information
+## 2. Immediate Zero-Storage Architecture for Raw Blueprints
+Uploaded floor plan image files are temporarily stored on secure server disk strictly during automated processing by computer-vision and OCR models (trained YOLO object detection and EasyOCR). Immediately upon completing the analysis, the raw image files are permanently unlinked and erased from the server disk. No raw floor plan image files are retained on our servers.
 
-    Uploaded Content
-* Floor plan images
-* Hand-drawn sketches
-* Property dimensions
-* Generated reports
+## 3. Project Results & Cloud Data Storage
+Unlike raw blueprint images, the derived architectural models (room polygons, 3D vectors, Vastu scores, and cost estimations) are stored securely in our cloud database (Supabase) under your unique user ID. This enables you to access your projects across app sessions in your History screen. These project results remain stored under your account until you choose to delete them or permanently delete your account.
 
-    Device Information
-* Device type
-* Operating system
-* App version
-* Crash logs
-* Analytics information
+## 4. Third-Party Service Providers & Data Transfers
+We work with trusted infrastructure providers that adhere to industry security standards (ISO 27001 / SOC 2):
+* **Supabase Inc.:** Cloud database hosting, user authentication, and Row Level Security (RLS).
+* **Railway Corp.:** Secure cloud backend hosting and API pipeline execution.
+* **Vercel Inc.:** Hosting our static web portals and compliance documentation.
+* **Google LLC:** Google OAuth 2.0 user authentication.
+* **Razorpay Software Private Limited:** RBI-authorized payment processing. All payment transaction data is localized and stored in India in compliance with Reserve Bank of India (RBI) mandates.
+* **OpenRouter Inc.:** Ephemeral text queries for live regional construction material prices. Your floor plan drawings, personal identifiers, and private account details are never sent to OpenRouter or external LLMs.
 
-    Payment Information
-Payments are processed securely through third-party payment providers such as Razorpay and Stripe. We do not store complete card or banking information.
+## 5. Data Retention & Account Deletion Policy
+We retain your personal profile and project history only for as long as your account is active:
+* **User-Initiated Deletion:** You have the absolute right to delete your account at any time. You can trigger deletion within the app under Profile > Delete Account, or via our public web deletion page.
+* **What is Purged:** Deleting your account immediately and permanently removes your profile, authentication credentials, project records, 3D models, and history logs from our database.
+* **Statutory Retention Exception:** Anonymized payment transaction logs are retained strictly for the statutory duration required by Indian tax, GST, and financial audit regulations.
 
-## 2. How We Use Information
-We use collected information to:
-* Create and manage accounts.
-* Generate automated architectural floor plan analysis.
-* Produce Vastu compliance reports.
-* Calculate construction estimates based on standard engineering formulas.
-* Generate downloadable PDF reports.
-* Improve application performance.
-* Provide customer support.
-* Prevent fraud and misuse.
+## 6. User Rights (DPDP Act, 2023)
+In accordance with the Digital Personal Data Protection Act, you possess the right to:
+* Access a summary of your personal data processed by us.
+* Request correction or updating of inaccurate or incomplete personal data.
+* Withdraw your consent at any time and request erasure of your data.
+* Nominate another individual in accordance with applicable legal provisions.
 
-## 3. Computational Processing Services
-Uploaded floor plans and drawings are processed on secure internal servers using computer vision and geometric algorithms.
-These services are used solely to generate the requested floor plan models, structural guidelines, and reports.
+## 7. Age Eligibility (18+ Requirement)
+Kanavu Illam is designed and intended strictly for adults aged 18 years and above. We do not knowingly solicit or collect personal information from individuals under the age of 18.
 
-## 4. Data Storage
-User data may be stored using Supabase cloud infrastructure and associated storage systems.
-Reasonable security measures are implemented to protect stored information.
+## 8. Security Safeguards & Breach Management
+We protect your data using industry-grade measures including TLS 1.3 encryption for data in transit, strict PostgreSQL Row Level Security (RLS) ensuring that users can only access their own records, private container networking, and rate-limited API endpoints. In the unlikely event of a verified data incident, we will notify affected users and regulatory bodies within the statutory timeline.
 
-## 5. Data Sharing
-We do not sell personal information.
-Information may be shared with:
-* Cloud infrastructure providers.
-* Payment processors (Razorpay).
-* Legal authorities when required by law.
-
-## 6. Data Retention
-We retain information only as long as necessary to:
-* Provide services and generate structural reports.
-* Maintain user accounts.
-* Process temporary uploaded architectural drawings (automatically purged on a rolling First-In First-Out basis, keeping a maximum of 10 plans per user to protect privacy and minimize server storage).
-* Resolve disputes and enforce agreements.
-
-Users may request complete account and personal data deletion at any time directly through the in-app Profile screen or our public web deletion portal.
-
-**Important Tax, GST & Financial Record Retention Notice:**
-When an account deletion is requested, all personal credentials, profile records, and uploaded design files are permanently erased from our active databases. However, transaction, billing, and payment records are retained for the minimum statutory period strictly as mandated by applicable tax, GST, and legal accounting regulations.
-
-## 7. Children's Privacy
-This application is not intended for children under 13 years of age.
-We do not knowingly collect information from children.
-
-## 8. Security
-We implement industry-standard security measures, HTTPS encryption in transit, and cloud-level database isolation to protect user information.
-However, no online system can guarantee absolute security.
-
-## 9. User Rights & Account Deletion
-Users may:
-* Access their profile information.
-* Correct inaccurate information.
-* Request immediate and permanent deletion of their account and associated data via in-app "Delete Account" button or the public web portal.
-* Withdraw consent where applicable.
-Requests can also be submitted directly through our support email.
-
-## 10. Third-Party Services
-The application securely utilizes trusted third-party cloud infrastructure:
-* Supabase (Database & Authentication)
-* Razorpay & Payment Gateway Services (Secure transaction processing)
-Their respective privacy policies govern their individual services.
-
-## 11. Changes to This Policy
-We may update this Privacy Policy periodically.
-Updated versions will be posted within the application and on our website.
-
-## 12. Support & Grievance Contact
-For privacy-related inquiries, legal concerns, or account assistance:
-
-* **Application Name:** Kanavu Illam (Floor Plan CAD & Engineering Estimator)
-* **Publisher / Entity:** Kanavu Illam
-* **Grievance & Support Desk:** Kanavu Illam Support Team
-* **Customer Support Email:** support@kanavuillam.com
-* **Jurisdiction / Location:** Tamil Nadu, India
-* **Response Time:** Inquiries acknowledged within 24 hours, resolved within 15 working days.
+## 9. Grievance Redressal & Contact Information
+In compliance with Rule 3(2) of the Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021 and the DPDP Act, 2023, the details of our Grievance Officer are:
+* **Publisher / Entity:** Kanavu Illam Technologies
+* **Grievance Officer:** Chandramouli S
+* **Designation:** Grievance Officer
+* **Address:** Kanavu Illam Technologies, Tamil Nadu, India
+* **Grievance Email:** grievance@kanavuillam.com (cc: support@kanavuillam.com)
+* **Statutory SLA:** Acknowledgment within 24 hours; resolution within 15–30 days.
 
 By using Kanavu Illam, you consent to this Privacy Policy.
 ''';
