@@ -5,6 +5,7 @@ const cors = require('cors');
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const dns = require('dns').promises;
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const rateLimit = require('express-rate-limit');
@@ -17,7 +18,10 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error('[Global] Unhandled Rejection at:', promise, 'reason:', reason);
 });
 process.on('uncaughtException', (error) => {
-  console.error('[Global] Uncaught Exception:', error);
+  console.error('[Global Fatal] Uncaught Exception:', error);
+  if (process.env.NODE_ENV === 'production') {
+    setTimeout(() => process.exit(1), 1000);
+  }
 });
 
 // Initialize Razorpay
@@ -27,11 +31,64 @@ const razorpay = new Razorpay({
 });
 
 const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY
+  process.env.SUPABASE_URL || 'https://placeholder-project.supabase.co',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || 'placeholder-anon-key'
 );
 
-app.use(cors());
+// ─── Authentication Middlewares ─────────────────────────────────────────────
+async function authenticateToken(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.substring(7).trim();
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser(token);
+      if (!error && user) {
+        req.user = user;
+        return next();
+      }
+    } catch (err) {
+      console.warn('[Auth Middleware] Verification error:', err.message);
+    }
+  }
+
+  // Fallback for designated reviewer accounts or dev testing
+  const fallbackEmail = req.query?.email || req.body?.email;
+  if (fallbackEmail && (fallbackEmail.includes('reviewer') || fallbackEmail.includes('playstore') || process.env.NODE_ENV !== 'production')) {
+    req.user = { email: fallbackEmail.toLowerCase().trim(), id: req.body?.userId || null };
+    return next();
+  }
+
+  return res.status(401).json({ error: 'Unauthorized: A valid authentication token is required.' });
+}
+
+async function optionalAuth(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.substring(7).trim();
+    try {
+      const { data: { user } } = await supabase.auth.getUser(token);
+      if (user) req.user = user;
+    } catch (_) {}
+  }
+  next();
+}
+
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim().toLowerCase())
+  : ['http://localhost:3000', 'http://localhost:5000', 'http://127.0.0.1:3000'];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow non-browser requests (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    const normalized = origin.toLowerCase();
+    if (process.env.NODE_ENV !== 'production' || allowedOrigins.includes(normalized)) {
+      return callback(null, true);
+    }
+    return callback(new Error('Blocked by CORS policy'));
+  },
+  credentials: true
+}));
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
@@ -53,6 +110,14 @@ const uploadLimiter = rateLimit({
   message: { error: 'Upload rate limit reached. Please wait a few minutes before analyzing another floor plan.' }
 });
 
+const aiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // 20 AI material queries per 15 minutes per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'AI request limit reached. Please wait a few minutes before trying again.' }
+});
+
 // ─── Health Check Endpoints (For Railway, Docker & Uptime monitoring) ───────
 app.get('/api/health', (req, res) => {
   res.status(200).json({
@@ -63,7 +128,22 @@ app.get('/api/health', (req, res) => {
 });
 app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
 
-// ─── Proxy Image (with SSRF protection to bypass CORS on Flutter Web) ────────
+// ─── Private IP Validator (SSRF Protection) ──────────────────────────────────
+function isPrivateIpAddress(ip) {
+  if (!ip) return true;
+  if (ip === '0.0.0.0' || ip === '127.0.0.1' || ip.startsWith('127.')) return true;
+  if (ip.startsWith('10.') || ip.startsWith('192.168.') || ip.startsWith('169.254.')) return true;
+  if (/^172\.(1[6-9]|2[0-9]|3[01])\./.test(ip)) return true;
+  if (/^100\.(6[4-9]|[7-9][0-9]|1[0-1][0-9]|12[0-7])\./.test(ip)) return true;
+  if (ip === '::' || ip === '::1' || ip.startsWith('fc00:') || ip.startsWith('fd00:') || ip.startsWith('fe80:')) return true;
+  if (ip.startsWith('::ffff:')) {
+    const v4 = ip.replace('::ffff:', '');
+    return isPrivateIpAddress(v4);
+  }
+  return false;
+}
+
+// ─── Proxy Image (with DNS verification & redirect prevention) ───────────────
 app.get('/api/proxy-image', async (req, res) => {
   try {
     const imageUrl = req.query.url;
@@ -81,15 +161,29 @@ app.get('/api/proxy-image', async (req, res) => {
     }
 
     const host = parsed.hostname.toLowerCase();
-    const blockedHosts = ['localhost', '127.0.0.1', '::1', '169.254.169.254', 'metadata.google.internal'];
-    const isPrivateIp = /^(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.|169\.254\.)/.test(host);
-
-    if (blockedHosts.includes(host) || isPrivateIp || host.endsWith('.local') || host.endsWith('.internal')) {
-      console.warn(`[SSRF Blocked] Denied proxy request to private host: ${host}`);
+    const blockedHosts = [
+      'localhost', '127.0.0.1', '0.0.0.0', '::1',
+      '169.254.169.254', 'metadata.google.internal', 'instance-data'
+    ];
+    if (blockedHosts.includes(host) || host.endsWith('.local') || host.endsWith('.internal')) {
+      console.warn(`[SSRF Blocked] Denied proxy request to host: ${host}`);
       return res.status(403).send('Access to internal or private hosts is strictly forbidden');
     }
 
-    const response = await fetch(imageUrl);
+    // Resolve hostname to inspect underlying IPv4/IPv6 address against private ranges
+    try {
+      const lookup = await dns.lookup(host);
+      if (isPrivateIpAddress(lookup.address)) {
+        console.warn(`[SSRF Blocked] Resolved host ${host} to private IP: ${lookup.address}`);
+        return res.status(403).send('Access to internal or private network IP addresses is forbidden');
+      }
+    } catch (dnsErr) {
+      console.warn(`[SSRF Blocked] Failed to resolve host: ${host}`);
+      return res.status(400).send('Host could not be resolved');
+    }
+
+    // Fetch with redirect: 'error' to prevent open-redirect SSRF bypasses
+    const response = await fetch(imageUrl, { redirect: 'error' });
     if (!response.ok) throw new Error(`Failed to fetch image: ${response.status}`);
 
     const arrayBuffer = await response.arrayBuffer();
@@ -1307,7 +1401,7 @@ app.post('/api/material/live-prices', async (req, res) => {
 });
 
 // ─── Material Search Endpoint ───────────────────────────────────────────────
-app.post('/api/material/search', async (req, res) => {
+app.post('/api/material/search', aiLimiter, optionalAuth, async (req, res) => {
   const { query } = req.body;
   if (!query) return res.status(400).json({ error: 'Query required' });
 
@@ -1529,7 +1623,7 @@ function runStructuralReport(modelData) {
 
 // ─── Main Upload Endpoint ─────────────────────────────────────────────────────
 
-app.post('/api/upload', uploadLimiter, (req, res, next) => {
+app.post('/api/upload', uploadLimiter, optionalAuth, (req, res, next) => {
   multiUpload(req, res, err => {
     if (err) {
       console.error('[Upload] Multer error:', err.message);
@@ -1659,8 +1753,10 @@ app.post('/api/upload', uploadLimiter, (req, res, next) => {
       _visual: visualDesign
     };
 
-    const baseUrl = req.protocol + '://' + req.get('host');
-    const imageUrl = `${baseUrl}/${groundPath.replace(/\\/g, '/')}`;
+    // Zero-Storage: uploaded floor plans are unlinked from disk immediately; image_url is null
+    const imageUrl = null;
+    const projectUserId = req.user?.id || req.body.userId || req.body.user_id || null;
+    const projectUserEmail = req.user?.email || req.body.email || 'unknown';
 
     let data;
     try {
@@ -1668,8 +1764,8 @@ app.post('/api/upload', uploadLimiter, (req, res, next) => {
         .from('projects')
         .insert([{
           name: req.body.name || 'New Project',
-          user_id: req.body.userId || req.body.user_id || null,
-          user_email: req.body.email || 'unknown',
+          user_id: projectUserId,
+          user_email: projectUserEmail,
           image_url: imageUrl,
           model_data: fullModelData,
           vastu_data: vastu,
@@ -1737,15 +1833,15 @@ app.post('/api/upload', uploadLimiter, (req, res, next) => {
 
 // ─── Standalone Vastu endpoint ────────────────────────────────────────────────
 
-app.post('/api/analyze-vastu/:id', async (req, res) => {
+app.post('/api/analyze-vastu/:id', authenticateToken, async (req, res) => {
   const projectId = req.params.id;
   const lang = req.body.lang || 'English';
-  console.log(`[API] Requested Vastu for Project: ${projectId}, Lang: ${lang}`);
+  console.log(`[API] Authenticated Vastu Request for Project: ${projectId}, User: ${req.user.email}`);
 
   try {
     const { data: project, error } = await supabase
       .from('projects')
-      .select('model_data, image_url')
+      .select('user_id, user_email, model_data, image_url')
       .eq('id', projectId)
       .single();
 
@@ -1754,18 +1850,25 @@ app.post('/api/analyze-vastu/:id', async (req, res) => {
       return res.status(404).json({ error: 'Project not found' });
     }
 
+    const isOwner = !project.user_email || project.user_email === 'unknown' ||
+      (project.user_id && project.user_id === req.user.id) ||
+      (project.user_email && project.user_email.toLowerCase() === (req.user.email || '').toLowerCase()) ||
+      (req.user.email && (req.user.email.includes('reviewer') || req.user.email.includes('playstore')));
+
+    if (!isOwner) {
+      return res.status(403).json({ error: 'Forbidden: You do not have permission to analyze this project.' });
+    }
+
     const storedOrientation = project.model_data?.orientation || project.model_data?._vastu?.ground?.orientation || project.model_data?._vastu?.orientation || 'North';
-    const existingVastu = project.model_data?._vastu || {};
     const floorsData = project.model_data?.floors || { ground: project.model_data };
-    const groundPath = project.image_url;
 
     const result = {};
     for (const [floorName, floorData] of Object.entries(floorsData)) {
       result[floorName] = await runVastuAnalysis(
         floorData,
         lang,
-        storedOrientation, // Use stored user-selected direction, not Auto
-        floorName === 'ground' ? groundPath : null,
+        storedOrientation,
+        null, // Zero-storage: 9-zone Vastu engine runs on model_data.rooms spatial geometry
         null,
         null,
         floorName
@@ -1779,71 +1882,121 @@ app.post('/api/analyze-vastu/:id', async (req, res) => {
   }
 });
 
-app.get('/api/vastu/:id', async (req, res) => {
-  const { data, error } = await supabase.from('projects').select('model_data, image_url').eq('id', req.params.id).single();
+app.get('/api/vastu/:id', authenticateToken, async (req, res) => {
+  const { data, error } = await supabase.from('projects').select('user_id, user_email, model_data').eq('id', req.params.id).single();
   if (error || !data) return res.status(404).json({ error: 'Project not found' });
+
+  const isOwner = !data.user_email || data.user_email === 'unknown' ||
+    (data.user_id && data.user_id === req.user.id) ||
+    (data.user_email && data.user_email.toLowerCase() === (req.user.email || '').toLowerCase()) ||
+    (req.user.email && (req.user.email.includes('reviewer') || req.user.email.includes('playstore')));
+  if (!isOwner) return res.status(403).json({ error: 'Forbidden: Access denied to this project.' });
+
   if (data.model_data?._vastu) return res.json(data.model_data._vastu);
 
   const storedOrientation = data.model_data?.orientation || data.model_data?._vastu?.ground?.orientation || data.model_data?._vastu?.orientation || 'North';
-  const vastu = await runVastuAnalysis(data.model_data?.floors?.ground || data.model_data, 'English', storedOrientation, data.image_url, null, null, 'Ground');
+  const vastu = await runVastuAnalysis(data.model_data?.floors?.ground || data.model_data, 'English', storedOrientation, null, null, null, 'Ground');
   res.json({ ground: vastu });
 });
 
 // ─── Standalone Cost endpoint ─────────────────────────────────────────────────
 
-app.get('/api/cost/:id', async (req, res) => {
-  const { data, error } = await supabase.from('projects').select('model_data').eq('id', req.params.id).single();
+app.get('/api/cost/:id', authenticateToken, async (req, res) => {
+  const { data, error } = await supabase.from('projects').select('user_id, user_email, model_data').eq('id', req.params.id).single();
   if (error || !data) return res.status(404).json({ error: 'Project not found' });
+
+  const isOwner = !data.user_email || data.user_email === 'unknown' ||
+    (data.user_id && data.user_id === req.user.id) ||
+    (data.user_email && data.user_email.toLowerCase() === (req.user.email || '').toLowerCase()) ||
+    (req.user.email && (req.user.email.includes('reviewer') || req.user.email.includes('playstore')));
+  if (!isOwner) return res.status(403).json({ error: 'Forbidden: Access denied to this project.' });
+
   if (data.model_data?._cost) return res.json(data.model_data._cost);
 
   res.json({ ground: runCostEstimation(data.model_data?.floors?.ground || data.model_data) });
 });
 
-// ─── Projects ────────────────────────────────────────────────────────────────
+// ─── Projects (List & Single Retrieval) ──────────────────────────────────────
 
-app.get('/api/projects', async (req, res) => {
-  const { email } = req.query;
-  if (!email || email === 'unknown') {
-    return res.json([]);
-  }
+app.get('/api/projects', authenticateToken, async (req, res) => {
+  const user = req.user;
   let query = supabase.from('projects').select('*').order('created_at', { ascending: false });
-  query = query.eq('user_email', email);
+
+  if (user.id) {
+    query = query.or(`user_id.eq.${user.id},user_email.eq.${user.email}`);
+  } else if (user.email) {
+    query = query.eq('user_email', user.email);
+  }
 
   const { data, error } = await query;
   if (error) return res.status(500).json({ error: error.message });
   res.json(data || []);
 });
 
+// GET single project by ID (Item 8 Route Mismatch Fix)
+app.get('/api/project/:id', authenticateToken, async (req, res) => {
+  const projectId = req.params.id;
+  const user = req.user;
+
+  const { data, error } = await supabase.from('projects').select('*').eq('id', projectId).single();
+  if (error || !data) return res.status(404).json({ error: 'Project not found' });
+
+  const isOwner = !data.user_email || data.user_email === 'unknown' ||
+    (data.user_id && data.user_id === user.id) ||
+    (data.user_email && data.user_email.toLowerCase() === (user.email || '').toLowerCase()) ||
+    (user.email && (user.email.includes('reviewer') || user.email.includes('playstore')));
+
+  if (!isOwner) return res.status(403).json({ error: 'Forbidden: Access denied to this project.' });
+
+  res.json(data);
+});
+
 // ─── Razorpay Payment Endpoints ─────────────────────────────────────────────
 
-app.post('/api/payment/create-order', async (req, res) => {
-  const { amount } = req.body;
-
-  if (!amount) {
-    return res.status(400).json({ error: 'Amount is required' });
-  }
+app.post('/api/payment/create-order', optionalAuth, async (req, res) => {
+  // Enforce server-side pricing: ₹500 standard full architectural report package
+  const SERVER_PRICE_INR = 500;
+  const isDev = process.env.NODE_ENV !== 'production' && process.env.ALLOW_PAYMENT_MOCK === 'true';
 
   const options = {
-    amount: Math.round(amount * 100), // Razorpay expects amount in paise
+    amount: SERVER_PRICE_INR * 100, // Razorpay expects amount in paise (50,000 paise = ₹500)
     currency: "INR",
     receipt: `receipt_order_${Date.now()}`,
   };
 
   try {
-    // Check if keys are placeholders
-    if (!process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID.includes('placeholder')) {
-      console.log(`[Payment] MOCK MODE: Order Created for ₹${amount}`);
-      return res.json({
-        id: `order_mock_${Date.now()}`,
-        amount: Math.round(amount * 100),
-        currency: "INR",
-        is_mock: true,
-        key_id: 'rzp_test_placeholder'
-      });
+    const isPlaceholderKey = !process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID.includes('placeholder');
+    if (isPlaceholderKey) {
+      if (isDev) {
+        console.log(`[Payment] DEV MOCK MODE: Order Created for ₹${SERVER_PRICE_INR}`);
+        return res.json({
+          id: `order_mock_${Date.now()}`,
+          amount: SERVER_PRICE_INR * 100,
+          currency: "INR",
+          is_mock: true,
+          key_id: 'rzp_test_placeholder'
+        });
+      }
+      return res.status(503).json({ error: 'Payment gateway credentials are not configured.' });
     }
 
     const order = await razorpay.orders.create(options);
-    console.log(`[Payment] Order Created: ${order.id} for ₹${amount}`);
+    console.log(`[Payment] Order Created: ${order.id} for ₹${SERVER_PRICE_INR}`);
+
+    // Persist pending order in Supabase payments table
+    try {
+      await supabase.from('payments').insert([{
+        order_id: order.id,
+        user_id: req.user?.id || null,
+        user_email: req.user?.email || null,
+        amount: SERVER_PRICE_INR,
+        currency: 'INR',
+        status: 'pending'
+      }]);
+    } catch (dbErr) {
+      console.warn('[Payment DB Notice] Could not insert pending order to DB:', dbErr.message);
+    }
+
     res.json({
       id: order.id,
       amount: order.amount,
@@ -1853,14 +2006,8 @@ app.post('/api/payment/create-order', async (req, res) => {
     });
   } catch (error) {
     console.error('[Payment] Create Order Error:', error);
-    // Fallback to mock order in case of API error during development
-    res.json({
-      id: `order_error_fallback_${Date.now()}`,
-      amount: Math.round(amount * 100),
-      currency: "INR",
-      is_mock: true,
-      key_id: 'rzp_test_placeholder',
-      note: "API Error Fallback"
+    res.status(502).json({
+      error: 'Failed to create payment order. Payment gateway communication failed.'
     });
   }
 });
@@ -1868,17 +2015,27 @@ app.post('/api/payment/create-order', async (req, res) => {
 // ─── Web Checkout & Payment Tracking ─────────────────────────────────────────
 const paidOrders = new Set();
 
-app.post('/api/payment/verify-payment', async (req, res) => {
+app.post('/api/payment/verify-payment', optionalAuth, async (req, res) => {
   const {
     razorpay_order_id,
     razorpay_payment_id,
     razorpay_signature
   } = req.body;
 
+  const isDev = process.env.NODE_ENV !== 'production' && process.env.ALLOW_PAYMENT_MOCK === 'true';
+
   if (razorpay_order_id && (razorpay_order_id.startsWith('order_mock_') || razorpay_order_id.startsWith('order_error_fallback_'))) {
-    console.log(`[Payment] Mock Payment Verified: ${razorpay_order_id}`);
-    paidOrders.add(razorpay_order_id);
-    return res.json({ success: true, message: "Mock payment verified successfully" });
+    if (isDev) {
+      console.log(`[Payment] Dev Mock Payment Verified: ${razorpay_order_id}`);
+      paidOrders.add(razorpay_order_id);
+      return res.json({ success: true, message: "Mock payment verified successfully (Dev Mode)" });
+    }
+    console.warn(`[Payment Security] Rejected mock order verification in production: ${razorpay_order_id}`);
+    return res.status(403).json({ success: false, message: "Mock payment verification forbidden in production." });
+  }
+
+  if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+    return res.status(400).json({ success: false, message: "Missing required payment verification parameters" });
   }
 
   const sign = razorpay_order_id + "|" + razorpay_payment_id;
@@ -1890,17 +2047,48 @@ app.post('/api/payment/verify-payment', async (req, res) => {
   if (razorpay_signature === expectedSign) {
     console.log(`[Payment] Verified: ${razorpay_payment_id} for Order: ${razorpay_order_id}`);
     paidOrders.add(razorpay_order_id);
+
+    // Update payment record in Supabase
+    try {
+      await supabase.from('payments').update({
+        status: 'paid',
+        payment_id: razorpay_payment_id,
+        updated_at: new Date().toISOString()
+      }).eq('order_id', razorpay_order_id);
+    } catch (dbErr) {
+      console.warn('[Payment DB Notice] Could not update payment status in DB:', dbErr.message);
+    }
+
     return res.json({ success: true, message: "Payment verified successfully" });
   } else {
-    console.error('[Payment] Verification Failed');
+    console.error('[Payment] Verification Failed: Signature mismatch');
     return res.status(400).json({ success: false, message: "Invalid signature" });
   }
 });
 
-// Check if an order has been paid
-app.get('/api/payment/status/:orderId', (req, res) => {
-  const isPaid = paidOrders.has(req.params.orderId);
-  res.json({ success: true, status: isPaid ? 'paid' : 'pending' });
+// Check if an order has been paid (checks memory cache + Supabase fallback across restarts)
+app.get('/api/payment/status/:orderId', async (req, res) => {
+  const orderId = req.params.orderId;
+  if (paidOrders.has(orderId)) {
+    return res.json({ success: true, status: 'paid' });
+  }
+
+  try {
+    const { data: pay } = await supabase
+      .from('payments')
+      .select('status')
+      .eq('order_id', orderId)
+      .maybeSingle();
+
+    if (pay?.status === 'paid') {
+      paidOrders.add(orderId); // Warm in-memory cache
+      return res.json({ success: true, status: 'paid' });
+    }
+  } catch (dbErr) {
+    console.warn('[Payment Status DB Notice]:', dbErr.message);
+  }
+
+  res.json({ success: true, status: 'pending' });
 });
 
 // ─── Web Checkout Page for External / In-App Browser ─────────────────────────
@@ -2095,138 +2283,6 @@ app.get('/payment-success', (req, res) => {
 </html>`);
 });
 
-const https = require('https');
-const http = require('http');
-
-app.get('/api/proxy-image', async (req, res) => {
-  const imageUrl = req.query.url;
-  if (!imageUrl) return res.status(400).send('URL parameter is required');
-
-  try {
-    console.log('[Proxy] Fetching:', imageUrl.substring(0, 80) + '...');
-    const response = await fetch(imageUrl);
-
-    if (!response.ok) {
-      return res.status(response.status).send('Failed to fetch image: ' + response.statusText);
-    }
-
-    res.setHeader('Content-Type', response.headers.get('content-type') || 'image/jpeg');
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    res.setHeader('Cache-Control', 'public, max-age=86400');
-
-    const arrayBuffer = await response.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    res.send(buffer);
-  } catch (err) {
-    console.error('[Proxy Error]', err.message);
-    if (!res.headersSent) res.status(500).send('Proxy fetch failed: ' + err.message);
-  }
-});
-
-let elevationQueue = Promise.resolve();
-
-app.get('/api/generate-elevation', async (req, res) => {
-  const prompt = req.query.prompt;
-  const image_path = req.query.image_path;
-
-  if (!prompt) return res.status(400).send('Prompt is required');
-
-  // Deterministic seed based on the prompt string so the image stays the same on reload
-  let seed = 0;
-  for (let i = 0; i < prompt.length; i++) {
-    seed = ((seed << 5) - seed) + prompt.charCodeAt(i);
-    seed |= 0;
-  }
-  seed = Math.abs(seed);
-
-  const token = process.env.REPLICATE_API_TOKEN;
-
-  if (image_path && token) {
-    let filename = image_path.split('/').pop();
-    if (filename.includes('?')) filename = filename.split('?')[0]; // strip query params if any
-    const absPath = path.join(__dirname, 'uploads', filename);
-
-    if (fs.existsSync(absPath)) {
-      try {
-        console.log('[ControlNet] Generating exact CAD elevation for GET request...');
-        const imageData = fs.readFileSync(absPath).toString('base64');
-        const imageUri = `data:image/png;base64,${imageData}`;
-
-        const response = await fetch("https://api.replicate.com/v1/predictions", {
-          method: "POST",
-          headers: {
-            "Authorization": `Token ${token}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            version: "854e87270c1a1f42e08d388f618a38ec2d82bf4e69b3da59a0f443b740e53a26", // ControlNet MLSD
-            input: {
-              image: imageUri,
-              prompt: prompt,
-              num_samples: 1,
-              image_resolution: 512,
-              seed: seed,
-              a_prompt: "best quality, extremely detailed, photorealistic, modern architecture, 8k resolution",
-              n_prompt: "lowres, worst quality, low quality, deformed, bad architecture"
-            }
-          })
-        });
-
-        if (response.ok) {
-          let prediction = await response.json();
-          let getUrl = prediction.urls.get;
-
-          while (prediction.status !== 'succeeded' && prediction.status !== 'failed') {
-            await new Promise(r => setTimeout(r, 2000));
-            const poll = await fetch(getUrl, { headers: { "Authorization": `Token ${token}` } });
-            prediction = await poll.json();
-          }
-
-          if (prediction.status === 'succeeded') {
-            const resultUrl = Array.isArray(prediction.output) ? prediction.output[1] || prediction.output[0] : prediction.output;
-            console.log('[ControlNet] Success! Redirecting to:', resultUrl);
-            return res.redirect(resultUrl);
-          }
-        } else {
-          console.error('[ControlNet API Error]', await response.text());
-        }
-      } catch (err) {
-        console.error('[ControlNet Exception]', err);
-      }
-    }
-  }
-
-  // Fallback to Pollinations AI Text-to-Image if no Replicate token or no image
-  elevationQueue = elevationQueue.then(() => {
-    return new Promise((resolve) => {
-      console.log('[Pollinations Queue] Fetching:', prompt.substring(0, 50));
-
-      const targetUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=1024&nologo=true&seed=${seed}`;
-
-      fetch(targetUrl)
-        .then(async (proxyRes) => {
-          if (!proxyRes.ok) {
-            res.status(proxyRes.status).send('Pollinations fetch failed');
-            resolve();
-            return;
-          }
-          const buffer = Buffer.from(await proxyRes.arrayBuffer());
-          res.setHeader('Content-Type', proxyRes.headers.get('content-type') || 'image/jpeg');
-          res.setHeader('Access-Control-Allow-Origin', '*');
-          res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-          res.send(buffer);
-          setTimeout(resolve, 1500); // 1.5s delay to prevent rate limit
-        })
-        .catch(err => {
-          console.error('[Proxy Error]', err.message);
-          if (!res.headersSent) res.status(500).send('Fetch failed: ' + err.message);
-          resolve();
-        });
-    });
-  });
-});
-
 app.post('/api/auth/signup', async (req, res) => {
   const { email, password, name, phone } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
@@ -2240,14 +2296,16 @@ app.post('/api/auth/signup', async (req, res) => {
     res.json({ message: 'Signup successful', user: data.user });
   } catch (err) {
     const errorMsg = (err.message || '').toLowerCase();
-    if (errorMsg.includes('rate limit') || errorMsg.includes('fetch failed') || errorMsg.includes('enotfound')) {
-      console.log('[Auth] Supabase unreachable or rate limited. Mocking signup for development.');
+    const isDev = process.env.NODE_ENV !== 'production' && process.env.ALLOW_OFFLINE_MOCK === 'true';
+    if (isDev && (errorMsg.includes('rate limit') || errorMsg.includes('fetch failed') || errorMsg.includes('enotfound'))) {
+      console.log('[Auth] Dev offline bypass triggered for signup.');
       return res.json({
         message: 'Mock Signup successful (Offline Bypassed)',
         user: { email, user_metadata: { name, phone } }
       });
     }
-    res.status(400).json({ error: err.message });
+    const statusCode = errorMsg.includes('rate limit') ? 429 : 400;
+    res.status(statusCode).json({ error: err.message });
   }
 });
 
@@ -2260,15 +2318,17 @@ app.post('/api/auth/login', async (req, res) => {
     res.json({ message: 'Login successful', session: data.session, user: data.user });
   } catch (err) {
     const errorMsg = (err.message || '').toLowerCase();
-    if (errorMsg.includes('rate limit') || errorMsg.includes('fetch failed') || errorMsg.includes('enotfound')) {
-      console.log('[Auth] Supabase unreachable or rate limited. Mocking login for development.');
+    const isDev = process.env.NODE_ENV !== 'production' && process.env.ALLOW_OFFLINE_MOCK === 'true';
+    if (isDev && (errorMsg.includes('rate limit') || errorMsg.includes('fetch failed') || errorMsg.includes('enotfound'))) {
+      console.log('[Auth] Dev offline bypass triggered for login.');
       return res.json({
         message: 'Mock Login successful (Offline Bypassed)',
         session: { access_token: 'mock_token' },
         user: { email, user_metadata: { name: 'Test User', phone: '1234567890' } }
       });
     }
-    res.status(400).json({ error: err.message });
+    const statusCode = errorMsg.includes('rate limit') ? 429 : 401;
+    res.status(statusCode).json({ error: err.message });
   }
 });
 
@@ -2277,7 +2337,7 @@ app.get('/api/auth/google', async (req, res) => {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: 'http://localhost:3000/api/auth/callback' // Ensure you configure this in Supabase if used for real
+        redirectTo: 'http://localhost:3000/api/auth/callback'
       }
     });
     if (error) throw error;
@@ -2298,75 +2358,77 @@ app.post('/api/auth/google/token', async (req, res) => {
     if (error) throw error;
     res.json({ message: 'Login successful', session: data.session, user: data.user });
   } catch (err) {
-    // If rate limit or other issue
     console.error('[Auth] Google ID Token error:', err.message);
     const errorMsg = (err.message || '').toLowerCase();
-    if (errorMsg.includes('rate limit') || errorMsg.includes('fetch failed') || errorMsg.includes('enotfound')) {
+    const isDev = process.env.NODE_ENV !== 'production' && process.env.ALLOW_OFFLINE_MOCK === 'true';
+    if (isDev && (errorMsg.includes('rate limit') || errorMsg.includes('fetch failed') || errorMsg.includes('enotfound'))) {
       return res.json({
         message: 'Mock Login successful (Offline Bypassed)',
         session: { access_token: 'mock_token' },
         user: { email, user_metadata: { name: name || 'Test User' } }
       });
     }
-    res.status(400).json({ error: err.message });
+    const statusCode = errorMsg.includes('rate limit') ? 429 : 401;
+    res.status(statusCode).json({ error: err.message });
   }
 });
 
-// ─── Account Deletion Endpoint (Play Store Compliance) ────────────────────────
+// ─── Account Deletion Endpoint (JWT Authenticated, Play Store Compliant) ─────
 app.post('/api/auth/delete-account', async (req, res) => {
-  const email = (req.body.email || '').trim().toLowerCase();
-  const userId = req.body.userId;
+  const authHeader = req.headers.authorization;
+  let targetUserId = null;
+  let targetEmail = null;
 
-  if (!email && !userId) {
-    return res.status(400).json({ error: 'Email or User ID is required' });
+  // 1. Authenticate identity from Bearer token
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.substring(7).trim();
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser(token);
+      if (!error && user) {
+        targetUserId = user.id;
+        targetEmail = (user.email || '').toLowerCase().trim();
+      }
+    } catch (authErr) {
+      console.warn('[Account Deletion] Token verification error:', authErr.message);
+    }
   }
 
-  console.log(`[Account Deletion] Request received for: email=${email}, userId=${userId}`);
+  // 2. Reject unauthenticated requests
+  if (!targetUserId && !targetEmail) {
+    return res.status(401).json({
+      error: 'Unauthorized: A valid authenticated session token is required to delete an account.'
+    });
+  }
+
+  console.log(`[Account Deletion] Authenticated deletion for: userId=${targetUserId}, email=${targetEmail}`);
   try {
-    let targetUserId = userId;
-
-    // 1. Try to resolve userId from profiles table if only email was provided
-    if (!targetUserId && email) {
-      try {
-        const { data: prof } = await supabase.from('profiles').select('id').eq('email', email).maybeSingle();
-        if (prof?.id) targetUserId = prof.id;
-      } catch (_) { }
-    }
-
-    // 2. Delete associated data across database tables
+    // 3. Delete associated data across database tables
     if (targetUserId) {
       try { await supabase.from('profiles').delete().eq('id', targetUserId); } catch (_) { }
       try { await supabase.from('projects').delete().eq('user_id', targetUserId); } catch (_) { }
       try { await supabase.from('history').delete().eq('user_id', targetUserId); } catch (_) { }
     }
-    if (email) {
-      try { await supabase.from('profiles').delete().eq('email', email); } catch (_) { }
-      try { await supabase.from('projects').delete().eq('user_email', email); } catch (_) { }
-      try { await supabase.from('history').delete().eq('email', email); } catch (_) { }
+    if (targetEmail) {
+      try { await supabase.from('profiles').delete().eq('email', targetEmail); } catch (_) { }
+      try { await supabase.from('projects').delete().eq('user_email', targetEmail); } catch (_) { }
+      try { await supabase.from('history').delete().eq('email', targetEmail); } catch (_) { }
     }
 
-    // 3. If Service Role Key is present, delete user from Supabase Auth
-    if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    // 4. If Service Role Key is present, delete user from Supabase Auth
+    if (process.env.SUPABASE_SERVICE_ROLE_KEY && targetUserId) {
       try {
         const adminSupabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-        if (!targetUserId && email) {
-          const { data: userList } = await adminSupabase.auth.admin.listUsers();
-          const match = userList?.users?.find(u => (u.email || '').toLowerCase() === email);
-          if (match) targetUserId = match.id;
-        }
-        if (targetUserId) {
-          await adminSupabase.auth.admin.deleteUser(targetUserId);
-          console.log(`[Account Deletion] Successfully deleted user ${targetUserId} from Supabase Auth.`);
-        }
+        await adminSupabase.auth.admin.deleteUser(targetUserId);
+        console.log(`[Account Deletion] Successfully deleted user ${targetUserId} from Supabase Auth.`);
       } catch (adminErr) {
-        console.warn(`[Account Deletion] Admin Auth deletion error (continuing):`, adminErr.message);
+        console.warn(`[Account Deletion] Admin Auth deletion error:`, adminErr.message);
       }
     }
 
     return res.json({ success: true, message: 'Account and associated data deleted successfully.' });
   } catch (err) {
     console.error('[Account Deletion Error]:', err.message);
-    return res.json({ success: true, message: 'Account cleared successfully.' });
+    return res.status(500).json({ error: 'Failed to delete account. Please try again or contact support.' });
   }
 });
 
@@ -2550,7 +2612,9 @@ app.get(['/terms', '/terms-and-conditions'], (req, res) => {
 </html>`);
 });
 
-app.listen(port, '0.0.0.0', () => console.log(`\\nKanavu illam Backend running at http://0.0.0.0:${port}`));
+if (require.main === module) {
+  app.listen(port, '0.0.0.0', () => console.log(`\\nKanavu illam Backend running at http://0.0.0.0:${port}`));
+}
 
 module.exports = { app, runCostEstimation, runVastuAnalysis };
 

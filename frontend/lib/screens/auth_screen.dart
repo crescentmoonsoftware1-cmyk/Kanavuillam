@@ -121,6 +121,11 @@ class _AuthScreenState extends State<AuthScreen> {
         await prefs.setString('user_email', email);
         if (name.isNotEmpty) await prefs.setString('user_name', name);
         if (phone.isNotEmpty) await prefs.setString('user_phone', phone);
+        final session = response['session'] as Map<String, dynamic>?;
+        final token = session?['access_token'] as String?;
+        if (token != null && token.isNotEmpty) {
+          await prefs.setString('auth_token', token);
+        }
 
         if (mounted) {
           Navigator.of(context).pushAndRemoveUntil(
@@ -203,6 +208,11 @@ class _AuthScreenState extends State<AuthScreen> {
         if (userId.isNotEmpty) await prefs.setString('user_id', userId);
         await prefs.setString('user_email', email);
         await prefs.setString('user_name', name);
+        final session = response['session'] as Map<String, dynamic>?;
+        final token = session?['access_token'] as String?;
+        if (token != null && token.isNotEmpty) {
+          await prefs.setString('auth_token', token);
+        }
 
         if (mounted) {
           Navigator.of(context).pushReplacement(

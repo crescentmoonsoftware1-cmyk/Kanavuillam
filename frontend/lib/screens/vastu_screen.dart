@@ -264,7 +264,7 @@ class _VastuScreenState extends State<VastuScreen> {
                 data = Map<String, dynamic>.from(rawData['ground'] as Map);
               } else if (rawData['rooms'] == null && rawData.isNotEmpty) {
                 final match = rawData.values.firstWhere(
-                  (v) => v is Map && (v as Map).containsKey('rooms'),
+                  (v) => v is Map && (v).containsKey('rooms'),
                   orElse: () => null,
                 );
                 if (match != null) data = Map<String, dynamic>.from(match as Map);

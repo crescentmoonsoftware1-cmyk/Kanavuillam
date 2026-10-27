@@ -1,11 +1,4 @@
-const fs = require('fs');
-let code = fs.readFileSync('server.js', 'utf8');
-
-const startIdx = code.indexOf('async function runVastuAnalysis');
-const endIdx = code.indexOf('// ─── Step 6: Cost Estimation', startIdx);
-const funcCode = code.substring(startIdx, endIdx);
-
-eval(funcCode);
+const { runVastuAnalysis } = require('./server');
 
 const samplePlan = {
   project: { width: 40, height: 40 },

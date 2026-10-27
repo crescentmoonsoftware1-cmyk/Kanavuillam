@@ -99,3 +99,43 @@ create policy "Users can delete own projects" on projects
     auth.uid() = user_id 
     or (auth.jwt() ->> 'email') = user_email
   );
+
+-- ==============================================================================
+-- 12. PAYMENTS & TRANSACTIONS TABLE
+-- ==============================================================================
+
+create table if not exists payments (
+  id uuid default uuid_generate_v4() primary key,
+  order_id text not null unique,
+  payment_id text,
+  user_id uuid references auth.users(id) on delete set null,
+  user_email text,
+  project_id uuid references projects(id) on delete set null,
+  amount numeric(10, 2) not null default 500.00,
+  currency text not null default 'INR',
+  status text not null default 'pending', -- 'pending', 'paid', 'failed'
+  created_at timestamp with time zone default now(),
+  updated_at timestamp with time zone default now()
+);
+
+create index if not exists idx_payments_order_id on payments (order_id);
+create index if not exists idx_payments_user_id on payments (user_id);
+create index if not exists idx_payments_user_email on payments (user_email);
+create index if not exists idx_payments_status on payments (status);
+
+alter table payments enable row level security;
+
+create policy "Service role has full access to payments" on payments
+  for all
+  to service_role
+  using (true)
+  with check (true);
+
+create policy "Users can view own payments" on payments
+  for select
+  to authenticated
+  using (
+    auth.uid() = user_id 
+    or (auth.jwt() ->> 'email') = user_email
+  );
+

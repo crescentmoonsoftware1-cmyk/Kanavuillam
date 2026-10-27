@@ -53,25 +53,8 @@ class PdfService {
           debugPrint(
               'Failed to fetch directUrl. Status: ${directRes.statusCode}');
         } else {
-          final backendBase =
-              ApiService.baseUrl.replaceAll(RegExp(r'/api$'), '');
-          String urlString =
-              '$backendBase/api/generate-elevation?prompt=${Uri.encodeComponent(prompt)}';
-          if (imagePath != null && imagePath.isNotEmpty) {
-            urlString += '&image_path=${Uri.encodeComponent(imagePath)}';
-          }
-          final url = Uri.parse(urlString);
-          final res = await http.get(url,
-              headers: kIsWeb
-                  ? null
-                  : {
-                      'User-Agent':
-                          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-                    }).timeout(const Duration(seconds: 6),
-              onTimeout: () => http.Response('timeout', 408));
-          if (res.statusCode == 200) return res.bodyBytes;
-          debugPrint(
-              'Failed to fetch from fallback API. Status: ${res.statusCode}');
+          // Note: Elevation generation API removed; native architectural blueprint is used instead
+          return null;
         }
       } catch (e) {
         debugPrint('Error fetching image for PDF: $e');

@@ -20,28 +20,6 @@
 
 # macOS
 **/.DS_Store
-# Flutter
-**/.dart_tool/
-**/build/
-**/build_mobile/
-**/.flutter-plugins
-**/.flutter-plugins-dependencies
-**/.packages
-
-# Node
-**/node_modules/
-
-# Python
-**/__pycache__/
-**/*.pyc
-**/venv/
-**/.env
-
-# Android
-**/.gradle/
-
-# macOS
-**/.DS_Store
 
 # Logs & Temporary Files
 *.log

@@ -116,8 +116,9 @@ class _EstimationScreenState extends State<EstimationScreen> {
 
   double get _contractMultiplier {
     if (_selectedContractMode == 'labor') return 0.40; // Labor Only ~40%
-    if (_selectedContractMode == 'self')
+    if (_selectedContractMode == 'self') {
       return 0.88; // Direct / Self Build saves 12%
+    }
     return 1.0; // Turnkey
   }
 
@@ -595,9 +596,10 @@ class _EstimationScreenState extends State<EstimationScreen> {
                                     'self': 'Direct Procurement (Self)',
                                   },
                                   onChanged: (val) {
-                                    if (val != null)
+                                    if (val != null) {
                                       setState(
                                           () => _selectedContractMode = val);
+                                    }
                                   },
                                 ),
                               ),
@@ -617,8 +619,9 @@ class _EstimationScreenState extends State<EstimationScreen> {
                                     'hard_rock': 'Hard Rock (+8%)',
                                   },
                                   onChanged: (val) {
-                                    if (val != null)
+                                    if (val != null) {
                                       setState(() => _selectedSoil = val);
+                                    }
                                   },
                                 ),
                               ),
@@ -638,8 +641,9 @@ class _EstimationScreenState extends State<EstimationScreen> {
                                     'rural': 'Rural / Village (-5%)',
                                   },
                                   onChanged: (val) {
-                                    if (val != null)
+                                    if (val != null) {
                                       setState(() => _selectedLocation = val);
+                                    }
                                   },
                                 ),
                               ),

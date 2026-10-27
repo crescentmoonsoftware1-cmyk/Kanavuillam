@@ -9,6 +9,19 @@ class ApiService {
   static String get baseUrl =>
       'https://kanavuillam-production.up.railway.app/api';
 
+  static Future<Map<String, String>> _authHeaders([Map<String, String>? extra]) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      ...?extra,
+    };
+    if (token != null && token.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+    return headers;
+  }
+
   Future<Map<String, dynamic>> uploadPlan(XFile groundFile,
       XFile? firstFloorFile, XFile? secondFloorFile, String projectName,
       {String orientation = 'North', String? userEmail}) async {
@@ -21,6 +34,10 @@ class ApiService {
     final savedUserId = prefs.getString('user_id');
     if (savedUserId != null && savedUserId.isNotEmpty) {
       request.fields['userId'] = savedUserId;
+    }
+    final token = prefs.getString('auth_token');
+    if (token != null && token.isNotEmpty) {
+      request.headers['Authorization'] = 'Bearer $token';
     }
 
     // Attach ground floor
@@ -75,11 +92,12 @@ class ApiService {
   }
 
   Future<List<dynamic>> getAllProjects([String? email]) async {
+    final headers = await _authHeaders();
     String url = '$baseUrl/projects';
     if (email != null && email.isNotEmpty) {
       url += '?email=${Uri.encodeComponent(email)}';
     }
-    final response = await http.get(Uri.parse(url));
+    final response = await http.get(Uri.parse(url), headers: headers);
 
     if (response.statusCode == 200) {
       return json.decode(response.body);
@@ -89,7 +107,8 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> getProject(String projectId) async {
-    final response = await http.get(Uri.parse('$baseUrl/project/$projectId'));
+    final headers = await _authHeaders();
+    final response = await http.get(Uri.parse('$baseUrl/project/$projectId'), headers: headers);
 
     if (response.statusCode == 200) {
       return json.decode(response.body);
@@ -100,9 +119,10 @@ class ApiService {
 
   Future<Map<String, dynamic>> analyzeVastu(String projectId,
       {String lang = 'English'}) async {
+    final headers = await _authHeaders();
     final response = await http.post(
       Uri.parse('$baseUrl/analyze-vastu/$projectId'),
-      headers: {'Content-Type': 'application/json'},
+      headers: headers,
       body: json.encode({'lang': lang}),
     );
 
@@ -200,9 +220,17 @@ class ApiService {
   static Future<Map<String, dynamic>?> post(
       String endpoint, Map<String, dynamic> body) async {
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+
+      final headers = {'Content-Type': 'application/json'};
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
       final response = await http.post(
         Uri.parse('$baseUrl$endpoint'),
-        headers: {'Content-Type': 'application/json'},
+        headers: headers,
         body: json.encode(body),
       );
 
