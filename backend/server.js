@@ -2644,9 +2644,9 @@ app.get(['/terms', '/terms-and-conditions'], (req, res) => {
     <h2>2. Professional Engineering Disclaimer</h2>
     <p>All calculations, structural load recommendations, and cost estimates are provided as preliminary planning guidelines for educational and preliminary budgeting purposes. They do not substitute for on-site structural soil testing, formal municipal approvals, or licensed structural engineer certifications.</p>
 
-    <h2>3. Payments, Deliverables & Free Retry Policy</h2>
+    <h2>3. Payments & Deliverables Policy</h2>
     <p>Fees paid to unlock deliverables cover computational image processing and immediate PDF report compilation. Once report processing begins and deliverables are generated, payments are strictly non-refundable.</p>
-    <p><strong>Technical Issue Resolution:</strong> In the rare event of a verified technical glitch, network disruption, or failure to receive the final PDF report, cash refunds are not issued. Instead, users can contact our helpline via email (support@kanavuillam.com) or phone. Upon transaction verification, our team will provide an immediate <strong>100% Free Re-try Credit</strong>, allowing the user to re-process and generate their complete architectural reports at zero additional cost.</p>
+    <p><strong>Technical Issue Resolution:</strong> In the rare event of a verified technical glitch, network disruption, or failure to receive the final PDF report, cash refunds are not issued. Users can contact our support team via email (<a href="mailto:support@kanavuillam.com">support@kanavuillam.com</a>) for technical assistance and manual report delivery.</p>
 
     <h2>4. Contact</h2>
     <p>Inquiries regarding these terms may be directed to: support@kanavuillam.com</p>

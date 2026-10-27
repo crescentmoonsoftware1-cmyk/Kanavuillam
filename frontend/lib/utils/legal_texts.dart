@@ -44,11 +44,11 @@ We do not guarantee:
 * Exact material or labor costs.
 Users should consult qualified professionals before making construction or investment decisions.
 
-## 6. Payments, Deliverables, and Free Retry Policy
+## 6. Payments and Deliverables Policy
 * Generating reports requires a one-time fee of ₹500 per floor plan scan.
 * Payments are completed securely via approved payment providers (Razorpay).
 * Once computational processing begins and the PDF deliverable is generated, fees are strictly non-refundable.
-* **Technical Glitch / Free Retry Policy:** In the event of a verified technical failure, network disruption, or failure to generate the final PDF report, cash refunds are not issued; instead, users can contact our helpline/support (via email at support@kanavuillam.com or phone). Upon quick verification of the transaction, our support team will provide an instant **100% Free Re-try Credit**, allowing you to re-scan and generate your complete reports at zero additional cost.
+* **Technical Glitch / Support:** In the event of a verified technical failure, network disruption, or failure to receive the final PDF report, cash refunds are not issued. Users can contact our support team (via email at support@kanavuillam.com or phone) for technical assistance and manual report delivery.
 
 ## 7. Intellectual Property
 All application content, branding, software, algorithms, UI designs, and generated system components remain the property of Kanavu illam unless otherwise stated.
