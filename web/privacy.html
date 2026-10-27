@@ -4,93 +4,634 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Privacy Policy - Kanavu Illam</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0B0E14; color: #E2E8F0; margin: 0; padding: 40px 20px; line-height: 1.6; }
-    .container { max-width: 820px; margin: 0 auto; background: #151A23; border: 1px solid #242C3D; border-radius: 20px; padding: 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-    h1 { font-size: 26px; color: #FFFFFF; margin-top: 0; border-bottom: 1px solid #242C3D; padding-bottom: 16px; }
-    h2 { font-size: 18px; color: #F59E0B; margin-top: 28px; }
-    p, li { font-size: 14.5px; color: #CBD5E1; }
-    ul { padding-left: 20px; }
-    a { color: #F59E0B; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .highlight-box { background: rgba(245, 158, 11, 0.08); border-left: 4px solid #F59E0B; padding: 14px 18px; margin: 18px 0; border-radius: 0 10px 10px 0; font-size: 14px; color: #E2E8F0; }
-    .footer { font-size: 13px; color: #64748B; margin-top: 40px; border-top: 1px solid #242C3D; padding-top: 20px; text-align: center; }
+    :root {
+      --bg-dark: #0B0E14;
+      --bg-mesh: radial-gradient(circle at 50% 0%, #1E2638 0%, #0B0E14 75%);
+      --card-bg: #151A24;
+      --card-elevated: #1B2230;
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-border-hover: rgba(229, 138, 24, 0.35);
+      --amber: #E58A18;
+      --amber-highlight: #FBA73B;
+      --amber-glow: rgba(229, 138, 24, 0.15);
+      --amber-tint: rgba(229, 138, 24, 0.08);
+      --text-white: #FFFFFF;
+      --text-slate: #CBD5E1;
+      --text-muted: #8E94A0;
+      --badge-slate: #242D3D;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg-dark);
+      background-image: var(--bg-mesh);
+      background-attachment: fixed;
+      color: var(--text-slate);
+      line-height: 1.65;
+      min-height: 100vh;
+      padding-bottom: 120px; /* Space for floating capsule navbar */
+    }
+
+    /* ─── Top Shell Navigation Bar ─── */
+    .shell-topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(11, 14, 20, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--card-border);
+      padding: 14px 24px;
+    }
+
+    .shell-topbar-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+
+    .brand-logo {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: var(--card-elevated);
+      border: 1px solid var(--card-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .brand-logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .brand-text h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text-white);
+      letter-spacing: -0.3px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .brand-text .brand-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--amber);
+      display: inline-block;
+    }
+
+    .brand-text p {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .top-nav-pills {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pill-btn {
+      font-size: 12.5px;
+      font-weight: 600;
+      padding: 7px 14px;
+      border-radius: 100px;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+    }
+
+    .pill-btn:hover {
+      color: var(--text-white);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .pill-btn.active {
+      background: var(--amber);
+      color: #1E252D;
+      font-weight: 700;
+      box-shadow: 0 2px 10px var(--amber-glow);
+    }
+
+    /* ─── Main Content Shell ─── */
+    .shell-container {
+      max-width: 900px;
+      margin: 32px auto 0;
+      padding: 0 20px;
+    }
+
+    /* Hero Card */
+    .hero-card {
+      background: linear-gradient(135deg, rgba(30, 38, 56, 0.8) 0%, rgba(21, 26, 36, 0.95) 100%);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 32px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+      margin-bottom: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-card::after {
+      content: "";
+      position: absolute;
+      top: -50px;
+      right: -50px;
+      width: 180px;
+      height: 180px;
+      background: radial-gradient(circle, rgba(229, 138, 24, 0.18) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(229, 138, 24, 0.12);
+      border: 1px solid rgba(229, 138, 24, 0.3);
+      padding: 5px 12px;
+      border-radius: 100px;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--amber);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+    }
+
+    .hero-card h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text-white);
+      margin-bottom: 10px;
+      letter-spacing: -0.5px;
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      font-size: 12.5px;
+      color: var(--text-muted);
+      margin-top: 14px;
+    }
+
+    .hero-chip {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 4px 10px;
+      border-radius: 6px;
+      color: var(--text-slate);
+    }
+
+    /* Section Jump Bar */
+    .jump-bar {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 8px 4px 16px;
+      margin-bottom: 20px;
+      scrollbar-width: none;
+    }
+    .jump-bar::-webkit-scrollbar { display: none; }
+
+    .jump-pill {
+      flex-shrink: 0;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 100px;
+      transition: all 0.2s;
+    }
+
+    .jump-pill:hover {
+      color: var(--text-white);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Content Card */
+    .content-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 36px 32px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+    }
+
+    .policy-section {
+      margin-bottom: 36px;
+      padding-bottom: 28px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .policy-section:last-child {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-white);
+      margin-bottom: 16px;
+    }
+
+    .section-num {
+      background: var(--badge-slate);
+      color: var(--amber);
+      font-size: 12px;
+      font-weight: 800;
+      padding: 4px 9px;
+      border-radius: 8px;
+      border: 1px solid rgba(229, 138, 24, 0.25);
+    }
+
+    p {
+      font-size: 14.5px;
+      color: var(--text-slate);
+      line-height: 1.7;
+      margin-bottom: 14px;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 14px 0;
+    }
+
+    li {
+      position: relative;
+      padding-left: 24px;
+      margin-bottom: 12px;
+      font-size: 14px;
+      color: var(--text-slate);
+      line-height: 1.6;
+    }
+
+    li::before {
+      content: "•";
+      color: var(--amber);
+      font-size: 20px;
+      position: absolute;
+      left: 6px;
+      top: -2px;
+    }
+
+    li strong {
+      color: var(--text-white);
+    }
+
+    .highlight-card {
+      background: var(--amber-tint);
+      border-left: 4px solid var(--amber);
+      border-radius: 0 14px 14px 0;
+      padding: 16px 20px;
+      margin: 18px 0;
+      font-size: 14px;
+      color: #F1F5F9;
+      border-top: 1px solid rgba(229, 138, 24, 0.15);
+      border-right: 1px solid rgba(229, 138, 24, 0.15);
+      border-bottom: 1px solid rgba(229, 138, 24, 0.15);
+    }
+
+    .highlight-card strong {
+      color: var(--amber-highlight);
+    }
+
+    a {
+      color: var(--amber);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    a:hover {
+      text-decoration: underline;
+      color: var(--amber-highlight);
+    }
+
+    /* ─── Floating Capsule Navigation Bar (Shell Screen Pattern) ─── */
+    .capsule-nav-wrapper {
+      position: fixed;
+      bottom: 24px;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
+      z-index: 1000;
+      pointer-events: none;
+    }
+
+    .capsule-nav {
+      pointer-events: auto;
+      background: rgba(21, 26, 36, 0.88);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 100px;
+      padding: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.04);
+    }
+
+    .capsule-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: 100px;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      transition: all 0.2s ease;
+    }
+
+    .capsule-item svg {
+      width: 17px;
+      height: 17px;
+      fill: currentColor;
+    }
+
+    .capsule-item:hover {
+      color: var(--text-white);
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .capsule-item.active {
+      background: var(--amber);
+      color: #1E252D;
+      font-weight: 700;
+      box-shadow: 0 4px 14px var(--amber-glow);
+    }
+
+    .capsule-item.active svg {
+      fill: #1E252D;
+    }
+
+    /* Footer */
+    .shell-footer {
+      text-align: center;
+      padding: 40px 20px 20px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .shell-footer a {
+      color: var(--text-muted);
+      margin: 0 8px;
+    }
+
+    .shell-footer a:hover {
+      color: var(--amber);
+    }
+
+    @media (max-width: 640px) {
+      .shell-topbar-inner { flex-direction: column; align-items: flex-start; gap: 10px; }
+      .top-nav-pills { width: 100%; justify-content: space-between; }
+      .content-card { padding: 24px 18px; border-radius: 18px; }
+      .hero-card { padding: 24px 20px; border-radius: 18px; }
+      .hero-card h2 { font-size: 22px; }
+      .capsule-item { padding: 8px 14px; font-size: 12px; }
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Privacy Policy for Kanavu Illam</h1>
-    <p><em>Effective Date: October 27, 2026</em></p>
-    <p>Kanavu Illam ("we", "our", or "us"), operated by Kanavu Illam Technologies, Coimbatore, Tamil Nadu, India, is committed to safeguarding your personal data and privacy. This Privacy Policy details how we collect, process, store, and protect your information across our mobile application and web services in full compliance with the <strong>Digital Personal Data Protection Act, 2023 (DPDP Act)</strong>, the <strong>Information Technology Act, 2000</strong>, the <strong>SPDI Rules, 2011</strong>, and <strong>Google Play Developer Data Safety Policies</strong>.</p>
 
-    <h2>1. Information We Collect and Purpose of Processing</h2>
-    <p>We collect only the minimum necessary data to authenticate accounts, analyze floor plans, and generate architectural reports:</p>
-    <ul>
-      <li><strong>Account Credentials & Profile Data:</strong> Full name, email address, phone number, and optional delivery/site address provided directly by you or via Google Sign-In (OAuth) or Supabase authentication. These are used strictly to create, authenticate, and manage your account and deliver requested services.</li>
-      <li><strong>Uploaded Floor Plan Drawings:</strong> 2D architectural blueprint drawings or sketches uploaded by you. These are used solely for automated geometric contour detection, room boundary segmentation, and text reading.</li>
-      <li><strong>Derived Architectural Project Data:</strong> 3D parametric CAD coordinates, room dimensions, traditional Tamil Vastu rule scores, estimated material bill of quantities (BOQ), and preliminary structural guidance generated from your uploads. These are saved to your account so you can view, review, and export them at any time in your History tab.</li>
-      <li><strong>Payment and Invoicing Records:</strong> When you purchase or unlock deliverables, our payment partner (such as Razorpay) provides transaction metadata including transaction ID, order ID, payment status, timestamp, amount, and the user's billing email. These records are retained strictly for order fulfillment, fraud prevention, accounting, and statutory tax (GST) compliance. <em>We never receive, process, or store credit/debit card numbers, CVVs, or UPI PINs on our servers.</em></li>
-      <li><strong>Technical Telemetry & Device Logs:</strong> IP address, device operating system version, and standard access logs collected ephemerally for rate limiting, DDoS defense, and server health diagnostics.</li>
-      <li><strong>Local Storage:</strong> Authentication session tokens and language preferences (English/Tamil) stored locally on your device via local app storage (e.g., SharedPreferences).</li>
-    </ul>
+  <!-- Top App Shell Bar -->
+  <header class="shell-topbar">
+    <div class="shell-topbar-inner">
+      <a href="index.html" class="brand-group">
+        <div class="brand-logo">
+          <img src="logo.png" alt="Kanavu Illam Logo" onerror="this.src='../frontend/assets/images/logo.png'">
+        </div>
+        <div class="brand-text">
+          <h1>Kanavu Illam <span class="brand-dot"></span></h1>
+          <p>Legal & Data Privacy Portal</p>
+        </div>
+      </a>
 
-    <h2>2. Immediate Zero-Storage Architecture for Raw Blueprints</h2>
-    <div class="highlight-box">
-      <strong>Zero-Storage Architecture:</strong> Uploaded floor plan image files are stored temporarily on server disk strictly during automated processing by computer-vision software (YOLO, OpenCV, and EasyOCR) and are deleted immediately after processing, or at server restart if interrupted. We do not store raw blueprint image files on our servers, and no permanent blueprint image URLs are retained in our database.
+      <nav class="top-nav-pills">
+        <a href="privacy.html" class="pill-btn active">Privacy Policy</a>
+        <a href="terms.html" class="pill-btn">Terms & Conditions</a>
+        <a href="delete-account.html" class="pill-btn">Delete Account</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Shell Container -->
+  <main class="shell-container">
+    
+    <!-- Hero Banner -->
+    <div class="hero-card">
+      <div class="hero-badge">DPDP Act & Google Play Certified</div>
+      <h2>Privacy Policy for Kanavu Illam</h2>
+      <p>Operated by Kanavu Illam Technologies, Coimbatore, Tamil Nadu, India. Committed to complete transparency and minimal data footprint.</p>
+      <div class="hero-meta">
+        <span class="hero-chip">Effective: October 27, 2026</span>
+        <span class="hero-chip">DPDP Act, 2023 Compliant</span>
+        <span class="hero-chip">IT Rules, 2021 (Rule 3(2))</span>
+        <span class="hero-chip">Zero-Storage Architecture</span>
+      </div>
     </div>
 
-    <h2>3. Project Results & Cloud Data Storage</h2>
-    <p>Unlike raw blueprint images, the derived architectural models (room polygons, 3D vectors, Vastu scores, and cost estimations) are stored securely in our cloud database (Supabase) under your unique user ID. This enables you to access your projects across app sessions in your History screen. These project results remain stored under your account until you choose to delete them or permanently delete your account.</p>
+    <!-- Quick Section Jump Bar -->
+    <nav class="jump-bar" aria-label="Section shortcuts">
+      <a href="#sec1" class="jump-pill">§1 Collection</a>
+      <a href="#sec2" class="jump-pill">§2 Zero-Storage</a>
+      <a href="#sec3" class="jump-pill">§3 Cloud Results</a>
+      <a href="#sec4" class="jump-pill">§4 Cloud Providers</a>
+      <a href="#sec5" class="jump-pill">§5 Retention & Deletion</a>
+      <a href="#sec6" class="jump-pill">§6 User Rights</a>
+      <a href="#sec7" class="jump-pill">§7 Eligibility</a>
+      <a href="#sec8" class="jump-pill">§8 Security</a>
+      <a href="#sec9" class="jump-pill">§9 Grievance</a>
+    </nav>
 
-    <h2>4. Third-Party Service Providers & Cloud Hosting Locations</h2>
-    <p>We work with trusted infrastructure and service providers:</p>
-    <ul>
-      <li><strong>Supabase Inc.:</strong> Cloud database hosting and user authentication.</li>
-      <li><strong>Railway Corp.:</strong> Secure cloud backend hosting and API pipeline execution.</li>
-      <li><strong>Vercel Inc.:</strong> Hosting our static web portals and compliance documentation.</li>
-      <li><strong>Google LLC:</strong> Google OAuth 2.0 user authentication.</li>
-      <li><strong>Razorpay Software Private Limited:</strong> RBI-authorized payment processing. All payment transaction data is localized and stored within India in compliance with Reserve Bank of India (RBI) mandates.</li>
-      <li><strong>OpenRouter Inc.:</strong> Ephemeral text queries for live regional construction material prices. <em>Your floor plan drawings, personal identifiers, and private account details are never sent to OpenRouter or external language models.</em></li>
-    </ul>
-    <p>Our cloud backend and database services are hosted in enterprise data centers. Depending on operational routing, technical data and project calculations may be transferred to or processed on secure servers located outside India, subject to standard encryption and contractual data safeguards.</p>
+    <!-- Main Content Card -->
+    <article class="content-card">
+      
+      <section id="sec1" class="policy-section">
+        <div class="section-title">
+          <span class="section-num">§ 1</span>
+          <h3>Information We Collect and Purpose of Processing</h3>
+        </div>
+        <p>We collect only the minimum necessary data to authenticate accounts, analyze floor plans, and generate architectural reports:</p>
+        <ul>
+          <li><strong>Account Credentials & Profile Data:</strong> Full name, email address, phone number, and optional delivery/site address provided directly by you or via Google Sign-In (OAuth) or Supabase authentication. These are used strictly to create, authenticate, and manage your account and deliver requested services.</li>
+          <li><strong>Uploaded Floor Plan Drawings:</strong> 2D architectural blueprint drawings or sketches uploaded by you. These are used solely for automated geometric contour detection, room boundary segmentation, and text reading.</li>
+          <li><strong>Derived Architectural Project Data:</strong> 3D parametric CAD coordinates, room dimensions, traditional Tamil Vastu rule scores, estimated material bill of quantities (BOQ), and preliminary structural guidance generated from your uploads. These are saved to your account so you can view, review, and export them at any time in your History tab.</li>
+          <li><strong>Payment and Invoicing Records:</strong> When you purchase or unlock deliverables, our payment partner (such as Razorpay) provides transaction metadata including transaction ID, order ID, payment status, timestamp, amount, and the user's billing email. These records are retained strictly for order fulfillment, fraud prevention, accounting, and statutory tax (GST) compliance. <em>We never receive, process, or store credit/debit card numbers, CVVs, or UPI PINs on our servers.</em></li>
+          <li><strong>Technical Telemetry & Device Logs:</strong> IP address, device operating system version, and standard access logs collected ephemerally for rate limiting, DDoS defense, and server health diagnostics.</li>
+          <li><strong>Local Storage:</strong> Authentication session tokens and language preferences (English/Tamil) stored locally on your device via local app storage (e.g., SharedPreferences).</li>
+        </ul>
+      </section>
 
-    <h2>5. Data Retention & Account Deletion Policy</h2>
-    <p>We retain your personal profile and project history only for as long as your account is active:</p>
-    <ul>
-      <li><strong>User-Initiated Deletion:</strong> You have the absolute right to delete your account at any time. You can trigger deletion within the app under <strong>Profile &gt; Delete Account</strong>, or via our public web deletion page at <a href="delete-account.html">Request Account Deletion</a>.</li>
-      <li><strong>What is Purged:</strong> Deleting your account immediately and permanently removes your profile, authentication credentials, project records, 3D models, and history logs from our database.</li>
-      <li><strong>Statutory Retention Exception:</strong> Payment and billing records (including transaction IDs and associated billing email) are retained strictly for the statutory duration required by Indian accounting, tax, and GST audit regulations.</li>
-    </ul>
+      <section id="sec2" class="policy-section">
+        <div class="section-title">
+          <span class="section-num">§ 2</span>
+          <h3>Immediate Zero-Storage Architecture for Raw Blueprints</h3>
+        </div>
+        <div class="highlight-card">
+          <strong>Zero-Storage Architecture:</strong> Uploaded floor plan image files are stored temporarily on server disk strictly during automated processing by computer-vision software (YOLO, OpenCV, and EasyOCR) and are deleted immediately after processing, or at server restart if interrupted. We do not store raw blueprint image files on our servers, and no permanent blueprint image URLs are retained in our database.
+        </div>
+      </section>
 
-    <h2>6. User Rights (DPDP Act, 2023)</h2>
-    <p>In accordance with the Digital Personal Data Protection Act, you possess the right to:</p>
-    <ul>
-      <li>Access a summary of your personal data processed by us.</li>
-      <li>Request correction or updating of inaccurate or incomplete personal data.</li>
-      <li>Withdraw your consent at any time and request erasure of your data.</li>
-      <li>Nominate another individual in accordance with applicable legal provisions.</li>
-    </ul>
+      <section id="sec3" class="policy-section">
+        <div class="section-title">
+          <span class="section-num">§ 3</span>
+          <h3>Project Results & Cloud Data Storage</h3>
+        </div>
+        <p>Unlike raw blueprint images, the derived architectural models (room polygons, 3D vectors, Vastu scores, and cost estimations) are stored securely in our cloud database (Supabase) under your unique user ID. This enables you to access your projects across app sessions in your History screen. These project results remain stored under your account until you choose to delete them or permanently delete your account.</p>
+      </section>
 
-    <h2>7. Age Eligibility (18+ Requirement)</h2>
-    <p>Kanavu Illam is designed and intended strictly for adults aged 18 years and above. We do not knowingly solicit or collect personal information from individuals under the age of 18.</p>
+      <section id="sec4" class="policy-section">
+        <div class="section-title">
+          <span class="section-num">§ 4</span>
+          <h3>Third-Party Service Providers & Cloud Hosting Locations</h3>
+        </div>
+        <p>We work with trusted infrastructure and service providers:</p>
+        <ul>
+          <li><strong>Supabase Inc.:</strong> Cloud database hosting and user authentication.</li>
+          <li><strong>Railway Corp.:</strong> Secure cloud backend hosting and API pipeline execution.</li>
+          <li><strong>Vercel Inc.:</strong> Hosting our static web portals and compliance documentation.</li>
+          <li><strong>Google LLC:</strong> Google OAuth 2.0 user authentication.</li>
+          <li><strong>Razorpay Software Private Limited:</strong> RBI-authorized payment processing. All payment transaction data is localized and stored within India in compliance with Reserve Bank of India (RBI) mandates.</li>
+          <li><strong>OpenRouter Inc.:</strong> Ephemeral text queries for live regional construction material prices. <em>Your floor plan drawings, personal identifiers, and private account details are never sent to OpenRouter or external language models.</em></li>
+        </ul>
+        <p>Our cloud backend and database services are hosted in enterprise data centers. Depending on operational routing, technical data and project calculations may be transferred to or processed on secure servers located outside India, subject to standard encryption and contractual data safeguards.</p>
+      </section>
 
-    <h2>8. Security Safeguards & Breach Management</h2>
-    <p>We protect your data using industry-standard measures including TLS encryption for data in transit, access controls enforced by our backend and database policies ensuring authorized access to project records, secure session authentication tokens, and rate-limited API endpoints. In the unlikely event of a verified data incident, we will notify affected users and regulatory bodies within the statutory timeline.</p>
+      <section id="sec5" class="policy-section">
+        <div class="section-title">
+          <span class="section-num">§ 5</span>
+          <h3>Data Retention & Account Deletion Policy</h3>
+        </div>
+        <p>We retain your personal profile and project history only for as long as your account is active:</p>
+        <ul>
+          <li><strong>User-Initiated Deletion:</strong> You have the absolute right to delete your account at any time. You can trigger deletion within the app under <strong>Profile &gt; Delete Account</strong>, or via our public web deletion page at <a href="delete-account.html">Request Account Deletion</a>.</li>
+          <li><strong>What is Purged:</strong> Deleting your account immediately and permanently removes your profile, authentication credentials, project records, 3D models, and history logs from our database.</li>
+          <li><strong>Statutory Retention Exception:</strong> Payment and billing records (including transaction IDs and associated billing email) are retained strictly for the statutory duration required by Indian accounting, tax, and GST audit regulations.</li>
+        </ul>
+      </section>
 
-    <h2>9. Grievance Redressal & Contact Information</h2>
-    <p>In compliance with Rule 3(2) of the Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021 and the DPDP Act, 2023, the details of our Grievance Officer are:</p>
-    <ul>
-      <li><strong>Publisher / Entity:</strong> Kanavu Illam Technologies</li>
-      <li><strong>Grievance Officer:</strong> Chandramouli S</li>
-      <li><strong>Designation:</strong> Grievance Officer</li>
-      <li><strong>Address:</strong> Kanavu Illam Technologies, Coimbatore, Tamil Nadu 641001, India</li>
-      <li><strong>Grievance Email:</strong> <a href="mailto:grievance@kanavuillam.com">grievance@kanavuillam.com</a> (cc: <a href="mailto:support@kanavuillam.com">support@kanavuillam.com</a>)</li>
-      <li><strong>Statutory SLA:</strong> Acknowledgment within 24 hours; resolution within 15 days.</li>
-    </ul>
+      <section id="sec6" class="policy-section">
+        <div class="section-title">
+          <span class="section-num">§ 6</span>
+          <h3>User Rights (DPDP Act, 2023)</h3>
+        </div>
+        <p>In accordance with the Digital Personal Data Protection Act, you possess the right to:</p>
+        <ul>
+          <li>Access a summary of your personal data processed by us.</li>
+          <li>Request correction or updating of inaccurate or incomplete personal data.</li>
+          <li>Withdraw your consent at any time and request erasure of your data.</li>
+          <li>Nominate another individual in accordance with applicable legal provisions.</li>
+        </ul>
+      </section>
 
-    <div class="footer">
-      &copy; 2026 Kanavu Illam Technologies. All Rights Reserved. &bull; <a href="terms.html">Terms & Conditions</a> &bull; <a href="delete-account.html">Account Deletion</a>
-    </div>
+      <section id="sec7" class="policy-section">
+        <div class="section-title">
+          <span class="section-num">§ 7</span>
+          <h3>Age Eligibility (18+ Requirement)</h3>
+        </div>
+        <p>Kanavu Illam is designed and intended strictly for adults aged 18 years and above. We do not knowingly solicit or collect personal information from individuals under the age of 18.</p>
+      </section>
+
+      <section id="sec8" class="policy-section">
+        <div class="section-title">
+          <span class="section-num">§ 8</span>
+          <h3>Security Safeguards & Breach Management</h3>
+        </div>
+        <p>We protect your data using industry-standard measures including TLS encryption for data in transit, access controls enforced by our backend and database policies ensuring authorized access to project records, secure session authentication tokens, and rate-limited API endpoints. In the unlikely event of a verified data incident, we will notify affected users and regulatory bodies within the statutory timeline.</p>
+      </section>
+
+      <section id="sec9" class="policy-section">
+        <div class="section-title">
+          <span class="section-num">§ 9</span>
+          <h3>Grievance Redressal & Contact Information</h3>
+        </div>
+        <p>In compliance with Rule 3(2) of the Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021 and the DPDP Act, 2023, the details of our Grievance Officer are:</p>
+        <ul>
+          <li><strong>Publisher / Entity:</strong> Kanavu Illam Technologies</li>
+          <li><strong>Grievance Officer:</strong> Chandramouli S</li>
+          <li><strong>Designation:</strong> Grievance Officer</li>
+          <li><strong>Address:</strong> Kanavu Illam Technologies, Coimbatore, Tamil Nadu 641001, India</li>
+          <li><strong>Grievance Email:</strong> <a href="mailto:grievance@kanavuillam.com">grievance@kanavuillam.com</a> (cc: <a href="mailto:support@kanavuillam.com">support@kanavuillam.com</a>)</li>
+          <li><strong>Statutory SLA:</strong> Acknowledgment within 24 hours; resolution within 15 days.</li>
+        </ul>
+      </section>
+
+    </article>
+
+    <!-- Footer -->
+    <footer class="shell-footer">
+      <p>&copy; 2026 Kanavu Illam Technologies. All Rights Reserved.</p>
+      <p style="margin-top: 8px;">
+        <a href="terms.html">Terms & Conditions</a> &bull;
+        <a href="privacy.html">Privacy Policy</a> &bull;
+        <a href="delete-account.html">Request Account Deletion</a>
+      </p>
+    </footer>
+  </main>
+
+  <!-- Floating Capsule Navigation Bar (App Shell style) -->
+  <div class="capsule-nav-wrapper">
+    <nav class="capsule-nav" aria-label="Quick navigation">
+      <a href="terms.html" class="capsule-item">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+        <span>Terms</span>
+      </a>
+      <a href="privacy.html" class="capsule-item active">
+        <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+        <span>Privacy</span>
+      </a>
+      <a href="delete-account.html" class="capsule-item">
+        <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+        <span>Account</span>
+      </a>
+    </nav>
   </div>
+
 </body>
 </html>
