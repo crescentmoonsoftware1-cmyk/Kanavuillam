@@ -263,7 +263,20 @@ class ViewerScreenState extends State<ViewerScreen> {
 
   /// Automatically switches to 3D Top View for PDF, captures screenshots, and restores view.
   Future<Map<String, Uint8List>> captureAllFloorScreenshots() async {
-    if (!_isWebViewReady) return {};
+    // If the viewer was just mounted, wait up to 8 seconds for WebView initialization
+    if (!_isWebViewReady) {
+      debugPrint('[ViewerScreen] Waiting for 3D WebView to initialize before capture...');
+      for (int i = 0; i < 80; i++) {
+        await Future.delayed(const Duration(milliseconds: 100));
+        if (_isWebViewReady) break;
+      }
+      // Brief pause to allow the first 3D frame to render
+      await Future.delayed(const Duration(milliseconds: 500));
+    }
+    if (!_isWebViewReady) {
+      debugPrint('[ViewerScreen] Warning: 3D WebView was not ready in time for screenshots.');
+      return {};
+    }
 
     Map<String, Uint8List> result = {};
     final modelData = widget.projectData['model_data'];

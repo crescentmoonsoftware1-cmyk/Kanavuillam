@@ -1016,7 +1016,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
         try {
           screenshots3D = await (widget.capture3DScreenshots?.call() ??
                   Future.value(<String, Uint8List>{}))
-              .timeout(const Duration(seconds: 5),
+              .timeout(const Duration(seconds: 12),
                   onTimeout: () => <String, Uint8List>{});
           debugPrint(
               '[PDF] 3D screenshots captured: ${screenshots3D.keys.length}');

@@ -353,7 +353,14 @@ class _ShellScreenState extends State<ShellScreen> {
                     userData: widget.userData,
                     capture3DScreenshots: () async {
                       if (!_loadedTabs.contains(1)) {
-                        _switchTab(1);
+                        setState(() {
+                          _loadedTabs.add(1);
+                        });
+                        // Wait for Flutter to mount ViewerScreen and attach GlobalKey
+                        for (int i = 0; i < 40; i++) {
+                          await Future.delayed(const Duration(milliseconds: 100));
+                          if (_viewerKey.currentState != null) break;
+                        }
                       }
                       return await _viewerKey.currentState
                               ?.captureAllFloorScreenshots() ??
