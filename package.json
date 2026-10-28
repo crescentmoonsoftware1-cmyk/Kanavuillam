@@ -1,0 +1,11 @@
+{
+  "name": "kanavuillam",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Kanavu Illam Platform Root",
+  "scripts": {
+    "postinstall": "cd backend && npm install",
+    "build": "cd backend && npm install",
+    "start": "node backend/server.js"
+  }
+}

@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: kanavuillam-backend
+    env: docker
+    dockerfilePath: backend/Dockerfile
+    dockerContext: .
+    plan: free
+    region: singapore
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: NODE_ENV
+        value: production
