@@ -5,9 +5,29 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
+  // Set this to true for Local testing (port 3000), or false for production Railway
+  static const bool useLocalBackend = false;
+
   // Production Railway backend URL
-  static String get baseUrl =>
+  static const String _productionUrl =
       'https://kanavuillam-production.up.railway.app/api';
+
+  // Base URL dynamically routes to Localhost/10.0.2.2 in local mode, or Railway in production
+  static String get baseUrl {
+    if (!useLocalBackend) {
+      return _productionUrl;
+    }
+    // Web and desktop connect directly to localhost
+    if (kIsWeb) {
+      return 'http://localhost:3000/api';
+    }
+    // Android emulator loops back to host machine via 10.0.2.2
+    // If using a physical Android device, run: `adb reverse tcp:3000 tcp:3000`
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      return 'http://10.0.2.2:3000/api';
+    }
+    return 'http://localhost:3000/api';
+  }
 
   /// Asynchronously pings the server to wake it up from cloud cold sleep
   static void warmupBackend() {

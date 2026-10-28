@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../core/providers/app_config_provider.dart';
 import '../core/theme/app_colors.dart';
 import '../services/api_service.dart';
+import 'history_screen.dart';
 import 'welcome_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -18,15 +19,15 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   // User fields
-  String _name = 'Thomas';
-  String _phone = '+91 98765 43210';
-  String _email = 'thomas.arch@kanavuillam.com';
-  String _city = 'Erode, Tamil Nadu';
+  String _name = 'User';
+  String _phone = '';
+  String _email = '';
+  String _city = 'Tamil Nadu, India';
 
   final ApiService _apiService = ApiService();
-  int? _projectCount = 0;
-  int? _totalAmountSpent = 0;
-  bool? _isLoadingStats = false;
+  int _projectCount = 0;
+  int _totalAmountSpent = 0;
+  bool _isLoadingStats = false;
   bool _statsLoaded = false;
 
   late final TextEditingController _nameController;
@@ -40,7 +41,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _phoneController = TextEditingController(text: _phone);
     _cityController = TextEditingController(text: _city);
     _loadProfileData();
-    _loadStats();
   }
 
   @override
@@ -55,25 +55,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final prefs = await SharedPreferences.getInstance();
     final meta = widget.userData?['user_metadata'] as Map<String, dynamic>?;
 
-    final currentEmail = (widget.userData?['email'] as String?) ??
+    final currentEmail = ((widget.userData?['email'] as String?) ??
         prefs.getString('user_email') ??
-        '';
+        '').trim();
 
     final savedName = (meta?['name'] as String?) ??
         (meta?['full_name'] as String?) ??
         prefs.getString('user_name') ??
-        (currentEmail.isNotEmpty ? currentEmail.split('@').first : 'Thomas');
+        (currentEmail.isNotEmpty ? currentEmail.split('@').first : 'User');
 
-    final savedEmail = currentEmail.isNotEmpty ? currentEmail : 'thomas.arch@kanavuillam.com';
     final savedPhone = (meta?['phone'] as String?) ??
         prefs.getString('user_phone') ??
-        '+91 98765 43210';
+        '';
     final savedCity = prefs.getString('user_address') ?? 'Tamil Nadu, India';
 
     if (mounted) {
       setState(() {
         _name = savedName;
-        _email = savedEmail;
+        _email = currentEmail;
         _phone = savedPhone;
         _city = savedCity;
 
@@ -88,15 +87,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadStats([String? email]) async {
     final prefs = await SharedPreferences.getInstance();
-    final targetEmail = (email != null && email.isNotEmpty && email != 'thomas.arch@kanavuillam.com')
+    final targetEmail = ((email != null && email.isNotEmpty)
         ? email
-        : ((widget.userData?['email'] as String?) ?? prefs.getString('user_email') ?? _email);
+        : ((widget.userData?['email'] as String?) ?? prefs.getString('user_email') ?? _email)).trim().toLowerCase();
 
-    if (targetEmail.isEmpty || targetEmail == 'unknown' || targetEmail == 'thomas.arch@kanavuillam.com') {
+    if (targetEmail.isEmpty || targetEmail == 'unknown') {
       if (mounted) {
         setState(() {
-          _projectCount = 6;
-          _totalAmountSpent = 3000;
+          _projectCount = 0;
+          _totalAmountSpent = 0;
           _isLoadingStats = false;
         });
       }
@@ -427,6 +426,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             onPressed: () async {
               Navigator.pop(ctx);
+              HistoryScreen.clearCache();
               final prefs = await SharedPreferences.getInstance();
               await prefs.clear();
               if (context.mounted) {
@@ -648,7 +648,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final isDark = config.isDarkMode;
 
     // Trigger stats load if not yet loaded
-    if (!_statsLoaded && !(_isLoadingStats ?? false)) {
+    if (!_statsLoaded && !_isLoadingStats) {
       _statsLoaded = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _loadStats(_email);
@@ -1048,9 +1048,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildStatsCard(AppConfigProvider config, bool isDark) {
-    final int count = _projectCount ?? 0;
-    final int spend = _totalAmountSpent ?? 0;
-    final bool isLoading = _isLoadingStats ?? false;
+    final int count = _projectCount;
+    final int spend = _totalAmountSpent;
+    final bool isLoading = _isLoadingStats;
 
     return Material(
       color: Colors.transparent,

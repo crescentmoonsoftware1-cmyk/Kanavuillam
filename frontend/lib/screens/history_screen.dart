@@ -16,6 +16,8 @@ class HistoryScreen extends StatefulWidget {
     this.userData,
   });
 
+  static void clearCache() => _HistoryScreenState.clearCache();
+
   @override
   State<HistoryScreen> createState() => _HistoryScreenState();
 }
@@ -23,13 +25,20 @@ class HistoryScreen extends StatefulWidget {
 class _HistoryScreenState extends State<HistoryScreen> {
   final ApiService _apiService = ApiService();
   static List<Map<String, dynamic>>? _cachedProjects;
+  static String? _cachedEmail;
   late bool _isLoading;
   List<Map<String, dynamic>> _projects = [];
+
+  static void clearCache() {
+    _cachedProjects = null;
+    _cachedEmail = null;
+  }
 
   @override
   void initState() {
     super.initState();
-    if (_cachedProjects != null) {
+    final userEmail = (widget.userData?['email'] as String?)?.trim().toLowerCase();
+    if (_cachedProjects != null && (_cachedEmail == null || _cachedEmail == userEmail)) {
       _projects = _cachedProjects!;
       _isLoading = false;
     } else {
@@ -38,58 +47,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
     _loadUserHistory();
   }
 
-  static final List<Map<String, dynamic>> _sampleProjects = [
-    {
-      'name': 'KI_Project 01',
-      'date': '12 Oct 2026',
-      'features': ['3d', 'vastu', 'cost', 'structural'],
-      'amount': '₹500',
-      'image_url': null,
-    },
-    {
-      'name': 'KI_Project 02',
-      'date': '28 Sep 2026',
-      'features': ['3d', 'vastu', 'cost', 'structural'],
-      'amount': '₹500',
-      'image_url': null,
-    },
-    {
-      'name': 'KI_Project 03',
-      'date': '15 Sep 2026',
-      'features': ['3d', 'vastu', 'cost', 'structural'],
-      'amount': '₹500',
-      'image_url': null,
-    },
-    {
-      'name': 'KI_Project 04',
-      'date': '02 Aug 2026',
-      'features': ['3d', 'vastu', 'cost', 'structural'],
-      'amount': '₹500',
-      'image_url': null,
-    },
-    {
-      'name': 'KI_Project 05',
-      'date': '19 Jul 2026',
-      'features': ['3d', 'vastu', 'cost', 'structural'],
-      'amount': '₹500',
-      'image_url': null,
-    },
-    {
-      'name': 'KI_Project 06',
-      'date': '04 Jun 2026',
-      'features': ['3d', 'vastu', 'cost', 'structural'],
-      'amount': '₹500',
-      'image_url': null,
-    },
-  ];
-
   Future<void> _loadUserHistory() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final email = (widget.userData?['email'] as String?) ??
-          prefs.getString('user_email');
+      final email = ((widget.userData?['email'] as String?) ??
+          prefs.getString('user_email') ?? '').trim().toLowerCase();
 
-      if (email == null || email.isEmpty || email == 'unknown') {
+      if (email.isEmpty || email == 'unknown') {
         if (mounted) {
           setState(() {
             _projects = [];
@@ -97,6 +61,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
           });
         }
         return;
+      }
+
+      // If cache belongs to a different email, invalidate it
+      if (_cachedEmail != null && _cachedEmail != email) {
+        _cachedProjects = null;
       }
 
       final fetched = await _apiService.getAllProjects(email);
@@ -144,6 +113,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             final imageUrl = p['image_url']?.toString();
 
             return {
+              'id': p['id']?.toString() ?? '',
               'name': displayName,
               'date': createdAt,
               'features': features,
@@ -154,12 +124,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
           }).toList();
 
           _cachedProjects = mapped;
+          _cachedEmail = email;
           setState(() {
             _projects = mapped;
             _isLoading = false;
           });
         } else {
           _cachedProjects = [];
+          _cachedEmail = email;
           setState(() {
             _projects = [];
             _isLoading = false;
@@ -339,25 +311,35 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                       ),
                                     ),
                                   )
-                                : ListView.separated(
-                                    physics: const BouncingScrollPhysics(),
-                                    padding: const EdgeInsets.only(
-                                      left: 16,
-                                      right: 16,
-                                      top: 4,
-                                      bottom: 120, // Floating nav room
+                                : RefreshIndicator(
+                                    onRefresh: _loadUserHistory,
+                                    color: const Color(0xFFE58A18),
+                                    backgroundColor: isDark
+                                        ? const Color(0xFF1B212F)
+                                        : Colors.white,
+                                    child: ListView.separated(
+                                      physics:
+                                          const AlwaysScrollableScrollPhysics(
+                                        parent: BouncingScrollPhysics(),
+                                      ),
+                                      padding: const EdgeInsets.only(
+                                        left: 16,
+                                        right: 16,
+                                        top: 4,
+                                        bottom: 120, // Floating nav room
+                                      ),
+                                      itemCount: _projects.length,
+                                      separatorBuilder: (context, index) =>
+                                          const SizedBox(height: 12),
+                                      itemBuilder: (context, index) {
+                                        return _buildProjectCard(
+                                          _projects[index],
+                                          index,
+                                          config: config,
+                                          isDark: isDark,
+                                        );
+                                      },
                                     ),
-                                    itemCount: _projects.length,
-                                    separatorBuilder: (context, index) =>
-                                        const SizedBox(height: 12),
-                                    itemBuilder: (context, index) {
-                                      return _buildProjectCard(
-                                        _projects[index],
-                                        index,
-                                        config: config,
-                                        isDark: isDark,
-                                      );
-                                    },
                                   ),
                       ),
                     ],

@@ -85,7 +85,12 @@ app.use(cors({
     // Allow non-browser requests (mobile apps, curl, etc.)
     if (!origin) return callback(null, true);
     const normalized = origin.toLowerCase();
-    if (process.env.NODE_ENV !== 'production' || allowedOrigins.includes(normalized)) {
+    if (
+      process.env.NODE_ENV !== 'production' ||
+      allowedOrigins.includes(normalized) ||
+      normalized.startsWith('http://localhost:') ||
+      normalized.startsWith('http://127.0.0.1:')
+    ) {
       return callback(null, true);
     }
     return callback(new Error('Blocked by CORS policy'));
@@ -1929,35 +1934,54 @@ app.get('/api/cost/:id', authenticateToken, async (req, res) => {
 
 // ─── Projects (List & Single Retrieval) ──────────────────────────────────────
 
-app.get('/api/projects', authenticateToken, async (req, res) => {
+app.get('/api/projects', optionalAuth, async (req, res) => {
   const user = req.user;
+  const queryEmail = (req.query.email || '').trim().toLowerCase();
+
+  const userId = user?.id;
+  const userEmail = (user?.email || queryEmail || '').trim().toLowerCase();
+
+  // If neither authenticated user nor email was supplied, return empty list safely
+  if (!userId && !userEmail) {
+    return res.json([]);
+  }
+
   // Optimize payload: only return lightweight list metadata, omit massive model_data JSON
   let query = supabase.from('projects').select('id, name, created_at, image_url').order('created_at', { ascending: false });
 
-  if (user.id) {
-    query = query.or(`user_id.eq.${user.id},user_email.eq.${user.email}`);
-  } else if (user.email) {
-    query = query.eq('user_email', user.email);
+  if (userId && userEmail) {
+    query = query.or(`user_id.eq.${userId},user_email.ilike.${userEmail}`);
+  } else if (userId) {
+    query = query.eq('user_id', userId);
+  } else if (userEmail) {
+    query = query.ilike('user_email', userEmail);
   }
 
   const { data, error } = await query;
-  if (error) return res.status(500).json({ error: error.message });
+  if (error) {
+    console.error('[Projects API Error]', error.message);
+    return res.status(500).json({ error: error.message });
+  }
   res.json(data || []);
 });
 
 // GET single project by ID (Item 8 Route Mismatch Fix)
-app.get('/api/project/:id', authenticateToken, async (req, res) => {
+app.get('/api/project/:id', optionalAuth, async (req, res) => {
   const projectId = req.params.id;
   const user = req.user;
+  const queryEmail = (req.query.email || '').trim().toLowerCase();
 
   const { data, error } = await supabase.from('projects').select('*').eq('id', projectId).single();
   if (error || !data) return res.status(404).json({ error: 'Project not found' });
 
-  const isOwner =
-    (data.user_id && data.user_id === user.id) ||
-    (data.user_email && data.user_email.toLowerCase() === (user.email || '').toLowerCase());
+  const userId = user?.id;
+  const userEmail = (user?.email || queryEmail || '').toLowerCase();
 
-  if (!isOwner) return res.status(403).json({ error: 'Forbidden: Access denied to this project.' });
+  const isOwner =
+    (data.user_id && userId && data.user_id === userId) ||
+    (data.user_email && userEmail && data.user_email.toLowerCase() === userEmail);
+
+  if (!isOwner && (userId || userEmail)) return res.status(403).json({ error: 'Forbidden: Access denied to this project.' });
 
   res.json(data);
 });

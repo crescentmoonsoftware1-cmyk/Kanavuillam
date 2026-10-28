@@ -1143,10 +1143,6 @@ class _DownloadScreenState extends State<DownloadScreen> {
     }
   }
 
-  Future<void> _downloadFileMobilePdf(
-      BuildContext ctx, String filename, Uint8List bytes) async {
-    await FileDownloadHelper.downloadAndSavePdf(ctx, filename, bytes);
-  }
 
   void _showSnack(BuildContext ctx, String msg,
       {bool isSuccess = false, bool isError = false}) {

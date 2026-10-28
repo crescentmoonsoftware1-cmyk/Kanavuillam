@@ -34,7 +34,6 @@ class _SecurePaymentScreenState extends State<SecurePaymentScreen> {
   bool _isProcessing = false;
   bool _promoApplied = false;
   bool _isReviewerAccount = false;
-  String? _userEmail;
   final TextEditingController _promoController = TextEditingController();
   late Razorpay _razorpay;
 
@@ -54,7 +53,6 @@ class _SecurePaymentScreenState extends State<SecurePaymentScreen> {
       final email = (prefs.getString('user_email') ?? '').trim().toLowerCase();
       if (mounted) {
         setState(() {
-          _userEmail = email;
           if (email == 'playstore@kanavuillam.com' ||
               email == 'reviewer@kanavuillam.com' ||
               email.contains('playstore') ||
