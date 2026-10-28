@@ -80,7 +80,10 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
       'https://kanavuillam.vercel.app',
       'https://kanavuillam-web.vercel.app',
       'https://kanavuillam.com',
-      'https://www.kanavuillam.com'
+      'https://www.kanavuillam.com',
+      'https://kanavuillam.in',
+      'https://www.kanavuillam.in',
+      'https://api.kanavuillam.in'
     ];
 
 app.use(cors({
