@@ -251,32 +251,51 @@ class ApiService {
     };
   }
 
-  Future<Map<String, dynamic>> createRazorpayOrder(double amount) async {
+  Future<Map<String, dynamic>> createRazorpayOrder(double amount, {String? projectId}) async {
+    final headers = await _authHeaders();
+    final bodyData = <String, dynamic>{'amount': amount};
+    if (projectId != null) bodyData['project_id'] = projectId;
+
     final response = await http.post(
       Uri.parse('$baseUrl/payment/create-order'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({'amount': amount}),
+      headers: headers,
+      body: json.encode(bodyData),
     );
 
     if (response.statusCode == 200) {
       return json.decode(response.body);
     } else {
-      throw Exception('Failed to create payment order');
+      String errorMsg = 'Failed to create payment order (${response.statusCode})';
+      try {
+        final errJson = json.decode(response.body);
+        if (errJson is Map && errJson['error'] != null) {
+          errorMsg = errJson['error'];
+        }
+      } catch (_) {}
+      throw Exception(errorMsg);
     }
   }
 
   Future<Map<String, dynamic>> verifyRazorpayPayment(
       Map<String, dynamic> data) async {
+    final headers = await _authHeaders();
     final response = await http.post(
       Uri.parse('$baseUrl/payment/verify-payment'),
-      headers: {'Content-Type': 'application/json'},
+      headers: headers,
       body: json.encode(data),
     );
 
     if (response.statusCode == 200) {
       return json.decode(response.body);
     } else {
-      throw Exception('Payment verification failed');
+      String errorMsg = 'Payment verification failed (${response.statusCode})';
+      try {
+        final errJson = json.decode(response.body);
+        if (errJson is Map && (errJson['message'] != null || errJson['error'] != null)) {
+          errorMsg = errJson['message'] ?? errJson['error'];
+        }
+      } catch (_) {}
+      throw Exception(errorMsg);
     }
   }
 

@@ -128,30 +128,98 @@ class _SecurePaymentScreenState extends State<SecurePaymentScreen> {
   }
 
   void _handlePayment() async {
+    final effectiveAmount = _promoApplied ? 0.0 : widget.amount;
+
+    // Reviewer promo or 100% off applied -> Directly proceed
+    if (effectiveAmount <= 0) {
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PaymentSuccessScreen(
+              amount: 0,
+              onFinish: widget.onFinish,
+            ),
+          ),
+        );
+      }
+      return;
+    }
+
     setState(() => _isProcessing = true);
 
-    // Direct transition to PaymentSuccessScreen (bypassing Razorpay checkout)
-    await Future.delayed(const Duration(milliseconds: 500));
-    if (mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => PaymentSuccessScreen(
-            amount: widget.amount,
-            onFinish: widget.onFinish,
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userEmail = prefs.getString('user_email') ?? '';
+      final userPhone = prefs.getString('user_phone') ?? '';
+
+      final api = ApiService();
+      final orderData = await api.createRazorpayOrder(effectiveAmount);
+
+      final keyId = orderData['key_id'] as String?;
+      final orderId = orderData['id'] as String?;
+
+      if (orderData['is_mock'] == true) {
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PaymentSuccessScreen(
+                amount: effectiveAmount,
+                onFinish: widget.onFinish,
+              ),
+            ),
+          );
+        }
+        return;
+      }
+
+      if (keyId == null || keyId.isEmpty || keyId.contains('placeholder')) {
+        throw Exception(
+          'Razorpay Key ID is not configured on the server yet. Please add your Razorpay keys.',
+        );
+      }
+
+      final options = {
+        'key': keyId,
+        'amount': orderData['amount'],
+        'name': 'Kanavu Illam',
+        'order_id': orderId,
+        'description': 'AI Architectural Plan & 3D Deliverables',
+        'timeout': 300,
+        'prefill': {
+          'contact': userPhone.isNotEmpty ? userPhone : '9876543210',
+          'email': userEmail.isNotEmpty ? userEmail : 'user@kanavuillam.com',
+        },
+        'theme': {
+          'color': '#F59E0B',
+        },
+      };
+
+      _razorpay.open(options);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isProcessing = false);
+        final cleanMsg = e.toString().replaceAll('Exception: ', '');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(cleanMsg),
+            backgroundColor: Colors.redAccent,
+            duration: const Duration(seconds: 4),
           ),
-        ),
-      );
+        );
+      }
     }
   }
 
   void _handlePaymentSuccess(PaymentSuccessResponse response) async {
     try {
+      setState(() => _isProcessing = true);
       final api = ApiService();
       await api.verifyRazorpayPayment({
-        'razorpay_order_id': response.orderId,
-        'razorpay_payment_id': response.paymentId,
-        'razorpay_signature': response.signature,
+        'razorpay_order_id': response.orderId ?? '',
+        'razorpay_payment_id': response.paymentId ?? '',
+        'razorpay_signature': response.signature ?? '',
       });
 
       if (mounted) {
@@ -165,15 +233,15 @@ class _SecurePaymentScreenState extends State<SecurePaymentScreen> {
           ),
         );
       }
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[Payment Error] Verification failed: $e');
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => PaymentSuccessScreen(
-              amount: widget.amount,
-              onFinish: widget.onFinish,
-            ),
+        final cleanMsg = e.toString().replaceAll('Exception: ', '');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Verification Notice: $cleanMsg'),
+            backgroundColor: Colors.redAccent,
+            duration: const Duration(seconds: 4),
           ),
         );
       }
@@ -187,25 +255,10 @@ class _SecurePaymentScreenState extends State<SecurePaymentScreen> {
     final errorMsg = response.message ?? 'Payment cancelled or failed';
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Payment Note: $errorMsg'),
+        content: Text('Payment: $errorMsg'),
         backgroundColor: Colors.black87,
         behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 5),
-        action: SnackBarAction(
-          label: 'Proceed (Test)',
-          textColor: Colors.amberAccent,
-          onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => PaymentSuccessScreen(
-                  amount: widget.amount,
-                  onFinish: widget.onFinish,
-                ),
-              ),
-            );
-          },
-        ),
+        duration: const Duration(seconds: 4),
       ),
     );
   }

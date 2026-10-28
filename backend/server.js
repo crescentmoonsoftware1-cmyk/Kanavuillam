@@ -25,10 +25,13 @@ process.on('uncaughtException', (error) => {
 });
 
 // Initialize Razorpay
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_placeholder',
-  key_secret: process.env.RAZORPAY_KEY_SECRET || 'placeholder_secret',
-});
+function getRazorpayInstance() {
+  return new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_placeholder',
+    key_secret: process.env.RAZORPAY_KEY_SECRET || 'placeholder_secret',
+  });
+}
+const razorpay = getRazorpayInstance();
 
 const supabase = createClient(
   process.env.SUPABASE_URL || 'https://placeholder-project.supabase.co',
@@ -1989,8 +1992,11 @@ app.get('/api/project/:id', optionalAuth, async (req, res) => {
 // ─── Razorpay Payment Endpoints ─────────────────────────────────────────────
 
 app.post('/api/payment/create-order', optionalAuth, async (req, res) => {
-  // Enforce server-side pricing: ₹500 standard full architectural report package
-  const SERVER_PRICE_INR = 500;
+  // Support client requested amount with ₹500 standard fallback
+  const requestedAmount = Number(req.body?.amount);
+  const SERVER_PRICE_INR = (requestedAmount > 0 && requestedAmount <= 100000)
+    ? Math.round(requestedAmount)
+    : 500;
   const isDev = process.env.NODE_ENV !== 'production' && process.env.ALLOW_PAYMENT_MOCK === 'true';
 
   const options = {
@@ -2000,7 +2006,8 @@ app.post('/api/payment/create-order', optionalAuth, async (req, res) => {
   };
 
   try {
-    const isPlaceholderKey = !process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID.includes('placeholder');
+    const keyId = process.env.RAZORPAY_KEY_ID;
+    const isPlaceholderKey = !keyId || keyId.trim() === '' || keyId.includes('placeholder');
     if (isPlaceholderKey) {
       if (isDev) {
         console.log(`[Payment] DEV MOCK MODE: Order Created for ₹${SERVER_PRICE_INR}`);
@@ -2012,10 +2019,11 @@ app.post('/api/payment/create-order', optionalAuth, async (req, res) => {
           key_id: 'rzp_test_placeholder'
         });
       }
-      return res.status(503).json({ error: 'Payment gateway credentials are not configured.' });
+      return res.status(503).json({ error: 'Payment gateway credentials (RAZORPAY_KEY_ID) are not configured on the server.' });
     }
 
-    const order = await razorpay.orders.create(options);
+    const rzp = getRazorpayInstance();
+    const order = await rzp.orders.create(options);
     console.log(`[Payment] Order Created: ${order.id} for ₹${SERVER_PRICE_INR}`);
 
     // Persist pending order in Supabase payments table, linked to project if provided
