@@ -439,7 +439,7 @@
       btn.innerText = 'Processing Deletion Request...';
 
       try {
-        const res = await fetch('https://kanavuillam-production.up.railway.app/api/auth/delete-account', {
+        const res = await fetch('https://api.kanavuillam.in/api/auth/delete-account', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: email })
