@@ -90,7 +90,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     }
 
     final isDark = config.isDarkMode;
-    final isTamil = config.isTamil;
 
     return Scaffold(
       body: Container(
@@ -160,29 +159,28 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                isTamil
-                                    ? 'கனவு விதைத்த நிலத்தில்'
-                                    : 'Kanavu vidhaitha nilaththil',
+                                'கனவு விதைத்த நிலத்தில்',
                                 textAlign: TextAlign.center,
-                                style: GoogleFonts.cormorantGaramond(
-                                  fontSize: 29,
+                                style: GoogleFonts.notoSansTamil(
+                                  fontSize: 24,
                                   fontWeight: FontWeight.w600,
-                                  fontStyle: FontStyle.italic,
                                   color: isDark
                                       ? const Color(0xFFBDC7DB)
                                       : AppColors.steelBinder,
-                                  height: 1.25,
+                                  height: 1.35,
+                                  letterSpacing: 0.2,
                                 ),
                               ),
+                              const SizedBox(height: 4),
                               Text(
-                                isTamil ? 'இல்லம் எழும்' : 'Illam ezhum',
+                                'இல்லம் எழும்',
                                 textAlign: TextAlign.center,
-                                style: GoogleFonts.cormorantGaramond(
-                                  fontSize: 29,
+                                style: GoogleFonts.notoSansTamil(
+                                  fontSize: 26,
                                   fontWeight: FontWeight.w700,
-                                  fontStyle: FontStyle.italic,
                                   color: AppColors.amberDeep,
-                                  height: 1.25,
+                                  height: 1.35,
+                                  letterSpacing: 0.2,
                                 ),
                               ),
                             ],
