@@ -145,6 +145,7 @@ const authLimiter = rateLimit({
 app.get('/api/health', (req, res) => {
   res.status(200).json({
     status: 'ok',
+    port: port,
     uptime_seconds: Math.floor(process.uptime()),
     timestamp: new Date().toISOString()
   });
@@ -2778,6 +2779,16 @@ app.get(['/terms', '/terms-and-conditions'], (req, res) => {
 
 if (require.main === module) {
   app.listen(port, '0.0.0.0', () => console.log(`\\nKanavu illam Backend running at http://0.0.0.0:${port}`));
+  if (Number(port) !== 3000) {
+    try {
+      const server3000 = app.listen(3000, '0.0.0.0', () => {
+        console.log(`Kanavu illam Backend also listening on custom domain port 3000`);
+      });
+      server3000.on('error', (err) => console.warn('[Port 3000 listener note]', err.message));
+    } catch (e) {
+      console.warn('[Port 3000 listener exception]', e.message);
+    }
+  }
 }
 
 module.exports = { app, runCostEstimation, runVastuAnalysis };

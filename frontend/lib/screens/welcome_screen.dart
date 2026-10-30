@@ -107,7 +107,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         child: SafeArea(
           child: Padding(
             padding:
-                const EdgeInsets.symmetric(horizontal: 32.0, vertical: 24.0),
+                const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24.0),
             child: Column(
               children: [
                 // UPPER SECTION: Centered Animated Logo + Animated Poetic Kural Tagline
@@ -158,29 +158,38 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text(
-                                'கனவு விதைத்த நிலத்தில்',
-                                textAlign: TextAlign.center,
-                                style: GoogleFonts.notoSansTamil(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w600,
-                                  color: isDark
-                                      ? const Color(0xFFBDC7DB)
-                                      : AppColors.steelBinder,
-                                  height: 1.35,
-                                  letterSpacing: 0.2,
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  'கனவு விதைத்த நிலத்தில்',
+                                  textAlign: TextAlign.center,
+                                  maxLines: 1,
+                                  style: GoogleFonts.notoSansTamil(
+                                    fontSize: 21,
+                                    fontWeight: FontWeight.w600,
+                                    color: isDark
+                                        ? const Color(0xFFBDC7DB)
+                                        : AppColors.steelBinder,
+                                    height: 1.35,
+                                    letterSpacing: 0.1,
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 4),
-                              Text(
-                                'இல்லம் எழும்',
-                                textAlign: TextAlign.center,
-                                style: GoogleFonts.notoSansTamil(
-                                  fontSize: 26,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.amberDeep,
-                                  height: 1.35,
-                                  letterSpacing: 0.2,
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  'இல்லம் எழும்',
+                                  textAlign: TextAlign.center,
+                                  maxLines: 1,
+                                  style: GoogleFonts.notoSansTamil(
+                                    fontSize: 25,
+                                    fontWeight: FontWeight.w700,
+                                    color:
+                                        const Color.fromARGB(255, 254, 161, 1),
+                                    height: 1.35,
+                                    letterSpacing: 0.2,
+                                  ),
                                 ),
                               ),
                             ],
