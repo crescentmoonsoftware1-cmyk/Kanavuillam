@@ -8,7 +8,7 @@ class ApiService {
   // Set this to true for Local testing (port 3000), or false for production Railway
   static const bool useLocalBackend = false;
 
-  // Production Railway backend URL with custom branded domain
+  // Production Railway backend URL (or custom domain)
   static const String _productionUrl = 'https://api.kanavuillam.in/api';
 
   // Base URL dynamically routes to Localhost/10.0.2.2 in local mode, or Railway in production

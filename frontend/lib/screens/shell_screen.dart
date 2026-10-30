@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:image_picker/image_picker.dart';
@@ -876,11 +875,72 @@ class _FloatingCapsuleNavBar extends StatefulWidget {
   State<_FloatingCapsuleNavBar> createState() => _FloatingCapsuleNavBarState();
 }
 
-class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar> {
-  int _tabForIndex(int index) {
-    if (index == 6) return 1;
-    if (index == 7) return 2;
+class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _posAnim;
+  late int _activeTabIndex;
+
+  static int _getTabIndex(int shellIndex) {
+    if (shellIndex == 6) return 0; // History
+    if (shellIndex == 7) return 2; // Profile
+    return 1; // Home (default)
+  }
+
+  static int _getShellIndex(int tabIndex) {
+    if (tabIndex == 0) return 6;
+    if (tabIndex == 2) return 7;
     return 0;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _activeTabIndex = _getTabIndex(widget.selectedIndex);
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 380),
+    );
+    _posAnim = Tween<double>(
+      begin: _activeTabIndex.toDouble(),
+      end: _activeTabIndex.toDouble(),
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOutCubic,
+    ));
+  }
+
+  @override
+  void didUpdateWidget(covariant _FloatingCapsuleNavBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final targetTab = _getTabIndex(widget.selectedIndex);
+    if (targetTab != _activeTabIndex) {
+      _animateToTab(targetTab, notify: false);
+    }
+  }
+
+  void _animateToTab(int targetTab, {bool notify = true}) {
+    final startVal = _posAnim.value;
+    _posAnim = Tween<double>(
+      begin: startVal,
+      end: targetTab.toDouble(),
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOutCubic,
+    ));
+    setState(() {
+      _activeTabIndex = targetTab;
+    });
+    _controller.forward(from: 0.0);
+    if (notify) {
+      widget.onTap(_getShellIndex(targetTab));
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
@@ -892,165 +952,266 @@ class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar> {
       config = AppConfigProvider();
     }
     final isDark = config.isDarkMode;
-    final activeTab = _tabForIndex(widget.selectedIndex);
+    final isTamil = config.isTamil;
 
-    // Instagram Glass Pill geometry (Icon-only, matching reference image)
-    const double barWidth = 230.0;
-    const double barHeight = 56.0;
-    const double innerPadding = 5.0;
-    const double slotWidth = (barWidth - (innerPadding * 2)) / 3.0; // ~73.3px
-    const double slotHeight = barHeight - (innerPadding * 2); // 46.0px
+    final barColor = isDark ? const Color(0xFF131826) : Colors.white;
+    final shadowColor = isDark
+        ? Colors.black.withValues(alpha: 0.40)
+        : Colors.black.withValues(alpha: 0.08);
 
-    final gliderLeft = innerPadding + (activeTab * slotWidth);
+    final tabIcons = [
+      Icons.history_rounded,
+      Icons.home_rounded,
+      Icons.person_outline_rounded,
+    ];
 
-    return SafeArea(
-      top: false,
-      child: Align(
-        alignment: Alignment.bottomCenter,
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 16),
-          child: SizedBox(
-            width: barWidth,
-            height: barHeight,
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(100),
-              boxShadow: [
-                BoxShadow(
-                  color: isDark
-                      ? Colors.black.withValues(alpha: 0.45)
-                      : const Color(0x1F0F172A),
-                  blurRadius: 28,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(100),
-              child: BackdropFilter(
-                filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? const Color(0xFF161B26).withValues(alpha: 0.72)
-                        : Colors.white.withValues(alpha: 0.75),
-                    borderRadius: BorderRadius.circular(100),
-                    border: Border.all(
-                      color: isDark
-                          ? Colors.white.withValues(alpha: 0.16)
-                          : Colors.white.withValues(alpha: 0.90),
-                      width: 1.2,
+    final tabLabels = [
+      isTamil ? 'வரலாறு' : 'History',
+      isTamil ? 'முகப்பு' : 'Home',
+      isTamil ? 'சுயவிவரம்' : 'Profile',
+    ];
+
+    return SizedBox(
+      width: double.infinity,
+      height: 86,
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final w = constraints.maxWidth;
+              const tabCount = 3;
+              final tabWidth = w / tabCount;
+              final notchCenterX = (0.5 + _posAnim.value) * tabWidth;
+
+              return Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  // 1. Fluid Scooped Curved Background Painter
+                  Positioned.fill(
+                    child: CustomPaint(
+                      painter: _ScoopedCurvedNavBarPainter(
+                        cx: notchCenterX,
+                        color: barColor,
+                        shadowColor: shadowColor,
+                      ),
                     ),
                   ),
-                  child: Stack(
-                    children: [
-                      // Active Pill Glider (matching Instagram reference's soft capsule)
-                      AnimatedPositioned(
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeOutCubic,
-                        left: gliderLeft,
-                        top: innerPadding,
-                        width: slotWidth,
-                        height: slotHeight,
-                        child: Container(
-                          decoration: BoxDecoration(
+
+                  // 2. Tab Items Row (Resting Icons and Labels)
+                  ...List.generate(tabCount, (i) {
+                    final dist = (_posAnim.value - i).abs().clamp(0.0, 1.0);
+                    final isCurrentActive = i == _activeTabIndex;
+
+                    return Positioned(
+                      left: i * tabWidth,
+                      width: tabWidth,
+                      top: 0,
+                      bottom: 0,
+                      child: GestureDetector(
+                        onTap: () => _animateToTab(i),
+                        behavior: HitTestBehavior.opaque,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            // Resting icon in the flat bar (fades out as notch approaches)
+                            Positioned(
+                              top: 14,
+                              child: Opacity(
+                                opacity: dist,
+                                child: Icon(
+                                  tabIcons[i],
+                                  size: 26,
+                                  color: isDark
+                                      ? const Color(0xFF94A3B8)
+                                      : const Color(0xFF2D3748),
+                                ),
+                              ),
+                            ),
+
+                            // Label below (bold when selected)
+                            Positioned(
+                              top: 44,
+                              child: Text(
+                                tabLabels[i],
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 11,
+                                  fontWeight: isCurrentActive
+                                      ? FontWeight.w700
+                                      : FontWeight.w600,
+                                  color: isCurrentActive
+                                      ? (isDark
+                                          ? const Color(0xFFE58A18)
+                                          : const Color(0xFF0F172A))
+                                      : (isDark
+                                          ? const Color(0xFF64748B)
+                                          : const Color(0xFF8E94A0)),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+
+                  // 3. Sliding Floating Circular Active Button
+                  Positioned(
+                    left: notchCenterX - 27,
+                    top: -16,
+                    child: GestureDetector(
+                      onTap: () => _animateToTab(_activeTabIndex),
+                      child: Container(
+                        width: 54,
+                        height: 54,
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? const Color(0xFF1E293B)
+                              : Colors.white,
+                          shape: BoxShape.circle,
+                          border: Border.all(
                             color: isDark
-                                ? Colors.white.withValues(alpha: 0.16)
-                                : const Color(0x14000000),
-                            borderRadius: BorderRadius.circular(100),
-                            border: Border.all(
+                                ? const Color(0xFFE58A18)
+                                : const Color(0xFF1E293B),
+                            width: 3.0,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.16),
+                              blurRadius: 14,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Center(
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 220),
+                            transitionBuilder: (child, anim) =>
+                                ScaleTransition(scale: anim, child: child),
+                            child: Icon(
+                              tabIcons[_activeTabIndex],
+                              key: ValueKey<int>(_activeTabIndex),
+                              size: 27,
                               color: isDark
-                                  ? Colors.white.withValues(alpha: 0.10)
-                                  : Colors.white.withValues(alpha: 0.60),
-                              width: 1.0,
+                                  ? const Color(0xFFE58A18)
+                                  : const Color(0xFF1E293B),
                             ),
                           ),
                         ),
                       ),
+                    ),
+                  ),
 
-                      // Nav Items Row (Icons only: Home, History, Profile)
-                      Positioned.fill(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: innerPadding),
-                          child: Row(
-                            children: [
-                              _buildTabItem(
-                                tabIndex: 0,
-                                realIndex: 0,
-                                activeTab: activeTab,
-                                isDark: isDark,
-                                activeIcon: Icons.home_rounded,
-                                inactiveIcon: Icons.home_outlined,
-                                width: slotWidth,
-                              ),
-                              _buildTabItem(
-                                tabIndex: 1,
-                                realIndex: 6,
-                                activeTab: activeTab,
-                                isDark: isDark,
-                                activeIcon: Icons.history_rounded,
-                                inactiveIcon: Icons.history_outlined,
-                                width: slotWidth,
-                              ),
-                              _buildTabItem(
-                                tabIndex: 2,
-                                realIndex: 7,
-                                activeTab: activeTab,
-                                isDark: isDark,
-                                activeIcon: Icons.person_rounded,
-                                inactiveIcon: Icons.person_outline_rounded,
-                                width: slotWidth,
-                              ),
-                            ],
-                          ),
+                  // 4. Bottom Home Indicator Pill
+                  Positioned(
+                    bottom: 6,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: Container(
+                        width: 134,
+                        height: 4.5,
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? const Color(0xFF475569)
+                              : const Color(0xFF0F172A),
+                          borderRadius: BorderRadius.circular(100),
                         ),
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    ),
-  );
-  }
-
-  Widget _buildTabItem({
-    required int tabIndex,
-    required int realIndex,
-    required int activeTab,
-    required bool isDark,
-    required IconData activeIcon,
-    required IconData inactiveIcon,
-    required double width,
-  }) {
-    final isSelected = activeTab == tabIndex;
-    final activeColor = isDark ? Colors.white : const Color(0xFF0F172A);
-    final inactiveColor =
-        isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-
-    return SizedBox(
-      width: width,
-      height: double.infinity,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => widget.onTap(realIndex),
-        child: Center(
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200),
-            child: Icon(
-              isSelected ? activeIcon : inactiveIcon,
-              key: ValueKey('$tabIndex$isSelected'),
-              size: 24,
-              color: isSelected ? activeColor : inactiveColor,
-            ),
-          ),
-        ),
+                ],
+              );
+            },
+          );
+        },
       ),
     );
   }
+}
+
+/// Custom Painter creating the smooth dynamic sliding concave scoop (notch)
+class _ScoopedCurvedNavBarPainter extends CustomPainter {
+  final double cx;
+  final Color color;
+  final Color shadowColor;
+
+  _ScoopedCurvedNavBarPainter({
+    required this.cx,
+    required this.color,
+    required this.shadowColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+
+    const cornerRadius = 26.0;
+    const notchRadius = 35.0;
+    const s = 14.0; // blend distance
+
+    final path = Path();
+    // Top-left start with rounded corner
+    path.moveTo(0, cornerRadius);
+    path.quadraticBezierTo(0, 0, cornerRadius, 0);
+
+    final notchStart = cx - notchRadius - s;
+    final notchEnd = cx + notchRadius + s;
+
+    if (notchStart > cornerRadius) {
+      path.lineTo(notchStart, 0);
+    }
+
+    // Smooth bezier curve down into the scoop
+    path.cubicTo(
+      cx - notchRadius, 0,
+      cx - notchRadius + 4, notchRadius * 0.70,
+      cx - notchRadius * 0.65, notchRadius * 0.92,
+    );
+
+    // Bottom arc of the scoop
+    path.cubicTo(
+      cx - notchRadius * 0.30, notchRadius * 1.05,
+      cx + notchRadius * 0.30, notchRadius * 1.05,
+      cx + notchRadius * 0.65, notchRadius * 0.92,
+    );
+
+    // Smooth bezier curve back up
+    path.cubicTo(
+      cx + notchRadius - 4, notchRadius * 0.70,
+      cx + notchRadius, 0,
+      notchEnd, 0,
+    );
+
+    if (notchEnd < w - cornerRadius) {
+      path.lineTo(w - cornerRadius, 0);
+    }
+    path.quadraticBezierTo(w, 0, w, cornerRadius);
+
+    // Right and bottom borders
+    path.lineTo(w, h);
+    path.lineTo(0, h);
+    path.close();
+
+    // Soft drop shadow above the curved bar
+    final shadowPaint = Paint()
+      ..color = shadowColor
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14);
+    canvas.drawPath(path.shift(const Offset(0, -3)), shadowPaint);
+
+    // Solid surface fill
+    final fillPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(path, fillPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _ScoopedCurvedNavBarPainter oldDelegate) =>
+      oldDelegate.cx != cx ||
+      oldDelegate.color != color ||
+      oldDelegate.shadowColor != shadowColor;
 }
 
 class _EmptyState extends StatelessWidget {
