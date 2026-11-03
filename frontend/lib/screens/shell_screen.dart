@@ -171,7 +171,7 @@ class _ShellScreenState extends State<ShellScreen> {
     try {
       final apiService = ApiService();
 
-      const totalAmount = 500.0;
+      const totalAmount = 1.0;
 
       final projectName =
           'kanavuillam_report|${selectedIds.join(",")}|$totalAmount';

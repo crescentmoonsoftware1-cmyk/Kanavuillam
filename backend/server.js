@@ -2000,7 +2000,7 @@ app.post('/api/payment/create-order', optionalAuth, async (req, res) => {
   const requestedAmount = Number(req.body?.amount);
   const SERVER_PRICE_INR = (requestedAmount > 0 && requestedAmount <= 100000)
     ? Math.round(requestedAmount)
-    : 500;
+    : 1;
   const isDev = process.env.NODE_ENV !== 'production' && process.env.ALLOW_PAYMENT_MOCK === 'true';
 
   const options = {
@@ -2149,7 +2149,7 @@ function escapeHtml(str) {
 app.get('/checkout', (req, res) => {
   // Validate and sanitise every query-string value before embedding in HTML/JS
   const rawAmount = parseFloat(req.query.amount);
-  const amount = (!isNaN(rawAmount) && rawAmount > 0) ? rawAmount : 500;
+  const amount = (!isNaN(rawAmount) && rawAmount > 0) ? rawAmount : 1;
   const orderId = escapeHtml(req.query.orderId || `order_${Date.now()}`);
   const email = escapeHtml(req.query.email || 'customer@kanavuillam.com');
   const rzpKey = process.env.RAZORPAY_KEY_ID || 'rzp_test_placeholder';

@@ -111,7 +111,7 @@ create table if not exists payments (
   user_id uuid references auth.users(id) on delete set null,
   user_email text,
   project_id uuid references projects(id) on delete set null,
-  amount numeric(10, 2) not null default 500.00,
+  amount numeric(10, 2) not null default 1.00,
   currency text not null default 'INR',
   status text not null default 'pending', -- 'pending', 'paid', 'failed'
   created_at timestamp with time zone default now(),

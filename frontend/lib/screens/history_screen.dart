@@ -77,7 +77,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             String rawName = p['name'] ?? 'KI_Project';
             String displayName = rawName;
             List<String> features = ['3d', 'vastu', 'cost', 'structural'];
-            String amount = '₹500';
+            String amount = '₹1';
 
             if (rawName.contains('|')) {
               final parts = rawName.split('|');
@@ -90,7 +90,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 features = reportKeys;
               }
               if (parts.length > 2) {
-                amount = '₹${(double.tryParse(parts[2]) ?? 500).toInt()}';
+                amount = '₹${(double.tryParse(parts[2]) ?? 1).toInt()}';
               }
             }
 
@@ -391,7 +391,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     required AppConfigProvider config,
     required bool isDark,
   }) {
-    final String amount = project['amount'] ?? '₹500';
+    final String amount = project['amount'] ?? '₹1';
     String rawTitle = project['name']?.toString() ?? '';
     String displayTitle = 'KI_Project ${(index + 1).toString().padLeft(2, '0')}';
     if (rawTitle.isNotEmpty &&

@@ -34,7 +34,7 @@ class _PlanXReportPopupState extends State<PlanXReportPopup> {
       id: '3d',
       title: '3D View Model',
       description: 'Realistic 3D model visualization',
-      price: 500,
+      price: 1,
       icon: Icons.view_in_ar_rounded,
       iconColor: const Color(0xFF2979FF),
     ),
@@ -42,7 +42,7 @@ class _PlanXReportPopupState extends State<PlanXReportPopup> {
       id: 'vastu',
       title: 'Vastu Analysis',
       description: 'Orientation & alignment check',
-      price: 500,
+      price: 1,
       icon: Icons.explore_rounded,
       iconColor: Colors.orange,
     ),
@@ -50,7 +50,7 @@ class _PlanXReportPopupState extends State<PlanXReportPopup> {
       id: 'cost',
       title: 'Cost Estimation',
       description: 'Material & labor cost breakdown',
-      price: 500,
+      price: 1,
       icon: Icons.calculate_rounded,
       iconColor: Colors.green,
     ),
@@ -58,7 +58,7 @@ class _PlanXReportPopupState extends State<PlanXReportPopup> {
       id: 'structural',
       title: 'Structural Design',
       description: 'Structural safety specs & design',
-      price: 500,
+      price: 1,
       icon: Icons.architecture_rounded,
       iconColor: Colors.deepPurple,
     ),
@@ -70,7 +70,7 @@ class _PlanXReportPopupState extends State<PlanXReportPopup> {
     'cost',
     'structural'
   };
-  final int _totalPrice = 500; // Fixed total amount for all projects
+  final int _totalPrice = 1; // Fixed total amount for all projects
 
   @override
   Widget build(BuildContext context) {
