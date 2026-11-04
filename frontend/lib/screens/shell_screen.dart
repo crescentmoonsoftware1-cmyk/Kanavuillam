@@ -877,10 +877,13 @@ class _FloatingCapsuleNavBar extends StatefulWidget {
 }
 
 class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
+    with TickerProviderStateMixin {
+  late AnimationController _posController;
+  late AnimationController _buttonController;
   late Animation<double> _posAnim;
+  late Animation<double> _buttonScaleAnim;
   late int _activeTabIndex;
+  bool _isAnimating = false;
 
   static int _getTabIndex(int shellIndex) {
     if (shellIndex == 6) return 0; // History
@@ -898,41 +901,64 @@ class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar>
   void initState() {
     super.initState();
     _activeTabIndex = _getTabIndex(widget.selectedIndex);
-    _controller = AnimationController(
+
+    _posController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 420),
+      duration: const Duration(milliseconds: 280),
     );
     _posAnim = Tween<double>(
       begin: _activeTabIndex.toDouble(),
       end: _activeTabIndex.toDouble(),
     ).animate(CurvedAnimation(
-      parent: _controller,
+      parent: _posController,
       curve: Curves.easeInOutCubic,
     ));
+
+    _buttonController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 160),
+    );
+    _buttonScaleAnim = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
+      parent: _buttonController,
+      curve: Curves.easeOutBack,
+    ));
+    _buttonController.value = 1.0;
   }
 
   @override
   void didUpdateWidget(covariant _FloatingCapsuleNavBar oldWidget) {
     super.didUpdateWidget(oldWidget);
     final targetTab = _getTabIndex(widget.selectedIndex);
-    if (targetTab != _activeTabIndex) {
+    if (targetTab != _activeTabIndex && !_isAnimating) {
       _animateToTab(targetTab, notify: false);
     }
   }
 
-  void _animateToTab(int targetTab, {bool notify = true}) {
+  void _animateToTab(int targetTab, {bool notify = true}) async {
+    if (targetTab == _activeTabIndex && !_isAnimating) return;
+    _isAnimating = true;
+
+    // Phase 1: Button dives down into the scoop
+    await _buttonController.reverse(from: 1.0);
+
+    // Phase 2: Empty scoop notch glides across to the target tab
     final startVal = _posAnim.value;
     _posAnim = Tween<double>(
       begin: startVal,
       end: targetTab.toDouble(),
     ).animate(CurvedAnimation(
-      parent: _controller,
+      parent: _posController,
       curve: Curves.easeInOutCubic,
     ));
     setState(() {
       _activeTabIndex = targetTab;
     });
-    _controller.forward(from: 0.0);
+    await _posController.forward(from: 0.0);
+
+    // Phase 3: Button pops up out of the scoop at destination
+    await _buttonController.forward(from: 0.0);
+
+    _isAnimating = false;
     if (notify) {
       widget.onTap(_getShellIndex(targetTab));
     }
@@ -940,7 +966,8 @@ class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar>
 
   @override
   void dispose() {
-    _controller.dispose();
+    _posController.dispose();
+    _buttonController.dispose();
     super.dispose();
   }
 
@@ -953,10 +980,11 @@ class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar>
       config = AppConfigProvider();
     }
     final isDark = config.isDarkMode;
-    final barColor = isDark ? const Color(0xFF131826) : Colors.white;
+
+    final barColor = isDark ? const Color(0xFF1E293B) : Colors.white;
     final shadowColor = isDark
-        ? Colors.black.withValues(alpha: 0.45)
-        : const Color(0x1A1B212F);
+        ? Colors.black.withValues(alpha: 0.55)
+        : const Color(0x281B212F);
 
     final tabIcons = [
       Icons.history_rounded,
@@ -964,60 +992,66 @@ class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar>
       Icons.person_outline_rounded,
     ];
 
+    const tabCount = 3;
+    const barHeight = 75.0;
+    const buttonDiam = 54.0;
+    const buttonTop = -17.0;
+
     return SizedBox(
       width: double.infinity,
-      height: 70,
+      height: barHeight,
       child: AnimatedBuilder(
-        animation: _controller,
+        animation: Listenable.merge([_posController, _buttonController]),
         builder: (context, child) {
           return LayoutBuilder(
             builder: (context, constraints) {
               final w = constraints.maxWidth;
-              const tabCount = 3;
               final tabWidth = w / tabCount;
-              final waveCenterX = (0.5 + _posAnim.value) * tabWidth;
-              // Fluid liquid morph stretch factor (peaks at mid-animation)
-              final stretchFactor = (math.sin(_controller.value * math.pi)).abs();
+              final currentCx = (0.5 + _posAnim.value) * tabWidth;
+
+              final buttonBgColor = isDark ? const Color(0xFF283548) : Colors.white;
+              final activeIconColor = isDark
+                  ? const Color(0xFFE58A18)
+                  : const Color(0xFF1E293B);
 
               return Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  // 1. Fluid Upward Wave Continuous Surface Painter (Reference Match)
+                  // 1. Authentic Curved Scoop Painter (exact cubic bezier cradle)
                   Positioned.fill(
                     child: CustomPaint(
-                      painter: _FluidUpwardWaveNavBarPainter(
-                        cx: waveCenterX,
+                      painter: _CurvedScoopedNavBarPainter(
+                        pos: _posAnim.value,
+                        itemsLength: tabCount,
                         color: barColor,
                         shadowColor: shadowColor,
-                        stretch: stretchFactor,
                       ),
                     ),
                   ),
 
-                  // 2. Resting Icons Row
+                  // 2. Inactive icons centered inside the bar
                   ...List.generate(tabCount, (i) {
                     final dist = (_posAnim.value - i).abs().clamp(0.0, 1.0);
+                    final buttonImpact = i == _activeTabIndex ? _buttonScaleAnim.value : 0.0;
+                    final iconOpacity = ((1.0 - buttonImpact) * dist).clamp(0.0, 1.0);
 
                     return Positioned(
                       left: i * tabWidth,
                       width: tabWidth,
-                      top: 0,
+                      top: 15,
                       bottom: 0,
                       child: GestureDetector(
                         onTap: () => _animateToTab(i),
                         behavior: HitTestBehavior.opaque,
                         child: Center(
-                          child: Padding(
-                            padding: const EdgeInsets.only(top: 8.0),
-                            child: Opacity(
-                              opacity: dist.clamp(0.0, 1.0),
-                              child: Icon(
-                                tabIcons[i],
-                                size: 25,
-                                color: isDark
-                                    ? const Color(0xFF94A3B8)
-                                    : const Color(0xFF64748B),
-                              ),
+                          child: Opacity(
+                            opacity: iconOpacity,
+                            child: Icon(
+                              tabIcons[i],
+                              size: 25,
+                              color: isDark
+                                  ? const Color(0xFF94A3B8)
+                                  : const Color(0xFF64748B),
                             ),
                           ),
                         ),
@@ -1025,44 +1059,40 @@ class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar>
                     );
                   }),
 
-                  // 3. Fluid Wave Active Icon & Indicator Dot (Nested Inside the Wave)
+                  // 3. Floating Circular Button nestled snugly in the scoop
                   Positioned(
-                    left: waveCenterX - 24,
-                    top: -14,
-                    width: 48,
-                    height: 48,
+                    left: currentCx - (buttonDiam / 2),
+                    top: buttonTop,
+                    width: buttonDiam,
+                    height: buttonDiam,
                     child: GestureDetector(
                       onTap: () => _animateToTab(_activeTabIndex),
                       behavior: HitTestBehavior.opaque,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 220),
-                            transitionBuilder: (child, anim) =>
-                                ScaleTransition(scale: anim, child: child),
+                      child: ScaleTransition(
+                        scale: _buttonScaleAnim,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: buttonBgColor,
+                            boxShadow: [
+                              BoxShadow(
+                                color: isDark
+                                    ? Colors.black.withValues(alpha: 0.50)
+                                    : Colors.black.withValues(alpha: 0.16),
+                                blurRadius: 10,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: Center(
                             child: Icon(
                               tabIcons[_activeTabIndex],
                               key: ValueKey<int>(_activeTabIndex),
                               size: 26,
-                              color: isDark
-                                  ? const Color(0xFFE58A18)
-                                  : const Color(0xFF1E252D),
+                              color: activeIconColor,
                             ),
                           ),
-                          const SizedBox(height: 3),
-                          // Subtle Active Indicator Dot matching reference
-                          Container(
-                            width: 4,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isDark
-                                  ? const Color(0xFFE58A18)
-                                  : const Color(0xFF1E252D),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
@@ -1076,18 +1106,19 @@ class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar>
   }
 }
 
-/// Custom Painter creating the smooth, seamless upward fluid wave (convex dome)
-class _FluidUpwardWaveNavBarPainter extends CustomPainter {
-  final double cx;
+/// Custom Painter creating the authentic curved navigation bar scoop
+/// with smooth cubic bezier shoulders and cradle matching the reference exactly
+class _CurvedScoopedNavBarPainter extends CustomPainter {
+  final double pos;
+  final int itemsLength;
   final Color color;
   final Color shadowColor;
-  final double stretch;
 
-  _FluidUpwardWaveNavBarPainter({
-    required this.cx,
+  _CurvedScoopedNavBarPainter({
+    required this.pos,
+    required this.itemsLength,
     required this.color,
     required this.shadowColor,
-    this.stretch = 0.0,
   });
 
   @override
@@ -1095,53 +1126,42 @@ class _FluidUpwardWaveNavBarPainter extends CustomPainter {
     final w = size.width;
     final h = size.height;
 
-    const cornerRadius = 24.0;
-    const domeHeight = 22.0;
-    // Elastic horizontal stretching during transition
-    final domeRadius = 26.0 + (stretch * 6.0);
-    final s = 18.0 + (stretch * 4.0);
+    final span = 1.0 / itemsLength;
+    final s = 80.0 / w;
+    final startingLoc = pos * span;
+    final loc = startingLoc + (span - s) / 2;
+
+    final p0x = (loc - 0.1) * w;
+    final c1x = (loc + s * 0.20) * w;
+    final c2x = loc * w;
+    final midx = (loc + s * 0.50) * w;
+    final c3x = (loc + s) * w;
+    final c4x = (loc + s - s * 0.20) * w;
+    final p1x = (loc + s * 1.10) * w;
+    final dipY = h * 0.60;
 
     final path = Path();
-    path.moveTo(0, cornerRadius);
-    path.quadraticBezierTo(0, 0, cornerRadius, 0);
-
-    final domeStart = cx - domeRadius - s;
-    final domeEnd = cx + domeRadius + s;
-
-    if (domeStart > cornerRadius) {
-      path.lineTo(domeStart, 0);
+    final p0xClamped = p0x.clamp(0.0, w);
+    if (p0xClamped > 0) {
+      path.lineTo(p0xClamped, 0);
     }
-
-    // Left upward smooth wave into the dome
-    path.cubicTo(
-      cx - domeRadius - (s * 0.40), 0,
-      cx - domeRadius * 0.70, -domeHeight,
-      cx, -domeHeight,
-    );
-
-    // Right downward smooth wave out of the dome
-    path.cubicTo(
-      cx + domeRadius * 0.70, -domeHeight,
-      cx + domeRadius + (s * 0.40), 0,
-      domeEnd, 0,
-    );
-
-    if (domeEnd < w - cornerRadius) {
-      path.lineTo(w - cornerRadius, 0);
+    path.cubicTo(c1x, 0, c2x, dipY, midx, dipY);
+    path.cubicTo(c3x, dipY, c4x, 0, p1x, 0);
+    final p1xClamped = p1x.clamp(0.0, w);
+    if (p1xClamped < w) {
+      path.lineTo(w, 0);
     }
-    path.quadraticBezierTo(w, 0, w, cornerRadius);
-
     path.lineTo(w, h);
     path.lineTo(0, h);
     path.close();
 
-    // Ambient diffuse shadow behind the entire curved bar
+    // Ambient diffuse shadow along top contour
     final shadowPaint = Paint()
       ..color = shadowColor
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
     canvas.drawPath(path.shift(const Offset(0, -2)), shadowPaint);
 
-    // Solid surface fill
+    // Solid bar surface
     final fillPaint = Paint()
       ..color = color
       ..style = PaintingStyle.fill;
@@ -1149,11 +1169,10 @@ class _FluidUpwardWaveNavBarPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _FluidUpwardWaveNavBarPainter oldDelegate) =>
-      oldDelegate.cx != cx ||
+  bool shouldRepaint(covariant _CurvedScoopedNavBarPainter oldDelegate) =>
+      oldDelegate.pos != pos ||
       oldDelegate.color != color ||
-      oldDelegate.shadowColor != shadowColor ||
-      oldDelegate.stretch != stretch;
+      oldDelegate.shadowColor != shadowColor;
 }
 
 class _EmptyState extends StatelessWidget {
