@@ -1040,6 +1040,9 @@ class _DownloadScreenState extends State<DownloadScreen> {
       final countKey = 'download_count_$uEmail';
       await prefsInst.setInt(countKey, (prefsInst.getInt(countKey) ?? 0) + 1);
 
+      // Record delivery proof in payments & enforce zero-storage wipe in Supabase
+      _recordFulfillment(uEmail);
+
       if (!mounted) return;
       Navigator.of(context).push(MaterialPageRoute(
           builder: (_) => FeedbackScreen(userData: widget.userData)));
@@ -1130,6 +1133,9 @@ class _DownloadScreenState extends State<DownloadScreen> {
       final countKey = 'download_count_$uEmail';
       await prefs.setInt(countKey, (prefs.getInt(countKey) ?? 0) + 1);
 
+      // Record delivery proof in payments & enforce zero-storage wipe in Supabase
+      _recordFulfillment(uEmail);
+
       if (!mounted) return;
       Navigator.of(context).push(MaterialPageRoute(
           builder: (_) => FeedbackScreen(userData: widget.userData)));
@@ -1141,6 +1147,15 @@ class _DownloadScreenState extends State<DownloadScreen> {
     } finally {
       if (mounted) setState(() => _activeSingleDownload = null);
     }
+  }
+
+  void _recordFulfillment(String uEmail) {
+    try {
+      final pId = widget.projectData['id']?.toString();
+      if (pId != null && pId.isNotEmpty) {
+        ApiService().markProjectDownloaded(pId, email: uEmail);
+      }
+    } catch (_) {}
   }
 
 

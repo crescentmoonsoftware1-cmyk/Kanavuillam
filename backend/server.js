@@ -103,8 +103,8 @@ app.use(cors({
   },
   credentials: true
 }));
-app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use(express.json({ verify: (req, res, buf) => { req.rawBody = buf; } }));
+// Public /uploads static route removed to enforce Zero-Storage compliance and prevent blueprint leaks
 
 // ─── Rate Limiting (Protects AI costs, prevents denial of service) ───────────
 const generalLimiter = rateLimit({
@@ -1993,6 +1993,70 @@ app.get('/api/project/:id', optionalAuth, async (req, res) => {
   res.json(data);
 });
 
+// ─── Mark Project Downloaded: Record Fulfillment Proof & Wipe Architectural Data ───
+app.post('/api/project/mark-downloaded/:id', optionalAuth, async (req, res) => {
+  const projectId = req.params.id;
+  const user = req.user;
+  const userEmail = (user?.email || req.body?.email || '').trim().toLowerCase();
+
+  try {
+    const downloadedAt = new Date().toISOString();
+    const checksum = 'KI-REP-' + crypto.randomBytes(4).toString('hex').toUpperCase();
+
+    // 1. Update Payment record with Delivery Proof
+    const paymentUpdate = {
+      delivery_status: 'DELIVERED',
+      downloaded_at: downloadedAt,
+      report_checksum: checksum,
+      updated_at: downloadedAt
+    };
+
+    let { error: payErr } = await supabase
+      .from('payments')
+      .update(paymentUpdate)
+      .eq('project_id', projectId);
+
+    if (payErr && userEmail) {
+      await supabase
+        .from('payments')
+        .update(paymentUpdate)
+        .eq('user_email', userEmail)
+        .eq('status', 'paid');
+    }
+
+    // 2. Immediate Data Wipe in projects table: enforce Zero-Storage of sensitive architectural JSON
+    // We retain only metadata (name, user_id, user_email, created_at) so the History card still displays.
+    const { error: projErr } = await supabase
+      .from('projects')
+      .update({
+        model_data: {},
+        vastu_data: null,
+        cost_data: null,
+        structural_data: null,
+        elevation_data: null,
+        visual_data: null,
+        updated_at: downloadedAt
+      })
+      .eq('id', projectId);
+
+    if (projErr) {
+      console.warn(`[Zero-Storage] Could not wipe project ${projectId}: ${projErr.message}`);
+    } else {
+      console.log(`[Zero-Storage] ✓ Successfully wiped architectural data for project ${projectId} post-download.`);
+    }
+
+    return res.json({
+      success: true,
+      delivery_status: 'DELIVERED',
+      downloaded_at: downloadedAt,
+      report_checksum: checksum
+    });
+  } catch (err) {
+    console.error('[Mark Downloaded Error]', err.message);
+    return res.status(500).json({ error: 'Failed to record fulfillment: ' + err.message });
+  }
+});
+
 // ─── Razorpay Payment Endpoints ─────────────────────────────────────────────
 
 app.post('/api/payment/create-order', optionalAuth, async (req, res) => {
@@ -2063,6 +2127,59 @@ app.post('/api/payment/create-order', optionalAuth, async (req, res) => {
 
 // ─── Web Checkout & Payment Tracking ─────────────────────────────────────────
 const paidOrders = new Set();
+
+// ─── Razorpay Asynchronous Webhook Backup Confirmation ─────────────────────────
+app.post('/api/payment/webhook', async (req, res) => {
+  const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || process.env.RAZORPAY_KEY_SECRET;
+  const signature = req.headers['x-razorpay-signature'];
+
+  if (!signature || !webhookSecret) {
+    console.warn('[Razorpay Webhook] Missing signature or webhook secret.');
+    return res.status(400).json({ error: 'Missing webhook signature or secret.' });
+  }
+
+  try {
+    const rawPayload = req.rawBody ? req.rawBody.toString('utf8') : JSON.stringify(req.body);
+    const expectedSignature = crypto
+      .createHmac('sha256', webhookSecret)
+      .update(rawPayload)
+      .digest('hex');
+
+    if (signature !== expectedSignature) {
+      console.error('[Razorpay Webhook] Signature mismatch.');
+      return res.status(400).json({ error: 'Invalid webhook signature.' });
+    }
+
+    const event = req.body.event;
+    const payload = req.body.payload;
+
+    if (event === 'payment.captured' || event === 'order.paid') {
+      const paymentEntity = payload?.payment?.entity;
+      const orderId = paymentEntity?.order_id || payload?.order?.entity?.id;
+      const paymentId = paymentEntity?.id;
+
+      if (orderId) {
+        console.log(`[Razorpay Webhook] Verified payment for Order: ${orderId}, Payment ID: ${paymentId}`);
+        paidOrders.add(orderId);
+
+        try {
+          await supabase.from('payments').update({
+            status: 'paid',
+            payment_id: paymentId,
+            updated_at: new Date().toISOString()
+          }).eq('order_id', orderId);
+        } catch (dbErr) {
+          console.warn('[Razorpay Webhook DB Warning] Unable to update payment row:', dbErr.message);
+        }
+      }
+    }
+
+    res.json({ status: 'ok' });
+  } catch (err) {
+    console.error('[Razorpay Webhook Error]:', err);
+    res.status(500).json({ error: 'Webhook processing failure.' });
+  }
+});
 
 app.post('/api/payment/verify-payment', optionalAuth, async (req, res) => {
   const {
@@ -2597,6 +2714,10 @@ app.get('/delete-account', (req, res) => {
 
 // ─── Public Web Page for Privacy Policy (Google Play Mandatory URL) ───────────
 app.get(['/privacy-policy', '/privacy'], (req, res) => {
+  const privacyPath = path.join(__dirname, '../web/privacy.html');
+  if (fs.existsSync(privacyPath)) {
+    return res.sendFile(privacyPath);
+  }
   res.send(`<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2696,6 +2817,10 @@ app.get(['/privacy-policy', '/privacy'], (req, res) => {
 
 // ─── Public Web Page for Terms and Conditions ─────────────────────────────────
 app.get(['/terms', '/terms-and-conditions'], (req, res) => {
+  const termsPath = path.join(__dirname, '../web/terms.html');
+  if (fs.existsSync(termsPath)) {
+    return res.sendFile(termsPath);
+  }
   res.send(`<!DOCTYPE html>
 <html lang="en">
 <head>
