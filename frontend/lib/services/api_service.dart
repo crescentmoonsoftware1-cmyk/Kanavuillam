@@ -36,51 +36,78 @@ class ApiService {
     } catch (_) {}
   }
 
-  /// Refresh the Supabase access token if it expires within the next 5 minutes.
-  static Future<void> _refreshTokenIfNeeded() async {
-    final prefs = await SharedPreferences.getInstance();
-    final expiresAt = prefs.getInt('token_expires_at') ?? 0;
-    final nowSecs = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    // Refresh if less than 5 minutes remain
-    if (expiresAt > 0 && expiresAt - nowSecs < 300) {
+  /// Ensures the current auth token is valid. If it is expired (or expires within 5 mins),
+  /// or if [force] is true, silently refreshes it using the saved refresh_token.
+  static Future<bool> ensureFreshToken({bool force = false}) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
       final refreshToken = prefs.getString('refresh_token');
-      if (refreshToken != null && refreshToken.isNotEmpty) {
-        try {
-          final response = await http.post(
-            Uri.parse('${baseUrl.replaceAll(RegExp(r'/api$'), '')}/api/auth/refresh'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'refresh_token': refreshToken}),
-          ).timeout(const Duration(seconds: 10));
-          if (response.statusCode == 200) {
-            final data = jsonDecode(response.body) as Map<String, dynamic>?;
-            final session = data?['session'] as Map<String, dynamic>?;
-            final newToken = session?['access_token'] as String?;
-            final newRefresh = session?['refresh_token'] as String?;
-            final newExpiry = session?['expires_at'];
-            if (newToken != null && newToken.isNotEmpty) {
-              await prefs.setString('auth_token', newToken);
-            }
-            if (newRefresh != null && newRefresh.isNotEmpty) {
-              await prefs.setString('refresh_token', newRefresh);
-            }
-            if (newExpiry != null) {
-              await prefs.setInt('token_expires_at', (newExpiry is int ? newExpiry : int.tryParse(newExpiry.toString()) ?? 0));
-            }
-          } else if (response.statusCode == 400 || response.statusCode == 401) {
-            // Refresh token has expired or been revoked. Clear session to prevent sending expired token.
-            await prefs.remove('auth_token');
-            await prefs.remove('refresh_token');
-            await prefs.remove('token_expires_at');
-          }
-        } catch (_) {
-          // Network failure: proceed with existing token
-        }
+      if (refreshToken == null || refreshToken.isEmpty) {
+        debugPrint('[ApiService] No refresh token found in storage.');
+        return false;
       }
+
+      final expiresAt = prefs.getInt('token_expires_at') ?? 0;
+      final nowSecs = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+
+      // Only refresh if forced, expiry unknown (0), or expires in < 5 mins (300s), or already expired
+      final bool needsRefresh = force || expiresAt == 0 || (expiresAt - nowSecs < 300);
+      if (!needsRefresh) {
+        return true;
+      }
+
+      debugPrint('[ApiService] Refreshing Supabase auth token (force=$force, remaining=${expiresAt - nowSecs}s)...');
+      final refreshUri = Uri.parse('$baseUrl/auth/refresh');
+      final response = await http.post(
+        refreshUri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'refresh_token': refreshToken}),
+      ).timeout(const Duration(seconds: 12));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>?;
+        final session = data?['session'] as Map<String, dynamic>?;
+        final newToken = session?['access_token'] as String?;
+        final newRefresh = session?['refresh_token'] as String?;
+        final newExpiry = session?['expires_at'];
+
+        if (newToken != null && newToken.isNotEmpty) {
+          await prefs.setString('auth_token', newToken);
+        }
+        if (newRefresh != null && newRefresh.isNotEmpty) {
+          await prefs.setString('refresh_token', newRefresh);
+        }
+        if (newExpiry != null) {
+          final expInt = newExpiry is int ? newExpiry : int.tryParse(newExpiry.toString()) ?? 0;
+          await prefs.setInt('token_expires_at', expInt);
+        }
+        debugPrint('[ApiService] Auth token successfully refreshed!');
+        return true;
+      } else if (response.statusCode == 400 || response.statusCode == 401) {
+        // Refresh token has expired or been revoked. Clear session to prevent sending expired token.
+        debugPrint('[ApiService] Refresh token expired/revoked. Clearing session.');
+        await prefs.remove('auth_token');
+        await prefs.remove('refresh_token');
+        await prefs.remove('token_expires_at');
+        return false;
+      } else {
+        debugPrint('[ApiService] Token refresh rejected (${response.statusCode}): ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      debugPrint('[ApiService] Token refresh error: $e');
+      return false;
     }
   }
 
+  /// Backward-compatible alias for existing callers
+  static Future<void> _refreshTokenIfNeeded() async {
+    await ensureFreshToken();
+  }
+
+
   static Future<Map<String, String>> _authHeaders([Map<String, String>? extra]) async {
-    await _refreshTokenIfNeeded();
+    await ensureFreshToken();
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('auth_token');
     final headers = <String, String>{
@@ -96,51 +123,67 @@ class ApiService {
   Future<Map<String, dynamic>> uploadPlan(XFile groundFile,
       XFile? firstFloorFile, XFile? secondFloorFile, String projectName,
       {String orientation = 'North', String? userEmail}) async {
-    final request = http.MultipartRequest('POST', Uri.parse('$baseUrl/upload'));
-    request.fields['name'] = projectName;
-    request.fields['orientation'] = orientation;
+    await ensureFreshToken();
 
-    await _refreshTokenIfNeeded();
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('auth_token');
-    if (token != null && token.isNotEmpty) {
-      request.headers['Authorization'] = 'Bearer $token';
-    }
+    Future<http.StreamedResponse> doSend() async {
+      final request = http.MultipartRequest('POST', Uri.parse('$baseUrl/upload'));
+      request.fields['name'] = projectName;
+      request.fields['orientation'] = orientation;
 
-    // Attach ground floor
-    final groundBytes = await groundFile.readAsBytes();
-    request.files.add(http.MultipartFile.fromBytes(
-      'ground_plan',
-      groundBytes,
-      filename: groundFile.name,
-    ));
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      if (token != null && token.isNotEmpty) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
 
-    // Attach first floor if provided
-    if (firstFloorFile != null) {
-      final firstBytes = await firstFloorFile.readAsBytes();
+      // Attach ground floor
+      final groundBytes = await groundFile.readAsBytes();
       request.files.add(http.MultipartFile.fromBytes(
-        'first_plan',
-        firstBytes,
-        filename: firstFloorFile.name,
+        'ground_plan',
+        groundBytes,
+        filename: groundFile.name,
       ));
+
+      // Attach first floor if provided
+      if (firstFloorFile != null) {
+        final firstBytes = await firstFloorFile.readAsBytes();
+        request.files.add(http.MultipartFile.fromBytes(
+          'first_plan',
+          firstBytes,
+          filename: firstFloorFile.name,
+        ));
+      }
+
+      // Attach second floor if provided
+      if (secondFloorFile != null) {
+        final secondBytes = await secondFloorFile.readAsBytes();
+        request.files.add(http.MultipartFile.fromBytes(
+          'second_plan',
+          secondBytes,
+          filename: secondFloorFile.name,
+        ));
+      }
+
+      return await request.send().timeout(const Duration(seconds: 600),
+          onTimeout: () {
+        throw Exception(
+            "Request timed out. The AI is taking longer than expected. Please try again.");
+      });
     }
 
-    // Attach second floor if provided
-    if (secondFloorFile != null) {
-      final secondBytes = await secondFloorFile.readAsBytes();
-      request.files.add(http.MultipartFile.fromBytes(
-        'second_plan',
-        secondBytes,
-        filename: secondFloorFile.name,
-      ));
-    }
+    var response = await doSend();
+    var responseData = await response.stream.bytesToString();
 
-    final response = await request.send().timeout(const Duration(seconds: 600),
-        onTimeout: () {
-      throw Exception(
-          "Request timed out. The AI is taking longer than expected. Please try again.");
-    });
-    final responseData = await response.stream.bytesToString();
+    // 401 Interceptor: If token expired, auto-refresh and retry once transparently
+    if (response.statusCode == 401) {
+      debugPrint('[ApiService] uploadPlan got 401 Unauthorized. Auto-refreshing token & retrying...');
+      final refreshed = await ensureFreshToken(force: true);
+      if (refreshed) {
+        debugPrint('[ApiService] Token refreshed! Retrying upload...');
+        response = await doSend();
+        responseData = await response.stream.bytesToString();
+      }
+    }
 
     if (response.statusCode == 200) {
       try {
@@ -149,22 +192,34 @@ class ApiService {
         throw Exception("Server returned invalid data: $responseData");
       }
     } else {
+      String errorMessage = 'Upload failed';
       try {
-        final error = json.decode(responseData)['error'] ?? 'Upload failed';
-        throw Exception(error);
-      } catch (e) {
-        throw Exception("Server Error (${response.statusCode}): $responseData");
+        final decoded = json.decode(responseData);
+        if (decoded is Map && decoded['error'] != null) {
+          errorMessage = decoded['error'];
+        }
+      } catch (_) {
+        errorMessage = "Server Error (${response.statusCode}): $responseData";
       }
+      throw Exception(errorMessage);
     }
   }
 
   Future<List<dynamic>> getAllProjects([String? email]) async {
-    final headers = await _authHeaders();
+    var headers = await _authHeaders();
     String url = '$baseUrl/projects';
     if (email != null && email.isNotEmpty) {
       url += '?email=${Uri.encodeComponent(email)}';
     }
-    final response = await http.get(Uri.parse(url), headers: headers);
+    var response = await http.get(Uri.parse(url), headers: headers);
+
+    if (response.statusCode == 401) {
+      final refreshed = await ensureFreshToken(force: true);
+      if (refreshed) {
+        headers = await _authHeaders();
+        response = await http.get(Uri.parse(url), headers: headers);
+      }
+    }
 
     if (response.statusCode == 200) {
       return json.decode(response.body);
@@ -174,8 +229,16 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> getProject(String projectId) async {
-    final headers = await _authHeaders();
-    final response = await http.get(Uri.parse('$baseUrl/project/$projectId'), headers: headers);
+    var headers = await _authHeaders();
+    var response = await http.get(Uri.parse('$baseUrl/project/$projectId'), headers: headers);
+
+    if (response.statusCode == 401) {
+      final refreshed = await ensureFreshToken(force: true);
+      if (refreshed) {
+        headers = await _authHeaders();
+        response = await http.get(Uri.parse('$baseUrl/project/$projectId'), headers: headers);
+      }
+    }
 
     if (response.statusCode == 200) {
       return json.decode(response.body);
@@ -206,12 +269,24 @@ class ApiService {
 
   Future<Map<String, dynamic>> analyzeVastu(String projectId,
       {String lang = 'English'}) async {
-    final headers = await _authHeaders();
-    final response = await http.post(
+    var headers = await _authHeaders();
+    var response = await http.post(
       Uri.parse('$baseUrl/analyze-vastu/$projectId'),
       headers: headers,
       body: json.encode({'lang': lang}),
     );
+
+    if (response.statusCode == 401) {
+      final refreshed = await ensureFreshToken(force: true);
+      if (refreshed) {
+        headers = await _authHeaders();
+        response = await http.post(
+          Uri.parse('$baseUrl/analyze-vastu/$projectId'),
+          headers: headers,
+          body: json.encode({'lang': lang}),
+        );
+      }
+    }
 
     if (response.statusCode == 200) {
       return json.decode(response.body);
@@ -276,15 +351,27 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> createRazorpayOrder(double amount, {String? projectId}) async {
-    final headers = await _authHeaders();
+    var headers = await _authHeaders();
     final bodyData = <String, dynamic>{'amount': amount};
     if (projectId != null) bodyData['project_id'] = projectId;
 
-    final response = await http.post(
+    var response = await http.post(
       Uri.parse('$baseUrl/payment/create-order'),
       headers: headers,
       body: json.encode(bodyData),
     );
+
+    if (response.statusCode == 401) {
+      final refreshed = await ensureFreshToken(force: true);
+      if (refreshed) {
+        headers = await _authHeaders();
+        response = await http.post(
+          Uri.parse('$baseUrl/payment/create-order'),
+          headers: headers,
+          body: json.encode(bodyData),
+        );
+      }
+    }
 
     if (response.statusCode == 200) {
       return json.decode(response.body);
@@ -302,12 +389,24 @@ class ApiService {
 
   Future<Map<String, dynamic>> verifyRazorpayPayment(
       Map<String, dynamic> data) async {
-    final headers = await _authHeaders();
-    final response = await http.post(
+    var headers = await _authHeaders();
+    var response = await http.post(
       Uri.parse('$baseUrl/payment/verify-payment'),
       headers: headers,
       body: json.encode(data),
     );
+
+    if (response.statusCode == 401) {
+      final refreshed = await ensureFreshToken(force: true);
+      if (refreshed) {
+        headers = await _authHeaders();
+        response = await http.post(
+          Uri.parse('$baseUrl/payment/verify-payment'),
+          headers: headers,
+          body: json.encode(data),
+        );
+      }
+    }
 
     if (response.statusCode == 200) {
       return json.decode(response.body);
@@ -326,19 +425,40 @@ class ApiService {
   static Future<Map<String, dynamic>?> post(
       String endpoint, Map<String, dynamic> body) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token');
+      final isAuthEndpoint = endpoint.contains('/auth/login') ||
+          endpoint.contains('/auth/signup') ||
+          endpoint.contains('/auth/refresh') ||
+          endpoint.contains('/auth/google');
 
-      final headers = {'Content-Type': 'application/json'};
-      if (token != null && token.isNotEmpty) {
-        headers['Authorization'] = 'Bearer $token';
+      if (!isAuthEndpoint) {
+        await ensureFreshToken();
       }
 
-      final response = await http.post(
-        Uri.parse('$baseUrl$endpoint'),
-        headers: headers,
-        body: json.encode(body),
-      );
+      Future<http.Response> executePost() async {
+        final prefs = await SharedPreferences.getInstance();
+        final token = prefs.getString('auth_token');
+
+        final headers = {'Content-Type': 'application/json'};
+        if (token != null && token.isNotEmpty) {
+          headers['Authorization'] = 'Bearer $token';
+        }
+
+        return await http.post(
+          Uri.parse('$baseUrl$endpoint'),
+          headers: headers,
+          body: json.encode(body),
+        );
+      }
+
+      var response = await executePost();
+
+      // Auto-retry once on 401 for authenticated endpoints
+      if (response.statusCode == 401 && !isAuthEndpoint) {
+        final refreshed = await ensureFreshToken(force: true);
+        if (refreshed) {
+          response = await executePost();
+        }
+      }
 
       if (response.statusCode == 200) {
         return json.decode(response.body);

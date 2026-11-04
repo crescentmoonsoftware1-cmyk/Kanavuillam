@@ -38,8 +38,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       final prefs = await SharedPreferences.getInstance();
       final email = prefs.getString('user_email');
 
-      // Smooth, full entrance animation (3 seconds) so user can see logo & kural tagline
-      await Future.delayed(const Duration(seconds: 3));
+      // In the background, trigger silent token refresh so auth_token is fully valid
+      final Future<bool> tokenRefreshTask = ApiService.ensureFreshToken();
+
+      // Smooth, full entrance animation (2.5 seconds) so user can see logo & kural tagline
+      await Future.delayed(const Duration(milliseconds: 2500));
+      await tokenRefreshTask;
 
       if (email != null && email.trim().isNotEmpty) {
         if (mounted) {

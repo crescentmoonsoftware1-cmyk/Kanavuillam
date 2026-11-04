@@ -141,6 +141,15 @@ const authLimiter = rateLimit({
   message: { error: 'Too many authentication attempts. Please wait 15 minutes before trying again.' }
 });
 
+// Dedicated limiter for background token refreshes (allowing smooth background session renewal for mobile apps)
+const refreshLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 150, // 150 token refreshes per 15 minutes per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many token refresh attempts. Please try again later.' }
+});
+
 // ─── Health Check Endpoints (For Railway, Docker & Uptime monitoring) ───────
 app.get('/api/health', (req, res) => {
   res.status(200).json({
@@ -2457,12 +2466,15 @@ app.get('/payment-success', (req, res) => {
 });
 
 // ─── Token Refresh Endpoint ───────────────────────────────────────────────────
-app.post('/api/auth/refresh', authLimiter, async (req, res) => {
+app.post('/api/auth/refresh', refreshLimiter, async (req, res) => {
   const { refresh_token } = req.body;
   if (!refresh_token) return res.status(400).json({ error: 'refresh_token is required' });
   try {
     const { data, error } = await supabase.auth.refreshSession({ refresh_token });
-    if (error || !data?.session) throw error || new Error('Refresh failed');
+    if (error || !data?.session) {
+      console.warn('[Auth Refresh] refreshSession failed:', error?.message);
+      throw error || new Error('Refresh failed');
+    }
     res.json({ session: data.session, user: data.user });
   } catch (err) {
     res.status(401).json({ error: 'Session refresh failed. Please log in again.' });
@@ -2479,7 +2491,7 @@ app.post('/api/auth/signup', authLimiter, async (req, res) => {
       options: { data: { name, phone } }
     });
     if (error) throw error;
-    res.json({ message: 'Signup successful', user: data.user });
+    res.json({ message: 'Signup successful', session: data.session, user: data.user });
   } catch (err) {
     const errorMsg = (err.message || '').toLowerCase();
     const isDev = process.env.NODE_ENV !== 'production' && process.env.ALLOW_OFFLINE_MOCK === 'true';

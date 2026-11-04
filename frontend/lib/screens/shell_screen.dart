@@ -952,8 +952,6 @@ class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar>
       config = AppConfigProvider();
     }
     final isDark = config.isDarkMode;
-    final isTamil = config.isTamil;
-
     final barColor = isDark ? const Color(0xFF131826) : Colors.white;
     final shadowColor = isDark
         ? Colors.black.withValues(alpha: 0.40)
@@ -965,15 +963,9 @@ class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar>
       Icons.person_outline_rounded,
     ];
 
-    final tabLabels = [
-      isTamil ? 'வரலாறு' : 'History',
-      isTamil ? 'முகப்பு' : 'Home',
-      isTamil ? 'சுயவிவரம்' : 'Profile',
-    ];
-
     return SizedBox(
       width: double.infinity,
-      height: 86,
+      height: 68,
       child: AnimatedBuilder(
         animation: _controller,
         builder: (context, child) {
@@ -1016,7 +1008,7 @@ class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar>
                           children: [
                             // Resting icon in the flat bar (fades out as notch approaches)
                             Positioned(
-                              top: 14,
+                              top: 21,
                               child: Opacity(
                                 opacity: dist,
                                 child: Icon(
@@ -1029,26 +1021,6 @@ class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar>
                               ),
                             ),
 
-                            // Label below (bold when selected)
-                            Positioned(
-                              top: 44,
-                              child: Text(
-                                tabLabels[i],
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 11,
-                                  fontWeight: isCurrentActive
-                                      ? FontWeight.w700
-                                      : FontWeight.w600,
-                                  color: isCurrentActive
-                                      ? (isDark
-                                          ? const Color(0xFFE58A18)
-                                          : const Color(0xFF0F172A))
-                                      : (isDark
-                                          ? const Color(0xFF64748B)
-                                          : const Color(0xFF8E94A0)),
-                                ),
-                              ),
-                            ),
                           ],
                         ),
                       ),
@@ -1102,24 +1074,6 @@ class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar>
                     ),
                   ),
 
-                  // 4. Bottom Home Indicator Pill
-                  Positioned(
-                    bottom: 6,
-                    left: 0,
-                    right: 0,
-                    child: Center(
-                      child: Container(
-                        width: 134,
-                        height: 4.5,
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? const Color(0xFF475569)
-                              : const Color(0xFF0F172A),
-                          borderRadius: BorderRadius.circular(100),
-                        ),
-                      ),
-                    ),
-                  ),
                 ],
               );
             },
