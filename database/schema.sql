@@ -114,9 +114,17 @@ create table if not exists payments (
   amount numeric(10, 2) not null default 1.00,
   currency text not null default 'INR',
   status text not null default 'pending', -- 'pending', 'paid', 'failed'
+  delivery_status text not null default 'PENDING', -- 'PENDING', 'DELIVERED'
+  downloaded_at timestamp with time zone,
+  report_checksum text,
   created_at timestamp with time zone default now(),
   updated_at timestamp with time zone default now()
 );
+
+-- Add delivery/fulfillment tracking columns if missing
+alter table payments add column if not exists delivery_status text not null default 'PENDING';
+alter table payments add column if not exists downloaded_at timestamp with time zone;
+alter table payments add column if not exists report_checksum text;
 
 create index if not exists idx_payments_order_id on payments (order_id);
 create index if not exists idx_payments_user_id on payments (user_id);

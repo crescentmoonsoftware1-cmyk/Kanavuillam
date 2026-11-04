@@ -38,3 +38,8 @@ test*.html
 dummy*.jpg
 backend/cv_debug_output/
 *.mp4
+
+# Stray test & run dumps
+backend/new_run.json
+backend/user_run_test.json
+frontend/assets/images/3d_base64.txt

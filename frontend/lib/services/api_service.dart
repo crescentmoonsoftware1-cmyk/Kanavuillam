@@ -66,6 +66,11 @@ class ApiService {
             if (newExpiry != null) {
               await prefs.setInt('token_expires_at', (newExpiry is int ? newExpiry : int.tryParse(newExpiry.toString()) ?? 0));
             }
+          } else if (response.statusCode == 400 || response.statusCode == 401) {
+            // Refresh token has expired or been revoked. Clear session to prevent sending expired token.
+            await prefs.remove('auth_token');
+            await prefs.remove('refresh_token');
+            await prefs.remove('token_expires_at');
           }
         } catch (_) {
           // Network failure: proceed with existing token
@@ -177,6 +182,26 @@ class ApiService {
     } else {
       throw Exception('Failed to load project');
     }
+  }
+
+  /// Records delivery proof in payments table and wipes sensitive architectural JSON from projects table
+  Future<Map<String, dynamic>?> markProjectDownloaded(String projectId, {String? email}) async {
+    try {
+      final headers = await _authHeaders();
+      final body = email != null && email.isNotEmpty ? json.encode({'email': email}) : null;
+      final response = await http.post(
+        Uri.parse('$baseUrl/project/mark-downloaded/$projectId'),
+        headers: headers,
+        body: body,
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+    } catch (_) {
+      // Non-blocking best-effort execution
+    }
+    return null;
   }
 
   Future<Map<String, dynamic>> analyzeVastu(String projectId,

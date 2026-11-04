@@ -6,53 +6,60 @@
   <title>Terms and Conditions - Kanavu Illam</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
+
     :root {
-      --bg-dark: #0B0E14;
-      --bg-mesh: radial-gradient(circle at 50% 0%, #1E2638 0%, #0B0E14 75%);
-      --card-bg: #151A24;
-      --card-elevated: #1B2230;
-      --card-border: rgba(255, 255, 255, 0.08);
-      --card-border-hover: rgba(229, 138, 24, 0.35);
-      --amber: #E58A18;
-      --amber-highlight: #FBA73B;
-      --amber-glow: rgba(229, 138, 24, 0.15);
-      --amber-tint: rgba(229, 138, 24, 0.08);
-      --text-white: #FFFFFF;
-      --text-slate: #CBD5E1;
-      --text-muted: #8E94A0;
-      --badge-slate: #242D3D;
+      --bg-page: #F8FAFC;
+      --bg-card: #FFFFFF;
+      --border-subtle: #E2E8F0;
+      --border-hover: #CBD5E1;
+      --text-heading: #0F172A;
+      --text-body: #334155;
+      --text-muted: #64748B;
+      --amber-600: #D97706;
+      --amber-700: #B45309;
+      --amber-50: #FFFBEB;
+      --amber-100: #FEF3C7;
+      --amber-border: #FDE68A;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    body {
-      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: var(--bg-dark);
-      background-image: var(--bg-mesh);
-      background-attachment: fixed;
-      color: var(--text-slate);
-      line-height: 1.65;
-      min-height: 100vh;
-      padding-bottom: 120px; /* Space for floating capsule navbar */
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 100px;
     }
 
-    /* ─── Top Shell Navigation Bar ─── */
-    .shell-topbar {
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-page);
+      color: var(--text-body);
+      line-height: 1.75;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── Top Header & Navigation ─── */
+    .top-header {
       position: sticky;
       top: 0;
       z-index: 100;
-      background: rgba(11, 14, 20, 0.85);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-bottom: 1px solid var(--card-border);
-      padding: 14px 24px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-subtle);
     }
 
-    .shell-topbar-inner {
-      max-width: 900px;
+    .header-inner {
+      max-width: 1200px;
       margin: 0 auto;
+      padding: 14px 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -67,564 +74,721 @@
     }
 
     .brand-logo {
-      width: 38px;
-      height: 38px;
-      border-radius: 10px;
-      background: var(--card-elevated);
-      border: 1px solid var(--card-border);
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: #FFFFFF;
+      border: 1px solid var(--border-subtle);
       display: flex;
       align-items: center;
       justify-content: center;
       overflow: hidden;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      box-shadow: var(--shadow-sm);
     }
 
-    .brand-logo img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
+    .brand-logo img { width: 100%; height: 100%; object-fit: cover; }
 
-    .brand-text h1 {
+    .brand-title {
       font-family: 'Outfit', sans-serif;
-      font-size: 17px;
+      font-size: 18px;
       font-weight: 700;
-      color: var(--text-white);
+      color: var(--text-heading);
       letter-spacing: -0.3px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
+      line-height: 1.2;
     }
 
-    .brand-text .brand-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--amber);
-      display: inline-block;
-    }
-
-    .brand-text p {
-      font-size: 11px;
-      color: var(--text-muted);
-      font-weight: 500;
-    }
-
-    .top-nav-pills {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .pill-btn {
-      font-size: 12.5px;
-      font-weight: 600;
-      padding: 7px 14px;
-      border-radius: 100px;
-      text-decoration: none;
-      transition: all 0.2s ease;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      border: 1px solid transparent;
-      color: var(--text-muted);
-    }
-
-    .pill-btn:hover {
-      color: var(--text-white);
-      background: rgba(255, 255, 255, 0.05);
-    }
-
-    .pill-btn.active {
-      background: var(--amber);
-      color: #1E252D;
-      font-weight: 700;
-      box-shadow: 0 2px 10px var(--amber-glow);
-    }
-
-    /* ─── Main Content Shell ─── */
-    .shell-container {
-      max-width: 900px;
-      margin: 32px auto 0;
-      padding: 0 20px;
-    }
-
-    /* Hero Card */
-    .hero-card {
-      background: linear-gradient(135deg, rgba(30, 38, 56, 0.8) 0%, rgba(21, 26, 36, 0.95) 100%);
-      border: 1px solid var(--card-border);
-      border-radius: 24px;
-      padding: 32px;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-      margin-bottom: 24px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .hero-card::after {
-      content: "";
-      position: absolute;
-      top: -50px;
-      right: -50px;
-      width: 180px;
-      height: 180px;
-      background: radial-gradient(circle, rgba(229, 138, 24, 0.18) 0%, transparent 70%);
-      pointer-events: none;
-    }
-
-    .hero-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: rgba(229, 138, 24, 0.12);
-      border: 1px solid rgba(229, 138, 24, 0.3);
-      padding: 5px 12px;
-      border-radius: 100px;
+    .brand-subtitle {
       font-size: 11.5px;
-      font-weight: 700;
-      color: var(--amber);
+      font-weight: 600;
+      color: var(--amber-700);
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      margin-bottom: 16px;
     }
 
-    .hero-card h2 {
-      font-family: 'Outfit', sans-serif;
-      font-size: 28px;
-      font-weight: 700;
-      color: var(--text-white);
-      margin-bottom: 10px;
-      letter-spacing: -0.5px;
-    }
-
-    .hero-meta {
+    .header-nav {
       display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
       align-items: center;
-      font-size: 12.5px;
-      color: var(--text-muted);
-      margin-top: 14px;
+      gap: 6px;
     }
 
-    .hero-chip {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      padding: 4px 10px;
-      border-radius: 6px;
-      color: var(--text-slate);
-    }
-
-    /* Section Jump Bar */
-    .jump-bar {
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      padding: 8px 4px 16px;
-      margin-bottom: 20px;
-      scrollbar-width: none;
-    }
-    .jump-bar::-webkit-scrollbar { display: none; }
-
-    .jump-pill {
-      flex-shrink: 0;
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      color: var(--text-muted);
-      text-decoration: none;
-      font-size: 12px;
+    .nav-pill {
+      padding: 7px 16px;
+      border-radius: 20px;
+      font-size: 13px;
       font-weight: 600;
-      padding: 6px 14px;
-      border-radius: 100px;
-      transition: all 0.2s;
+      text-decoration: none;
+      color: var(--text-muted);
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
     }
 
-    .jump-pill:hover {
-      color: var(--text-white);
-      border-color: rgba(255, 255, 255, 0.2);
+    .nav-pill:hover {
+      color: var(--text-heading);
+      background: #F1F5F9;
     }
 
-    /* Content Card */
-    .content-card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 24px;
-      padding: 36px 32px;
-      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+    .nav-pill.active {
+      color: var(--amber-700);
+      background: var(--amber-50);
+      border-color: var(--amber-border);
     }
 
-    .terms-section {
-      margin-bottom: 36px;
-      padding-bottom: 28px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    /* ─── Hero Banner ─── */
+    .hero-banner {
+      background: #FFFFFF;
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 40px 24px 36px;
     }
 
-    .terms-section:last-child {
-      margin-bottom: 0;
-      padding-bottom: 0;
-      border-bottom: none;
+    .hero-inner {
+      max-width: 1200px;
+      margin: 0 auto;
     }
 
-    .section-title {
-      display: flex;
+    .version-tag {
+      display: inline-flex;
       align-items: center;
-      gap: 12px;
-      font-family: 'Outfit', sans-serif;
-      font-size: 20px;
-      font-weight: 700;
-      color: var(--text-white);
-      margin-bottom: 16px;
-    }
-
-    .section-num {
-      background: var(--badge-slate);
-      color: var(--amber);
+      gap: 6px;
+      background: var(--amber-50);
+      color: var(--amber-700);
+      border: 1px solid var(--amber-border);
+      padding: 4px 12px;
+      border-radius: 16px;
       font-size: 12px;
-      font-weight: 800;
-      padding: 4px 9px;
-      border-radius: 8px;
-      border: 1px solid rgba(229, 138, 24, 0.25);
-    }
-
-    p {
-      font-size: 14.5px;
-      color: var(--text-slate);
-      line-height: 1.7;
+      font-weight: 700;
       margin-bottom: 14px;
     }
 
-    ul {
-      list-style: none;
-      padding: 0;
-      margin: 14px 0;
+    .hero-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--text-heading);
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
     }
 
-    li {
-      position: relative;
-      padding-left: 24px;
-      margin-bottom: 12px;
-      font-size: 14px;
-      color: var(--text-slate);
+    .hero-desc {
+      font-size: 15px;
+      color: var(--text-muted);
+      max-width: 760px;
+      margin-bottom: 18px;
       line-height: 1.6;
     }
 
-    li::before {
-      content: "•";
-      color: var(--amber);
-      font-size: 20px;
-      position: absolute;
-      left: 6px;
-      top: -2px;
-    }
-
-    li strong {
-      color: var(--text-white);
-    }
-
-    .highlight-card {
-      background: var(--amber-tint);
-      border-left: 4px solid var(--amber);
-      border-radius: 0 14px 14px 0;
-      padding: 16px 20px;
-      margin: 18px 0;
-      font-size: 14px;
-      color: #F1F5F9;
-      border-top: 1px solid rgba(229, 138, 24, 0.15);
-      border-right: 1px solid rgba(229, 138, 24, 0.15);
-      border-bottom: 1px solid rgba(229, 138, 24, 0.15);
-    }
-
-    .highlight-card strong {
-      color: var(--amber-highlight);
-    }
-
-    a {
-      color: var(--amber);
-      text-decoration: none;
-      transition: color 0.15s;
-    }
-
-    a:hover {
-      text-decoration: underline;
-      color: var(--amber-highlight);
-    }
-
-    /* ─── Floating Capsule Navigation Bar (Shell Screen Pattern) ─── */
-    .capsule-nav-wrapper {
-      position: fixed;
-      bottom: 24px;
-      left: 0;
-      right: 0;
+    .meta-chips {
       display: flex;
-      justify-content: center;
-      z-index: 1000;
-      pointer-events: none;
-    }
-
-    .capsule-nav {
-      pointer-events: auto;
-      background: rgba(21, 26, 36, 0.88);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 100px;
-      padding: 6px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.04);
-    }
-
-    .capsule-item {
-      display: flex;
-      align-items: center;
+      flex-wrap: wrap;
       gap: 8px;
-      padding: 10px 18px;
-      border-radius: 100px;
-      text-decoration: none;
+    }
+
+    .chip {
+      background: var(--bg-page);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      padding: 5px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    /* ─── Main Two-Column Layout ─── */
+    .portal-layout {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 40px;
+      align-items: start;
+    }
+
+    /* ─── Left Sticky Sidebar (Table of Contents) ─── */
+    .sidebar {
+      position: sticky;
+      top: 90px;
+      max-height: calc(100vh - 110px);
+      overflow-y: auto;
+      padding-right: 12px;
+      scrollbar-width: thin;
+      scrollbar-color: #CBD5E1 transparent;
+    }
+
+    .sidebar-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      padding-left: 12px;
+    }
+
+    .toc-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .toc-item a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 8px;
       font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: all 0.15s ease;
+      border-left: 3px solid transparent;
+    }
+
+    .toc-item a:hover {
+      color: var(--text-heading);
+      background: #F1F5F9;
+    }
+
+    .toc-item.active a {
+      color: var(--amber-700);
+      background: var(--amber-50);
+      font-weight: 600;
+      border-left-color: var(--amber-600);
+    }
+
+    .toc-num {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      min-width: 20px;
+    }
+
+    .toc-item.active .toc-num {
+      color: var(--amber-700);
+    }
+
+    /* ─── Right Document Container ─── */
+    .document-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 44px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .doc-section {
+      padding-bottom: 36px;
+      margin-bottom: 36px;
+      border-bottom: 1px solid #F1F5F9;
+    }
+
+    .doc-section:last-child {
+      padding-bottom: 0;
+      margin-bottom: 0;
+      border-bottom: none;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .sec-badge {
+      background: #F1F5F9;
+      color: var(--text-heading);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .doc-section h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 21px;
+      font-weight: 700;
+      color: var(--text-heading);
+      letter-spacing: -0.3px;
+    }
+
+    .doc-section p {
+      font-size: 14.5px;
+      color: var(--text-body);
+      line-height: 1.75;
+      margin-bottom: 16px;
+    }
+
+    .doc-section ul {
+      padding-left: 22px;
+      margin-bottom: 16px;
+    }
+
+    .doc-section li {
+      font-size: 14.5px;
+      color: var(--text-body);
+      line-height: 1.7;
+      margin-bottom: 10px;
+    }
+
+    .doc-section strong {
+      color: var(--text-heading);
+    }
+
+    .doc-section a {
+      color: var(--amber-700);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .doc-section a:hover {
+      color: var(--amber-600);
+    }
+
+    /* ─── Callout Boxes ─── */
+    .callout-box {
+      background: var(--amber-50);
+      border: 1px solid var(--amber-border);
+      border-left: 4px solid var(--amber-600);
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin: 20px 0;
+      font-size: 14px;
+      line-height: 1.65;
+      color: #78350F;
+    }
+
+    .callout-box strong {
+      color: #92400E;
+    }
+
+    /* ─── Data Tables ─── */
+    .table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      margin: 20px 0;
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13.5px;
+    }
+
+    th {
+      background: #F8FAFC;
+      color: var(--text-heading);
+      font-weight: 700;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid #F1F5F9;
+      color: var(--text-body);
+      vertical-align: top;
+      line-height: 1.6;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: #FAFAFA;
+    }
+
+    /* ─── Mobile Sticky TOC Bar (under 960px) ─── */
+    .mobile-toc-bar {
+      display: none;
+      position: sticky;
+      top: 65px;
+      z-index: 90;
+      background: #FFFFFF;
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 10px 16px;
+      overflow-x: auto;
+      white-space: nowrap;
+      gap: 8px;
+      scrollbar-width: none;
+    }
+    .mobile-toc-bar::-webkit-scrollbar { display: none; }
+
+    .mobile-toc-chip {
+      display: inline-block;
+      padding: 5px 12px;
+      border-radius: 16px;
+      font-size: 12px;
       font-weight: 600;
       color: var(--text-muted);
-      transition: all 0.2s ease;
+      text-decoration: none;
+      background: var(--bg-page);
+      border: 1px solid var(--border-subtle);
+      transition: all 0.15s ease;
     }
 
-    .capsule-item svg {
-      width: 17px;
-      height: 17px;
-      fill: currentColor;
+    .mobile-toc-chip.active {
+      color: var(--amber-700);
+      background: var(--amber-50);
+      border-color: var(--amber-border);
     }
 
-    .capsule-item:hover {
-      color: var(--text-white);
-      background: rgba(255, 255, 255, 0.06);
-    }
-
-    .capsule-item.active {
-      background: var(--amber);
-      color: #1E252D;
-      font-weight: 700;
-      box-shadow: 0 4px 14px var(--amber-glow);
-    }
-
-    .capsule-item.active svg {
-      fill: #1E252D;
-    }
-
-    /* Footer */
-    .shell-footer {
+    /* ─── Footer ─── */
+    .portal-footer {
+      background: #FFFFFF;
+      border-top: 1px solid var(--border-subtle);
+      padding: 40px 24px;
+      margin-top: auto;
       text-align: center;
-      padding: 40px 20px 20px;
       font-size: 13px;
       color: var(--text-muted);
     }
 
-    .shell-footer a {
-      color: var(--text-muted);
-      margin: 0 8px;
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
     }
 
-    .shell-footer a:hover {
-      color: var(--amber);
+    .footer-links a {
+      color: var(--text-body);
+      text-decoration: none;
+      font-weight: 500;
     }
 
-    @media (max-width: 640px) {
-      .shell-topbar-inner { flex-direction: column; align-items: flex-start; gap: 10px; }
-      .top-nav-pills { width: 100%; justify-content: space-between; }
-      .content-card { padding: 24px 18px; border-radius: 18px; }
-      .hero-card { padding: 24px 20px; border-radius: 18px; }
-      .hero-card h2 { font-size: 22px; }
-      .capsule-item { padding: 8px 14px; font-size: 12px; }
+    .footer-links a:hover {
+      color: var(--amber-700);
     }
+
+    /* ─── Responsiveness ─── */
+    @media (max-width: 960px) {
+      .portal-layout {
+        grid-template-columns: 1fr;
+        padding: 24px 16px 60px;
+        gap: 0;
+      }
+
+      .sidebar {
+        display: none;
+      }
+
+      .mobile-toc-bar {
+        display: flex;
+      }
+
+      .document-card {
+        padding: 24px 20px;
+      }
+
+      .hero-title {
+        font-size: 26px;
+      }
+    }
+
   </style>
 </head>
 <body>
 
-  <!-- Top App Shell Bar -->
-  <header class="shell-topbar">
-    <div class="shell-topbar-inner">
+  <!-- Top Sticky Header -->
+  <header class="top-header">
+    <div class="header-inner">
       <a href="index.html" class="brand-group">
         <div class="brand-logo">
           <img src="logo.png" alt="Kanavu Illam Logo" onerror="this.src='../frontend/assets/images/logo.png'">
         </div>
-        <div class="brand-text">
-          <h1>Kanavu Illam <span class="brand-dot"></span></h1>
-          <p>Legal & Terms Portal</p>
+        <div>
+          <div class="brand-title">Kanavu Illam</div>
+          <div class="brand-subtitle">Legal & Trust Portal</div>
         </div>
       </a>
 
-      <nav class="top-nav-pills">
-        <a href="privacy.html" class="pill-btn">Privacy Policy</a>
-        <a href="terms.html" class="pill-btn active">Terms & Conditions</a>
-        <a href="delete-account.html" class="pill-btn">Delete Account</a>
+      <nav class="header-nav">
+        <a href="privacy.html" class="nav-pill">Privacy Policy</a>
+        <a href="terms.html" class="nav-pill active">Terms & Conditions</a>
+        <a href="delete-account.html" class="nav-pill">Delete Account</a>
       </nav>
     </div>
   </header>
 
-  <!-- Main Shell Container -->
-  <main class="shell-container">
-    
-    <!-- Hero Banner -->
-    <div class="hero-card">
-      <div class="hero-badge">Official Software Terms of Service</div>
-      <h2>Terms and Conditions</h2>
-      <p>Operated by Kanavu Illam Technologies, Coimbatore, Tamil Nadu, India. Please review these terms carefully before accessing or using our services.</p>
-      <div class="hero-meta">
-        <span class="hero-chip">Effective: October 27, 2026</span>
-        <span class="hero-chip">Indian Contract Act, 1872</span>
-        <span class="hero-chip">Coimbatore Jurisdiction</span>
-        <span class="hero-chip">IS 456 Conventions</span>
+  <!-- Hero Header Banner -->
+  <div class="hero-banner">
+    <div class="hero-inner">
+      <div class="version-tag">Effective October 30, 2026</div>
+      <h1 class="hero-title">Terms and Conditions</h1>
+      <p class="hero-desc">Operated by Crescent Moon Consulting Services, Erode, Tamil Nadu, India. Please review these terms carefully before accessing or using the Kanavu Illam platform.</p>
+      <div class="meta-chips">
+        <span class="chip">Indian Contract Act, 1872</span>
+        <span class="chip">Erode Jurisdiction</span>
+        <span class="chip">Price: ₹500 / Project</span>
+        <span class="chip">IS 456 Conventions</span>
       </div>
     </div>
-
-    <!-- Quick Section Jump Bar -->
-    <nav class="jump-bar" aria-label="Section shortcuts">
-      <a href="#sec1" class="jump-pill">§1 Eligibility</a>
-      <a href="#sec2" class="jump-pill">§2 Services & Disclaimer</a>
-      <a href="#sec3" class="jump-pill">§3 Pricing & Refund</a>
-      <a href="#sec4" class="jump-pill">§4 IP License</a>
-      <a href="#sec5" class="jump-pill">§5 Liability Cap</a>
-      <a href="#sec6" class="jump-pill">§6 "As Is" Service</a>
-      <a href="#sec7" class="jump-pill">§7 Acceptable Use</a>
-      <a href="#sec8" class="jump-pill">§8 Jurisdiction</a>
-      <a href="#sec9" class="jump-pill">§9 Modifications</a>
-      <a href="#sec10" class="jump-pill">§10 Grievance</a>
-    </nav>
-
-    <!-- Main Content Card -->
-    <article class="content-card">
-      
-      <section id="sec1" class="terms-section">
-        <div class="section-title">
-          <span class="section-num">§ 1</span>
-          <h3>Eligibility & User Accounts</h3>
-        </div>
-        <p>You must be at least 18 years of age to enter into a legally binding contract under the Indian Contract Act, 1872. By using this service, you represent and warrant that you meet this age requirement. You are responsible for maintaining the confidentiality of your login credentials and for all activities that occur under your account.</p>
-      </section>
-
-      <section id="sec2" class="terms-section">
-        <div class="section-title">
-          <span class="section-num">§ 2</span>
-          <h3>Nature of Services & Computer-Vision Disclaimer</h3>
-        </div>
-        <p>Kanavu Illam provides automated architectural analysis tools, including 2D-to-3D parametric CAD modeling, traditional Tamil Vastu rule compliance scoring, and preliminary civil structural and cost estimations.</p>
-        <div class="highlight-card">
-          <strong>Important Accuracy Disclaimer:</strong> Floor plans are read automatically using computer-vision software (YOLO, OpenCV, and EasyOCR), which may misread labels, hand-drawn lines, walls, or dimensions. Users must manually verify all dimensions, room boundaries, and site orientations before relying on any output.
-        </div>
-        <ul>
-          <li><strong>Vastu Compliance:</strong> Vastu scoring follows traditional cultural rule systems and is provided purely for informational and cultural reference. It does not constitute licensed architectural design, civil engineering, or legal advice.</li>
-          <li><strong>Cost Estimations (BOQ):</strong> Material prices, labor costs, and rate breakdowns are indicative planning estimates based on regional benchmarks and may vary depending on local suppliers, site conditions, and market fluctuations.</li>
-          <li><strong>Structural Guidelines:</strong> Structural assessments and column/beam sizing are preliminary planning guidelines calculated based on commonly used Indian Standard planning formulas (such as IS 456 conventions). They do not substitute for on-site geotechnical soil testing, formal municipal building approvals, or certified drawings signed by a licensed structural engineer.</li>
-        </ul>
-      </section>
-
-      <section id="sec3" class="terms-section">
-        <div class="section-title">
-          <span class="section-num">§ 3</span>
-          <h3>Pricing, Deliverables & Refund Policy</h3>
-        </div>
-        <ul>
-          <li><strong>Pricing:</strong> Access to generate complete architectural deliverables is ₹500 per project upload (up to 3 floors), inclusive of applicable taxes, when premium deliverables are enabled.</li>
-          <li><strong>Payments:</strong> All transactions are processed securely through RBI-authorized payment aggregators (such as Razorpay). We do not store sensitive payment card details or UPI PINs on our servers.</li>
-          <li><strong>Computational Processing:</strong> Fees paid cover immediate computational server processing and customized PDF compilation. Once analysis has commenced and deliverables are generated, payments are generally non-refundable.</li>
-          <li><strong>Technical Failure & Manual Re-try Policy:</strong> In the event of a verified technical failure (such as a pipeline crash, system error, or failure to deliver the final PDF report), please contact <a href="mailto:support@kanavuillam.com">support@kanavuillam.com</a> within 7 days of purchase with your transaction Order ID. Upon verification, our support team will provide <strong>one manual re-processing of the same project</strong> at zero additional charge. If manual re-processing is also unable to generate your deliverables due to persistent system failure, a full refund of the amount paid for that transaction will be issued.</li>
-        </ul>
-      </section>
-
-      <section id="sec4" class="terms-section">
-        <div class="section-title">
-          <span class="section-num">§ 4</span>
-          <h3>Intellectual Property & Limited License</h3>
-        </div>
-        <p>Kanavu Illam Technologies retains all rights, title, and interest in and to the application, software, algorithms, 3D parametric viewer, branding, UI designs, and underlying code. Upon successful generation and payment, you are granted a perpetual, personal, non-exclusive license to view, download, print, and share your generated PDF report.</p>
-      </section>
-
-      <section id="sec5" class="terms-section">
-        <div class="section-title">
-          <span class="section-num">§ 5</span>
-          <h3>Limitation of Liability</h3>
-        </div>
-        <p>To the maximum extent permitted under applicable Indian law, Kanavu Illam Technologies, its founders, and employees shall not be liable for any indirect, incidental, punitive, or consequential damages, construction defects, contractor disputes, foundation settlement, structural damage, or cost overruns resulting from the use of or reliance on automated reports.</p>
-        <div class="highlight-card">
-          <strong>Liability Cap:</strong> In all circumstances, our maximum aggregate liability arising out of or related to your use of the application or reports shall be strictly capped at the amount actually paid by you for the specific service or transaction.
-        </div>
-      </section>
-
-      <section id="sec6" class="terms-section">
-        <div class="section-title">
-          <span class="section-num">§ 6</span>
-          <h3>Service Availability & "As Is" Disclaimer</h3>
-        </div>
-        <p>The application and its generated reports are provided on an "as is" and "as available" basis without warranties of any kind, either express or implied, including but not limited to warranties of fitness for a particular purpose or non-infringement. We do not warrant that the service will be uninterrupted, error-free, or compatible with all device configurations.</p>
-      </section>
-
-      <section id="sec7" class="terms-section">
-        <div class="section-title">
-          <span class="section-num">§ 7</span>
-          <h3>Termination & Acceptable Use</h3>
-        </div>
-        <p>You agree not to misuse the platform, reverse engineer the computer-vision algorithms, upload malicious or unlawful content, or attempt unauthorized access to our servers. We reserve the right to suspend or terminate accounts that violate these terms.</p>
-      </section>
-
-      <section id="sec8" class="terms-section">
-        <div class="section-title">
-          <span class="section-num">§ 8</span>
-          <h3>Governing Law & Jurisdiction</h3>
-        </div>
-        <p>These Terms shall be governed by and construed in accordance with the laws of the Republic of India. Any disputes, claims, or controversies arising out of or relating to these Terms or the use of the service shall be subject to the exclusive jurisdiction of the competent courts in Coimbatore, Tamil Nadu, India.</p>
-      </section>
-
-      <section id="sec9" class="terms-section">
-        <div class="section-title">
-          <span class="section-num">§ 9</span>
-          <h3>Changes to Terms</h3>
-        </div>
-        <p>We reserve the right to modify these Terms at any time. Any changes will be published on this page with an updated Effective Date. Continued use of the application following the posting of revised Terms constitutes your acceptance.</p>
-      </section>
-
-      <section id="sec10" class="terms-section">
-        <div class="section-title">
-          <span class="section-num">§ 10</span>
-          <h3>Contact Information & Grievance Redressal</h3>
-        </div>
-        <p>For questions or assistance regarding these terms:</p>
-        <ul>
-          <li><strong>Entity:</strong> Kanavu Illam Technologies</li>
-          <li><strong>Address:</strong> Kanavu Illam Technologies, Coimbatore, Tamil Nadu 641001, India</li>
-          <li><strong>Support Email:</strong> <a href="mailto:support@kanavuillam.com">support@kanavuillam.com</a></li>
-          <li><strong>Grievance Redressal:</strong> For legal complaints or data grievances under the IT Rules and DPDP Act, 2023, please refer to our Grievance Officer details set out in §9 of our <a href="privacy.html">Privacy Policy</a> (contact: <a href="mailto:grievance@kanavuillam.com">grievance@kanavuillam.com</a>).</li>
-        </ul>
-      </section>
-
-    </article>
-
-    <!-- Footer -->
-    <footer class="shell-footer">
-      <p>&copy; 2026 Kanavu Illam Technologies. All Rights Reserved.</p>
-      <p style="margin-top: 8px;">
-        <a href="terms.html">Terms & Conditions</a> &bull;
-        <a href="privacy.html">Privacy Policy</a> &bull;
-        <a href="delete-account.html">Request Account Deletion</a>
-      </p>
-    </footer>
-  </main>
-
-  <!-- Floating Capsule Navigation Bar (App Shell style) -->
-  <div class="capsule-nav-wrapper">
-    <nav class="capsule-nav" aria-label="Quick navigation">
-      <a href="terms.html" class="capsule-item active">
-        <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
-        <span>Terms</span>
-      </a>
-      <a href="privacy.html" class="capsule-item">
-        <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
-        <span>Privacy</span>
-      </a>
-      <a href="delete-account.html" class="capsule-item">
-        <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-        <span>Account</span>
-      </a>
-    </nav>
   </div>
+
+  <!-- Mobile Sticky Horizontal Jump Bar -->
+  <nav class="mobile-toc-bar" aria-label="Quick section navigation">
+    <a href="#sec1" class="mobile-toc-chip">1. Eligibility</a>
+    <a href="#sec2" class="mobile-toc-chip">2. The Service</a>
+    <a href="#sec3" class="mobile-toc-chip">3. Disclaimers</a>
+    <a href="#sec4" class="mobile-toc-chip">4. Pricing</a>
+    <a href="#sec5" class="mobile-toc-chip">5. Payments & Re-try</a>
+    <a href="#sec6" class="mobile-toc-chip">6. Deletion</a>
+    <a href="#sec7" class="mobile-toc-chip">7. Acceptable Use</a>
+    <a href="#sec8" class="mobile-toc-chip">8. IP & Licence</a>
+    <a href="#sec9" class="mobile-toc-chip">9. Third Parties</a>
+    <a href="#sec10" class="mobile-toc-chip">10. As Is</a>
+    <a href="#sec11" class="mobile-toc-chip">11. Liability Cap</a>
+    <a href="#sec12" class="mobile-toc-chip">12. Termination</a>
+    <a href="#sec13" class="mobile-toc-chip">13. Jurisdiction</a>
+    <a href="#sec14" class="mobile-toc-chip">14. Changes</a>
+    <a href="#sec15" class="mobile-toc-chip">15. General</a>
+    <a href="#sec16" class="mobile-toc-chip">16. Contact</a>
+  </nav>
+
+  <!-- Main Content Layout -->
+  <div class="portal-layout">
+    
+    <!-- Left Sticky Sidebar Table of Contents (Desktop) -->
+    <aside class="sidebar" aria-label="Table of contents">
+      <div class="sidebar-title">Terms Sections</div>
+      <ul class="toc-list" id="tocList">
+        <li class="toc-item active"><a href="#sec1"><span class="toc-num">1.</span> Acceptance & Eligibility</a></li>
+        <li class="toc-item"><a href="#sec2"><span class="toc-num">2.</span> Description of Service</a></li>
+        <li class="toc-item"><a href="#sec3"><span class="toc-num">3.</span> Accuracy & Disclaimers</a></li>
+        <li class="toc-item"><a href="#sec4"><span class="toc-num">4.</span> Pricing</a></li>
+        <li class="toc-item"><a href="#sec5"><span class="toc-num">5.</span> Payments & Free Re-try</a></li>
+        <li class="toc-item"><a href="#sec6"><span class="toc-num">6.</span> Account Deletion</a></li>
+        <li class="toc-item"><a href="#sec7"><span class="toc-num">7.</span> Acceptable Use Rules</a></li>
+        <li class="toc-item"><a href="#sec8"><span class="toc-num">8.</span> Intellectual Property</a></li>
+        <li class="toc-item"><a href="#sec9"><span class="toc-num">9.</span> Third-Party Services</a></li>
+        <li class="toc-item"><a href="#sec10"><span class="toc-num">10.</span> "As Is" Warranty Disclaimer</a></li>
+        <li class="toc-item"><a href="#sec11"><span class="toc-num">11.</span> Limitation of Liability</a></li>
+        <li class="toc-item"><a href="#sec12"><span class="toc-num">12.</span> Termination</a></li>
+        <li class="toc-item"><a href="#sec13"><span class="toc-num">13.</span> Governing Law & Disputes</a></li>
+        <li class="toc-item"><a href="#sec14"><span class="toc-num">14.</span> Changes to Terms</a></li>
+        <li class="toc-item"><a href="#sec15"><span class="toc-num">15.</span> General Provisions</a></li>
+        <li class="toc-item"><a href="#sec16"><span class="toc-num">16.</span> Contact & Grievances</a></li>
+      </ul>
+    </aside>
+
+    <!-- Right Document Card -->
+    <main class="document-card">
+
+      <section id="sec1" class="doc-section">
+        <div class="section-header">
+          <span class="sec-badge">1</span>
+          <h2>Acceptance and Eligibility</h2>
+        </div>
+        <p>By installing, accessing or using Kanavu Illam you agree to these Terms and to our Privacy Policy. If you do not agree, please do not use the Service. You must be at least 18 years old and able to enter a legally binding contract under the Indian Contract Act, 1872. You are responsible for keeping your login details safe and for everything done through your account.</p>
+      </section>
+
+      <section id="sec2" class="doc-section">
+        <div class="section-header">
+          <span class="sec-badge">2</span>
+          <h2>The Service</h2>
+        </div>
+        <p>Kanavu Illam offers automated architectural analysis tools: reading your 2D floor plan, building a 3D parametric model, traditional Tamil Vastu rule scoring, and preliminary structural and cost (bill of quantities) estimates, with a downloadable PDF report. The Service is a planning aid, not a professional engineering or architectural service.</p>
+      </section>
+
+      <section id="sec3" class="doc-section">
+        <div class="section-header">
+          <span class="sec-badge">3</span>
+          <h2>Accuracy and Professional Disclaimers</h2>
+        </div>
+        <ul>
+          <li><strong>Automatic plan reading:</strong> Floor plans are read by computer-vision software (YOLO, OpenCV and EasyOCR). It can misread labels, hand-drawn lines, walls or dimensions. You must check every dimension, room boundary and site orientation yourself before relying on any output.</li>
+          <li><strong>Vastu:</strong> Vastu scores follow traditional cultural rules and are given for information and cultural reference only. They are not architectural, engineering or legal advice.</li>
+          <li><strong>Cost estimates:</strong> Material prices, labour rates and totals are indicative planning figures. Real costs vary with suppliers, location, site conditions and the market. Live price and brand search results are indicative and may come from an automated language model.</li>
+          <li><strong>Structural guidance:</strong> Column, beam and footing suggestions are preliminary planning figures based on commonly used Indian Standard formulas (such as IS 456 conventions). They do not replace soil testing, municipal approvals, or drawings signed by a licensed structural engineer.</li>
+        </ul>
+        <div class="callout-box">
+          <strong>Important Building Notice:</strong> You must not build from the report alone. Always get a qualified, licensed professional structural engineer or architect to verify the design before on-site construction.
+        </div>
+      </section>
+
+      <section id="sec4" class="doc-section">
+        <div class="section-header">
+          <span class="sec-badge">4</span>
+          <h2>Pricing</h2>
+        </div>
+        <p>The price is <strong>₹500 per project upload (up to 3 floors)</strong>, inclusive of applicable taxes, shown to you before you pay. We may change the price for future purchases with notice in the app.</p>
+      </section>
+
+      <section id="sec5" class="doc-section">
+        <div class="section-header">
+          <span class="sec-badge">5</span>
+          <h2>Payments, Technical Failures and One Free Re-try</h2>
+        </div>
+        <ul>
+          <li><strong>Payments:</strong> Payments are processed by RBI-authorised payment aggregators (such as Razorpay). We do not store card details or UPI PINs.</li>
+          <li><strong>What you pay for:</strong> The fee covers server processing and PDF compilation of your project.</li>
+          <li><strong>Technical failure — one free re-try:</strong> If a verified technical failure stops your report from being generated or delivered (for example a processing crash, a blank or corrupt PDF, or no PDF received), email <a href="mailto:support@kanavuillam.in">support@kanavuillam.in</a> within 7 days of purchase with your Order ID. After verification we will re-process the same project once at no extra charge.</li>
+          <li><strong>Duplicate or wrong charges:</strong> If you are charged twice or charged an amount different from the price shown, contact us with your Order ID and we will review the charge.</li>
+        </ul>
+      </section>
+
+      <section id="sec6" class="doc-section">
+        <div class="section-header">
+          <span class="sec-badge">6</span>
+          <h2>Accounts and Account Deletion</h2>
+        </div>
+        <p>Provide accurate information and keep it up to date. You may delete your account at any time in the app (Profile → Delete Account) or through the verified web request described in the Privacy Policy Section 8. Deleting your account removes your data as explained there. Payment records are kept only as statutory law requires.</p>
+      </section>
+
+      <section id="sec7" class="doc-section">
+        <div class="section-header">
+          <span class="sec-badge">7</span>
+          <h2>Acceptable Use</h2>
+        </div>
+        <p>You agree not to: misuse or overload the Service; upload unlawful, malicious or infringing content, or files you have no right to upload; reverse engineer, scrape or copy our software, models or algorithms; try to access other users’ accounts or data; bypass payment, rate limits or security controls; or use the Service to harm anyone. We may suspend or end accounts that break these rules.</p>
+      </section>
+
+      <section id="sec8" class="doc-section">
+        <div class="section-header">
+          <span class="sec-badge">8</span>
+          <h2>Intellectual Property and Licence</h2>
+        </div>
+        <p>We own the app, software, algorithms, 3D viewer, branding, designs and code. You keep ownership of the floor plans you upload. You give us a limited permission to process them solely to provide the Service to you. When your report has been generated (and paid for), you receive a personal, non-exclusive, perpetual licence to view, download, print and share your PDF report for your own purposes.</p>
+      </section>
+
+      <section id="sec9" class="doc-section">
+        <div class="section-header">
+          <span class="sec-badge">9</span>
+          <h2>Third-Party Services</h2>
+        </div>
+        <p>The Service relies on third parties such as Supabase, Railway, Vercel, Google, OpenRouter and Razorpay. We are not responsible for outages or changes in their services, although we choose providers with care. Their own terms apply to their services.</p>
+      </section>
+
+      <section id="sec10" class="doc-section">
+        <div class="section-header">
+          <span class="sec-badge">10</span>
+          <h2>Service Availability and “As Is” Disclaimer</h2>
+        </div>
+        <p>The Service and its reports are provided “as is” and “as available”, without warranties of any kind, express or implied, including fitness for a particular purpose and non-infringement, to the extent the law allows. We do not promise the Service will be uninterrupted, error-free, or work on every device.</p>
+      </section>
+
+      <section id="sec11" class="doc-section">
+        <div class="section-header">
+          <span class="sec-badge">11</span>
+          <h2>Limitation of Liability</h2>
+        </div>
+        <p>To the maximum extent permitted by Indian law, Crescent Moon Consulting Services, its owners, directors and employees are not liable for indirect, incidental, special or consequential losses, including construction defects, contractor disputes, foundation or structural problems, or cost overruns that result from using or relying on automated reports.</p>
+        <p><strong>Liability Cap:</strong> Our total liability to you for any claim connected with the Service is strictly limited to the amount you actually paid us for the specific transaction the claim relates to.</p>
+        <p>Nothing in these Terms limits or excludes liability that cannot be limited or excluded by law, including liability for fraud, wilful misconduct, gross negligence, or death or personal injury caused by our negligence, or your rights under the Consumer Protection Act, 2019.</p>
+      </section>
+
+      <section id="sec12" class="doc-section">
+        <div class="section-header">
+          <span class="sec-badge">12</span>
+          <h2>Termination</h2>
+        </div>
+        <p>You can stop using the Service and delete your account at any time. We may suspend or end your access if you break these Terms, if required by law, or if we stop offering the Service. Sections that by their nature should continue (for example intellectual property, disclaimers, liability and governing law) will survive termination.</p>
+      </section>
+
+      <section id="sec13" class="doc-section">
+        <div class="section-header">
+          <span class="sec-badge">13</span>
+          <h2>Governing Law and Disputes</h2>
+        </div>
+        <p>These Terms are governed by the laws of India. Please write to us first at <a href="mailto:support@kanavuillam.in">support@kanavuillam.in</a> so we can try to settle any dispute informally within 30 days. If it is not settled, the courts at <strong>Erode, Tamil Nadu, India</strong> have exclusive jurisdiction, without affecting any right you have under consumer protection law to approach a consumer commission that has jurisdiction.</p>
+      </section>
+
+      <section id="sec14" class="doc-section">
+        <div class="section-header">
+          <span class="sec-badge">14</span>
+          <h2>Changes to These Terms</h2>
+        </div>
+        <p>We may update these Terms. We will post the new version with an updated Effective Date and, for material changes, notify you in the app or by email. Using the Service after the change means you accept it. If you do not agree, stop using the Service and delete your account.</p>
+      </section>
+
+      <section id="sec15" class="doc-section">
+        <div class="section-header">
+          <span class="sec-badge">15</span>
+          <h2>General</h2>
+        </div>
+        <p>If any part of these Terms is found unenforceable, the rest stays in force. These Terms and the Privacy Policy are the whole agreement between you and us about the Service. If we do not enforce a right immediately, that does not mean we give it up. You may not transfer your account or rights to anyone else.</p>
+      </section>
+
+      <section id="sec16" class="doc-section">
+        <div class="section-header">
+          <span class="sec-badge">16</span>
+          <h2>Contact and Grievances</h2>
+        </div>
+        <div class="callout-box">
+          • <strong>Entity (trade name):</strong> Crescent Moon Consulting Services (<a href="https://crescentmoon.ai" target="_blank" rel="noopener">https://crescentmoon.ai</a>)<br>
+          • <strong>Legal name (as registered for GST):</strong> Elamathi Ravindran<br>
+          • <strong>GSTIN:</strong> 33ADZPE8402C1ZP<br>
+          • <strong>Address:</strong> Corporation Ward-32, 134-B, Sengodampalayam, Perundurai Road, opposite Indian Public School, Thindal, Erode, Tamil Nadu 638012, India<br>
+          • <strong>Support email:</strong> <a href="mailto:support@kanavuillam.in">support@kanavuillam.in</a><br>
+          • <strong>Support phone:</strong> +91 75508 80429<br>
+          • <strong>Grievances about privacy, data or legal complaints:</strong> <a href="mailto:grievance@kanavuillam.in">grievance@kanavuillam.in</a> (Grievance Officer details are in Privacy Policy Section 13)
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Footer -->
+  <footer class="portal-footer">
+    <div class="footer-links">
+      <a href="terms.html">Terms & Conditions</a> &bull;
+      <a href="privacy.html">Privacy Policy</a> &bull;
+      <a href="delete-account.html">Request Account Deletion</a>
+    </div>
+    <p>&copy; 2026 Crescent Moon Consulting Services. All rights reserved.</p>
+  </footer>
+
+  <!-- Scrollspy script to highlight active TOC item -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const sections = document.querySelectorAll('section[id]');
+      const navItems = document.querySelectorAll('#tocList .toc-item');
+      const mobileChips = document.querySelectorAll('.mobile-toc-chip');
+
+      function onScroll() {
+        let current = '';
+        const scrollY = window.pageYOffset;
+        sections.forEach(sec => {
+          const sectionTop = sec.offsetTop - 140;
+          const sectionHeight = sec.offsetHeight;
+          if (scrollY >= sectionTop && scrollY < sectionTop + sectionHeight) {
+            current = sec.getAttribute('id');
+          }
+        });
+
+        navItems.forEach(item => {
+          const link = item.querySelector('a');
+          if (link.getAttribute('href') === '#' + current) {
+            item.classList.add('active');
+          } else {
+            item.classList.remove('active');
+          }
+        });
+
+        mobileChips.forEach(chip => {
+          if (chip.getAttribute('href') === '#' + current) {
+            chip.classList.add('active');
+            chip.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+          } else {
+            chip.classList.remove('active');
+          }
+        });
+      }
+
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+    });
+  </script>
 
 </body>
 </html>

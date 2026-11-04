@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brochure Page-by-Page Content Document</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #10141E;
+      --amber: #E58A18;
+      --amber-light: #FFF8EE;
+      --amber-border: #FCD34D;
+      --navy-card: #182030;
+      --slate-50: #F8FAFC;
+      --slate-100: #F1F5F9;
+      --slate-200: #E2E8F0;
+      --slate-600: #475569;
+      --slate-800: #1E293B;
+      --slate-900: #0F172A;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    @page {
+      size: A4 portrait;
+      margin: 15mm 18mm 15mm 18mm;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: var(--slate-800);
+      background: #FFFFFF;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    /* Page container */
+    .doc-page {
+      width: 100%;
+      min-height: 260mm;
+      max-height: 265mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      page-break-after: always;
+      break-after: page;
+      padding: 5mm 0;
+      position: relative;
+    }
+
+    .doc-page:last-child {
+      page-break-after: avoid;
+      break-after: avoid;
+    }
+
+    /* Header Bar on each page */
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px solid var(--slate-200);
+      padding-bottom: 10px;
+      margin-bottom: 24px;
+    }
+
+    .header-branding {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .logo-badge {
+      background: var(--amber);
+      color: #FFFFFF;
+      font-weight: 900;
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      letter-spacing: 0.5px;
+    }
+
+    .brand-name {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--slate-900);
+    }
+
+    .panel-meta {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--slate-600);
+      background: var(--slate-100);
+      padding: 3px 10px;
+      border-radius: 100px;
+    }
+
+    /* Main Content Area */
+    .content-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel-title-badge {
+      display: inline-block;
+      background: var(--amber-light);
+      border: 1px solid var(--amber-border);
+      color: #B45309;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 4px 12px;
+      border-radius: 6px;
+      margin-bottom: 14px;
+      align-self: flex-start;
+    }
+
+    .main-headline {
+      font-size: 26px;
+      font-weight: 900;
+      color: var(--slate-900);
+      line-height: 1.25;
+      letter-spacing: -0.5px;
+      margin-bottom: 12px;
+    }
+
+    .sub-headline {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--amber);
+      line-height: 1.4;
+      margin-bottom: 24px;
+    }
+
+    .lead-box {
+      background: var(--slate-50);
+      border-left: 4px solid var(--amber);
+      padding: 14px 18px;
+      border-radius: 0 8px 8px 0;
+      font-size: 13.5px;
+      color: var(--slate-800);
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+
+    /* Content Cards */
+    .section-block {
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--slate-900);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title::before {
+      content: '';
+      width: 4px;
+      height: 14px;
+      background: var(--amber);
+      border-radius: 2px;
+    }
+
+    .card-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .content-card {
+      background: #FFFFFF;
+      border: 1px solid var(--slate-200);
+      border-radius: 10px;
+      padding: 14px 16px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+
+    .card-header {
+      font-size: 13.5px;
+      font-weight: 800;
+      color: var(--slate-900);
+      margin-bottom: 4px;
+    }
+
+    .card-text {
+      font-size: 12.5px;
+      color: var(--slate-600);
+      line-height: 1.5;
+    }
+
+    ul.bullet-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    ul.bullet-list li {
+      position: relative;
+      padding-left: 20px;
+      font-size: 12.5px;
+      color: var(--slate-700);
+      line-height: 1.5;
+    }
+
+    ul.bullet-list li::before {
+      content: '•';
+      position: absolute;
+      left: 6px;
+      top: 0;
+      color: var(--amber);
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    /* Steps Display */
+    .step-box {
+      display: flex;
+      gap: 14px;
+      background: var(--slate-50);
+      border: 1px solid var(--slate-200);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+    }
+
+    .step-circle {
+      width: 32px;
+      height: 32px;
+      background: var(--amber);
+      color: #FFFFFF;
+      border-radius: 50%;
+      font-weight: 800;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .step-details h4 {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--slate-900);
+      margin-bottom: 4px;
+    }
+
+    .step-details p {
+      font-size: 12.5px;
+      color: var(--slate-600);
+    }
+
+    /* Highlighting Callout */
+    .highlight-card {
+      background: linear-gradient(135deg, #FFF9F2 0%, #FFF3E0 100%);
+      border: 1.5px solid var(--amber-border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .highlight-card h4 {
+      font-size: 13.5px;
+      font-weight: 800;
+      color: #9A3412;
+      margin-bottom: 6px;
+    }
+
+    .highlight-card p {
+      font-size: 12px;
+      color: #7C2D12;
+      line-height: 1.5;
+    }
+
+    /* Badges & Pills */
+    .pill-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .info-pill {
+      background: var(--slate-100);
+      border: 1px solid var(--slate-200);
+      padding: 5px 12px;
+      border-radius: 100px;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--slate-700);
+    }
+
+    .contact-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+
+    .contact-table td {
+      padding: 8px 12px;
+      font-size: 12.5px;
+      border-bottom: 1px solid var(--slate-200);
+    }
+
+    .contact-table td:first-child {
+      font-weight: 700;
+      color: var(--slate-900);
+      width: 32%;
+    }
+
+    .contact-table td:last-child {
+      color: var(--slate-600);
+    }
+
+    /* Footer Bar on each page */
+    .page-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--slate-200);
+      padding-top: 12px;
+      margin-top: 20px;
+      font-size: 10px;
+      color: #94A3B8;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========================================================================
+       PAGE 1: PANEL 1 - FRONT COVER (OUTER RIGHT)
+       ======================================================================== -->
+  <div class="doc-page">
+    <div class="page-header">
+      <div class="header-branding">
+        <span class="logo-badge">KI</span>
+        <span class="brand-name">Kanavu Illam — Brochure Content Dossier</span>
+      </div>
+      <span class="panel-meta">Panel 1 of 6</span>
+    </div>
+
+    <div class="content-body">
+      <div class="panel-title-badge">Panel 1: Front Cover (Outer Right)</div>
+      <h1 class="main-headline">Smarter Living Starts with Smart Planning</h1>
+      <h3 class="sub-headline">Design, evaluate, and estimate your dream home in minutes.</h3>
+
+      <div class="section-block">
+        <h4 class="section-title">Hero Visual & Caption</h4>
+        <div class="content-card" style="background: var(--slate-50); border: 1.5px dashed var(--amber);">
+          <div class="card-header" style="color: var(--amber);">Hero Visual Caption:</div>
+          <p class="card-text" style="font-size: 14px; font-weight: 700; color: var(--slate-900); margin-top: 4px;">
+            "AI-Powered Floor Plans & Vastu Analysis at Your Fingertips"
+          </p>
+        </div>
+      </div>
+
+      <div class="section-block">
+        <h4 class="section-title">Footer Badges</h4>
+        <div class="pill-group">
+          <span class="info-pill" style="background: #EFF6FF; border-color: #BFDBFE; color: #1E40AF;">📱 Available on Android & iOS</span>
+          <span class="info-pill" style="background: #ECFDF5; border-color: #A7F3D0; color: #065F46;">🔒 100% Secure & Localized</span>
+        </div>
+      </div>
+
+      <div class="highlight-card" style="margin-top: auto;">
+        <h4>Cover Placement Note</h4>
+        <p>This panel serves as the primary visual hook of the folded brochure. It greets homeowners with high-contrast architectural imagery and the core value proposition of instant planning.</p>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span>Kanavu Illam &bull; Official Tri-Fold Brochure Specification</span>
+      <span>Page 1 of 6</span>
+    </div>
+  </div>
+
+
+  <!-- ========================================================================
+       PAGE 2: PANEL 2 - THE INSIDE FLAP (OUTER LEFT)
+       ======================================================================== -->
+  <div class="doc-page">
+    <div class="page-header">
+      <div class="header-branding">
+        <span class="logo-badge">KI</span>
+        <span class="brand-name">Kanavu Illam — Brochure Content Dossier</span>
+      </div>
+      <span class="panel-meta">Panel 2 of 6</span>
+    </div>
+
+    <div class="content-body">
+      <div class="panel-title-badge">Panel 2: The Inside Flap (Outer Left)</div>
+      <h1 class="main-headline">Home Planning Made Simple, Accurate, and Stress-Free</h1>
+
+      <div class="lead-box">
+        <strong>Lead Paragraph:</strong><br>
+        Traditional planning takes weeks of back-and-forth, hidden costs, and design confusion. Our app puts professional architectural intelligence right in your pocket.
+      </div>
+
+      <div class="section-block">
+        <h4 class="section-title">Key Problems Solved</h4>
+        <div class="card-list">
+          <div class="content-card">
+            <div class="card-header">1. Zero Guesswork</div>
+            <div class="card-text">Generate compliant, dimensionally accurate 2D/3D layouts instantly.</div>
+          </div>
+          <div class="content-card">
+            <div class="card-header">2. Vastu Without Hassle</div>
+            <div class="card-text">Real-time alignment checks for rooms, entrances, and utilities.</div>
+          </div>
+          <div class="content-card">
+            <div class="card-header">3. Budget Clarity</div>
+            <div class="card-text">Reliable material and construction cost projections tailored to your location.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-block">
+        <h4 class="section-title">Target Audience Callout</h4>
+        <div class="pill-group">
+          <span class="info-pill">🏠 Homeowners</span>
+          <span class="info-pill">📐 Civil Engineers</span>
+          <span class="info-pill">🧱 Contractors</span>
+          <span class="info-pill">🏛️ Architects</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span>Kanavu Illam &bull; Official Tri-Fold Brochure Specification</span>
+      <span>Page 2 of 6</span>
+    </div>
+  </div>
+
+
+  <!-- ========================================================================
+       PAGE 3: PANEL 3 - BACK PANEL (OUTER CENTER)
+       ======================================================================== -->
+  <div class="doc-page">
+    <div class="page-header">
+      <div class="header-branding">
+        <span class="logo-badge">KI</span>
+        <span class="brand-name">Kanavu Illam — Brochure Content Dossier</span>
+      </div>
+      <span class="panel-meta">Panel 3 of 6</span>
+    </div>
+
+    <div class="content-body">
+      <div class="panel-title-badge">Panel 3: Back Panel (Outer Center)</div>
+      <h1 class="main-headline">Get Started Today</h1>
+      <h3 class="sub-headline">Scan the QR code to download the app and generate your first layout.</h3>
+
+      <div class="content-card" style="text-align: center; background: var(--slate-50); padding: 18px; margin-bottom: 20px;">
+        <div style="display: inline-block; background: #FFFFFF; padding: 10px; border-radius: 8px; border: 1px solid var(--slate-200); margin-bottom: 10px;">
+          <svg width="70" height="70" viewBox="0 0 24 24" fill="none" stroke="#10141E" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+        </div>
+        <div style="font-weight: 800; font-size: 13.5px; color: var(--amber);">
+          Call to Action: Scan to Download on Google Play & App Store
+        </div>
+      </div>
+
+      <div class="section-block">
+        <h4 class="section-title">Support & Contact Details</h4>
+        <table class="contact-table">
+          <tr>
+            <td>Email</td>
+            <td>support@kanavuillam.in (or support@yourdomain.com)</td>
+          </tr>
+          <tr>
+            <td>Phone / WhatsApp</td>
+            <td>+91 75508 80429 / +91 98765 43210</td>
+          </tr>
+          <tr>
+            <td>Website</td>
+            <td>www.kanavuillam.in / www.yourdomain.com</td>
+          </tr>
+          <tr>
+            <td>Office</td>
+            <td>Crescent Moon Consulting Services, Erode, Tamil Nadu</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="section-block" style="margin-top: 20px;">
+        <h4 class="section-title">Legal Footnote</h4>
+        <p style="font-size: 11.5px; color: #64748B; font-style: italic;">
+          &copy; 2026 All rights reserved. Designed and developed for modern construction workflows.
+        </p>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span>Kanavu Illam &bull; Official Tri-Fold Brochure Specification</span>
+      <span>Page 3 of 6</span>
+    </div>
+  </div>
+
+
+  <!-- ========================================================================
+       PAGE 4: PANEL 4 - INSIDE LEFT (CORE FEATURES)
+       ======================================================================== -->
+  <div class="doc-page">
+    <div class="page-header">
+      <div class="header-branding">
+        <span class="logo-badge">KI</span>
+        <span class="brand-name">Kanavu Illam — Brochure Content Dossier</span>
+      </div>
+      <span class="panel-meta">Panel 4 of 6</span>
+    </div>
+
+    <div class="content-body">
+      <div class="panel-title-badge">Panel 4: Inside Left (Core Features)</div>
+      <h1 class="main-headline">Intelligent Floor Plan Generation</h1>
+
+      <div class="card-list" style="margin-top: 10px;">
+        <!-- Feature 1 -->
+        <div class="content-card">
+          <div class="card-header" style="font-size: 15px; color: var(--amber);">Feature 1: Instant AI Layouts</div>
+          <ul class="bullet-list">
+            <li>Enter your plot dimensions, facing direction, and room requirements.</li>
+            <li>Receive optimized 1BHK, 2BHK, or multi-floor architectural options in seconds.</li>
+          </ul>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="content-card">
+          <div class="card-header" style="font-size: 15px; color: var(--amber);">Feature 2: Integrated Vastu Shastra Compliance</div>
+          <ul class="bullet-list">
+            <li>Automatic cardinal direction checks for kitchens, master bedrooms, and puja rooms.</li>
+            <li>Color-coded Vastu scores with clear correction recommendations.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="highlight-card">
+        <h4>Vastu Intelligence Details</h4>
+        <p>The system evaluates 8 energy zones (Agni, Nirudhi, Vayu, Eesanyam, etc.) and provides a quantitative score out of 100 with actionable architectural corrections.</p>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span>Kanavu Illam &bull; Official Tri-Fold Brochure Specification</span>
+      <span>Page 4 of 6</span>
+    </div>
+  </div>
+
+
+  <!-- ========================================================================
+       PAGE 5: PANEL 5 - INSIDE CENTER (HOW IT WORKS & COSTING)
+       ======================================================================== -->
+  <div class="doc-page">
+    <div class="page-header">
+      <div class="header-branding">
+        <span class="logo-badge">KI</span>
+        <span class="brand-name">Kanavu Illam — Brochure Content Dossier</span>
+      </div>
+      <span class="panel-meta">Panel 5 of 6</span>
+    </div>
+
+    <div class="content-body">
+      <div class="panel-title-badge">Panel 5: Inside Center (How It Works & Costing)</div>
+      <h1 class="main-headline">From Plot Dimensions to Cost Breakdown in 3 Steps</h1>
+
+      <div class="section-block">
+        <div class="step-box">
+          <div class="step-circle">1</div>
+          <div class="step-details">
+            <h4>Step 1: Input Specifications</h4>
+            <p>Enter plot area, road facing, setbacks, and family lifestyle needs.</p>
+          </div>
+        </div>
+
+        <div class="step-box">
+          <div class="step-circle">2</div>
+          <div class="step-details">
+            <h4>Step 2: Customize & Review</h4>
+            <p>Browse layouts, view room dimensions, and check 3D elevations.</p>
+          </div>
+        </div>
+
+        <div class="step-box">
+          <div class="step-circle">3</div>
+          <div class="step-details">
+            <h4>Step 3: Export & Build</h4>
+            <p>Download printable PDF blueprints and complete BOQ (Bill of Quantities) reports.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="highlight-card">
+        <h4>Highlight Feature: Localized Material Estimator</h4>
+        <p>Accurate tier-based pricing (Standard, Premium, Luxury) reflecting regional Tamil Nadu material and labor rates.</p>
+        <div class="pill-group" style="margin-top: 10px;">
+          <span class="info-pill" style="background:#FFF;">Standard: ~₹1,950/sqft</span>
+          <span class="info-pill" style="background:#FFF;">Premium: ~₹2,350/sqft</span>
+          <span class="info-pill" style="background:#FFF;">Luxury: ~₹2,850/sqft</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span>Kanavu Illam &bull; Official Tri-Fold Brochure Specification</span>
+      <span>Page 5 of 6</span>
+    </div>
+  </div>
+
+
+  <!-- ========================================================================
+       PAGE 6: PANEL 6 - INSIDE RIGHT (WHY CHOOSE US & DELIVERABLES)
+       ======================================================================== -->
+  <div class="doc-page">
+    <div class="page-header">
+      <div class="header-branding">
+        <span class="logo-badge">KI</span>
+        <span class="brand-name">Kanavu Illam — Brochure Content Dossier</span>
+      </div>
+      <span class="panel-meta">Panel 6 of 6</span>
+    </div>
+
+    <div class="content-body">
+      <div class="panel-title-badge">Panel 6: Inside Right (Why Choose Us & Deliverables)</div>
+      <h1 class="main-headline">Professional Blueprints in Your Pocket</h1>
+
+      <div class="section-block">
+        <h4 class="section-title">Key Advantages</h4>
+        <div class="card-list">
+          <div class="content-card">
+            <div class="card-header">Save Time & Fees</div>
+            <div class="card-text">Eliminate weeks of drafting delays before meeting contractors.</div>
+          </div>
+          <div class="content-card">
+            <div class="card-header">Export-Ready PDFs</div>
+            <div class="card-text">High-resolution plans ready for municipal approvals and site engineers.</div>
+          </div>
+          <div class="content-card">
+            <div class="card-header">Regional Precision</div>
+            <div class="card-text">Formatted specifically for South Indian plots, orientations, and construction standards.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="content-card" style="background: linear-gradient(135deg, #10141E 0%, #1A2232 100%); color: #FFFFFF; border: none; padding: 18px; margin-top: 15px;">
+        <h4 style="color: var(--amber); font-size: 12px; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px;">Closing Prompt:</h4>
+        <p style="font-size: 14px; font-weight: 700; line-height: 1.5; color: #F8FAFC;">
+          "Take control of your construction journey before breaking ground. Scan the back panel to begin!"
+        </p>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      <span>Kanavu Illam &bull; Official Tri-Fold Brochure Specification</span>
+      <span>Page 6 of 6</span>
+    </div>
+  </div>
+
+</body>
+</html>
+
