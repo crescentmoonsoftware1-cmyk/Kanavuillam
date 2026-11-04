@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -899,7 +900,7 @@ class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar>
     _activeTabIndex = _getTabIndex(widget.selectedIndex);
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 380),
+      duration: const Duration(milliseconds: 420),
     );
     _posAnim = Tween<double>(
       begin: _activeTabIndex.toDouble(),
@@ -954,8 +955,8 @@ class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar>
     final isDark = config.isDarkMode;
     final barColor = isDark ? const Color(0xFF131826) : Colors.white;
     final shadowColor = isDark
-        ? Colors.black.withValues(alpha: 0.40)
-        : Colors.black.withValues(alpha: 0.08);
+        ? Colors.black.withValues(alpha: 0.45)
+        : const Color(0x1A1B212F);
 
     final tabIcons = [
       Icons.history_rounded,
@@ -965,7 +966,7 @@ class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar>
 
     return SizedBox(
       width: double.infinity,
-      height: 68,
+      height: 70,
       child: AnimatedBuilder(
         animation: _controller,
         builder: (context, child) {
@@ -974,26 +975,28 @@ class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar>
               final w = constraints.maxWidth;
               const tabCount = 3;
               final tabWidth = w / tabCount;
-              final notchCenterX = (0.5 + _posAnim.value) * tabWidth;
+              final waveCenterX = (0.5 + _posAnim.value) * tabWidth;
+              // Fluid liquid morph stretch factor (peaks at mid-animation)
+              final stretchFactor = (math.sin(_controller.value * math.pi)).abs();
 
               return Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  // 1. Fluid Scooped Curved Background Painter
+                  // 1. Fluid Upward Wave Continuous Surface Painter (Reference Match)
                   Positioned.fill(
                     child: CustomPaint(
-                      painter: _ScoopedCurvedNavBarPainter(
-                        cx: notchCenterX,
+                      painter: _FluidUpwardWaveNavBarPainter(
+                        cx: waveCenterX,
                         color: barColor,
                         shadowColor: shadowColor,
+                        stretch: stretchFactor,
                       ),
                     ),
                   ),
 
-                  // 2. Tab Items Row (Resting Icons and Labels)
+                  // 2. Resting Icons Row
                   ...List.generate(tabCount, (i) {
                     final dist = (_posAnim.value - i).abs().clamp(0.0, 1.0);
-                    final isCurrentActive = i == _activeTabIndex;
 
                     return Positioned(
                       left: i * tabWidth,
@@ -1003,77 +1006,66 @@ class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar>
                       child: GestureDetector(
                         onTap: () => _animateToTab(i),
                         behavior: HitTestBehavior.opaque,
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            // Resting icon in the flat bar (fades out as notch approaches)
-                            Positioned(
-                              top: 21,
-                              child: Opacity(
-                                opacity: dist,
-                                child: Icon(
-                                  tabIcons[i],
-                                  size: 26,
-                                  color: isDark
-                                      ? const Color(0xFF94A3B8)
-                                      : const Color(0xFF2D3748),
-                                ),
+                        child: Center(
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Opacity(
+                              opacity: dist.clamp(0.0, 1.0),
+                              child: Icon(
+                                tabIcons[i],
+                                size: 25,
+                                color: isDark
+                                    ? const Color(0xFF94A3B8)
+                                    : const Color(0xFF64748B),
                               ),
                             ),
-
-                          ],
+                          ),
                         ),
                       ),
                     );
                   }),
 
-                  // 3. Sliding Floating Circular Active Button
+                  // 3. Fluid Wave Active Icon & Indicator Dot (Nested Inside the Wave)
                   Positioned(
-                    left: notchCenterX - 27,
-                    top: -16,
+                    left: waveCenterX - 24,
+                    top: -14,
+                    width: 48,
+                    height: 48,
                     child: GestureDetector(
                       onTap: () => _animateToTab(_activeTabIndex),
-                      child: Container(
-                        width: 54,
-                        height: 54,
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? const Color(0xFF1E293B)
-                              : Colors.white,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: isDark
-                                ? const Color(0xFFE58A18)
-                                : const Color(0xFF1E293B),
-                            width: 3.0,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.16),
-                              blurRadius: 14,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Center(
-                          child: AnimatedSwitcher(
+                      behavior: HitTestBehavior.opaque,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          AnimatedSwitcher(
                             duration: const Duration(milliseconds: 220),
                             transitionBuilder: (child, anim) =>
                                 ScaleTransition(scale: anim, child: child),
                             child: Icon(
                               tabIcons[_activeTabIndex],
                               key: ValueKey<int>(_activeTabIndex),
-                              size: 27,
+                              size: 26,
                               color: isDark
                                   ? const Color(0xFFE58A18)
-                                  : const Color(0xFF1E293B),
+                                  : const Color(0xFF1E252D),
                             ),
                           ),
-                        ),
+                          const SizedBox(height: 3),
+                          // Subtle Active Indicator Dot matching reference
+                          Container(
+                            width: 4,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isDark
+                                  ? const Color(0xFFE58A18)
+                                  : const Color(0xFF1E252D),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-
                 ],
               );
             },
@@ -1084,16 +1076,18 @@ class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar>
   }
 }
 
-/// Custom Painter creating the smooth dynamic sliding concave scoop (notch)
-class _ScoopedCurvedNavBarPainter extends CustomPainter {
+/// Custom Painter creating the smooth, seamless upward fluid wave (convex dome)
+class _FluidUpwardWaveNavBarPainter extends CustomPainter {
   final double cx;
   final Color color;
   final Color shadowColor;
+  final double stretch;
 
-  _ScoopedCurvedNavBarPainter({
+  _FluidUpwardWaveNavBarPainter({
     required this.cx,
     required this.color,
     required this.shadowColor,
+    this.stretch = 0.0,
   });
 
   @override
@@ -1101,58 +1095,51 @@ class _ScoopedCurvedNavBarPainter extends CustomPainter {
     final w = size.width;
     final h = size.height;
 
-    const cornerRadius = 26.0;
-    const notchRadius = 35.0;
-    const s = 14.0; // blend distance
+    const cornerRadius = 24.0;
+    const domeHeight = 22.0;
+    // Elastic horizontal stretching during transition
+    final domeRadius = 26.0 + (stretch * 6.0);
+    final s = 18.0 + (stretch * 4.0);
 
     final path = Path();
-    // Top-left start with rounded corner
     path.moveTo(0, cornerRadius);
     path.quadraticBezierTo(0, 0, cornerRadius, 0);
 
-    final notchStart = cx - notchRadius - s;
-    final notchEnd = cx + notchRadius + s;
+    final domeStart = cx - domeRadius - s;
+    final domeEnd = cx + domeRadius + s;
 
-    if (notchStart > cornerRadius) {
-      path.lineTo(notchStart, 0);
+    if (domeStart > cornerRadius) {
+      path.lineTo(domeStart, 0);
     }
 
-    // Smooth bezier curve down into the scoop
+    // Left upward smooth wave into the dome
     path.cubicTo(
-      cx - notchRadius, 0,
-      cx - notchRadius + 4, notchRadius * 0.70,
-      cx - notchRadius * 0.65, notchRadius * 0.92,
+      cx - domeRadius - (s * 0.40), 0,
+      cx - domeRadius * 0.70, -domeHeight,
+      cx, -domeHeight,
     );
 
-    // Bottom arc of the scoop
+    // Right downward smooth wave out of the dome
     path.cubicTo(
-      cx - notchRadius * 0.30, notchRadius * 1.05,
-      cx + notchRadius * 0.30, notchRadius * 1.05,
-      cx + notchRadius * 0.65, notchRadius * 0.92,
+      cx + domeRadius * 0.70, -domeHeight,
+      cx + domeRadius + (s * 0.40), 0,
+      domeEnd, 0,
     );
 
-    // Smooth bezier curve back up
-    path.cubicTo(
-      cx + notchRadius - 4, notchRadius * 0.70,
-      cx + notchRadius, 0,
-      notchEnd, 0,
-    );
-
-    if (notchEnd < w - cornerRadius) {
+    if (domeEnd < w - cornerRadius) {
       path.lineTo(w - cornerRadius, 0);
     }
     path.quadraticBezierTo(w, 0, w, cornerRadius);
 
-    // Right and bottom borders
     path.lineTo(w, h);
     path.lineTo(0, h);
     path.close();
 
-    // Soft drop shadow above the curved bar
+    // Ambient diffuse shadow behind the entire curved bar
     final shadowPaint = Paint()
       ..color = shadowColor
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14);
-    canvas.drawPath(path.shift(const Offset(0, -3)), shadowPaint);
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
+    canvas.drawPath(path.shift(const Offset(0, -2)), shadowPaint);
 
     // Solid surface fill
     final fillPaint = Paint()
@@ -1162,10 +1149,11 @@ class _ScoopedCurvedNavBarPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _ScoopedCurvedNavBarPainter oldDelegate) =>
+  bool shouldRepaint(covariant _FluidUpwardWaveNavBarPainter oldDelegate) =>
       oldDelegate.cx != cx ||
       oldDelegate.color != color ||
-      oldDelegate.shadowColor != shadowColor;
+      oldDelegate.shadowColor != shadowColor ||
+      oldDelegate.stretch != stretch;
 }
 
 class _EmptyState extends StatelessWidget {
