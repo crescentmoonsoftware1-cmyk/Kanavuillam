@@ -134,7 +134,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
                                     fontWeight: FontWeight.w500,
                                     color: secondaryTextColor,
                                   ),
-                                  maxLines: 1,
+                                  maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ],
@@ -223,52 +223,60 @@ class _DownloadScreenState extends State<DownloadScreen> {
                     ),
                     const SizedBox(height: 8),
 
-                    // ── 2. MAIN TABS (3D, Vastu, Cost, Structure, Download) ────────
+                    // ── 2. MAIN TABS (Fixed 5-Tab Bar, Fits All Devices) ───────────
                     SizedBox(
                       height: 34,
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        physics: const BouncingScrollPhysics(),
+                      child: Row(
                         children: [
-                          _buildMainTab(
-                            title: '3D',
-                            isActive: false,
-                            isDark: isDark,
-                            onTap: () {
-                              if (widget.onNavigateToTab != null) {
-                                widget.onNavigateToTab!(1);
-                              } else {
-                                widget.onNavigateTo3D?.call();
-                              }
-                            },
+                          Expanded(
+                            child: _buildMainTab(
+                              title: '3D',
+                              isActive: false,
+                              isDark: isDark,
+                              onTap: () {
+                                if (widget.onNavigateToTab != null) {
+                                  widget.onNavigateToTab!(1);
+                                } else {
+                                  widget.onNavigateTo3D?.call();
+                                }
+                              },
+                            ),
                           ),
-                          const SizedBox(width: 5),
-                          _buildMainTab(
-                            title: isTamil ? 'வாஸ்து' : 'Vastu',
-                            isActive: false,
-                            isDark: isDark,
-                            onTap: () => widget.onNavigateToTab?.call(2),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: _buildMainTab(
+                              title: isTamil ? 'வாஸ்து' : 'Vastu',
+                              isActive: false,
+                              isDark: isDark,
+                              onTap: () => widget.onNavigateToTab?.call(2),
+                            ),
                           ),
-                          const SizedBox(width: 5),
-                          _buildMainTab(
-                            title: isTamil ? 'செலவு' : 'Cost',
-                            isActive: false,
-                            isDark: isDark,
-                            onTap: () => widget.onNavigateToTab?.call(3),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: _buildMainTab(
+                              title: isTamil ? 'செலவு' : 'Cost',
+                              isActive: false,
+                              isDark: isDark,
+                              onTap: () => widget.onNavigateToTab?.call(3),
+                            ),
                           ),
-                          const SizedBox(width: 5),
-                          _buildMainTab(
-                            title: isTamil ? 'அமைப்பு' : 'Structure',
-                            isActive: false,
-                            isDark: isDark,
-                            onTap: () => widget.onNavigateToTab?.call(4),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: _buildMainTab(
+                              title: isTamil ? 'அமைப்பு' : 'Structure',
+                              isActive: false,
+                              isDark: isDark,
+                              onTap: () => widget.onNavigateToTab?.call(4),
+                            ),
                           ),
-                          const SizedBox(width: 5),
-                          _buildMainTab(
-                            title: isTamil ? 'பதிவிறக்கம்' : 'Download',
-                            isActive: true,
-                            isDark: isDark,
-                            onTap: () {},
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: _buildMainTab(
+                              title: isTamil ? 'அறிக்கை' : 'Download',
+                              isActive: true,
+                              isDark: isDark,
+                              onTap: () {},
+                            ),
                           ),
                         ],
                       ),
@@ -455,7 +463,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
                       subtitle: isTamil
                           ? 'முழுமையான 3D தள வடிவமைப்பு மற்றும் ஐசோமெட்ரிக் தோற்றம்'
                           : 'Photorealistic isometric views & multi-floor architecture',
-                      tag: isTamil ? 'உள்ளடக்கம்' : 'Included',
+                      tag: isTamil ? 'சேர்க்கப்பட்டது' : 'Included',
                       actionLabel: isTamil ? 'PDF' : 'PDF',
                       isLoading: _activeSingleDownload == '3D Perspective',
                       onDownload: () => _downloadSingle(
@@ -476,7 +484,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
                       subtitle: isTamil
                           ? 'அறை வாரியான திசைகள், வாஸ்து மதிப்பெண் மற்றும் பரிகாரங்கள்'
                           : 'Directional room scores, energy matrix & remedial guidance',
-                      tag: isTamil ? 'உள்ளடக்கம்' : 'Included',
+                      tag: isTamil ? 'சேர்க்கப்பட்டது' : 'Included',
                       actionLabel: isTamil ? 'PDF' : 'PDF',
                       isLoading: _activeSingleDownload == 'Vastu Analysis',
                       onDownload: () => _downloadSingle(
@@ -497,7 +505,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
                       subtitle: isTamil
                           ? 'பொருள் வாரியான செலவுகள், கூலி நிலைகள் மற்றும் நேரலை கட்டணங்கள்'
                           : 'Stage-wise estimates, civil labor & Tamil Nadu material rates',
-                      tag: isTamil ? 'உள்ளடக்கம்' : 'Included',
+                      tag: isTamil ? 'சேர்க்கப்பட்டது' : 'Included',
                       actionLabel: isTamil ? 'PDF' : 'PDF',
                       isLoading: _activeSingleDownload == 'Cost Estimation',
                       onDownload: () => _downloadSingle(
@@ -518,7 +526,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
                       subtitle: isTamil
                           ? 'தூண்கள், அடித்தளம், பீம்கள் விவரங்கள் மற்றும் IS:456 பாதுகாப்பு'
                           : 'Footings, columns, beams, bar bending & earthquake safety',
-                      tag: isTamil ? 'உள்ளடக்கம்' : 'Included',
+                      tag: isTamil ? 'சேர்க்கப்பட்டது' : 'Included',
                       actionLabel: isTamil ? 'PDF' : 'PDF',
                       isLoading: _activeSingleDownload == 'Structural Report',
                       onDownload: () => _downloadSingle(
@@ -554,7 +562,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: isActive
@@ -577,17 +585,20 @@ class _DownloadScreenState extends State<DownloadScreen> {
                 ]
               : null,
         ),
-        child: Text(
-          title,
-          maxLines: 1,
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 12.0,
-            fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
-            color: isActive
-                ? (isDark ? Colors.black : Colors.white)
-                : (isDark
-                    ? const Color(0xFFA1A1AA)
-                    : AppColors.inkMuted),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            title,
+            maxLines: 1,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 12.0,
+              fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
+              color: isActive
+                  ? (isDark ? Colors.black : Colors.white)
+                  : (isDark
+                      ? const Color(0xFFA1A1AA)
+                      : AppColors.inkMuted),
+            ),
           ),
         ),
       ),
@@ -641,7 +652,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
     required bool isDark,
   }) {
     return InkWell(
-      onTap: isLoading ? null : onDownload,
+      onTap: null,
       borderRadius: BorderRadius.circular(22),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -700,48 +711,38 @@ class _DownloadScreenState extends State<DownloadScreen> {
               ),
             ),
             const SizedBox(width: 8),
-            if (isLoading)
-              const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.2,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.amber),
-                ),
-              )
-            else
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? const Color(0xFF27272A)
-                      : AppColors.innerPanel,
-                  borderRadius: BorderRadius.circular(100),
-                  border: Border.all(
-                    color: isDark ? borderColor : AppColors.cardBorder,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      tag,
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? primaryTextColor : AppColors.inkPrimary,
-                      ),
-                    ),
-                    const SizedBox(width: 3),
-                    Icon(
-                      Icons.file_download_outlined,
-                      size: 13,
-                      color: isDark ? primaryTextColor : AppColors.inkPrimary,
-                    ),
-                  ],
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xFF27272A)
+                    : AppColors.innerPanel,
+                borderRadius: BorderRadius.circular(100),
+                border: Border.all(
+                  color: isDark ? borderColor : AppColors.cardBorder,
                 ),
               ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    tag,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? primaryTextColor : AppColors.inkPrimary,
+                    ),
+                  ),
+                  const SizedBox(width: 3),
+                  Icon(
+                    Icons.check_circle_rounded,
+                    size: 13,
+                    color: isDark ? const Color(0xFF10B981) : const Color(0xFF16A34A),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -1165,8 +1166,8 @@ class _DownloadScreenState extends State<DownloadScreen> {
       SnackBar(
         content: Text(msg),
         backgroundColor: isError
-            ? Colors.redAccent
-            : (isSuccess ? const Color(0xFF00C896) : Colors.black87),
+            ? AppColors.snackbarError
+            : (isSuccess ? AppColors.snackbarSuccess : Colors.black87),
         behavior: SnackBarBehavior.floating,
       ),
     );

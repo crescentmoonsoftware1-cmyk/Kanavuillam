@@ -294,46 +294,54 @@ class _StructuralScreenState extends State<StructuralScreen> {
                     ),
                     const SizedBox(height: 8),
 
-                    // ── 2. MAIN TABS (3D, Vastu, Cost, Structure, Download) ──
+                    // ── 2. MAIN TABS (Fixed 5-Tab Bar, Fits All Devices) ─────
                     SizedBox(
                       height: 34,
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        physics: const BouncingScrollPhysics(),
+                      child: Row(
                         children: [
-                          _buildMainTab(
-                            title: '3D',
-                            isActive: false,
-                            onTap: () => widget.onNavigateToTab?.call(1),
-                            isDark: isDark,
+                          Expanded(
+                            child: _buildMainTab(
+                              title: '3D',
+                              isActive: false,
+                              onTap: () => widget.onNavigateToTab?.call(1),
+                              isDark: isDark,
+                            ),
                           ),
-                          const SizedBox(width: 5),
-                          _buildMainTab(
-                            title: isTamil ? 'வாஸ்து' : 'Vastu',
-                            isActive: false,
-                            onTap: () => widget.onNavigateToTab?.call(2),
-                            isDark: isDark,
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: _buildMainTab(
+                              title: isTamil ? 'வாஸ்து' : 'Vastu',
+                              isActive: false,
+                              onTap: () => widget.onNavigateToTab?.call(2),
+                              isDark: isDark,
+                            ),
                           ),
-                          const SizedBox(width: 5),
-                          _buildMainTab(
-                            title: isTamil ? 'செலவு' : 'Cost',
-                            isActive: false,
-                            onTap: () => widget.onNavigateToTab?.call(3),
-                            isDark: isDark,
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: _buildMainTab(
+                              title: isTamil ? 'செலவு' : 'Cost',
+                              isActive: false,
+                              onTap: () => widget.onNavigateToTab?.call(3),
+                              isDark: isDark,
+                            ),
                           ),
-                          const SizedBox(width: 5),
-                          _buildMainTab(
-                            title: isTamil ? 'அமைப்பு' : 'Structure',
-                            isActive: true,
-                            onTap: () {},
-                            isDark: isDark,
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: _buildMainTab(
+                              title: isTamil ? 'அமைப்பு' : 'Structure',
+                              isActive: true,
+                              onTap: () {},
+                              isDark: isDark,
+                            ),
                           ),
-                          const SizedBox(width: 5),
-                          _buildMainTab(
-                            title: isTamil ? 'பதிவிறக்கம்' : 'Download',
-                            isActive: false,
-                            onTap: () => widget.onNavigateToTab?.call(5),
-                            isDark: isDark,
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: _buildMainTab(
+                              title: isTamil ? 'அறிக்கை' : 'Download',
+                              isActive: false,
+                              onTap: () => widget.onNavigateToTab?.call(5),
+                              isDark: isDark,
+                            ),
                           ),
                         ],
                       ),
@@ -618,7 +626,7 @@ class _StructuralScreenState extends State<StructuralScreen> {
     return GestureDetector(
       onTap: isActive ? null : onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
         decoration: BoxDecoration(
           color: isActive
               ? (isDark ? const Color(0xFFE58A18) : AppColors.inkDark)
@@ -639,14 +647,18 @@ class _StructuralScreenState extends State<StructuralScreen> {
               : null,
         ),
         alignment: Alignment.center,
-        child: Text(
-          title,
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: isActive
-                ? Colors.white
-                : (isDark ? const Color(0xFF94A3B8) : AppColors.inkMuted),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            title,
+            maxLines: 1,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: isActive
+                  ? Colors.white
+                  : (isDark ? const Color(0xFF94A3B8) : AppColors.inkMuted),
+            ),
           ),
         ),
       ),
@@ -668,19 +680,21 @@ class _StructuralScreenState extends State<StructuralScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              child: Text(
-                title,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 13,
-                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                  color: isActive
-                      ? (isDark ? Colors.white : const Color(0xFF0F172A))
-                      : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13,
+                    fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                    color: isActive
+                        ? (isDark ? Colors.white : const Color(0xFF0F172A))
+                        : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                  ),
+                  maxLines: 1,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
             ),
             Container(

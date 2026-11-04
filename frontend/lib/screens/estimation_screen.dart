@@ -83,7 +83,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
             }
           });
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            backgroundColor: AppColors.primary,
+            backgroundColor: AppColors.snackbarSuccess,
             behavior: SnackBarBehavior.floating,
             duration: const Duration(seconds: 2),
             shape:
@@ -140,7 +140,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
     });
 
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      backgroundColor: AppColors.primary,
+      backgroundColor: AppColors.snackbarSuccess,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       content: Text(
@@ -156,7 +156,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
       _addedCustomMaterials.clear();
     });
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      backgroundColor: AppColors.primary,
+      backgroundColor: AppColors.snackbarSuccess,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       content: const Text(
@@ -309,7 +309,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
                                     fontWeight: FontWeight.w500,
                                     color: isDark ? const Color(0xFF94A3B8) : AppColors.inkQuiet,
                                   ),
-                                  maxLines: 1,
+                                  maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ],
@@ -385,46 +385,54 @@ class _EstimationScreenState extends State<EstimationScreen> {
                     ),
                     const SizedBox(height: 8),
 
-                    // ── 2. MAIN TABS (3D, Vastu, Cost, Structure, Download) ──
+                    // ── 2. MAIN TABS (Fixed 5-Tab Bar, Fits All Devices) ─────
                     SizedBox(
                       height: 34,
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        physics: const BouncingScrollPhysics(),
+                      child: Row(
                         children: [
-                          _buildMainTab(
-                            title: '3D',
-                            isActive: false,
-                            isDark: isDark,
-                            onTap: () => widget.onNavigateToTab?.call(1),
+                          Expanded(
+                            child: _buildMainTab(
+                              title: '3D',
+                              isActive: false,
+                              isDark: isDark,
+                              onTap: () => widget.onNavigateToTab?.call(1),
+                            ),
                           ),
-                          const SizedBox(width: 5),
-                          _buildMainTab(
-                            title: isTamil ? 'வாஸ்து' : 'Vastu',
-                            isActive: false,
-                            isDark: isDark,
-                            onTap: () => widget.onNavigateToTab?.call(2),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: _buildMainTab(
+                              title: isTamil ? 'வாஸ்து' : 'Vastu',
+                              isActive: false,
+                              isDark: isDark,
+                              onTap: () => widget.onNavigateToTab?.call(2),
+                            ),
                           ),
-                          const SizedBox(width: 5),
-                          _buildMainTab(
-                            title: isTamil ? 'செலவு' : 'Cost',
-                            isActive: true,
-                            isDark: isDark,
-                            onTap: () {},
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: _buildMainTab(
+                              title: isTamil ? 'செலவு' : 'Cost',
+                              isActive: true,
+                              isDark: isDark,
+                              onTap: () {},
+                            ),
                           ),
-                          const SizedBox(width: 5),
-                          _buildMainTab(
-                            title: isTamil ? 'அமைப்பு' : 'Structure',
-                            isActive: false,
-                            isDark: isDark,
-                            onTap: () => widget.onNavigateToTab?.call(4),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: _buildMainTab(
+                              title: isTamil ? 'அமைப்பு' : 'Structure',
+                              isActive: false,
+                              isDark: isDark,
+                              onTap: () => widget.onNavigateToTab?.call(4),
+                            ),
                           ),
-                          const SizedBox(width: 5),
-                          _buildMainTab(
-                            title: isTamil ? 'பதிவிறக்கம்' : 'Download',
-                            isActive: false,
-                            isDark: isDark,
-                            onTap: () => widget.onNavigateToTab?.call(5),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: _buildMainTab(
+                              title: isTamil ? 'அறிக்கை' : 'Download',
+                              isActive: false,
+                              isDark: isDark,
+                              onTap: () => widget.onNavigateToTab?.call(5),
+                            ),
                           ),
                         ],
                       ),
@@ -745,7 +753,7 @@ class _EstimationScreenState extends State<EstimationScreen> {
     return GestureDetector(
       onTap: isActive ? null : onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
         decoration: BoxDecoration(
           color: isActive
               ? (isDark ? Colors.white : AppColors.inkDark)
@@ -766,14 +774,18 @@ class _EstimationScreenState extends State<EstimationScreen> {
               : null,
         ),
         alignment: Alignment.center,
-        child: Text(
-          title,
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: isActive
-                ? (isDark ? Colors.black : Colors.white)
-                : (isDark ? const Color(0xFF94A3B8) : AppColors.inkMuted),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            title,
+            maxLines: 1,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: isActive
+                  ? (isDark ? Colors.black : Colors.white)
+                  : (isDark ? const Color(0xFF94A3B8) : AppColors.inkMuted),
+            ),
           ),
         ),
       ),
@@ -795,19 +807,21 @@ class _EstimationScreenState extends State<EstimationScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              child: Text(
-                title,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 14,
-                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                  color: isActive
-                      ? (isDark ? Colors.white : const Color(0xFF0F172A))
-                      : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 14,
+                    fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                    color: isActive
+                        ? (isDark ? Colors.white : const Color(0xFF0F172A))
+                        : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                  ),
+                  maxLines: 1,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
             ),
             Container(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/theme/app_colors.dart';
 import 'package:image_picker/image_picker.dart';
 
 class DoorStyleOption {
@@ -142,7 +143,7 @@ class _DoorWindowSelectorWidgetState extends State<DoorWindowSelectorWidget>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('✓ Custom $category image uploaded successfully!'),
-          backgroundColor: const Color(0xFF2979FF),
+          backgroundColor: AppColors.snackbarSuccess,
         ));
       }
     }
@@ -255,7 +256,7 @@ class _DoorWindowSelectorWidgetState extends State<DoorWindowSelectorWidget>
               height: 48,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2979FF),
+                  backgroundColor: AppColors.snackbarSuccess,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),

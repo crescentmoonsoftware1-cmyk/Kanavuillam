@@ -105,14 +105,14 @@ class _SecurePaymentScreenState extends State<SecurePaymentScreen> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Promo Code Applied! 100% OFF for Reviewer Access.'),
-                    backgroundColor: Colors.green,
+                    backgroundColor: AppColors.snackbarSuccess,
                   ),
                 );
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Invalid Promo Code'),
-                    backgroundColor: Colors.red,
+                    backgroundColor: AppColors.snackbarError,
                   ),
                 );
               }
@@ -204,7 +204,7 @@ class _SecurePaymentScreenState extends State<SecurePaymentScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(cleanMsg),
-            backgroundColor: Colors.redAccent,
+            backgroundColor: AppColors.snackbarError,
             duration: const Duration(seconds: 4),
           ),
         );
@@ -240,7 +240,7 @@ class _SecurePaymentScreenState extends State<SecurePaymentScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Verification Notice: $cleanMsg'),
-            backgroundColor: Colors.redAccent,
+            backgroundColor: AppColors.snackbarError,
             duration: const Duration(seconds: 4),
           ),
         );
@@ -302,7 +302,7 @@ class _SecurePaymentScreenState extends State<SecurePaymentScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          config.tr('Review & Pay', 'சரிபார்த்து பணம் செலுத்தவும்'),
+          config.tr('Review & Pay', 'செலுத்துக'),
           style: GoogleFonts.syne(
             fontSize: 19,
             fontWeight: FontWeight.w600,

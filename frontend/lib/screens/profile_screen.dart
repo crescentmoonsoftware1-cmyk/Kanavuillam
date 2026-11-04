@@ -594,7 +594,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     'Your account and data have been permanently deleted.',
                                     'உங்கள் கணக்கு மற்றும் தரவுகள் நிரந்தரமாக நீக்கப்பட்டன.',
                                   )),
-                                  backgroundColor: const Color(0xFFEF4444),
+                                  backgroundColor: AppColors.snackbarError,
                                   behavior: SnackBarBehavior.floating,
                                   duration: const Duration(seconds: 4),
                                 ),
@@ -610,7 +610,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text('Failed to delete account: $e'),
-                                  backgroundColor: const Color(0xFFEF4444),
+                                  backgroundColor: AppColors.snackbarError,
                                   behavior: SnackBarBehavior.floating,
                                 ),
                               );
@@ -978,32 +978,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: iconBgColor ?? (isDark ? const Color(0xFF2E3744) : const Color(0xFFE9EEF4)),
-                        shape: BoxShape.circle,
+                Expanded(
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: iconBgColor ?? (isDark ? const Color(0xFF2E3744) : const Color(0xFFE9EEF4)),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          icon,
+                          size: 20,
+                          color: iconColor ?? (isDark ? Colors.white : const Color(0xFF364050)),
+                        ),
                       ),
-                      child: Icon(
-                        icon,
-                        size: 20,
-                        color: iconColor ?? (isDark ? Colors.white : const Color(0xFF364050)),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: titleColor ?? (isDark ? Colors.white : const Color(0xFF18191D)),
+                          ),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 14),
-                    Text(
-                      title,
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: titleColor ?? (isDark ? Colors.white : const Color(0xFF18191D)),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 12),
                 trailing,
               ],
             ),

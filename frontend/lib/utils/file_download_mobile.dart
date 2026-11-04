@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:printing/printing.dart';
+import '../core/theme/app_colors.dart';
 
 Future<bool> savePdfFile(
     BuildContext context, String filename, Uint8List bytes) async {
@@ -61,7 +62,7 @@ Future<bool> savePdfFile(
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('✓ Saved to Downloads: $filename'),
-          backgroundColor: const Color(0xFF00C896),
+          backgroundColor: AppColors.snackbarSuccess,
           behavior: SnackBarBehavior.floating,
           duration: const Duration(seconds: 8),
           action: SnackBarAction(
@@ -81,7 +82,7 @@ Future<bool> savePdfFile(
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Download error: $e'),
-          backgroundColor: Colors.redAccent,
+          backgroundColor: AppColors.snackbarError,
           behavior: SnackBarBehavior.floating,
         ),
       );

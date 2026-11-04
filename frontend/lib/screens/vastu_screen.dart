@@ -432,46 +432,54 @@ class _VastuScreenState extends State<VastuScreen> {
                         ),
                         const SizedBox(height: 8),
 
-                        // ── 2. MAIN TABS ROW (3D, Vastu, Cost, Structure, Download) ──
+                        // ── 2. MAIN TABS ROW (Fixed 5-Tab Bar, Fits All Devices) ─────
                         SizedBox(
                           height: 34,
-                          child: ListView(
-                            scrollDirection: Axis.horizontal,
-                            physics: const BouncingScrollPhysics(),
+                          child: Row(
                             children: [
-                              _buildMainTabChip(
-                                title: '3D',
-                                isActive: false,
-                                isDark: isDark,
-                                onTap: () => widget.onNavigateToTab?.call(1),
+                              Expanded(
+                                child: _buildMainTabChip(
+                                  title: '3D',
+                                  isActive: false,
+                                  isDark: isDark,
+                                  onTap: () => widget.onNavigateToTab?.call(1),
+                                ),
                               ),
-                              const SizedBox(width: 5),
-                              _buildMainTabChip(
-                                title: isTamil ? 'வாஸ்து' : 'Vastu',
-                                isActive: true,
-                                isDark: isDark,
-                                onTap: () {},
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: _buildMainTabChip(
+                                  title: isTamil ? 'வாஸ்து' : 'Vastu',
+                                  isActive: true,
+                                  isDark: isDark,
+                                  onTap: () {},
+                                ),
                               ),
-                              const SizedBox(width: 5),
-                              _buildMainTabChip(
-                                title: isTamil ? 'செலவு' : 'Cost',
-                                isActive: false,
-                                isDark: isDark,
-                                onTap: () => widget.onNavigateToTab?.call(3),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: _buildMainTabChip(
+                                  title: isTamil ? 'செலவு' : 'Cost',
+                                  isActive: false,
+                                  isDark: isDark,
+                                  onTap: () => widget.onNavigateToTab?.call(3),
+                                ),
                               ),
-                              const SizedBox(width: 5),
-                              _buildMainTabChip(
-                                title: isTamil ? 'அமைப்பு' : 'Structure',
-                                isActive: false,
-                                isDark: isDark,
-                                onTap: () => widget.onNavigateToTab?.call(4),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: _buildMainTabChip(
+                                  title: isTamil ? 'அமைப்பு' : 'Structure',
+                                  isActive: false,
+                                  isDark: isDark,
+                                  onTap: () => widget.onNavigateToTab?.call(4),
+                                ),
                               ),
-                              const SizedBox(width: 5),
-                              _buildMainTabChip(
-                                title: isTamil ? 'பதிவிறக்கம்' : 'Download',
-                                isActive: false,
-                                isDark: isDark,
-                                onTap: () => widget.onNavigateToTab?.call(5),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: _buildMainTabChip(
+                                  title: isTamil ? 'அறிக்கை' : 'Download',
+                                  isActive: false,
+                                  isDark: isDark,
+                                  onTap: () => widget.onNavigateToTab?.call(5),
+                                ),
                               ),
                             ],
                           ),
@@ -605,7 +613,7 @@ class _VastuScreenState extends State<VastuScreen> {
     return GestureDetector(
       onTap: isActive ? null : onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
         decoration: BoxDecoration(
           color: isActive
               ? (isDark ? Colors.white : AppColors.inkDark)
@@ -626,14 +634,18 @@ class _VastuScreenState extends State<VastuScreen> {
               : null,
         ),
         alignment: Alignment.center,
-        child: Text(
-          title,
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: isActive
-                ? (isDark ? Colors.black : Colors.white)
-                : (isDark ? const Color(0xFF94A3B8) : AppColors.inkMuted),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            title,
+            maxLines: 1,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: isActive
+                  ? (isDark ? Colors.black : Colors.white)
+                  : (isDark ? const Color(0xFF94A3B8) : AppColors.inkMuted),
+            ),
           ),
         ),
       ),

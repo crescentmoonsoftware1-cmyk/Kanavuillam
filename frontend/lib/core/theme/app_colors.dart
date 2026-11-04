@@ -51,9 +51,11 @@ class AppColors {
   static const Color heroTop = steelBinder; // #364050
   static const Color heroBottom = structuralSlate; // #1B212F
 
-  // ─── Status Colors ────────────────────────────────────────────────
+  // ─── Status & Notification Colors (Option 1: Architectural Slate & Burnt Ochre) ─
+  static const Color snackbarSuccess = structuralSlate; // #1B212F (Architectural Slate)
+  static const Color snackbarError = Color(0xFFC2410C); // #C2410C (Burnt Ochre)
   static const Color success = Color(0xFF16A34A);
-  static const Color error = Color(0xFFBA1A1A);
+  static const Color error = Color(0xFFC2410C); // #C2410C (Burnt Ochre)
   static const Color errorContainer = Color(0xFFFFDAD6);
   static const Color onErrorContainer = Color(0xFF93000A);
 
