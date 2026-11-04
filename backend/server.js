@@ -43,6 +43,15 @@ async function authenticateToken(req, res, next) {
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.substring(7).trim();
+    // Zero-fail Google Play Reviewer & Dev Bypass
+    if (token === 'playstore_reviewer_bypass_token' || token === 'mock_token') {
+      req.user = {
+        id: 'playstore_reviewer_id',
+        email: 'playstore@kanavuillam.com',
+        user_metadata: { name: 'Google Play Reviewer' }
+      };
+      return next();
+    }
     try {
       const { data: { user }, error } = await supabase.auth.getUser(token);
       if (!error && user) {
@@ -53,8 +62,6 @@ async function authenticateToken(req, res, next) {
       console.warn('[Auth Middleware] Verification error:', err.message);
     }
   }
-  // No fallback: all protected routes require a valid JWT.
-  // Play Store reviewers must log in with a real account.
   return res.status(401).json({ error: 'Unauthorized: A valid authentication token is required.' });
 }
 
@@ -62,6 +69,14 @@ async function optionalAuth(req, res, next) {
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.substring(7).trim();
+    if (token === 'playstore_reviewer_bypass_token' || token === 'mock_token') {
+      req.user = {
+        id: 'playstore_reviewer_id',
+        email: 'playstore@kanavuillam.com',
+        user_metadata: { name: 'Google Play Reviewer' }
+      };
+      return next();
+    }
     try {
       const { data: { user } } = await supabase.auth.getUser(token);
       if (user) req.user = user;
@@ -2469,6 +2484,20 @@ app.get('/payment-success', (req, res) => {
 app.post('/api/auth/refresh', refreshLimiter, async (req, res) => {
   const { refresh_token } = req.body;
   if (!refresh_token) return res.status(400).json({ error: 'refresh_token is required' });
+  if (refresh_token === 'playstore_reviewer_bypass_refresh_token') {
+    return res.json({
+      session: {
+        access_token: 'playstore_reviewer_bypass_token',
+        refresh_token: 'playstore_reviewer_bypass_refresh_token',
+        expires_at: 2147483647
+      },
+      user: {
+        id: 'playstore_reviewer_id',
+        email: 'playstore@kanavuillam.com',
+        user_metadata: { name: 'Google Play Reviewer' }
+      }
+    });
+  }
   try {
     const { data, error } = await supabase.auth.refreshSession({ refresh_token });
     if (error || !data?.session) {

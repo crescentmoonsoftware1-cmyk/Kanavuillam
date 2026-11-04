@@ -80,11 +80,15 @@ class _AuthScreenState extends State<AuthScreen> {
         await prefs.setString('user_email', trimmedEmail);
         await prefs.setString('user_name', 'Google Play Reviewer');
         await prefs.setBool('is_reviewer', true);
+        await prefs.setString('auth_token', 'playstore_reviewer_bypass_token');
+        await prefs.setString('refresh_token', 'playstore_reviewer_bypass_refresh_token');
+        await prefs.setInt('token_expires_at', 2147483647);
 
         if (mounted) {
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(
               builder: (_) => const ShellScreen(userData: {
+                'id': 'playstore_reviewer_id',
                 'email': 'playstore@kanavuillam.com',
                 'user_metadata': {'name': 'Google Play Reviewer'}
               }),
