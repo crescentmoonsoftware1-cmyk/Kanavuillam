@@ -811,15 +811,15 @@ class _AuthScreenState extends State<AuthScreen> {
                               ),
                             ),
 
-                            // Google Sign-In affirmative consent notice
+                            // Affirmative consent notice (Terms & Privacy Policy)
                             Padding(
-                              padding: const EdgeInsets.only(top: 12.0),
+                              padding: const EdgeInsets.only(top: 14.0),
                               child: Wrap(
                                 alignment: WrapAlignment.center,
                                 crossAxisAlignment: WrapCrossAlignment.center,
                                 children: [
                                   Text(
-                                    config.tr('By continuing with Google, you agree to our ', 'Google மூலம் தொடர்வதன் மூலம், நீங்கள் எங்களின் '),
+                                    config.tr('By continuing, you agree to our ', 'தொடர்வதன் மூலம், நீங்கள் எங்களின் '),
                                     style: GoogleFonts.plusJakartaSans(
                                       fontSize: 11.5,
                                       color: isDark ? const Color(0xFF94A3B8) : AppColors.quietGrey,

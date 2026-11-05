@@ -35,7 +35,7 @@ You may delete your account at any time in the app (Profile → Delete Account) 
 We may update these Terms by posting them with a new date. Continued use means acceptance.
 
 10. Governing Law and Disputes
-These Terms are governed by the laws of India. Please write to support@kanavuillam.in first so we can try to resolve the matter within 30 days. Otherwise, the courts at Erode, Tamil Nadu, India have exclusive jurisdiction, without affecting any right you have to approach a consumer commission. If any clause is unenforceable, the rest remains in force.
+These Terms are governed by the laws of India. Please write to support@kanavuillam.in first so we can try to resolve the matter within 30 days. Otherwise, the courts at Erode jurisdiction, Tamil Nadu, India have exclusive jurisdiction, without affecting any right you have to approach a consumer commission. If any clause is unenforceable, the rest remains in force.
 
 11. Contact
 Crescent Moon Consulting Services. Support: support@kanavuillam.in. Legal and grievances: grievance@kanavuillam.in. Phone: +91 75508 80429 (Mon–Sat, 10:00–18:00 IST).
