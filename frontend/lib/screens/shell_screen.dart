@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -108,7 +107,8 @@ class _ShellScreenState extends State<ShellScreen> {
               _selectedReportIds = {'3d', 'vastu', 'cost', 'structural'};
             }
           });
-          debugPrint('[ShellScreen] Restored last active project from phone storage');
+          debugPrint(
+              '[ShellScreen] Restored last active project from phone storage');
         }
       }
     } catch (e) {
@@ -358,7 +358,8 @@ class _ShellScreenState extends State<ShellScreen> {
                         });
                         // Wait for Flutter to mount ViewerScreen and attach GlobalKey
                         for (int i = 0; i < 40; i++) {
-                          await Future.delayed(const Duration(milliseconds: 100));
+                          await Future.delayed(
+                              const Duration(milliseconds: 100));
                           if (_viewerKey.currentState != null) break;
                         }
                       }
@@ -512,9 +513,8 @@ class _ShellScreenState extends State<ShellScreen> {
               style: GoogleFonts.inter(
                 fontSize: 13,
                 height: 1.45,
-                color: isDark
-                    ? const Color(0xFFA1A1AA)
-                    : const Color(0xFF64748B),
+                color:
+                    isDark ? const Color(0xFFA1A1AA) : const Color(0xFF64748B),
               ),
               textAlign: TextAlign.center,
             ),
@@ -665,7 +665,6 @@ class _ShellScreenState extends State<ShellScreen> {
                   ),
                 ),
               ),
-
             if (!_isGenerating &&
                 (_selectedIndex == 0 ||
                     _selectedIndex == 6 ||
@@ -918,7 +917,8 @@ class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar>
       vsync: this,
       duration: const Duration(milliseconds: 160),
     );
-    _buttonScaleAnim = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
+    _buttonScaleAnim =
+        Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
       parent: _buttonController,
       curve: Curves.easeOutBack,
     ));
@@ -982,9 +982,8 @@ class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar>
     final isDark = config.isDarkMode;
 
     final barColor = isDark ? const Color(0xFF1E293B) : Colors.white;
-    final shadowColor = isDark
-        ? Colors.black.withValues(alpha: 0.55)
-        : const Color(0x281B212F);
+    final shadowColor =
+        isDark ? Colors.black.withValues(alpha: 0.55) : const Color(0x281B212F);
 
     final tabIcons = [
       Icons.history_rounded,
@@ -1009,10 +1008,10 @@ class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar>
               final tabWidth = w / tabCount;
               final currentCx = (0.5 + _posAnim.value) * tabWidth;
 
-              final buttonBgColor = isDark ? const Color(0xFF283548) : Colors.white;
-              final activeIconColor = isDark
-                  ? const Color(0xFFE58A18)
-                  : const Color(0xFF1E293B);
+              final buttonBgColor =
+                  isDark ? const Color(0xFF283548) : Colors.white;
+              final activeIconColor =
+                  isDark ? const Color(0xFFE58A18) : const Color(0xFF1E293B);
 
               return Stack(
                 clipBehavior: Clip.none,
@@ -1032,8 +1031,10 @@ class _FloatingCapsuleNavBarState extends State<_FloatingCapsuleNavBar>
                   // 2. Inactive icons centered inside the bar
                   ...List.generate(tabCount, (i) {
                     final dist = (_posAnim.value - i).abs().clamp(0.0, 1.0);
-                    final buttonImpact = i == _activeTabIndex ? _buttonScaleAnim.value : 0.0;
-                    final iconOpacity = ((1.0 - buttonImpact) * dist).clamp(0.0, 1.0);
+                    final buttonImpact =
+                        i == _activeTabIndex ? _buttonScaleAnim.value : 0.0;
+                    final iconOpacity =
+                        ((1.0 - buttonImpact) * dist).clamp(0.0, 1.0);
 
                     return Positioned(
                       left: i * tabWidth,

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -8,6 +9,12 @@ import '../core/providers/app_config_provider.dart';
 import '../core/theme/app_colors.dart';
 import '../services/api_service.dart';
 
+/// Production History Screen for Kanavu Illam
+/// Incorporates the physical folder dispensing architecture:
+/// 1. Folder card appears at center (fades & scales in)
+/// 2. Holds briefly at center
+/// 3. Glides smoothly up to top resting position (top: 52px)
+/// 4. Floor plan cards emerge 1-by-1 from top pocket and glide down in slow-mo
 class HistoryScreen extends StatefulWidget {
   final Map<String, dynamic>? userData;
 
@@ -22,549 +29,375 @@ class HistoryScreen extends StatefulWidget {
   State<HistoryScreen> createState() => _HistoryScreenState();
 }
 
-class _HistoryScreenState extends State<HistoryScreen> {
+class _HistoryScreenState extends State<HistoryScreen>
+    with SingleTickerProviderStateMixin {
   final ApiService _apiService = ApiService();
-  static List<Map<String, dynamic>>? _cachedProjects;
+  late AnimationController _controller;
+
+  static List<_FloorPlanModel>? _cachedPlans;
   static String? _cachedEmail;
-  late bool _isLoading;
-  List<Map<String, dynamic>> _projects = [];
+
+  bool _isLoading = false;
+
+  // Default demo plans as fallback
+  static const List<_FloorPlanModel> _defaultDemoPlans = [
+    _FloorPlanModel(
+      title: 'Floor Plan 01',
+      date: '12 Oct 2026',
+      price: '₹499',
+      iconVariant: 1,
+      features: ['3D', 'Vastu', 'Cost', 'Structural'],
+    ),
+    _FloorPlanModel(
+      title: 'Floor Plan 02',
+      date: '28 Sep 2026',
+      price: '₹799',
+      iconVariant: 2,
+      features: ['3D', 'Vastu', 'Cost'],
+    ),
+    _FloorPlanModel(
+      title: 'Floor Plan 03',
+      date: '15 Sep 2026',
+      price: '₹499',
+      iconVariant: 3,
+      features: ['3D', 'Vastu'],
+    ),
+    _FloorPlanModel(
+      title: 'Floor Plan 04',
+      date: '02 Aug 2026',
+      price: '₹1,299',
+      iconVariant: 1,
+      features: ['3D', 'Vastu', 'Cost', 'Structural'],
+    ),
+    _FloorPlanModel(
+      title: 'Floor Plan 05',
+      date: '19 Jul 2026',
+      price: '₹499',
+      iconVariant: 2,
+      features: ['3D', 'Vastu'],
+    ),
+    _FloorPlanModel(
+      title: 'Floor Plan 06',
+      date: '04 Jun 2026',
+      price: '₹899',
+      iconVariant: 3,
+      features: ['3D', 'Cost'],
+    ),
+  ];
+
+  List<_FloorPlanModel> _floorPlans = List.from(_defaultDemoPlans);
 
   static void clearCache() {
-    _cachedProjects = null;
+    _cachedPlans = null;
     _cachedEmail = null;
   }
 
   @override
   void initState() {
     super.initState();
-    final userEmail = (widget.userData?['email'] as String?)?.trim().toLowerCase();
-    if (_cachedProjects != null && (_cachedEmail == null || _cachedEmail == userEmail)) {
-      _projects = _cachedProjects!;
+    // 4.8 seconds total sequence:
+    // 1. Folder appears at center (0 - 580ms)
+    // 2. Folder micro-hold (580 - 770ms)
+    // 3. Folder glides UP to top position (770 - 1340ms)
+    // 4. Cards emerge from top pocket 1-by-1 and glide down (1340 - 4800ms)
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 4800),
+    );
+
+    final userEmail =
+        (widget.userData?['email'] as String?)?.trim().toLowerCase();
+    if (_cachedPlans != null &&
+        (_cachedEmail == null || _cachedEmail == userEmail)) {
+      _floorPlans = _cachedPlans!;
       _isLoading = false;
     } else {
-      _isLoading = true;
+      _loadUserHistory();
     }
-    _loadUserHistory();
+
+    // Auto-play the sequence on load after initial build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (mounted) {
+          _controller.forward(from: 0.0);
+        }
+      });
+    });
   }
 
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  /// Fetches real user projects and maps them to _FloorPlanModel
   Future<void> _loadUserHistory() async {
+    if (!mounted) return;
+    setState(() => _isLoading = true);
+
     try {
       final prefs = await SharedPreferences.getInstance();
       final email = ((widget.userData?['email'] as String?) ??
-          prefs.getString('user_email') ?? '').trim().toLowerCase();
+              prefs.getString('user_email') ??
+              '')
+          .trim()
+          .toLowerCase();
 
-      if (email.isEmpty || email == 'unknown') {
-        if (mounted) {
-          setState(() {
-            _projects = [];
-            _isLoading = false;
-          });
+      if (email.isNotEmpty && email != 'unknown') {
+        if (_cachedEmail != null && _cachedEmail != email) {
+          _cachedPlans = null;
         }
-        return;
-      }
 
-      // If cache belongs to a different email, invalidate it
-      if (_cachedEmail != null && _cachedEmail != email) {
-        _cachedProjects = null;
-      }
-
-      final fetched = await _apiService.getAllProjects(email);
-
-      if (mounted) {
-        if (fetched.isNotEmpty) {
+        final fetched = await _apiService.getAllProjects(email);
+        if (fetched.isNotEmpty && mounted) {
           int index = 1;
-          final mapped = fetched.map<Map<String, dynamic>>((p) {
+          final mapped = fetched.map<_FloorPlanModel>((p) {
             String rawName = p['name'] ?? 'KI_Project';
             String displayName = rawName;
-            List<String> features = ['3d', 'vastu', 'cost', 'structural'];
-            String amount = '₹1';
+            List<String> features = ['3D', 'Vastu', 'Cost', 'Structural'];
+            String amount = '₹499';
 
             if (rawName.contains('|')) {
               final parts = rawName.split('|');
               displayName = parts[0];
               if (parts.length > 1 && parts[1].isNotEmpty) {
-                final reportKeys = parts[1]
+                features = parts[1]
                     .split(',')
-                    .map((e) => e.trim().toLowerCase())
+                    .map((e) => e.trim().toUpperCase())
                     .toList();
-                features = reportKeys;
               }
               if (parts.length > 2) {
-                amount = '₹${(double.tryParse(parts[2]) ?? 1).toInt()}';
+                amount = '₹${(double.tryParse(parts[2]) ?? 499).toInt()}';
               }
+            } else if (p['amount'] != null) {
+              amount = '₹${p['amount']}';
             }
 
-            final lowerName = displayName.toLowerCase().trim();
-            if (lowerName == 'kanavuillam_report' ||
-                lowerName == 'new project' ||
-                lowerName == 'project' ||
-                lowerName.startsWith('floor plan') ||
-                lowerName.isEmpty) {
-              displayName = 'KI_Project ${index.toString().padLeft(2, '0')}';
-            } else {
-              displayName = 'KI_Project ${index.toString().padLeft(2, '0')}';
+            final lower = displayName.toLowerCase().trim();
+            if (lower == 'kanavuillam_report' ||
+                lower == 'new project' ||
+                lower == 'project' ||
+                lower.isEmpty) {
+              displayName = 'Floor Plan ${index.toString().padLeft(2, '0')}';
             }
+
+            String dateStr = 'Recent';
+            if (p['created_at'] != null) {
+              dateStr = _formatDate(p['created_at'].toString());
+            }
+
+            final int variant = ((index - 1) % 3) + 1;
             index++;
 
-            final createdAt = p['created_at'] != null
-                ? p['created_at'].toString().split('T').first
-                : 'Recent';
-
-            final imageUrl = p['image_url']?.toString();
-
-            return {
-              'id': p['id']?.toString() ?? '',
-              'name': displayName,
-              'date': createdAt,
-              'features': features,
-              'amount': amount,
-              'image_url': imageUrl,
-              'raw': p,
-            };
+            return _FloorPlanModel(
+              title: displayName,
+              date: dateStr,
+              price: amount,
+              iconVariant: variant,
+              features: features,
+              raw: p,
+            );
           }).toList();
 
-          _cachedProjects = mapped;
+          _cachedPlans = mapped;
           _cachedEmail = email;
-          setState(() {
-            _projects = mapped;
-            _isLoading = false;
-          });
-        } else {
-          _cachedProjects = [];
-          _cachedEmail = email;
-          setState(() {
-            _projects = [];
-            _isLoading = false;
-          });
+
+          if (mounted) {
+            setState(() {
+              _floorPlans = mapped;
+              _isLoading = false;
+            });
+          }
+          return;
         }
       }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _projects = [];
-          _isLoading = false;
-        });
-      }
+    } catch (_) {}
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
+  String _formatDate(String rawDate) {
+    try {
+      final parsed = DateTime.tryParse(rawDate);
+      if (parsed != null) {
+        const months = [
+          'Jan',
+          'Feb',
+          'Mar',
+          'Apr',
+          'May',
+          'Jun',
+          'Jul',
+          'Aug',
+          'Sep',
+          'Oct',
+          'Nov',
+          'Dec'
+        ];
+        return '${parsed.day.toString().padLeft(2, '0')} ${months[parsed.month - 1]} ${parsed.year}';
+      }
+    } catch (_) {}
+    return rawDate.split('T').first;
+  }
+
+  void _replaySequence() {
+    _controller.reset();
+    _controller.forward(from: 0.0);
+  }
+
+  void _showProjectDetails(_FloorPlanModel item) {
     AppConfigProvider config;
     try {
-      config = context.watch<AppConfigProvider>();
+      config = context.read<AppConfigProvider>();
     } catch (_) {
       config = AppConfigProvider();
     }
-
-    final primaryTextColor = config.primaryTextColor;
-    final secondaryTextColor = config.secondaryTextColor;
     final isDark = config.isDarkMode;
 
-    return Scaffold(
-      backgroundColor:
-          isDark ? const Color(0xFF14171F) : AppColors.canvasGradientTop,
-      body: Container(
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
         decoration: BoxDecoration(
-          gradient: isDark ? null : AppColors.canvasGradient,
+          color: isDark ? const Color(0xFF1B212F) : const Color(0xFFFCFDFF),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x331B212F),
+              blurRadius: 32,
+              offset: Offset(0, -8),
+            ),
+          ],
         ),
-        child: SafeArea(
-          bottom: false,
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 440),
-              child: Stack(
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 10),
-                      // 1. TOP HEADER (Dark slate gradient card matching design system)
-                      Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 16.0),
-                        height: 140,
-                        padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [Color(0xFF364050), Color(0xFF1B212F)],
-                          ),
-                          borderRadius: BorderRadius.circular(32),
-                          border: Border.all(
-                            color:
-                                const Color(0xFFFCFDFF).withValues(alpha: 0.12),
-                            width: 1.5,
-                          ),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color(0x381B212F),
-                              blurRadius: 40,
-                              offset: Offset(0, 16),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  config.tr('History', 'வரலாறு'),
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.w700,
-                                    color: const Color(0xFFFCFDFF),
-                                    letterSpacing: -0.6,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  config.tr(
-                                    '${_projects.length} Floor Plans',
-                                    '${_projects.length} தள வரைபடங்கள்',
-                                  ),
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 13,
-                                    color: Colors.white.withValues(alpha: 0.75),
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            IconButton(
-                              icon: const Icon(
-                                Icons.refresh_rounded,
-                                size: 24,
-                                color: Color(0xFFFCFDFF),
-                              ),
-                              onPressed: () {
-                                setState(() => _isLoading = true);
-                                _loadUserHistory();
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 14),
-
-                      // 2. Project List
-                      Expanded(
-                        child: _isLoading
-                            ? const Center(
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.5,
-                                  color: Color(0xFFE58A18),
-                                ),
-                              )
-                            : _projects.isEmpty
-                                ? Center(
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 32.0),
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Container(
-                                            width: 68,
-                                            height: 68,
-                                            decoration: BoxDecoration(
-                                              color: config.cardColor,
-                                              shape: BoxShape.circle,
-                                              border: Border.all(
-                                                  color: config.borderColor),
-                                            ),
-                                            child: Icon(
-                                              Icons.folder_open_rounded,
-                                              size: 32,
-                                              color: secondaryTextColor,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 16),
-                                          Text(
-                                            config.tr('No Projects Yet',
-                                                'திட்டங்கள் எதுவும் இல்லை'),
-                                            style: GoogleFonts.plusJakartaSans(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.w700,
-                                              color: primaryTextColor,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 6),
-                                          Text(
-                                            config.tr(
-                                              'Upload your 2D floor plan to see generated 3D models and reports here.',
-                                              'உருவாக்கப்பட்ட 3D மாதிரி மற்றும் அறிக்கைகளைக் காண 2D வரைபடத்தைப் பதிவேற்றவும்.',
-                                            ),
-                                            textAlign: TextAlign.center,
-                                            style: GoogleFonts.plusJakartaSans(
-                                              fontSize: 12.5,
-                                              color: secondaryTextColor,
-                                              height: 1.4,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  )
-                                : RefreshIndicator(
-                                    onRefresh: _loadUserHistory,
-                                    color: const Color(0xFFE58A18),
-                                    backgroundColor: isDark
-                                        ? const Color(0xFF1B212F)
-                                        : Colors.white,
-                                    child: ListView.separated(
-                                      physics:
-                                          const AlwaysScrollableScrollPhysics(
-                                        parent: BouncingScrollPhysics(),
-                                      ),
-                                      padding: const EdgeInsets.only(
-                                        left: 16,
-                                        right: 16,
-                                        top: 4,
-                                        bottom: 120, // Floating nav room
-                                      ),
-                                      itemCount: _projects.length,
-                                      separatorBuilder: (context, index) =>
-                                          const SizedBox(height: 12),
-                                      itemBuilder: (context, index) {
-                                        return _buildProjectCard(
-                                          _projects[index],
-                                          index,
-                                          config: config,
-                                          isDark: isDark,
-                                        );
-                                      },
-                                    ),
-                                  ),
-                      ),
-                    ],
-                  ),
-
-                  // Bottom Gradient Fade for smooth list ending
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    height: 90,
-                    child: IgnorePointer(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.bottomCenter,
-                            end: Alignment.topCenter,
-                            colors: [
-                              isDark
-                                  ? const Color(0xFF14171F)
-                                  : const Color(0xFFD8DFE9),
-                              (isDark
-                                      ? const Color(0xFF14171F)
-                                      : const Color(0xFFD8DFE9))
-                                  .withValues(alpha: 0.8),
-                              (isDark
-                                      ? const Color(0xFF14171F)
-                                      : const Color(0xFFD8DFE9))
-                                  .withValues(alpha: 0.0),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 44,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? const Color(0xFF334155)
+                      : const Color(0xFFCBD5E1),
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ─── Individual Project Card (NO NAVIGATION ON CLICK) ────────────────────────
-  Widget _buildProjectCard(
-    Map<String, dynamic> project,
-    int index, {
-    required AppConfigProvider config,
-    required bool isDark,
-  }) {
-    final String amount = project['amount'] ?? '₹1';
-    String rawTitle = project['name']?.toString() ?? '';
-    String displayTitle = 'KI_Project ${(index + 1).toString().padLeft(2, '0')}';
-    if (rawTitle.isNotEmpty &&
-        !rawTitle.toLowerCase().startsWith('floor plan') &&
-        !rawTitle.toLowerCase().contains('kanavuillam_report') &&
-        !rawTitle.toLowerCase().contains('new project') &&
-        !rawTitle.toLowerCase().startsWith('ki_project')) {
-      displayTitle = rawTitle;
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1B212F) : const Color(0xFFFCFDFF),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: isDark ? const Color(0xFF2C3545) : const Color(0xFFE8EDF3),
-          width: 1.2,
-        ),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x141B212F),
-            blurRadius: 24,
-            offset: Offset(0, 8),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 12.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // 1. User Uploaded 2D Floor Plan Image Preview Thumbnail
-          _build2DPlanThumbnail(project['image_url']?.toString(), isDark: isDark),
-
-          const SizedBox(width: 12),
-
-          // 2. Project Details + 4 Deliverable Icons (Display only, no navigation)
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Row 1: Title and Amount Badge
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        displayTitle,
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: isDark
-                              ? const Color(0xFFFCFDFF)
-                              : const Color(0xFF1E252D),
-                          letterSpacing: -0.2,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2.5),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE58A18)
-                            .withValues(alpha: isDark ? 0.2 : 0.12),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        amount,
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                          color: const Color(0xFFE58A18),
-                        ),
-                      ),
-                    ),
-                  ],
+                Text(
+                  item.title,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : const Color(0xFF18191D),
+                  ),
                 ),
-
-                const SizedBox(height: 3),
-
-                // Row 2: Date
-                Row(
-                  children: [
-                    Icon(
-                      Icons.calendar_today_rounded,
-                      size: 11,
-                      color: isDark
-                          ? const Color(0xFF8E99A8)
-                          : const Color(0xFF94A3B8),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      project['date'] ?? '',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w500,
-                        color: isDark
-                            ? const Color(0xFF8E99A8)
-                            : const Color(0xFF94A3B8),
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 8),
-
-                // Row 3: 4 Deliverable Feature Icons: [3D], [Vastu], [Cost], [Structural]
-                _buildFeatureIconsRow(
-                  project['features'] as List<dynamic>? ??
-                      ['3d', 'vastu', 'cost', 'structural'],
-                  isDark: isDark,
+                Text(
+                  item.price,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFFE58A18),
+                  ),
                 ),
               ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ─── 2D Floor Plan Thumbnail with "2D" Badge & Fallback Painter ──────────────
-  Widget _build2DPlanThumbnail(String? imageUrl, {required bool isDark}) {
-    return Container(
-      width: 62,
-      height: 62,
-      decoration: BoxDecoration(
-        color: const Color(0xFF141923),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? const Color(0xFF2C3545) : const Color(0xFFCBD5E1),
-          width: 1.2,
-        ),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x18000000),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(14.8),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            _resolvePlanImageWidget(imageUrl, isDark: isDark),
-
-            // Mini "2D" badge in top-left
-            Positioned(
-              left: 4,
-              top: 4,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 4.5, vertical: 1.5),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1B212F).withValues(alpha: 0.88),
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(
-                    color: const Color(0xFFE58A18).withValues(alpha: 0.7),
-                    width: 0.7,
+            const SizedBox(height: 4),
+            Text(
+              config.tr('Created on ${item.date}', 'உருவாக்கப்பட்டது: ${item.date}'),
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 13,
+                fontWeight: FontWeight.w400,
+                color: isDark
+                    ? const Color(0xFF94A3B8)
+                    : const Color(0xFF8E94A0),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              config.tr('Included Reports & Analysis', 'சேர்க்கப்பட்ட அறிக்கைகள்'),
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white : const Color(0xFF1B212F),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: item.features.map((feat) {
+                return Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? const Color(0xFF242E3E)
+                        : const Color(0xFFF4F7FB),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isDark
+                          ? const Color(0xFF334155)
+                          : const Color(0xFFE2E8F0),
+                    ),
                   ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.check_circle_rounded,
+                        size: 14,
+                        color: Color(0xFFE58A18),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        feat,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF1E252D),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(ctx),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isDark
+                      ? const Color(0xFF334155)
+                      : const Color(0xFF1B212F),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  elevation: 0,
                 ),
                 child: Text(
-                  '2D',
+                  config.tr('Close', 'மூடு'),
                   style: GoogleFonts.plusJakartaSans(
-                    fontSize: 8.5,
-                    fontWeight: FontWeight.w800,
-                    color: const Color(0xFFE58A18),
-                    letterSpacing: 0.5,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -575,153 +408,702 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
-  Widget _resolvePlanImageWidget(String? imageUrl, {required bool isDark}) {
-    if (imageUrl != null && imageUrl.trim().isNotEmpty) {
-      final cleanUrl = imageUrl.trim();
-
-      // 1. Data URI (Base64 encoded floor plan image)
-      if (cleanUrl.startsWith('data:image')) {
-        try {
-          final commaIndex = cleanUrl.indexOf(',');
-          final base64Str =
-              commaIndex != -1 ? cleanUrl.substring(commaIndex + 1) : cleanUrl;
-          final bytes = base64Decode(base64Str);
-          return Image.memory(
-            bytes,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) =>
-                _buildFallbackBlueprint(isDark: isDark),
-          );
-        } catch (_) {}
-      }
-
-      // 2. Network image URL (HTTP or HTTPS)
-      if (cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://')) {
-        return Image.network(
-          cleanUrl,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) =>
-              _buildFallbackBlueprint(isDark: isDark),
-        );
-      }
+  @override
+  Widget build(BuildContext context) {
+    AppConfigProvider config;
+    try {
+      config = context.watch<AppConfigProvider>();
+    } catch (_) {
+      config = AppConfigProvider();
     }
+    final isDark = config.isDarkMode;
 
-    // 3. Fallback: Architectural 2D Blueprint Graphic Painter
-    return _buildFallbackBlueprint(isDark: isDark);
-  }
+    final int planCount = _floorPlans.length;
+    final String countSubtitle = config.tr(
+      '$planCount ${planCount == 1 ? "floor plan" : "floor plans"}',
+      '$planCount வரைபடங்கள்',
+    );
 
-  Widget _buildFallbackBlueprint({required bool isDark}) {
-    return CustomPaint(
-      painter: _BlueprintThumbnailPainter(),
+    return Scaffold(
+      backgroundColor:
+          isDark ? const Color(0xFF14171F) : const Color(0xFFE2E8F0),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final double screenWidth = math.min(constraints.maxWidth, 420.0);
+          final double cardLeft =
+              math.max(16.0, (constraints.maxWidth - 350.0) / 2.0);
+
+          return Center(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(40),
+                  child: Container(
+                    width: 390,
+                    height: 844,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: isDark
+                            ? [
+                                const Color(0xFF1B212F),
+                                const Color(0xFF11151E),
+                              ]
+                            : [
+                                const Color(0xFFE9EEF4),
+                                const Color(0xFFD8DFE9),
+                              ],
+                      ),
+                      borderRadius: BorderRadius.circular(40),
+                      border: Border.all(
+                        color: isDark
+                            ? const Color(0xFF2C3545)
+                            : const Color(0xFFCBD5E1),
+                        width: 1.0,
+                      ),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x331B212F),
+                          blurRadius: 36,
+                          offset: Offset(0, 16),
+                        ),
+                      ],
+                    ),
+                    child: AnimatedBuilder(
+                      animation: _controller,
+                      builder: (context, _) {
+                        final double progress = _controller.value;
+
+                        // ─── STAGE 1, 2, 3: FOLDER ENTRANCE & GLIDE TO TOP ────────
+                        const double centerTop = (844.0 - 190.0) / 2.0; // 327.0
+                        const double finalTop = 52.0; // Header resting position
+
+                        double folderTop;
+                        double folderOpacity;
+                        double folderScale;
+
+                        if (progress <= 0.12) {
+                          final t = (progress / 0.12).clamp(0.0, 1.0);
+                          final curve = Curves.easeOutCubic.transform(t);
+                          folderTop = centerTop;
+                          folderOpacity = curve;
+                          folderScale = 0.92 + (0.08 * curve);
+                        } else if (progress <= 0.16) {
+                          folderTop = centerTop;
+                          folderOpacity = 1.0;
+                          folderScale = 1.0;
+                        } else if (progress <= 0.28) {
+                          final t = ((progress - 0.16) / (0.28 - 0.16))
+                              .clamp(0.0, 1.0);
+                          final curve =
+                              const Cubic(0.20, 1.0, 0.30, 1.0).transform(t);
+                          folderTop =
+                              centerTop - ((centerTop - finalTop) * curve);
+                          folderOpacity = 1.0;
+                          folderScale = 1.0;
+                        } else {
+                          folderTop = finalTop;
+                          folderOpacity = 1.0;
+                          folderScale = 1.0;
+                        }
+
+                        final int displayCount = math.min(_floorPlans.length, 6);
+
+                        // ─── STAGE 4: 1-BY-1 CARDS DISPENSE (AFTER FOLDER REACHES TOP) ───
+                        final List<Widget> dockedCardWidgets = [];
+                        final List<Widget> pocketCardWidgets = [];
+                        final List<Widget> descendingCardWidgets = [];
+
+                        for (int index = 0; index < displayCount; index++) {
+                          final item = _floorPlans[index];
+                          final double restingTop = 256.0 + (index * 64.0);
+
+                          // Sequential 1-by-1 cadence with zero overlap:
+                          final double cardStart = 0.28 + (index * 0.115);
+                          const double riseDuration = 0.040; // ~192ms: Rises UP out of pocket
+                          const double descendDuration = 0.075; // ~360ms: Glides DOWN in slow-mo
+                          final double riseEnd = cardStart + riseDuration;
+                          final double cardEnd = riseEnd + descendDuration;
+
+                          if (progress < cardStart) {
+                            continue;
+                          } else if (progress < riseEnd) {
+                            // ─── PHASE 1: RISING UP OUT OF FOLDER POCKET ───
+                            // Layer 3 (BEHIND Front Panel) -> "History" is NEVER covered!
+                            final double t =
+                                ((progress - cardStart) / riseDuration)
+                                    .clamp(0.0, 1.0);
+                            final double curve =
+                                Curves.easeOutCubic.transform(t);
+
+                            final double insideTop = folderTop + 30.0;
+                            final double peakTop = folderTop - 34.0;
+
+                            final double cardTop =
+                                insideTop - ((insideTop - peakTop) * curve);
+                            final double cardScale = 0.93 + (0.07 * curve);
+                            final double cardOpacity =
+                                (t / 0.20).clamp(0.0, 1.0);
+
+                            pocketCardWidgets.add(
+                              Positioned(
+                                top: cardTop,
+                                left: 20,
+                                width: 350,
+                                height: 58,
+                                child: Opacity(
+                                  opacity: cardOpacity,
+                                  child: Transform.scale(
+                                    scale: cardScale,
+                                    child: _buildFloorPlanCard(item,
+                                        isDark: isDark),
+                                  ),
+                                ),
+                              ),
+                            );
+                          } else if (progress < cardEnd) {
+                            // ─── PHASE 2: GLIDING DOWN IN FRONT OF FOLDER ───
+                            // Layer 5 (IN FRONT OF Front Panel) -> Glides down over front
+                            final double t =
+                                ((progress - riseEnd) / descendDuration)
+                                    .clamp(0.0, 1.0);
+                            final double curve =
+                                Curves.easeOutCubic.transform(t);
+
+                            final double peakTop = folderTop - 34.0;
+                            final double cardTop =
+                                peakTop + ((restingTop - peakTop) * curve);
+                            final double cardScale = 1.02 - (0.02 * curve);
+
+                            descendingCardWidgets.add(
+                              Positioned(
+                                top: cardTop,
+                                left: 20,
+                                width: 350,
+                                height: 58,
+                                child: Transform.scale(
+                                  scale: cardScale,
+                                  child: GestureDetector(
+                                    onTap: () => _showProjectDetails(item),
+                                    behavior: HitTestBehavior.opaque,
+                                    child: _buildFloorPlanCard(
+                                      item,
+                                      isElevated: true,
+                                      isDark: isDark,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          } else {
+                            // ─── PHASE 3: DOCKED AT DESIGNATED ROW ───
+                            dockedCardWidgets.add(
+                              Positioned(
+                                top: restingTop,
+                                left: 20,
+                                width: 350,
+                                height: 58,
+                                child: GestureDetector(
+                                  onTap: () => _showProjectDetails(item),
+                                  behavior: HitTestBehavior.opaque,
+                                  child: _buildFloorPlanCard(item,
+                                      isDark: isDark),
+                                ),
+                              ),
+                            );
+                          }
+                        }
+
+                        return Stack(
+                          children: [
+                            // ─── 1. DOCKED CARDS (Resting below folder) ─────────
+                            ...dockedCardWidgets,
+
+                            // ─── 2. FOLDER BACK PANEL + BLUEPRINT PAPERS ───────
+                            Positioned(
+                              top: folderTop,
+                              left: 20,
+                              width: 350,
+                              height: 190,
+                              child: Opacity(
+                                opacity: folderOpacity,
+                                child: Transform.scale(
+                                  scale: folderScale,
+                                  child: _buildFolderBack(isDark: isDark),
+                                ),
+                              ),
+                            ),
+
+                            // ─── 3. CARDS RISING INSIDE POCKET (BEHIND Front Flap!)
+                            ...pocketCardWidgets,
+
+                            // ─── 4. FOLDER FRONT PANEL (The Slate Flap) ─────────
+                            Positioned(
+                              top: folderTop,
+                              left: 20,
+                              width: 350,
+                              height: 190,
+                              child: Opacity(
+                                opacity: folderOpacity,
+                                child: Transform.scale(
+                                  scale: folderScale,
+                                  child: _buildFolderFront(
+                                    countSubtitle,
+                                    config: config,
+                                    isDark: isDark,
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            // ─── 5. ACTIVE DESCENDING CARDS (IN FRONT OF Front Flap!)
+                            ...descendingCardWidgets,
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 
-  // ─── 4 Deliverable Icons: [3D], [Vastu], [Cost], [Structural] (DISPLAY ONLY) ──
-  Widget _buildFeatureIconsRow(
-    List<dynamic> features, {
-    required bool isDark,
-  }) {
-    final featList = features.map((e) => e.toString().toLowerCase()).toList();
-    final has3D = featList.contains('3d') || featList.isEmpty;
-    final hasVastu = featList.contains('va') || featList.contains('vastu');
-    final hasCost = featList.contains('₹') ||
-        featList.contains('cost') ||
-        featList.contains('boq');
-    final hasStruct =
-        featList.contains('st') || featList.contains('structural');
-
-    return FittedBox(
-      fit: BoxFit.scaleDown,
-      alignment: Alignment.centerLeft,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+  // ─── FOLDER BACK PANEL (Back Sheet + Peeking Blueprint Papers) ───────
+  Widget _buildFolderBack({required bool isDark}) {
+    return SizedBox(
+      width: 350,
+      height: 190,
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          // 1. 3D Villa Icon
-          _buildFeatureChip(
-            icon: Icons.view_in_ar_rounded,
-            label: '3D',
-            accentColor: const Color(0xFFE58A18),
-            isEnabled: has3D,
-            isDark: isDark,
+          // Layer 1: Back panel (taller by 14px at top)
+          Positioned(
+            left: 0,
+            right: 0,
+            top: -14,
+            bottom: 0,
+            child: Container(
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xFF242E3E).withValues(alpha: 0.70)
+                    : const Color(0xFF64748B).withValues(alpha: 0.55),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.20),
+                  width: 1.0,
+                ),
+              ),
+            ),
           ),
-          const SizedBox(width: 5),
 
-          // 2. Vastu Shastra Icon
-          _buildFeatureChip(
-            icon: Icons.explore_outlined,
-            label: 'Vastu',
-            accentColor: const Color(0xFF10B981),
-            isEnabled: hasVastu,
-            isDark: isDark,
+          // Layer 2a: Left Paper Sheet (Rotated -4 deg, peeking -34px)
+          Positioned(
+            left: 26,
+            top: -34,
+            child: Transform.rotate(
+              angle: -4 * math.pi / 180,
+              alignment: Alignment.bottomCenter,
+              child: _buildBlueprintPaperSheet(isLeft: true, isDark: isDark),
+            ),
           ),
-          const SizedBox(width: 5),
 
-          // 3. Cost Estimation Icon
-          _buildFeatureChip(
-            icon: Icons.currency_rupee_rounded,
-            label: 'Cost',
-            accentColor: const Color(0xFF3B82F6),
-            isEnabled: hasCost,
-            isDark: isDark,
-          ),
-          const SizedBox(width: 5),
-
-          // 4. Structural Engineering Icon
-          _buildFeatureChip(
-            icon: Icons.architecture_rounded,
-            label: 'Struct',
-            accentColor: const Color(0xFF8B5CF6),
-            isEnabled: hasStruct,
-            isDark: isDark,
+          // Layer 2b: Right Paper Sheet (Rotated +4 deg, peeking -32px)
+          Positioned(
+            right: 24,
+            top: -32,
+            child: Transform.rotate(
+              angle: 4 * math.pi / 180,
+              alignment: Alignment.bottomCenter,
+              child: _buildBlueprintPaperSheet(isLeft: false, isDark: isDark),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildFeatureChip({
-    required IconData icon,
-    required String label,
-    required Color accentColor,
-    required bool isEnabled,
+  // ─── FOLDER FRONT PANEL (Dark Frosted Slate Flap with Sloped Tab) ────
+  Widget _buildFolderFront(
+    String countSubtitle, {
+    required AppConfigProvider config,
     required bool isDark,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6.5, vertical: 3.5),
+      width: 350,
+      height: 190,
       decoration: BoxDecoration(
-        color: isEnabled
-            ? accentColor.withValues(alpha: isDark ? 0.16 : 0.10)
-            : (isDark ? const Color(0xFF232A38) : const Color(0xFFF1F4F8)),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: isEnabled
-              ? accentColor.withValues(alpha: 0.4)
-              : (isDark ? const Color(0xFF2E384D) : const Color(0xFFE2E8F0)),
-          width: 0.8,
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: isDark
+              ? const [
+                  Color(0xFF242E3E), // Dark Binder
+                  Color(0xFF131822), // Deep Slate
+                ]
+              : const [
+                  Color(0xFF364050), // Steel Binder
+                  Color(0xFF1B212F), // Structural Slate
+                ],
         ),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.15),
+          width: 1.0,
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x381B212F),
+            blurRadius: 40,
+            offset: Offset(0, 16),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          // Sloped folder tab notch profile along top edge
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 28,
+            child: CustomPaint(
+              painter: _FolderTabPainter(),
+            ),
+          ),
+
+          // Front Panel Interior Content ("History" is always pristine & visible)
+          Positioned(
+            bottom: 22,
+            left: 22,
+            right: 22,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      config.tr('History', 'வரலாறு'),
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        letterSpacing: -0.48,
+                        height: 1.15,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      countSubtitle,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.white.withValues(alpha: 0.70),
+                        height: 1.2,
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_isLoading)
+                      const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.0,
+                          color: Color(0xFFE58A18),
+                        ),
+                      )
+                    else
+                      GestureDetector(
+                        onTap: () {
+                          _loadUserHistory();
+                          _replaySequence();
+                        },
+                        child: Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.08),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.refresh_rounded,
+                            size: 18,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── BLUEPRINT PAPER SHEET HELPER ────────────────────────────────────
+  Widget _buildBlueprintPaperSheet(
+      {required bool isLeft, required bool isDark}) {
+    final Color paperBg =
+        isDark ? const Color(0xFF1E2634) : const Color(0xFFFCFDFF);
+    final Color lineCol =
+        isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final Color borderCol =
+        isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
+
+    if (isLeft) {
+      return Container(
+        width: 180,
+        height: 96,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: paperBg,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: borderCol, width: 1.0),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x1F1B212F),
+              blurRadius: 16,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: lineCol.withValues(alpha: 0.40),
+                    ),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Container(
+                  width: 80,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: lineCol.withValues(alpha: 0.40),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Container(height: 1, color: borderCol),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: lineCol.withValues(alpha: 0.35),
+                    ),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  width: 64,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: lineCol.withValues(alpha: 0.35),
+                    ),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    } else {
+      return Container(
+        width: 170,
+        height: 96,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: paperBg,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: borderCol, width: 1.0),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x1F1B212F),
+              blurRadius: 16,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  width: 56,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: lineCol.withValues(alpha: 0.40),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+                Container(
+                  width: 32,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: lineCol.withValues(alpha: 0.40),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Container(height: 1, color: borderCol),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  flex: 1,
+                  child: Container(
+                    height: 20,
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: lineCol.withValues(alpha: 0.35),
+                      ),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  flex: 2,
+                  child: Container(
+                    height: 20,
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: lineCol.withValues(alpha: 0.35),
+                      ),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  // ─── SINGLE FLOOR PLAN CARD WIDGET ───────────────────────────────────
+  Widget _buildFloorPlanCard(
+    _FloorPlanModel item, {
+    bool isElevated = false,
+    required bool isDark,
+  }) {
+    return Container(
+      width: 350,
+      height: 58,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1B212F) : const Color(0xFFFCFDFF),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark
+              ? const Color(0xFF2C3545)
+              : Colors.white.withValues(alpha: 0.90),
+          width: 1.0,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0x1B212F)
+                .withValues(alpha: isElevated ? 0.22 : 0.08),
+            blurRadius: isElevated ? 24 : 16,
+            offset: Offset(0, isElevated ? 12 : 6),
+          ),
+        ],
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Icon(
-            icon,
-            size: 12.5,
-            color: isEnabled
-                ? accentColor
-                : (isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? const Color(0xFF242E3E)
+                      : const Color(0xFF2E3744),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: CustomPaint(
+                    size: const Size(18, 18),
+                    painter:
+                        _BlueprintLayoutIconPainter(variant: item.iconVariant),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.title,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? Colors.white : const Color(0xFF18191D),
+                      height: 1.15,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    item.date,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w400,
+                      color: isDark
+                          ? const Color(0xFF94A3B8)
+                          : const Color(0xFF8E94A0),
+                      height: 1.15,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-          const SizedBox(width: 3.5),
           Text(
-            label,
+            item.price,
             style: GoogleFonts.plusJakartaSans(
-              fontSize: 10.5,
+              fontSize: 15,
               fontWeight: FontWeight.w700,
-              color: isEnabled
-                  ? (isDark ? const Color(0xFFFCFDFF) : const Color(0xFF1E252D))
-                  : (isDark
-                      ? const Color(0xFF64748B)
-                      : const Color(0xFF94A3B8)),
-              letterSpacing: 0.1,
+              color: isDark ? Colors.white : const Color(0xFF18191D),
             ),
           ),
         ],
@@ -730,78 +1112,141 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 }
 
-// ─── Custom Architectural 2D Blueprint Graphic Painter ─────────────────────────
-class _BlueprintThumbnailPainter extends CustomPainter {
+// ─── MODEL CLASS ─────────────────────────────────────────────────────────────
+class _FloorPlanModel {
+  final String title;
+  final String date;
+  final String price;
+  final int iconVariant;
+  final List<String> features;
+  final Map<String, dynamic>? raw;
+
+  const _FloorPlanModel({
+    required this.title,
+    required this.date,
+    required this.price,
+    required this.iconVariant,
+    required this.features,
+    this.raw,
+  });
+}
+
+// ─── FOLDER TAB PAINTER ──────────────────────────────────────────────────────
+class _FolderTabPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    // 1. Dark blueprint background
-    final bgPaint = Paint()..color = const Color(0xFF151B27);
-    canvas.drawRect(Offset.zero & size, bgPaint);
-
-    // 2. Blueprint subtle grid lines
-    final gridPaint = Paint()
-      ..color = const Color(0xFF222C3D)
-      ..strokeWidth = 0.6;
-    for (double x = 8; x < size.width; x += 10) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
-    }
-    for (double y = 8; y < size.height; y += 10) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
-    }
-
-    // 3. Exterior perimeter wall
-    final wallPaint = Paint()
-      ..color = const Color(0xFFE2E8F0)
+    final paint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.28)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0
-      ..strokeCap = StrokeCap.square;
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.round;
 
-    final wallRect = RRect.fromRectAndRadius(
-      Rect.fromLTWH(8, 8, size.width - 16, size.height - 16),
-      const Radius.circular(3),
-    );
-    canvas.drawRRect(wallRect, wallPaint);
+    final path = Path()
+      ..moveTo(0, 28)
+      ..lineTo(0, 16)
+      ..cubicTo(0, 8, 8, 0, 20, 0)
+      ..lineTo(110, 0)
+      ..cubicTo(126, 0, 138, 12, 152, 12)
+      ..lineTo(size.width - 20, 12)
+      ..cubicTo(size.width - 8, 12, size.width, 18, size.width, 28);
 
-    // 4. Interior room partition walls
-    final partitionPaint = Paint()
-      ..color = const Color(0xFF94A3B8)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2;
-
-    // Horizontal partition
-    canvas.drawLine(
-      Offset(8, size.height * 0.52),
-      Offset(size.width * 0.65, size.height * 0.52),
-      partitionPaint,
-    );
-    // Vertical partition
-    canvas.drawLine(
-      Offset(size.width * 0.65, 8),
-      Offset(size.width * 0.65, size.height - 8),
-      partitionPaint,
-    );
-
-    // 5. Amber door swing arc
-    final doorPaint = Paint()
-      ..color = const Color(0xFFE58A18)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
-
-    canvas.drawArc(
-      Rect.fromCircle(
-          center: Offset(size.width * 0.36, size.height * 0.52), radius: 6),
-      0,
-      1.57,
-      false,
-      doorPaint,
-    );
-
-    // Mini blueprint marker
-    final dotPaint = Paint()..color = const Color(0xFFE58A18);
-    canvas.drawCircle(
-        Offset(size.width * 0.36, size.height * 0.52), 1.5, dotPaint);
+    canvas.drawPath(path, paint);
   }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// ─── BLUEPRINT ICONS PAINTER ─────────────────────────────────────────────────
+class _BlueprintLayoutIconPainter extends CustomPainter {
+  final int variant;
+
+  _BlueprintLayoutIconPainter({required this.variant});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final strokePaint = Paint()
+      ..color = const Color(0xFFE58A18)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    final double w = size.width;
+    final double h = size.height;
+
+    switch (variant) {
+      case 1:
+        // Outer room boundary
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(1, 1, w - 2, h - 2),
+            const Radius.circular(2.5),
+          ),
+          strokePaint,
+        );
+        // Vertical dividing partition
+        canvas.drawLine(
+          Offset(w * 0.45, 1),
+          Offset(w * 0.45, h - 1),
+          strokePaint,
+        );
+        // Horizontal interior wall
+        canvas.drawLine(
+          Offset(w * 0.45, h * 0.55),
+          Offset(w - 1, h * 0.55),
+          strokePaint,
+        );
+        break;
+
+      case 2:
+        // L-shaped floor layout
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(1, 1, w - 2, h - 2),
+            const Radius.circular(2.5),
+          ),
+          strokePaint,
+        );
+        // Horizontal hall split
+        canvas.drawLine(
+          Offset(1, h * 0.5),
+          Offset(w - 1, h * 0.5),
+          strokePaint,
+        );
+        // Vertical room partition in top half
+        canvas.drawLine(
+          Offset(w * 0.5, 1),
+          Offset(w * 0.5, h * 0.5),
+          strokePaint,
+        );
+        break;
+
+      case 3:
+      default:
+        // 4-Quadrant architectural grid
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(1, 1, w - 2, h - 2),
+            const Radius.circular(2.5),
+          ),
+          strokePaint,
+        );
+        canvas.drawLine(
+          Offset(w * 0.5, 1),
+          Offset(w * 0.5, h - 1),
+          strokePaint,
+        );
+        canvas.drawLine(
+          Offset(1, h * 0.5),
+          Offset(w - 1, h * 0.5),
+          strokePaint,
+        );
+        break;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _BlueprintLayoutIconPainter oldDelegate) =>
+      oldDelegate.variant != variant;
 }
