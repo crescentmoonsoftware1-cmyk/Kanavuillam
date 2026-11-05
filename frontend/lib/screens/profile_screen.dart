@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../core/providers/app_config_provider.dart';
 import '../core/theme/app_colors.dart';
 import '../services/api_service.dart';
+import '../utils/legal_texts.dart';
 import 'history_screen.dart';
 import 'welcome_screen.dart';
 
@@ -437,8 +438,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         content: Text(
           config.tr(
-            'Need assistance with your architectural plan or reports? Reach out to our technical team at support@kanavuillam.com or call +91 98765 43210.',
-            'உங்கள் வரைபடம் அல்லது அறிக்கைகளில் உதவி தேவையா? support@kanavuillam.com என்ற மின்னஞ்சல் அல்லது +91 98765 43210 என்ற எண்ணில் எங்களைத் தொடர்பு கொள்ளவும்.',
+            'Need assistance with your architectural plan or reports? Reach out to our technical team at support@kanavuillam.in or call +91 75508 80429 (Mon–Sat, 10:00–18:00 IST).',
+            'உங்கள் வரைபடம் அல்லது அறிக்கைகளில் உதவி தேவையா? support@kanavuillam.in என்ற மின்னஞ்சல் அல்லது +91 75508 80429 என்ற எண்ணில் எங்களைத் தொடர்பு கொள்ளவும் (திங்கள்-சனி, 10:00–18:00 IST).',
           ),
           style: GoogleFonts.inter(
             fontSize: 13,
@@ -458,6 +459,148 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // ─── TERMS & CONDITIONS DIALOG ───────────────────────────────────────────
+  void _showTermsDialog(BuildContext context, AppConfigProvider config) {
+    final isDark = config.isDarkMode;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        height: MediaQuery.of(context).size.height * 0.82,
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1B212F) : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          border: Border.all(
+            color: isDark ? const Color(0xFF2C323D) : const Color(0xFFE2E8F0),
+          ),
+        ),
+        padding: const EdgeInsets.fromLTRB(24, 20, 16, 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    config.tr(
+                      'Terms & Conditions',
+                      'விதிமுறைகள் மற்றும் நிபந்தனைகள்',
+                    ),
+                    style: GoogleFonts.syne(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : const Color(0xFF1B212F),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(
+                    Icons.close,
+                    color: isDark ? const Color(0xFF9EACB9) : const Color(0xFF64748B),
+                  ),
+                  onPressed: () => Navigator.pop(ctx),
+                ),
+              ],
+            ),
+            Divider(
+              color: isDark ? const Color(0xFF2C323D) : const Color(0xFFE2E8F0),
+              height: 24,
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.only(right: 8, bottom: 16),
+                child: Text(
+                  LegalTexts.termsAndConditions,
+                  style: GoogleFonts.inter(
+                    fontSize: 13.5,
+                    height: 1.6,
+                    color: isDark
+                        ? const Color(0xFFCDD6E0)
+                        : const Color(0xFF334155),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── PRIVACY POLICY DIALOG ───────────────────────────────────────────────
+  void _showPrivacyDialog(BuildContext context, AppConfigProvider config) {
+    final isDark = config.isDarkMode;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        height: MediaQuery.of(context).size.height * 0.82,
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1B212F) : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          border: Border.all(
+            color: isDark ? const Color(0xFF2C323D) : const Color(0xFFE2E8F0),
+          ),
+        ),
+        padding: const EdgeInsets.fromLTRB(24, 20, 16, 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    config.tr(
+                      'Privacy Policy',
+                      'தனியுரிமைக் கொள்கை',
+                    ),
+                    style: GoogleFonts.syne(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : const Color(0xFF1B212F),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(
+                    Icons.close,
+                    color: isDark ? const Color(0xFF9EACB9) : const Color(0xFF64748B),
+                  ),
+                  onPressed: () => Navigator.pop(ctx),
+                ),
+              ],
+            ),
+            Divider(
+              color: isDark ? const Color(0xFF2C323D) : const Color(0xFFE2E8F0),
+              height: 24,
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.only(right: 8, bottom: 16),
+                child: Text(
+                  LegalTexts.privacyPolicy,
+                  style: GoogleFonts.inter(
+                    fontSize: 13.5,
+                    height: 1.6,
+                    color: isDark
+                        ? const Color(0xFFCDD6E0)
+                        : const Color(0xFF334155),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1278,6 +1421,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
             iconColor: iconColor,
             textPrimary: textPrimary,
             onTap: () => _showHelpDialog(context, config),
+            trailing: Icon(
+              Icons.chevron_right_rounded,
+              size: 20,
+              color: config.isDarkMode
+                  ? const Color(0xFF64748B)
+                  : const Color(0xFF8E94A0),
+            ),
+            showDivider: true,
+            cardBorder: cardBorder,
+          ),
+          _buildRowItem(
+            icon: Icons.description_outlined,
+            title: config.tr('Terms & Conditions', 'விதிமுறைகள் & நிபந்தனைகள்'),
+            iconCircleBg: iconCircleBg,
+            iconColor: iconColor,
+            textPrimary: textPrimary,
+            onTap: () => _showTermsDialog(context, config),
+            trailing: Icon(
+              Icons.chevron_right_rounded,
+              size: 20,
+              color: config.isDarkMode
+                  ? const Color(0xFF64748B)
+                  : const Color(0xFF8E94A0),
+            ),
+            showDivider: true,
+            cardBorder: cardBorder,
+          ),
+          _buildRowItem(
+            icon: Icons.privacy_tip_outlined,
+            title: config.tr('Privacy Policy', 'தனியுரிமைக் கொள்கை'),
+            iconCircleBg: iconCircleBg,
+            iconColor: iconColor,
+            textPrimary: textPrimary,
+            onTap: () => _showPrivacyDialog(context, config),
             trailing: Icon(
               Icons.chevron_right_rounded,
               size: 20,
