@@ -121,14 +121,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       int spend = 0;
       for (final p in fetched) {
         String rawName = p['name']?.toString() ?? '';
-        int amount = 1;
+        int amount = 500;
         if (rawName.contains('|')) {
           final parts = rawName.split('|');
           if (parts.length > 2) {
-            amount = (double.tryParse(parts[2]) ?? 1).round();
+            amount = (double.tryParse(parts[2]) ?? 500).round();
           }
         } else if (p['amount'] != null) {
-          amount = (double.tryParse(p['amount'].toString()) ?? 1).round();
+          amount = (double.tryParse(p['amount'].toString()) ?? 500).round();
         }
         spend += amount;
       }

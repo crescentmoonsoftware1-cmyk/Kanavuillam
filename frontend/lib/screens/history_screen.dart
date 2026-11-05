@@ -44,7 +44,7 @@ class _HistoryScreenState extends State<HistoryScreen>
     _FloorPlanModel(
       title: 'Floor Plan 01',
       date: '12 Oct 2026',
-      price: '₹499',
+      price: '₹500',
       iconVariant: 1,
       features: ['3D', 'Vastu', 'Cost', 'Structural'],
     ),
@@ -58,7 +58,7 @@ class _HistoryScreenState extends State<HistoryScreen>
     _FloorPlanModel(
       title: 'Floor Plan 03',
       date: '15 Sep 2026',
-      price: '₹499',
+      price: '₹500',
       iconVariant: 3,
       features: ['3D', 'Vastu'],
     ),
@@ -72,7 +72,7 @@ class _HistoryScreenState extends State<HistoryScreen>
     _FloorPlanModel(
       title: 'Floor Plan 05',
       date: '19 Jul 2026',
-      price: '₹499',
+      price: '₹500',
       iconVariant: 2,
       features: ['3D', 'Vastu'],
     ),
@@ -156,7 +156,7 @@ class _HistoryScreenState extends State<HistoryScreen>
             String rawName = p['name'] ?? 'KI_Project';
             String displayName = rawName;
             List<String> features = ['3D', 'Vastu', 'Cost', 'Structural'];
-            String amount = '₹499';
+            String amount = '₹500';
 
             if (rawName.contains('|')) {
               final parts = rawName.split('|');
@@ -168,7 +168,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                     .toList();
               }
               if (parts.length > 2) {
-                amount = '₹${(double.tryParse(parts[2]) ?? 499).toInt()}';
+                amount = '₹${(double.tryParse(parts[2]) ?? 500).toInt()}';
               }
             } else if (p['amount'] != null) {
               amount = '₹${p['amount']}';
