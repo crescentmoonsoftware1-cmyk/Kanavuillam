@@ -188,8 +188,8 @@ class _SecurePaymentScreenState extends State<SecurePaymentScreen> {
         'description': 'AI Architectural Plan & 3D Deliverables',
         'timeout': 300,
         'prefill': {
-          'contact': userPhone.isNotEmpty ? userPhone : '9876543210',
-          'email': userEmail.isNotEmpty ? userEmail : 'user@kanavuillam.com',
+          if (userPhone.isNotEmpty) 'contact': userPhone,
+          if (userEmail.isNotEmpty) 'email': userEmail,
         },
         'theme': {
           'color': '#F59E0B',

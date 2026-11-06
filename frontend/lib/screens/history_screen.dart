@@ -17,10 +17,12 @@ import '../services/api_service.dart';
 /// 4. Floor plan cards emerge 1-by-1 from top pocket and glide down in slow-mo
 class HistoryScreen extends StatefulWidget {
   final Map<String, dynamic>? userData;
+  final void Function(int tab)? onNavigateToTab;
 
   const HistoryScreen({
     super.key,
     this.userData,
+    this.onNavigateToTab,
   });
 
   static void clearCache() => _HistoryScreenState.clearCache();
@@ -85,7 +87,7 @@ class _HistoryScreenState extends State<HistoryScreen>
     ),
   ];
 
-  List<_FloorPlanModel> _floorPlans = List.from(_defaultDemoPlans);
+  List<_FloorPlanModel> _floorPlans = [];
 
   static void clearCache() {
     _cachedPlans = null;
@@ -108,7 +110,8 @@ class _HistoryScreenState extends State<HistoryScreen>
     final userEmail =
         (widget.userData?['email'] as String?)?.trim().toLowerCase();
     if (_cachedPlans != null &&
-        (_cachedEmail == null || _cachedEmail == userEmail)) {
+        _cachedEmail != null &&
+        _cachedEmail == userEmail) {
       _floorPlans = _cachedPlans!;
       _isLoading = false;
     } else {
@@ -143,6 +146,10 @@ class _HistoryScreenState extends State<HistoryScreen>
               '')
           .trim()
           .toLowerCase();
+
+      // Check if Google Play Store reviewer account
+      final isReviewer = email == 'playstore@kanavuillam.com' ||
+          email == 'reviewer@kanavuillam.com';
 
       if (email.isNotEmpty && email != 'unknown') {
         if (_cachedEmail != null && _cachedEmail != email) {
@@ -210,7 +217,33 @@ class _HistoryScreenState extends State<HistoryScreen>
             });
           }
           return;
+        } else if (isReviewer) {
+          // Provide sample plans only for Google Play Reviewer demo account
+          if (mounted) {
+            setState(() {
+              _floorPlans = List.from(_defaultDemoPlans);
+              _cachedPlans = _floorPlans;
+              _cachedEmail = email;
+              _isLoading = false;
+            });
+          }
+          return;
+        } else if (mounted) {
+          // Real fresh user with 0 projects in database:
+          _cachedPlans = [];
+          _cachedEmail = email;
+          setState(() {
+            _floorPlans = [];
+            _isLoading = false;
+          });
+          return;
         }
+      } else if (mounted) {
+        setState(() {
+          _floorPlans = [];
+          _isLoading = false;
+        });
+        return;
       }
     } catch (_) {}
 
@@ -659,7 +692,16 @@ class _HistoryScreenState extends State<HistoryScreen>
                               ),
                             ),
 
-                            // ─── 5. ACTIVE DESCENDING CARDS (IN FRONT OF Front Flap!)
+                            // ─── 5. EMPTY STATE (When user has 0 floor plans) ───
+                            if (_floorPlans.isEmpty && progress > 0.25)
+                              Positioned(
+                                top: folderTop + 205,
+                                left: 20,
+                                width: 350,
+                                child: _buildEmptyHistoryState(config, isDark),
+                              ),
+
+                            // ─── 6. ACTIVE DESCENDING CARDS (IN FRONT OF Front Flap!)
                             ...descendingCardWidgets,
                           ],
                         );
@@ -671,6 +713,99 @@ class _HistoryScreenState extends State<HistoryScreen>
             ),
           );
         },
+      ),
+    );
+  }
+
+  // ─── EMPTY STATE (When user has 0 floor plans) ─────────────────────────
+  Widget _buildEmptyHistoryState(AppConfigProvider config, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 26),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1B212F) : const Color(0xFFFCFDFF),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: isDark ? const Color(0xFF2C3545) : const Color(0xFFD8DFE9),
+          width: 1.0,
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x141B212F),
+            blurRadius: 24,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: const Color(0xFFE58A18).withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: const Center(
+              child: Icon(
+                Icons.folder_open_rounded,
+                color: Color(0xFFE58A18),
+                size: 26,
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            config.tr('No Floor Plans Yet', 'வரைபடங்கள் இன்னும் இல்லை'),
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: isDark ? const Color(0xFFFCFDFF) : const Color(0xFF1B212F),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            config.tr(
+              'Upload your first floor plan on the Home Map screen to generate 3D models, Vastu analysis, and cost reports.',
+              'உங்கள் முதல் வரைபடத்தை முகப்புத் திரையில் பதிவேற்றி 3D மாதிரி, வாஸ்து பகுப்பாய்வு மற்றும் அறிக்கைகளைப் பெறுங்கள்.',
+            ),
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w400,
+              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF8E94A0),
+              height: 1.4,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 18),
+          SizedBox(
+            height: 42,
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFE58A18),
+                foregroundColor: const Color(0xFF1B212F),
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(100),
+                ),
+              ),
+              icon: const Icon(Icons.add_rounded, size: 18),
+              label: Text(
+                config.tr('Upload Floor Plan', 'வரைபடத்தை பதிவேற்று'),
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              onPressed: () {
+                if (widget.onNavigateToTab != null) {
+                  widget.onNavigateToTab!(0);
+                }
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

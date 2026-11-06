@@ -9,6 +9,7 @@ import '../core/theme/app_colors.dart';
 import '../core/theme/app_decor.dart';
 import '../services/api_service.dart';
 import '../utils/legal_texts.dart';
+import 'history_screen.dart';
 import 'shell_screen.dart';
 
 /// High-fidelity Authentication Screen (Login & Sign Up)
@@ -109,6 +110,7 @@ class _AuthScreenState extends State<AuthScreen> {
       final response = await ApiService.post(endpoint, body);
 
       if (response != null && response['error'] == null) {
+        HistoryScreen.clearCache();
         final prefs = await SharedPreferences.getInstance();
         await prefs.clear();
         final user = response['user'] as Map<String, dynamic>?;
@@ -206,6 +208,7 @@ class _AuthScreenState extends State<AuthScreen> {
       });
 
       if (response != null && response['error'] == null) {
+        HistoryScreen.clearCache();
         final prefs = await SharedPreferences.getInstance();
         await prefs.clear();
         final user = response['user'] as Map<String, dynamic>?;
@@ -417,6 +420,7 @@ class _AuthScreenState extends State<AuthScreen> {
     required IconData prefixIcon,
     bool isPassword = false,
     bool isEmail = false,
+    bool isRequired = false,
     String? Function(String?)? validator,
   }) {
     return Container(
@@ -455,7 +459,31 @@ class _AuthScreenState extends State<AuthScreen> {
               ),
             ),
           ),
-          if (isPassword)
+          if (isRequired && !isPassword)
+            Padding(
+              padding: const EdgeInsets.only(right: 4.0),
+              child: Text(
+                '*',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFFEF4444),
+                ),
+              ),
+            ),
+          if (isPassword) ...[
+            if (isRequired)
+              Padding(
+                padding: const EdgeInsets.only(right: 2.0),
+                child: Text(
+                  '*',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFFEF4444),
+                  ),
+                ),
+              ),
             IconButton(
               icon: Icon(
                 _obscurePassword
@@ -468,6 +496,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 setState(() => _obscurePassword = !_obscurePassword);
               },
             ),
+          ],
         ],
       ),
     );
@@ -545,14 +574,41 @@ class _AuthScreenState extends State<AuthScreen> {
                                 letterSpacing: -0.5,
                               ),
                             ),
+                            if (!_isLogin) ...[
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  const Text(
+                                    '* ',
+                                    style: TextStyle(
+                                      color: Color(0xFFEF4444),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                  Text(
+                                    config.tr(
+                                      'All fields are mandatory',
+                                      'அனைத்து விவரங்களும் கட்டாயமானவை',
+                                    ),
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: isDark ? const Color(0xFF94A3B8) : AppColors.quietGrey,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                             const SizedBox(height: 20),
 
                             // Name field (Sign Up only)
                             if (!_isLogin) ...[
                               _buildInputField(
                                 controller: _nameController,
-                                hintText: config.tr('Full Name', 'முழு பெயர்'),
+                                hintText: config.tr('Full Name *', 'முழு பெயர் *'),
                                 prefixIcon: Icons.person_outline,
+                                isRequired: true,
                                 validator: (val) {
                                   if (val == null || val.trim().isEmpty) {
                                     return config.tr('Please enter full name', 'பெயரை உள்ளிடவும்');
@@ -567,11 +623,12 @@ class _AuthScreenState extends State<AuthScreen> {
                             _buildInputField(
                               controller: _emailController,
                               hintText: config.tr(
-                                _isLogin ? 'Email or Phone' : 'Email address',
-                                _isLogin ? 'மின்னஞ்சல் அல்லது தொலைபேசி' : 'மின்னஞ்சல் முகவரி',
+                                _isLogin ? 'Email or Phone' : 'Email address *',
+                                _isLogin ? 'மின்னஞ்சல் அல்லது தொலைபேசி' : 'மின்னஞ்சல் முகவரி *',
                               ),
                               prefixIcon: Icons.mail_outline,
                               isEmail: true,
+                              isRequired: !_isLogin,
                               validator: (val) {
                                 if (val == null || val.trim().isEmpty) {
                                   return config.tr(
@@ -587,9 +644,13 @@ class _AuthScreenState extends State<AuthScreen> {
                             // Password field
                             _buildInputField(
                               controller: _passwordController,
-                              hintText: config.tr('Password', 'கடவுச்சொல்'),
+                              hintText: config.tr(
+                                _isLogin ? 'Password' : 'Password *',
+                                _isLogin ? 'கடவுச்சொல்' : 'கடவுச்சொல் *',
+                              ),
                               prefixIcon: Icons.lock_outline,
                               isPassword: true,
+                              isRequired: !_isLogin,
                               validator: (val) {
                                 if (val == null || val.isEmpty) {
                                   return config.tr('Please enter password', 'கடவுச்சொல்லை உள்ளிடவும்');

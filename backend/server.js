@@ -2532,7 +2532,7 @@ app.get('/checkout', (req, res) => {
         name: "Kanavu Illam",
         description: "Architectural & Vastu Reports",
         order_id: orderId,
-        prefill: { email: userEmail, contact: "9876543210" },
+        prefill: { email: userEmail },
         theme: { color: "#F59E0B" },
         handler: async function (response) {
           btn.innerText = 'Verifying Transaction...';

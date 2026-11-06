@@ -35,9 +35,12 @@ class _VastuScreenState extends State<VastuScreen> {
   @override
   void initState() {
     super.initState();
-    final initialVastu =
-        widget.projectData['vastu_data'] ?? widget.projectData['_vastu'];
-    if (initialVastu != null) {
+    final initialVastu = widget.projectData['vastu_data'] ??
+        widget.projectData['_vastu'] ??
+        (widget.projectData['model_data'] is Map
+            ? widget.projectData['model_data']['_vastu']
+            : null);
+    if (initialVastu != null && initialVastu is Map) {
       _resultsCache['EN'] = Map<String, dynamic>.from(initialVastu);
       _vastuFuture = Future.value(_resultsCache['EN']);
     } else {
@@ -46,21 +49,48 @@ class _VastuScreenState extends State<VastuScreen> {
   }
 
   Future<Map<String, dynamic>> _fetchVastuData(String lang) async {
+    if (_resultsCache.containsKey(lang)) {
+      return _resultsCache[lang]!;
+    }
+
+    final pId = widget.projectData['id']?.toString();
+
+    // Check if local projectData already has pre-computed vastu
+    final localVastu = widget.projectData['vastu_data'] ??
+        widget.projectData['_vastu'] ??
+        (widget.projectData['model_data'] is Map
+            ? widget.projectData['model_data']['_vastu']
+            : null);
+
+    if (pId == null || pId.isEmpty || pId == 'demo') {
+      if (localVastu != null && localVastu is Map) {
+        final mapped = Map<String, dynamic>.from(localVastu);
+        _resultsCache[lang] = mapped;
+        return mapped;
+      }
+      final demo = _getDemoVastuData(lang);
+      _resultsCache[lang] = demo;
+      return demo;
+    }
+
     try {
       final res = await ApiService().analyzeVastu(
-        widget.projectData['id']?.toString() ?? 'demo',
+        pId,
         lang: lang == 'TA' ? 'Tamil' : 'English',
       );
       _resultsCache[lang] = res;
       return res;
-    } catch (_) {
-      final fallback = _getFallbackData(lang);
-      _resultsCache[lang] = fallback;
-      return fallback;
+    } catch (e) {
+      if (localVastu != null && localVastu is Map) {
+        final mapped = Map<String, dynamic>.from(localVastu);
+        _resultsCache[lang] = mapped;
+        return mapped;
+      }
+      rethrow;
     }
   }
 
-  Map<String, dynamic> _getFallbackData(String lang) {
+  Map<String, dynamic> _getDemoVastuData(String lang) {
     final isTamil = lang == 'TA';
     return {
       'score': 65,
@@ -257,7 +287,80 @@ class _VastuScreenState extends State<VastuScreen> {
           child: FutureBuilder<Map<String, dynamic>>(
             future: _vastuFuture,
             builder: (context, snapshot) {
-              final rawData = snapshot.data ?? _getFallbackData(langKey);
+              if (snapshot.connectionState == ConnectionState.waiting &&
+                  !_resultsCache.containsKey(langKey)) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const CircularProgressIndicator(color: AppColors.amber),
+                      const SizedBox(height: 16),
+                      Text(
+                        isTamil
+                            ? 'வாஸ்து பகுப்பாய்வு செய்யப்படுகிறது...'
+                            : 'Analyzing Vastu layout...',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? const Color(0xFF94A3B8) : AppColors.inkQuiet,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.warning_amber_rounded, size: 52, color: AppColors.amber),
+                        const SizedBox(height: 14),
+                        Text(
+                          isTamil ? 'வாஸ்து அறிக்கை கிடைக்கவில்லை' : 'Vastu Analysis Unavailable',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: isDark ? Colors.white : AppColors.inkPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          isTamil
+                              ? 'வாஸ்து அறிக்கையைப் பெற முடியவில்லை. இணைய இணைப்பை சரிபார்த்து மீண்டும் முயற்சிக்கவும்.'
+                              : 'Could not fetch Vastu evaluation. Please check your internet connection and try again.',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            color: isDark ? const Color(0xFF94A3B8) : AppColors.inkQuiet,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            setState(() {
+                              _vastuFuture = _fetchVastuData(langKey);
+                            });
+                          },
+                          icon: const Icon(Icons.refresh_rounded, size: 18),
+                          label: Text(isTamil ? 'மீண்டும் முயற்சி செய்' : 'Retry Analysis'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.amber,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              final rawData = snapshot.data!;
 
               // Unwrap active floor data (backend returns { "ground": { ... }, "first": { ... } })
               Map<String, dynamic> data = rawData;
@@ -272,36 +375,31 @@ class _VastuScreenState extends State<VastuScreen> {
               }
 
               final int score =
-                  (data['score'] is num) ? (data['score'] as num).toInt() : 65;
-              final String grade = data['grade']?.toString() ?? 'B';
+                  (data['score'] is num) ? (data['score'] as num).toInt() : 100;
+              final String grade = data['grade']?.toString() ?? 'A';
               final String orientation =
-                  data['orientation']?.toString() ?? 'East';
-              final int pointsLost = 100 - score;
+                  data['orientation']?.toString() ?? 'North';
+              final int pointsLost = (100 - score).clamp(0, 100);
 
-              final List strengths = (data['strengths'] is List &&
-                      (data['strengths'] as List).isNotEmpty)
+              final List strengths = (data['strengths'] is List)
                   ? (data['strengths'] as List)
-                  : (_getFallbackData(langKey)['strengths'] as List);
+                  : [];
 
-              final List violations = (data['violations'] is List &&
-                      (data['violations'] as List).isNotEmpty)
+              final List violations = (data['violations'] is List)
                   ? (data['violations'] as List)
-                  : (_getFallbackData(langKey)['violations'] as List);
+                  : [];
 
-              final List whyPointsReduced = (data['whyPointsReduced'] is List &&
-                      (data['whyPointsReduced'] as List).isNotEmpty)
+              final List whyPointsReduced = (data['whyPointsReduced'] is List)
                   ? (data['whyPointsReduced'] as List)
-                  : (_getFallbackData(langKey)['whyPointsReduced'] as List);
+                  : [];
 
-              final List rooms =
-                  (data['rooms'] is List && (data['rooms'] as List).isNotEmpty)
-                      ? (data['rooms'] as List)
-                      : (_getFallbackData(langKey)['rooms'] as List);
+              final List rooms = (data['rooms'] is List)
+                  ? (data['rooms'] as List)
+                  : [];
 
-              final List fixes =
-                  (data['fixes'] is List && (data['fixes'] as List).isNotEmpty)
-                      ? (data['fixes'] as List)
-                      : (_getFallbackData(langKey)['fixes'] as List);
+              final List fixes = (data['fixes'] is List)
+                  ? (data['fixes'] as List)
+                  : [];
 
               return Center(
                 child: ConstrainedBox(
@@ -825,91 +923,154 @@ class _VastuScreenState extends State<VastuScreen> {
           ),
           const SizedBox(height: 20),
 
-          // Score Reduced Header
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  isTamil ? 'மதிப்பெண் குறைவு' : 'Score reduced',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: isDark ? Colors.white : AppColors.inkPrimary,
-                  ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.amberTint,
-                    borderRadius: BorderRadius.circular(100),
-                  ),
-                  child: Text(
-                    '-$pointsLost points',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.amberDark,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Numbered Reason Rows
-          ...whyPointsReduced.asMap().entries.map((entry) {
-            final int idx = entry.key + 1;
-            final String text = entry.value.toString();
-            return Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          // Score Deductions or Perfect Alignment
+          if (whyPointsReduced.isEmpty && pointsLost == 0) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+                color: isDark
+                    ? const Color(0xFF064E3B).withValues(alpha: 0.3)
+                    : const Color(0xFFECFDF5),
                 borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isDark
+                      ? const Color(0xFF059669)
+                      : const Color(0xFFA7F3D0),
+                ),
               ),
               child: Row(
                 children: [
-                  Container(
-                    width: 28,
-                    height: 28,
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF334155) : AppColors.canvasGradientTop,
-                      shape: BoxShape.circle,
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      idx.toString(),
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: isDark ? Colors.white : AppColors.inkMuted,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
+                  const Icon(Icons.check_circle_rounded,
+                      color: Color(0xFF10B981), size: 20),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      text,
+                      isTamil
+                          ? 'வாஸ்து விதிகளின்படி உங்களின் வரைபடம் சிறப்பான அமைப்பைப் பெற்றுள்ளது. புள்ளிகள் எதுவும் குறைக்கப்படவில்லை!'
+                          : 'Your layout adheres excellently to Vastu principles. No points deducted!',
                       style: GoogleFonts.plusJakartaSans(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w500,
-                        color: isDark ? const Color(0xFFE2E8F0) : AppColors.inkPrimary,
-                        height: 1.35,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: isDark
+                            ? const Color(0xFF6EE7B7)
+                            : const Color(0xFF065F46),
                       ),
                     ),
                   ),
                 ],
               ),
-            );
-          }),
+            ),
+          ] else ...[
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(
+                      color: isDark
+                          ? const Color(0xFF1E293B)
+                          : const Color(0xFFE2E8F0)),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    isTamil ? 'மதிப்பெண் குறைவு' : 'Score reduced',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? Colors.white : AppColors.inkPrimary,
+                    ),
+                  ),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.amberTint,
+                      borderRadius: BorderRadius.circular(100),
+                    ),
+                    child: Text(
+                      '-$pointsLost points',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.amberDark,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Numbered Reason Rows
+            if (whyPointsReduced.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Text(
+                  isTamil
+                      ? 'குறிப்பிட்ட குறைபாடுகள் எதுவும் பதிவு செய்யப்படவில்லை.'
+                      : 'No specific reduction points listed.',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13,
+                    color: isDark
+                        ? const Color(0xFF94A3B8)
+                        : AppColors.inkQuiet,
+                  ),
+                ),
+              )
+            else
+              ...whyPointsReduced.asMap().entries.map((entry) {
+                final int idx = entry.key + 1;
+                final String text = entry.value.toString();
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? const Color(0xFF1E293B)
+                        : const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? const Color(0xFF334155)
+                              : AppColors.canvasGradientTop,
+                          shape: BoxShape.circle,
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          idx.toString(),
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: isDark ? Colors.white : AppColors.inkMuted,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          text,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: isDark
+                                ? const Color(0xFFE2E8F0)
+                                : AppColors.inkDark,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+          ],
         ],
       ),
     );
@@ -1148,41 +1309,56 @@ class _VastuScreenState extends State<VastuScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  ...strengths.map((s) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12.0),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              width: 30,
-                              height: 30,
-                              decoration: BoxDecoration(
-                                color: isDark
-                                    ? const Color(0xFF064E3B).withValues(alpha: 0.5)
-                                    : AppColors.canvasGradientTop,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.check_rounded,
-                                size: 16,
-                                color: isDark ? const Color(0xFF4ADE80) : AppColors.inkMuted,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                s.toString(),
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w500,
-                                  color: isDark ? const Color(0xFFE2E8F0) : AppColors.inkPrimary,
-                                  height: 1.4,
+                  if (strengths.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Text(
+                        isTamil
+                            ? 'குறிப்பிடத்தக்க பலங்கள் எதுவும் பதிவு செய்யப்படவில்லை.'
+                            : 'No specific strengths recorded for this layout.',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: isDark ? const Color(0xFF94A3B8) : AppColors.inkQuiet,
+                        ),
+                      ),
+                    )
+                  else
+                    ...strengths.map((s) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12.0),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: 30,
+                                height: 30,
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? const Color(0xFF064E3B).withValues(alpha: 0.5)
+                                      : AppColors.canvasGradientTop,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.check_rounded,
+                                  size: 16,
+                                  color: isDark ? const Color(0xFF4ADE80) : AppColors.inkMuted,
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      )),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  s.toString(),
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w500,
+                                    color: isDark ? const Color(0xFFE2E8F0) : AppColors.inkPrimary,
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )),
                   const SizedBox(height: 12),
                   Divider(height: 1, color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
                   const SizedBox(height: 16),
@@ -1200,41 +1376,56 @@ class _VastuScreenState extends State<VastuScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  ...violations.map((v) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12.0),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              width: 30,
-                              height: 30,
-                              decoration: BoxDecoration(
-                                color: isDark
-                                    ? const Color(0xFF451A03).withValues(alpha: 0.5)
-                                    : AppColors.amberTint,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.warning_amber_rounded,
-                                size: 16,
-                                color: isDark ? const Color(0xFFFBBF24) : AppColors.amberDark,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                v.toString(),
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w500,
-                                  color: isDark ? const Color(0xFFE2E8F0) : AppColors.inkPrimary,
-                                  height: 1.4,
+                  if (violations.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Text(
+                        isTamil
+                            ? 'வாஸ்து குறைபாடுகள் எதுவும் கண்டறியப்படவில்லை! உங்கள் வரைபடம் சிறப்பான வாஸ்து அமைப்பைக் கொண்டுள்ளது.'
+                            : 'No Vastu violations found! Your floor plan aligns excellently with Vastu principles.',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? const Color(0xFF10B981) : const Color(0xFF059669),
+                        ),
+                      ),
+                    )
+                  else
+                    ...violations.map((v) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12.0),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: 30,
+                                height: 30,
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? const Color(0xFF451A03).withValues(alpha: 0.5)
+                                      : AppColors.amberTint,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.warning_amber_rounded,
+                                  size: 16,
+                                  color: isDark ? const Color(0xFFFBBF24) : AppColors.amberDark,
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      )),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  v.toString(),
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w500,
+                                    color: isDark ? const Color(0xFFE2E8F0) : AppColors.inkPrimary,
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )),
                   const SizedBox(height: 12),
                   Divider(height: 1, color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
                   const SizedBox(height: 16),
@@ -1252,7 +1443,22 @@ class _VastuScreenState extends State<VastuScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  ...fixes.asMap().entries.map((entry) {
+                  if (fixes.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Text(
+                        isTamil
+                            ? 'எந்தப் பரிகாரமும் தேவையில்லை. உங்கள் வரைபடம் முழுமையாக வாஸ்து விதிகளுக்கு இணங்குகிறது.'
+                            : 'No remedies required. Your layout is fully compliant with Vastu guidelines.',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? const Color(0xFF10B981) : const Color(0xFF059669),
+                        ),
+                      ),
+                    )
+                  else
+                    ...fixes.asMap().entries.map((entry) {
                     final int idx = entry.key + 1;
                     final Map f = entry.value as Map;
                     final String issue = f['issue']?.toString() ?? '';

@@ -38,7 +38,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // User fields
   String _displayName = 'User';
-  String _phoneNumber = '+91 98765 43210';
+  String _phoneNumber = '';
   String _location = 'Chennai, Tamil Nadu';
   String _email = '';
 
@@ -70,7 +70,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       final savedPhone = (meta?['phone'] as String?) ??
           prefs.getString('user_phone') ??
-          '+91 98765 43210';
+          '';
 
       final savedLocation = prefs.getString('user_location') ??
           prefs.getString('user_address') ??
@@ -253,6 +253,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   icon: Icons.phone_outlined,
                   keyboardType: TextInputType.phone,
                   isDark: isDark,
+                  hintText: '+91 98765 00000',
                 ),
                 const SizedBox(height: 14),
 
@@ -365,6 +366,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required IconData icon,
     required bool isDark,
     TextInputType keyboardType = TextInputType.text,
+    String? hintText,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -405,7 +407,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     fontWeight: FontWeight.w500,
                     color: isDark ? Colors.white : const Color(0xFF1B212F),
                   ),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
+                    hintText: hintText,
+                    hintStyle: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                    ),
                     border: InputBorder.none,
                     isDense: true,
                     contentPadding: EdgeInsets.zero,

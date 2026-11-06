@@ -94,6 +94,34 @@ class _ShellScreenState extends State<ShellScreen> {
   Future<void> _restoreActiveProject() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      final currentEmail = ((widget.userData?['email'] as String?) ??
+              prefs.getString('user_email') ??
+              '')
+          .trim()
+          .toLowerCase();
+
+      final savedUserEmail =
+          (prefs.getString('last_active_project_user_email') ?? '')
+              .trim()
+              .toLowerCase();
+
+      // Only restore if the project belongs to the current logged-in user!
+      if (currentEmail.isNotEmpty &&
+          savedUserEmail.isNotEmpty &&
+          currentEmail != savedUserEmail) {
+        debugPrint(
+            '[ShellScreen] Active project belongs to different user ($savedUserEmail != $currentEmail). Discarding.');
+        await prefs.remove('last_active_project_data');
+        await prefs.remove('last_active_selected_ids');
+        await prefs.remove('last_active_project_user_email');
+        if (mounted) {
+          setState(() {
+            _projectData = null;
+          });
+        }
+        return;
+      }
+
       final savedJson = prefs.getString('last_active_project_data');
       final savedIds = prefs.getStringList('last_active_selected_ids');
       if (savedJson != null && savedJson.isNotEmpty) {
@@ -120,10 +148,19 @@ class _ShellScreenState extends State<ShellScreen> {
     try {
       if (_projectData != null) {
         final prefs = await SharedPreferences.getInstance();
+        final currentEmail = ((widget.userData?['email'] as String?) ??
+                prefs.getString('user_email') ??
+                '')
+            .trim()
+            .toLowerCase();
         await prefs.setString(
             'last_active_project_data', json.encode(_projectData));
         await prefs.setStringList(
             'last_active_selected_ids', _selectedReportIds.toList());
+        if (currentEmail.isNotEmpty) {
+          await prefs.setString(
+              'last_active_project_user_email', currentEmail);
+        }
         debugPrint('[ShellScreen] Active project auto-saved to phone storage');
       }
     } catch (e) {
@@ -377,7 +414,10 @@ class _ShellScreenState extends State<ShellScreen> {
                   ))
             : const SizedBox.shrink(),
         _loadedTabs.contains(6)
-            ? HistoryScreen(userData: widget.userData)
+            ? HistoryScreen(
+                userData: widget.userData,
+                onNavigateToTab: _switchTab,
+              )
             : const SizedBox.shrink(),
         _loadedTabs.contains(7)
             ? ProfileScreen(userData: widget.userData)
