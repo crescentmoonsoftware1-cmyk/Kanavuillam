@@ -11,7 +11,7 @@ By using Kanavu Illam (the “Service”) you accept these Terms and our Privacy
 Kanavu Illam is an automated planning aid offering floor plan reading, 3D visualization, Vastu scoring and preliminary cost and structural estimates for Ground Floor plans only. It is not professional engineering, architectural or legal advice. Reports do not replace licensed civil engineers, soil tests or municipal approvals. Computer vision may misread plans or dimensions, and Vastu scores are for cultural reference only. Always verify with a licensed professional before building. Use of any report is at your own risk.
 
 3. Pricing and No-Refund Policy
-• Fee: ₹500 per project upload (Ground Floor plan), inclusive of taxes, displayed before payment. We may change prices for future purchases.
+• Fee: ₹1 per project upload (Ground Floor plan), inclusive of taxes, displayed before payment. We may change prices for future purchases.
 • No cash refunds: the fee covers immediate server processing and PDF compilation. All payments are non-refundable once analysis begins.
 • Technical failure: if a verified technical error on our side prevents report delivery, email support@kanavuillam.in within 7 days with your Order ID for one free re-processing of the same plan.
 • Duplicate or incorrect charges: contact us with your Order ID; any amount found to be wrongly charged will be reversed to your original payment method.

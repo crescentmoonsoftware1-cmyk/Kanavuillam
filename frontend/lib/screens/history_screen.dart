@@ -18,11 +18,13 @@ import '../services/api_service.dart';
 class HistoryScreen extends StatefulWidget {
   final Map<String, dynamic>? userData;
   final void Function(int tab)? onNavigateToTab;
+  final void Function(Map<String, dynamic> project)? onSelectProject;
 
   const HistoryScreen({
     super.key,
     this.userData,
     this.onNavigateToTab,
+    this.onSelectProject,
   });
 
   static void clearCache() => _HistoryScreenState.clearCache();
@@ -46,42 +48,42 @@ class _HistoryScreenState extends State<HistoryScreen>
     _FloorPlanModel(
       title: 'Floor Plan 01',
       date: '12 Oct 2026',
-      price: '₹500',
+      price: '₹1',
       iconVariant: 1,
       features: ['3D', 'Vastu', 'Cost', 'Structural'],
     ),
     _FloorPlanModel(
       title: 'Floor Plan 02',
       date: '28 Sep 2026',
-      price: '₹799',
+      price: '₹1',
       iconVariant: 2,
       features: ['3D', 'Vastu', 'Cost'],
     ),
     _FloorPlanModel(
       title: 'Floor Plan 03',
       date: '15 Sep 2026',
-      price: '₹500',
+      price: '₹1',
       iconVariant: 3,
       features: ['3D', 'Vastu'],
     ),
     _FloorPlanModel(
       title: 'Floor Plan 04',
       date: '02 Aug 2026',
-      price: '₹1,299',
+      price: '₹1',
       iconVariant: 1,
       features: ['3D', 'Vastu', 'Cost', 'Structural'],
     ),
     _FloorPlanModel(
       title: 'Floor Plan 05',
       date: '19 Jul 2026',
-      price: '₹500',
+      price: '₹1',
       iconVariant: 2,
       features: ['3D', 'Vastu'],
     ),
     _FloorPlanModel(
       title: 'Floor Plan 06',
       date: '04 Jun 2026',
-      price: '₹899',
+      price: '₹1',
       iconVariant: 3,
       features: ['3D', 'Cost'],
     ),
@@ -129,6 +131,12 @@ class _HistoryScreenState extends State<HistoryScreen>
   }
 
   @override
+  void didUpdateWidget(covariant HistoryScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _loadUserHistory();
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
     super.dispose();
@@ -163,7 +171,7 @@ class _HistoryScreenState extends State<HistoryScreen>
             String rawName = p['name'] ?? 'KI_Project';
             String displayName = rawName;
             List<String> features = ['3D', 'Vastu', 'Cost', 'Structural'];
-            String amount = '₹500';
+            int amountVal = 1; // Standard plan package price
 
             if (rawName.contains('|')) {
               final parts = rawName.split('|');
@@ -175,10 +183,16 @@ class _HistoryScreenState extends State<HistoryScreen>
                     .toList();
               }
               if (parts.length > 2) {
-                amount = '₹${(double.tryParse(parts[2]) ?? 500).toInt()}';
+                final parsed = double.tryParse(parts[2]);
+                if (parsed != null && parsed > 0) {
+                  amountVal = parsed.toInt();
+                }
               }
             } else if (p['amount'] != null) {
-              amount = '₹${p['amount']}';
+              final parsed = double.tryParse(p['amount'].toString());
+              if (parsed != null && parsed > 0) {
+                amountVal = parsed.toInt();
+              }
             }
 
             final lower = displayName.toLowerCase().trim();
@@ -186,7 +200,15 @@ class _HistoryScreenState extends State<HistoryScreen>
                 lower == 'new project' ||
                 lower == 'project' ||
                 lower.isEmpty) {
-              displayName = 'Floor Plan ${index.toString().padLeft(2, '0')}';
+              final has3d = features.contains('3D');
+              final hasVastu = features.contains('VASTU');
+              if (has3d && hasVastu) {
+                displayName =
+                    '3D & Vastu Plan ${index.toString().padLeft(2, '0')}';
+              } else {
+                displayName =
+                    'Architectural Plan ${index.toString().padLeft(2, '0')}';
+              }
             }
 
             String dateStr = 'Recent';
@@ -200,7 +222,7 @@ class _HistoryScreenState extends State<HistoryScreen>
             return _FloorPlanModel(
               title: displayName,
               date: dateStr,
-              price: amount,
+              price: '₹$amountVal',
               iconVariant: variant,
               features: features,
               raw: p,
@@ -349,18 +371,19 @@ class _HistoryScreenState extends State<HistoryScreen>
             ),
             const SizedBox(height: 4),
             Text(
-              config.tr('Created on ${item.date}', 'உருவாக்கப்பட்டது: ${item.date}'),
+              config.tr(
+                  'Created on ${item.date}', 'உருவாக்கப்பட்டது: ${item.date}'),
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 13,
                 fontWeight: FontWeight.w400,
-                color: isDark
-                    ? const Color(0xFF94A3B8)
-                    : const Color(0xFF8E94A0),
+                color:
+                    isDark ? const Color(0xFF94A3B8) : const Color(0xFF8E94A0),
               ),
             ),
             const SizedBox(height: 18),
             Text(
-              config.tr('Included Reports & Analysis', 'சேர்க்கப்பட்ட அறிக்கைகள்'),
+              config.tr(
+                  'Included Reports & Analysis', 'சேர்க்கப்பட்ட அறிக்கைகள்'),
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -400,9 +423,8 @@ class _HistoryScreenState extends State<HistoryScreen>
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: isDark
-                              ? Colors.white
-                              : const Color(0xFF1E252D),
+                          color:
+                              isDark ? Colors.white : const Color(0xFF1E252D),
                         ),
                       ),
                     ],
@@ -414,22 +436,24 @@ class _HistoryScreenState extends State<HistoryScreen>
             SizedBox(
               width: double.infinity,
               height: 48,
-              child: ElevatedButton(
+              child: OutlinedButton(
                 onPressed: () => Navigator.pop(ctx),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: isDark
-                      ? const Color(0xFF334155)
-                      : const Color(0xFF1B212F),
-                  foregroundColor: Colors.white,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor:
+                      isDark ? Colors.white : const Color(0xFF1B212F),
+                  side: BorderSide(
+                    color: isDark
+                        ? const Color(0xFF334155)
+                        : const Color(0xFFCBD5E1),
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(24),
                   ),
-                  elevation: 0,
                 ),
                 child: Text(
                   config.tr('Close', 'மூடு'),
                   style: GoogleFonts.plusJakartaSans(
-                    fontSize: 15,
+                    fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -543,7 +567,8 @@ class _HistoryScreenState extends State<HistoryScreen>
                           folderScale = 1.0;
                         }
 
-                        final int displayCount = math.min(_floorPlans.length, 6);
+                        final int displayCount =
+                            math.min(_floorPlans.length, 6);
 
                         // ─── STAGE 4: 1-BY-1 CARDS DISPENSE (AFTER FOLDER REACHES TOP) ───
                         final List<Widget> dockedCardWidgets = [];
@@ -556,8 +581,10 @@ class _HistoryScreenState extends State<HistoryScreen>
 
                           // Sequential 1-by-1 cadence with zero overlap:
                           final double cardStart = 0.28 + (index * 0.115);
-                          const double riseDuration = 0.040; // ~192ms: Rises UP out of pocket
-                          const double descendDuration = 0.075; // ~360ms: Glides DOWN in slow-mo
+                          const double riseDuration =
+                              0.040; // ~192ms: Rises UP out of pocket
+                          const double descendDuration =
+                              0.075; // ~360ms: Glides DOWN in slow-mo
                           final double riseEnd = cardStart + riseDuration;
                           final double cardEnd = riseEnd + descendDuration;
 
@@ -642,8 +669,8 @@ class _HistoryScreenState extends State<HistoryScreen>
                                 child: GestureDetector(
                                   onTap: () => _showProjectDetails(item),
                                   behavior: HitTestBehavior.opaque,
-                                  child: _buildFloorPlanCard(item,
-                                      isDark: isDark),
+                                  child:
+                                      _buildFloorPlanCard(item, isDark: isDark),
                                 ),
                               ),
                             );
@@ -1174,7 +1201,7 @@ class _HistoryScreenState extends State<HistoryScreen>
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0x1B212F)
+            color: const Color(0x001b212f)
                 .withValues(alpha: isElevated ? 0.22 : 0.08),
             blurRadius: isElevated ? 24 : 16,
             offset: Offset(0, isElevated ? 12 : 6),

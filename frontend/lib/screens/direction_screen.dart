@@ -226,7 +226,7 @@ class _DirectionScreenState extends State<DirectionScreen>
       context,
       MaterialPageRoute(
         builder: (_) => SecurePaymentScreen(
-          amount: 500.0,
+          amount: 1.0,
           selectedItems: const [
             '3D VISUALIZATION',
             'VASTU ANALYSIS',

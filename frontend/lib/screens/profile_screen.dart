@@ -53,6 +53,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _loadProfileData();
   }
 
+  @override
+  void didUpdateWidget(covariant ProfileScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _loadProfileData();
+  }
+
   Future<void> _loadProfileData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -122,14 +128,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
       int spend = 0;
       for (final p in fetched) {
         String rawName = p['name']?.toString() ?? '';
-        int amount = 500;
+        int amount = 1;
         if (rawName.contains('|')) {
           final parts = rawName.split('|');
           if (parts.length > 2) {
-            amount = (double.tryParse(parts[2]) ?? 500).round();
+            final parsed = double.tryParse(parts[2]);
+            if (parsed != null && parsed > 0) {
+              amount = parsed.round();
+            }
           }
         } else if (p['amount'] != null) {
-          amount = (double.tryParse(p['amount'].toString()) ?? 500).round();
+          final parsed = double.tryParse(p['amount'].toString());
+          if (parsed != null && parsed > 0) {
+            amount = parsed.round();
+          }
         }
         spend += amount;
       }
@@ -711,11 +723,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFEF4444),
-              foregroundColor: Colors.white,
+              backgroundColor: const Color(0xFFE58A18),
+              foregroundColor: const Color(0xFF1E252D),
+              elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(100),
               ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             ),
             onPressed: () async {
               Navigator.pop(ctx);
@@ -731,7 +745,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             },
             child: Text(
               config.tr('Log out', 'வெளியேறு'),
-              style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+              style: GoogleFonts.inter(
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF1E252D),
+              ),
             ),
           ),
         ],
@@ -765,13 +782,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   Container(
                     padding: const EdgeInsets.all(8),
-                    decoration: const BoxDecoration(
-                      color: Color(0x1AEF4444),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE58A18).withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
                       Icons.warning_amber_rounded,
-                      color: Color(0xFFEF4444),
+                      color: Color(0xFFE58A18),
                       size: 22,
                     ),
                   ),
@@ -782,7 +799,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       style: GoogleFonts.syne(
                         fontWeight: FontWeight.w700,
                         fontSize: 18,
-                        color: const Color(0xFFEF4444),
+                        color: config.isDarkMode
+                            ? Colors.white
+                            : const Color(0xFF1B212F),
                       ),
                     ),
                   ),
@@ -852,7 +871,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     style: GoogleFonts.inter(
                       fontSize: 11.5,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFFEF4444),
+                      color: const Color(0xFFE58A18),
                     ),
                   ),
                 ],
@@ -873,8 +892,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFEF4444),
-                    foregroundColor: Colors.white,
+                    backgroundColor: const Color(0xFFE58A18),
+                    foregroundColor: const Color(0xFF1E252D),
+                    elevation: 0,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(100)),
                     padding: const EdgeInsets.symmetric(
@@ -938,12 +958,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
                             valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
+                                AlwaysStoppedAnimation<Color>(Color(0xFF1E252D)),
                           ),
                         )
                       : Text(
                           config.tr('Delete Forever', 'நிரந்தரமாக நீக்கு'),
-                          style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+                          style: GoogleFonts.inter(
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF1E252D),
+                          ),
                         ),
                 ),
               ],

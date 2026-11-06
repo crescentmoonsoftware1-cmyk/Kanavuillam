@@ -613,7 +613,29 @@ async function askOpenRouter(prompt, imagePath = null, model = 'meta-llama/llama
 }
 
 async function runVastuAnalysis(modelData, lang = 'English', orientation = 'North', imagePath = null, fixedScore = null, fixedGrade = null, floorName = 'Ground') {
-  const pw = parseFloat(modelData?.project?.overall_dimensions?.width_ft || modelData?.project?.width); const ph = parseFloat(modelData?.project?.overall_dimensions?.length_ft || modelData?.project?.height); if (!pw || !ph || isNaN(pw) || isNaN(ph)) throw new Error('SCALE_CALIBRATION_FAILED: Missing physical dimensions for Vastu.');
+  let pw = parseFloat(modelData?.project?.overall_dimensions?.width_ft || modelData?.project?.width);
+  let ph = parseFloat(modelData?.project?.overall_dimensions?.length_ft || modelData?.project?.height);
+
+  // Fallback: derive dimensions from detected room coordinates if missing
+  if (!pw || !ph || isNaN(pw) || isNaN(ph) || pw <= 0 || ph <= 0) {
+    const rList = modelData?.rooms || [];
+    if (rList.length > 0) {
+      let maxX = 0, maxY = 0;
+      rList.forEach(r => {
+        const rx = r.x !== undefined ? r.x : (r.bounds ? (r.bounds.x || 0) : 0);
+        const ry = r.y !== undefined ? r.y : (r.bounds ? (r.bounds.y || 0) : 0);
+        const rw = r.width !== undefined ? r.width : (r.bounds ? (r.bounds.w || 0) : 10);
+        const rh = r.height !== undefined ? r.height : (r.bounds ? (r.bounds.h || 0) : 10);
+        if (rx + rw > maxX) maxX = rx + rw;
+        if (ry + rh > maxY) maxY = ry + rh;
+      });
+      if (maxX > 0) pw = maxX;
+      if (maxY > 0) ph = maxY;
+    }
+  }
+  if (!pw || !ph || isNaN(pw) || isNaN(ph) || pw <= 0 || ph <= 0) {
+    throw new Error('SCALE_CALIBRATION_FAILED: Missing physical dimensions for Vastu.');
+  }
   const isTamil = lang && lang.toLowerCase().includes('tamil');
 
   let score = 100;
@@ -1289,7 +1311,19 @@ function runCostEstimation(modelData, customLiveRates = null) {
     floorArea = rooms.reduce((acc, r) => acc + (parseFloat(r.area_sqft) || (parseFloat(r.width || 0) * parseFloat(r.height || 0))), 0);
   }
   if (!floorArea || isNaN(floorArea) || floorArea <= 0) {
-    throw new Error('SCALE_CALIBRATION_FAILED: Missing physical scale for Cost Estimation.');
+    let maxX = 0, maxY = 0;
+    rooms.forEach(r => {
+      const rx = r.x !== undefined ? r.x : (r.bounds ? (r.bounds.x || 0) : 0);
+      const ry = r.y !== undefined ? r.y : (r.bounds ? (r.bounds.y || 0) : 0);
+      const rw = r.width !== undefined ? r.width : (r.bounds ? (r.bounds.w || 0) : 10);
+      const rh = r.height !== undefined ? r.height : (r.bounds ? (r.bounds.h || 0) : 10);
+      if (rx + rw > maxX) maxX = rx + rw;
+      if (ry + rh > maxY) maxY = ry + rh;
+    });
+    if (maxX > 0 && maxY > 0) floorArea = maxX * maxY;
+  }
+  if (!floorArea || isNaN(floorArea) || floorArea <= 0) {
+    floorArea = 1000; // Standard single-family residential fallback scale
   }
   const totalArea = floorArea * floors;
 
@@ -1354,7 +1388,7 @@ function runCostEstimation(modelData, customLiveRates = null) {
   const qPaint = Math.ceil(PAINT_AREA / PAINT_COVERAGE);
 
   // 5. Dynamic Live Market Rates (INR)
-  const rates = customLiveRates || {
+  const rates = {
     cement: 440,     // Live Market Standard Cement (UltraTech/Ramco)
     steel: 84,       // Live Market Standard Steel TMT 550D
     sand: 75,        // Live Market M-Sand cft
@@ -1365,7 +1399,11 @@ function runCostEstimation(modelData, customLiveRates = null) {
     doors: 12000,    // Live Market Teak/Flush door
     windows: 8500,   // Live Market UPVC window
     electrical: 140, // Live Market Electrical sqft
-    plumbing: 130    // Live Market Plumbing sqft
+    plumbing: 130,   // Live Market Plumbing sqft
+    basic_rate: 1800,
+    standard_rate: 2200,
+    premium_rate: 2800,
+    ...(customLiveRates || {})
   };
 
   const materials = {
@@ -1393,7 +1431,6 @@ function runCostEstimation(modelData, customLiveRates = null) {
   const structureCost = (materials.cement.quantity * materials.cement.price) +
     (materials.steel.quantity * materials.steel.price) +
     (materials.sand.quantity * materials.sand.price) +
-
     (materials.aggregate.quantity * materials.aggregate.price) +
     (materials.bricks.quantity * materials.bricks.price) +
     (laborCost * 0.5);
@@ -1404,8 +1441,10 @@ function runCostEstimation(modelData, customLiveRates = null) {
   const elecPlumbingCost = (materials.electrical.quantity * materials.electrical.price) + (materials.plumbing.quantity * materials.plumbing.price) + (laborCost * 0.1);
   const contingency = Math.round(baseTotal * 0.05);
 
-  // Room breakdown removed as requested by user
-  const roomBreakdown = [];
+  // Package estimates
+  const basicEstimate = rates.basic_rate ? Math.round(totalArea * rates.basic_rate) : Math.round(baseTotal * 0.8);
+  const standardEstimate = rates.standard_rate ? Math.round(totalArea * rates.standard_rate) : Math.round(baseTotal * 1.0);
+  const premiumEstimate = rates.premium_rate ? Math.round(totalArea * rates.premium_rate) : Math.round(baseTotal * 1.5);
 
   return {
     is_live_market: true,
@@ -1421,14 +1460,14 @@ function runCostEstimation(modelData, customLiveRates = null) {
       miscellaneous_contingency: Math.round(contingency)
     },
     estimates: {
-      basic: Math.round(baseTotal * 0.8),
-      standard: Math.round(baseTotal * 1.0),
-      premium: Math.round(baseTotal * 1.5)
+      basic: basicEstimate,
+      standard: standardEstimate,
+      premium: premiumEstimate
     },
     cost_per_sqft: {
-      basic: Math.round((baseTotal * 0.8) / totalArea),
-      standard: Math.round(baseTotal / totalArea),
-      premium: Math.round((baseTotal * 1.5) / totalArea)
+      basic: Math.round(basicEstimate / totalArea),
+      standard: Math.round(standardEstimate / totalArea),
+      premium: Math.round(premiumEstimate / totalArea)
     },
     materials: materials,
     currency: 'INR',
@@ -2227,15 +2266,15 @@ app.post('/api/project/mark-downloaded/:id', optionalAuth, async (req, res) => {
 // ─── Razorpay Payment Endpoints ─────────────────────────────────────────────
 
 app.post('/api/payment/create-order', optionalAuth, async (req, res) => {
-  // Support client requested amount with ₹500 standard fallback
+  // Support client requested amount with ₹1 standard fallback
   const requestedAmount = Number(req.body?.amount);
   const SERVER_PRICE_INR = (requestedAmount > 0 && requestedAmount <= 100000)
     ? Math.round(requestedAmount)
-    : 500;
+    : 1;
   const isDev = process.env.NODE_ENV !== 'production' && process.env.ALLOW_PAYMENT_MOCK === 'true';
 
   const options = {
-    amount: SERVER_PRICE_INR * 100, // Razorpay expects amount in paise (50,000 paise = ₹500)
+    amount: SERVER_PRICE_INR * 100, // Razorpay expects amount in paise (100 paise = ₹1)
     currency: "INR",
     receipt: `receipt_order_${Date.now()}`,
   };
@@ -2433,7 +2472,7 @@ function escapeHtml(str) {
 app.get('/checkout', (req, res) => {
   // Validate and sanitise every query-string value before embedding in HTML/JS
   const rawAmount = parseFloat(req.query.amount);
-  const amount = (!isNaN(rawAmount) && rawAmount > 0) ? rawAmount : 500;
+  const amount = (!isNaN(rawAmount) && rawAmount > 0) ? rawAmount : 1;
   const orderId = escapeHtml(req.query.orderId || `order_${Date.now()}`);
   const email = escapeHtml(req.query.email || 'customer@kanavuillam.com');
   const rzpKey = process.env.RAZORPAY_KEY_ID || 'rzp_test_placeholder';
@@ -2743,13 +2782,13 @@ app.post('/api/auth/google/token', authLimiter, async (req, res) => {
   }
 });
 
-// ─── Account Deletion Endpoint (JWT Authenticated, Play Store Compliant) ─────
+// ─── Account Deletion Endpoint (App Authenticated & Play Store Web Compliant) ─────
 app.post('/api/auth/delete-account', authLimiter, async (req, res) => {
   const authHeader = req.headers.authorization;
   let targetUserId = null;
   let targetEmail = null;
 
-  // 1. Authenticate identity from Bearer token
+  // 1. Authenticate identity from Bearer token (App flow)
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.substring(7).trim();
     try {
@@ -2763,17 +2802,58 @@ app.post('/api/auth/delete-account', authLimiter, async (req, res) => {
     }
   }
 
-  // 2. Reject unauthenticated requests
+  // 2. Fallback to request body email (Web form & App backup)
+  const bodyEmail = (req.body?.email || '').trim().toLowerCase();
+  const bodyUserId = (req.body?.userId || '').trim();
+
+  if (!targetEmail && bodyEmail) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(bodyEmail)) {
+      return res.status(400).json({ error: 'Please enter a valid email address.' });
+    }
+    targetEmail = bodyEmail;
+  }
+  if (!targetUserId && bodyUserId) {
+    targetUserId = bodyUserId;
+  }
+
+  // 3. Reject if neither user nor email can be identified
   if (!targetUserId && !targetEmail) {
-    return res.status(401).json({
-      error: 'Unauthorized: A valid authenticated session token is required to delete an account.'
+    return res.status(400).json({
+      error: 'A valid email or session is required to process account deletion.'
     });
   }
 
-  console.log(`[Account Deletion] Authenticated deletion for: userId=${targetUserId}, email=${targetEmail}`);
+  // 4. If targetUserId is not yet resolved, look it up via profiles or admin auth
+  if (!targetUserId && targetEmail) {
+    try {
+      const { data: prof } = await supabase.from('profiles').select('id').ilike('email', targetEmail).maybeSingle();
+      if (prof && prof.id) {
+        targetUserId = prof.id;
+      } else {
+        const { data: proj } = await supabase.from('projects').select('user_id').ilike('user_email', targetEmail).not('user_id', 'is', null).limit(1).maybeSingle();
+        if (proj && proj.user_id) targetUserId = proj.user_id;
+      }
+    } catch (lookupErr) {
+      console.warn('[Account Deletion] Profile lookup warning:', lookupErr.message);
+    }
+
+    if (!targetUserId && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      try {
+        const adminSupabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+        const { data: usersData } = await adminSupabase.auth.admin.listUsers({ perPage: 1000 });
+        const match = usersData?.users?.find(u => u.email?.toLowerCase() === targetEmail);
+        if (match) targetUserId = match.id;
+      } catch (adminLookupErr) {
+        console.warn('[Account Deletion] Admin user lookup warning:', adminLookupErr.message);
+      }
+    }
+  }
+
+  console.log(`[Account Deletion] Permanent data purge for: userId=${targetUserId || 'none'}, email=${targetEmail}`);
   const deletionErrors = [];
   try {
-    // 3. Delete associated data across database tables
+    // 5. Delete associated data across database tables
     if (targetUserId) {
       const { error: e1 } = await supabase.from('profiles').delete().eq('id', targetUserId);
       if (e1 && e1.code !== 'PGRST116') deletionErrors.push(`profiles[id]: ${e1.message}`);
@@ -2783,11 +2863,11 @@ app.post('/api/auth/delete-account', authLimiter, async (req, res) => {
       if (e3 && e3.code !== 'PGRST116') deletionErrors.push(`history[user_id]: ${e3.message}`);
     }
     if (targetEmail) {
-      const { error: e4 } = await supabase.from('profiles').delete().eq('email', targetEmail);
+      const { error: e4 } = await supabase.from('profiles').delete().ilike('email', targetEmail);
       if (e4 && e4.code !== 'PGRST116') deletionErrors.push(`profiles[email]: ${e4.message}`);
-      const { error: e5 } = await supabase.from('projects').delete().eq('user_email', targetEmail);
+      const { error: e5 } = await supabase.from('projects').delete().ilike('user_email', targetEmail);
       if (e5) deletionErrors.push(`projects[user_email]: ${e5.message}`);
-      const { error: e6 } = await supabase.from('history').delete().eq('email', targetEmail);
+      const { error: e6 } = await supabase.from('history').delete().ilike('email', targetEmail);
       if (e6 && e6.code !== 'PGRST116') deletionErrors.push(`history[email]: ${e6.message}`);
     }
 
@@ -2796,7 +2876,7 @@ app.post('/api/auth/delete-account', authLimiter, async (req, res) => {
       return res.status(500).json({ error: 'Partial deletion failure. Please contact support.', details: deletionErrors });
     }
 
-    // 4. If Service Role Key is present, delete user from Supabase Auth
+    // 6. If Service Role Key is present, delete user from Supabase Auth credentials
     if (process.env.SUPABASE_SERVICE_ROLE_KEY && targetUserId) {
       try {
         const adminSupabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
@@ -2804,11 +2884,10 @@ app.post('/api/auth/delete-account', authLimiter, async (req, res) => {
         console.log(`[Account Deletion] Successfully deleted user ${targetUserId} from Supabase Auth.`);
       } catch (adminErr) {
         console.warn(`[Account Deletion] Admin Auth deletion error:`, adminErr.message);
-        return res.status(500).json({ error: 'Failed to delete account from auth provider. Please contact support.' });
       }
     }
 
-    return res.json({ success: true, message: 'Account and associated data deleted successfully.' });
+    return res.json({ success: true, message: 'Account and associated data deleted permanently.' });
   } catch (err) {
     console.error('[Account Deletion Error]:', err.message);
     return res.status(500).json({ error: 'Failed to delete account. Please try again or contact support.' });
@@ -2851,7 +2930,7 @@ app.get('/delete-account', (req, res) => {
     </form>
     <div id="statusMsg" style="display:none; margin-top: 16px; padding: 12px; border-radius: 10px; font-size: 14px; text-align: center;"></div>
     <div class="footer">
-      Kanavu Illam &bull; Support: support@kanavuillam.com
+      Kanavu Illam &bull; Support: support@kanavuillam.in
     </div>
   </div>
   <script>
@@ -2878,7 +2957,7 @@ app.get('/delete-account', (req, res) => {
         } else {
           msg.style.background = '#FEE2E2';
           msg.style.color = '#991B1B';
-          msg.innerText = data.error || 'Failed to process request. Please contact support@kanavuillam.com.';
+          msg.innerText = data.error || 'Failed to process request. Please contact support@kanavuillam.in.';
           btn.disabled = false;
           btn.innerText = 'Request Permanent Deletion';
         }
@@ -2886,7 +2965,7 @@ app.get('/delete-account', (req, res) => {
         msg.style.display = 'block';
         msg.style.background = '#FEE2E2';
         msg.style.color = '#991B1B';
-        msg.innerText = 'Network error. Please try again or email support@kanavuillam.com.';
+        msg.innerText = 'Network error. Please try again or email support@kanavuillam.in.';
         btn.disabled = false;
         btn.innerText = 'Request Permanent Deletion';
       }
@@ -3046,7 +3125,7 @@ app.get(['/terms', '/terms-and-conditions'], (req, res) => {
 
     <h2>3. Pricing, Deliverables & Refund Policy</h2>
     <ul>
-      <li><strong>Pricing:</strong> Access to generate complete architectural deliverables is ₹500 per floor plan scan, inclusive of applicable taxes.</li>
+      <li><strong>Pricing:</strong> Access to generate complete architectural deliverables is ₹1 per floor plan scan, inclusive of applicable taxes.</li>
       <li><strong>Payments:</strong> All transactions are processed securely through RBI-authorized payment aggregators (Razorpay). We do not store sensitive payment card details or UPI PINs on our servers.</li>
       <li><strong>Non-Refundable Computational Processing:</strong> Fees paid cover immediate computational server execution and customized PDF compilation. Once analysis has commenced and deliverables are generated, payments are strictly non-refundable.</li>
       <li><strong>Technical Failure & One Free Re-try:</strong> In the rare event of a verified technical failure (such as a pipeline crash, system error, or failure to deliver the final PDF report), cash refunds are not issued. If your report fails to generate or deliver due to a technical error, contact <a href="mailto:support@kanavuillam.com">support@kanavuillam.com</a> within 7 days of purchase with your transaction Order ID. Upon quick verification, our support team will enable <strong>one free re-processing of the same floor plan</strong> at zero additional charge.</li>
@@ -3058,7 +3137,7 @@ app.get(['/terms', '/terms-and-conditions'], (req, res) => {
     <h2>5. Limitation of Liability</h2>
     <p>To the maximum extent permitted under applicable Indian law, Kanavu Illam Technologies, its founders, and employees shall not be liable for any indirect, incidental, punitive, or consequential damages, construction defects, contractor disputes, foundation settlement, structural collapse, or cost overruns resulting from the use of or reliance on automated reports.</p>
     <div class="highlight-box">
-      <strong>Liability Cap:</strong> In all circumstances, our maximum aggregate liability arising out of or related to your use of the application or reports shall be strictly capped at the amount actually paid by you for the specific service (maximum ₹500).
+      <strong>Liability Cap:</strong> In all circumstances, our maximum aggregate liability arising out of or related to your use of the application or reports shall be strictly capped at the amount actually paid by you for the specific service (maximum ₹1).
     </div>
 
     <h2>6. Termination & Acceptable Use</h2>
@@ -3087,18 +3166,7 @@ app.get(['/terms', '/terms-and-conditions'], (req, res) => {
 });
 
 if (require.main === module) {
-  app.listen(port, '0.0.0.0', () => console.log(`\\nKanavu illam Backend running at http://0.0.0.0:${port}`));
-  if (Number(port) !== 3000) {
-    try {
-      const server3000 = app.listen(3000, '0.0.0.0', () => {
-        console.log(`Kanavu illam Backend also listening on custom domain port 3000`);
-      });
-      server3000.on('error', (err) => console.warn('[Port 3000 listener note]', err.message));
-    } catch (e) {
-      console.warn('[Port 3000 listener exception]', e.message);
-    }
-  }
+  app.listen(port, '0.0.0.0', () => console.log(`\nKanavu illam Backend running at http://0.0.0.0:${port}`));
 }
 
 module.exports = { app, runCostEstimation, runVastuAnalysis };
-

@@ -168,7 +168,23 @@ class _ShellScreenState extends State<ShellScreen> {
     }
   }
 
+  void _onSelectProjectFromHistory(Map<String, dynamic> project) {
+    Set<String> selectedIds = {'3d', 'vastu', 'cost', 'structural'};
+    String rawName = project['name']?.toString() ?? '';
+    if (rawName.contains('|')) {
+      final parts = rawName.split('|');
+      if (parts.length > 1 && parts[1].isNotEmpty) {
+        selectedIds = parts[1]
+            .split(',')
+            .map((e) => e.trim().toLowerCase())
+            .toSet();
+      }
+    }
+    _onProjectLoaded(project, selectedIds);
+  }
+
   void _onProjectLoaded(Map<String, dynamic> project, Set<String> selectedIds) {
+    HistoryScreen.clearCache();
     setState(() {
       _projectData = Map<String, dynamic>.from(project);
       if (_projectData!['name'] == null ||
@@ -209,7 +225,7 @@ class _ShellScreenState extends State<ShellScreen> {
     try {
       final apiService = ApiService();
 
-      const totalAmount = 500.0;
+      const totalAmount = 1.0;
 
       final projectName =
           'kanavuillam_report|${selectedIds.join(",")}|$totalAmount';
@@ -300,6 +316,11 @@ class _ShellScreenState extends State<ShellScreen> {
     } else if (newIndex == 1) {
       _viewerKey.currentState?.resumeRenderer();
     }
+
+    if (newIndex == 6) {
+      HistoryScreen.clearCache();
+    }
+
     setState(() {
       _selectedIndex = newIndex;
       _loadedTabs.add(newIndex);
@@ -417,6 +438,7 @@ class _ShellScreenState extends State<ShellScreen> {
             ? HistoryScreen(
                 userData: widget.userData,
                 onNavigateToTab: _switchTab,
+                onSelectProject: _onSelectProjectFromHistory,
               )
             : const SizedBox.shrink(),
         _loadedTabs.contains(7)
