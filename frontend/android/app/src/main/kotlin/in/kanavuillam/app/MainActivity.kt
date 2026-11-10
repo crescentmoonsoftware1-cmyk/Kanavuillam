@@ -1,5 +1,6 @@
-package com.archigen.archigen_ai
+package in.kanavuillam.app
 
 import io.flutter.embedding.android.FlutterActivity
 
 class MainActivity : FlutterActivity()
+
