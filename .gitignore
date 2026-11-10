@@ -41,6 +41,7 @@ backend/cv_debug_output/
 
 # Stray test & run dumps
 *.csv
+*.pdf
 backend/new_run.json
 backend/user_run_test.json
 frontend/assets/images/3d_base64.txt

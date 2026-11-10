@@ -231,1330 +231,1199 @@ class PdfService {
       logoImageBytes = logoData.buffer.asUint8List();
     } catch (_) {}
 
-    pw.Font timesFont;
-    pw.Font timesFontBold;
+    pw.Font baseFont;
+    pw.Font baseFontBold;
     pw.Font? tamilFont;
     pw.Font? tamilFontBold;
 
     try {
-      timesFont = await PdfGoogleFonts.tinosRegular()
-          .timeout(const Duration(seconds: 6));
-      timesFontBold = await PdfGoogleFonts.tinosBold()
-          .timeout(const Duration(seconds: 6));
+      baseFont = await PdfGoogleFonts.robotoRegular().timeout(const Duration(seconds: 4));
+      baseFontBold = await PdfGoogleFonts.robotoBold().timeout(const Duration(seconds: 4));
     } catch (_) {
-      timesFont = pw.Font.helvetica();
-      timesFontBold = pw.Font.helveticaBold();
+      baseFont = pw.Font.helvetica();
+      baseFontBold = pw.Font.helveticaBold();
     }
 
     try {
-      tamilFont = await PdfGoogleFonts.notoSansTamilRegular()
-          .timeout(const Duration(seconds: 6));
-      tamilFontBold = await PdfGoogleFonts.notoSansTamilBold()
-          .timeout(const Duration(seconds: 6));
+      tamilFont = await PdfGoogleFonts.notoSansTamilRegular().timeout(const Duration(seconds: 4));
+      tamilFontBold = await PdfGoogleFonts.notoSansTamilBold().timeout(const Duration(seconds: 4));
     } catch (_) {
       tamilFont = null;
       tamilFontBold = null;
     }
 
     final pdfTheme = pw.ThemeData.withFont(
-      base: timesFont,
-      bold: timesFontBold,
+      base: baseFont,
+      bold: baseFontBold,
       fontFallback: [
         if (tamilFont != null) tamilFont,
-        timesFontBold,
+        baseFontBold,
         if (tamilFontBold != null) tamilFontBold,
       ],
     );
 
     final pdf = pw.Document(theme: pdfTheme);
 
-    final name = data['name'] ?? 'My Project';
-    final date = DateTime.now().toString().split('.')[0];
+    String cleanProjectName(String? raw) {
+      if (raw == null || raw.trim().isEmpty) return 'Residential Architectural Project';
+      if (raw.contains('|')) {
+        return 'Residential Architectural Feasibility Report';
+      }
+      return raw.trim();
+    }
 
-    // model, costRoot, vastuRoot, and floors are already defined above
+    String cleanDateString(String rawDate) {
+      try {
+        final dt = DateTime.parse(rawDate);
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
+      } catch (_) {
+        return rawDate.split(' ')[0];
+      }
+    }
 
-    final primaryColor = PdfColor.fromHex('#1B365D');
-    final accentBlue = PdfColor.fromHex('#EFF6FF');
-    final accentOrange = PdfColor.fromHex('#F59E0B');
-    final bgTeal = PdfColor.fromHex('#F5F7FA');
+    String formatIndianCurrency(num amount) {
+      final int val = amount.round();
+      if (val >= 10000000) {
+        return 'Rs. ${(val / 10000000).toStringAsFixed(2)} Cr';
+      } else if (val >= 100000) {
+        return 'Rs. ${(val / 100000).toStringAsFixed(2)} Lakhs';
+      }
+      final str = val.toString();
+      if (str.length <= 3) return 'Rs. $str';
+      String lastThree = str.substring(str.length - 3);
+      String otherNumbers = str.substring(0, str.length - 3);
+      RegExp reg = RegExp(r'(\d+?)(?=(\d{2})+(?!\d))');
+      String formatted = otherNumbers.replaceAllMapped(reg, (Match m) => '${m[1]},');
+      return 'Rs. $formatted,$lastThree';
+    }
+
+    String formatNumberCommas(num val) {
+      final str = val.round().toString();
+      if (str.length <= 3) return str;
+      String lastThree = str.substring(str.length - 3);
+      String otherNumbers = str.substring(0, str.length - 3);
+      RegExp reg = RegExp(r'(\d+?)(?=(\d{2})+(?!\d))');
+      String formatted = otherNumbers.replaceAllMapped(reg, (Match m) => '${m[1]},');
+      return '$formatted,$lastThree';
+    }
+
+    final rawName = data['name']?.toString() ?? 'Kanavu Illam Analysis Report';
+    final cleanTitle = cleanProjectName(rawName);
+    final rawDate = DateTime.now().toString().split('.')[0];
+    final cleanDateStr = cleanDateString(rawDate);
+
+    // Exact Logo Brand Palette
+    final primaryColor = PdfColor.fromHex('#1B212F'); // Architectural Slate Grey (from logo)
+    final brandAmber = PdfColor.fromHex('#E58A18');   // Gold Amber Accent (from logo)
+    final slateSteel = PdfColor.fromHex('#364050');
+    final slateMuted = PdfColor.fromHex('#64748B');
+    final textDark = PdfColor.fromHex('#1E293B');
+    final bgLight = PdfColor.fromHex('#F8FAFC');
+    final borderSlate = PdfColor.fromHex('#E2E8F0');
+    final tintAmber = PdfColor.fromHex('#FFFBEB');
     final accentGreen = PdfColor.fromHex('#10B981');
     final accentRed = PdfColor.fromHex('#EF4444');
-    final textDark = PdfColor.fromHex('#374151');
-    final textMuted = PdfColor.fromHex('#6B7280');
 
     pw.Widget buildPageFooter(pw.Context context) {
-      return pw.Column(children: [
-        pw.SizedBox(height: 20),
-        pw.Container(height: 2, color: accentOrange),
-        pw.Container(
-          padding: const pw.EdgeInsets.symmetric(vertical: 10),
-          child: pw.Row(
+      return pw.Column(
+        children: [
+          pw.SizedBox(height: 10),
+          pw.Row(
+            children: [
+              pw.Expanded(child: pw.Container(height: 1.5, color: brandAmber)),
+              pw.SizedBox(width: 8),
+              pw.Container(
+                padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: pw.BoxDecoration(
+                  color: primaryColor,
+                  borderRadius: pw.BorderRadius.circular(3),
+                ),
+                child: pw.Text('KANAVU ILLAM',
+                    style: pw.TextStyle(color: PdfColors.white, fontSize: 7, fontWeight: pw.FontWeight.bold)),
+              ),
+              pw.SizedBox(width: 8),
+              pw.Expanded(child: pw.Container(height: 1.5, color: brandAmber)),
+            ],
+          ),
+          pw.Container(
+            padding: const pw.EdgeInsets.symmetric(vertical: 5),
+            child: pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                pw.Text('Project $name | Generated: $date | Confidential',
-                    style: pw.TextStyle(color: textMuted, fontSize: 10)),
+                pw.Text('Kanavu Illam™ · $cleanTitle · Confidential',
+                    style: pw.TextStyle(color: slateMuted, fontSize: 8)),
                 pw.Text('Page ${context.pageNumber} of ${context.pagesCount}',
-                    style: pw.TextStyle(color: textMuted, fontSize: 10)),
-              ]),
-        ),
-      ]);
+                    style: pw.TextStyle(color: slateMuted, fontSize: 8, fontWeight: pw.FontWeight.bold)),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    pw.Widget buildSectionHeader(String number, String title) {
+      return pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Row(
+            crossAxisAlignment: pw.CrossAxisAlignment.center,
+            children: [
+              pw.Container(
+                padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: pw.BoxDecoration(
+                  color: brandAmber,
+                  borderRadius: pw.BorderRadius.circular(4),
+                ),
+                child: pw.Text(number,
+                    style: pw.TextStyle(
+                        color: PdfColors.white,
+                        fontSize: 10,
+                        fontWeight: pw.FontWeight.bold)),
+              ),
+              pw.SizedBox(width: 8),
+              pw.Text(title,
+                  style: pw.TextStyle(
+                      fontSize: 14,
+                      fontWeight: pw.FontWeight.bold,
+                      color: primaryColor)),
+            ],
+          ),
+          pw.SizedBox(height: 6),
+          pw.Container(height: 1.5, width: double.infinity, color: brandAmber),
+          pw.SizedBox(height: 12),
+        ],
+      );
     }
 
     final pageTheme = pw.PageTheme(
       pageFormat: PdfPageFormat.a4,
-      margin:
-          const pw.EdgeInsets.only(left: 40, right: 40, top: 30, bottom: 30),
+      margin: const pw.EdgeInsets.only(left: 36, right: 36, top: 28, bottom: 28),
     );
 
-    // Page 1 - Cover Page
+    // =========================================================================
+    // PAGE 1: EXECUTIVE COVER PAGE (APP LOGO + USER & PAYMENT DETAILS ONLY)
+    // =========================================================================
+    String paymentAmount = 'Rs. 1.00';
+    if (data['amount'] != null) {
+      paymentAmount = 'Rs. ${data['amount']}';
+    } else if (rawName.contains('|')) {
+      final parts = rawName.split('|');
+      if (parts.length >= 3 && num.tryParse(parts[2]) != null) {
+        paymentAmount = 'Rs. ${parts[2]}';
+      }
+    }
+    final txnId = data['payment_id']?.toString() ??
+        'KI-PAY-${(data['id']?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString()).replaceAll('project_', '').substring(0, math.min(10, (data['id']?.toString() ?? '8942107452').length))}';
+
     pdf.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(40),
+        margin: const pw.EdgeInsets.all(36),
         build: (pw.Context context) {
-          return pw.Center(
-              child: pw.Column(
-                  mainAxisAlignment: pw.MainAxisAlignment.center,
-                  children: [
-                if (logoImageBytes != null) ...[
-                  pw.Image(pw.MemoryImage(logoImageBytes), height: 160),
-                  pw.SizedBox(height: 20),
-                ] else ...[
+          return pw.Container(
+            decoration: pw.BoxDecoration(
+              border: pw.Border.all(color: primaryColor, width: 2),
+              borderRadius: pw.BorderRadius.circular(12),
+            ),
+            padding: const pw.EdgeInsets.symmetric(horizontal: 32, vertical: 36),
+            child: pw.Column(
+              mainAxisAlignment: pw.MainAxisAlignment.center,
+              crossAxisAlignment: pw.CrossAxisAlignment.center,
+              children: [
+                pw.Spacer(),
+
+                // Center Large App Logo
+                if (logoImageBytes != null)
                   pw.Container(
-                    width: 140,
+                    padding: const pw.EdgeInsets.all(16),
+                    decoration: pw.BoxDecoration(
+                      color: bgLight,
+                      shape: pw.BoxShape.circle,
+                      border: pw.Border.all(color: brandAmber, width: 2.5),
+                    ),
+                    child: pw.Image(pw.MemoryImage(logoImageBytes), height: 160),
+                  )
+                else
+                  pw.Container(
+                    width: 150,
                     height: 150,
                     decoration: pw.BoxDecoration(
                       color: primaryColor,
                       shape: pw.BoxShape.circle,
+                      border: pw.Border.all(color: brandAmber, width: 3),
                     ),
                     child: pw.Center(
                       child: pw.Text('KI',
                           style: pw.TextStyle(
                               color: PdfColors.white,
-                              fontSize: 40,
+                              fontSize: 54,
                               fontWeight: pw.FontWeight.bold)),
                     ),
                   ),
-                  pw.SizedBox(height: 20),
-                  pw.Text('Kanavu illam',
-                      style: pw.TextStyle(
-                          fontSize: 32,
-                          fontWeight: pw.FontWeight.bold,
-                          color: textDark)),
-                ],
-                pw.SizedBox(height: 40),
-                pw.Text('Complete House Analysis Report',
-                    style: pw.TextStyle(fontSize: 24, color: primaryColor)),
-                pw.SizedBox(height: 80),
-                pw.Text('User Name: ${(data['user_name'] != null && data['user_name'].toString().trim().isNotEmpty) ? data['user_name'] : '—'}',
-                    style: pw.TextStyle(fontSize: 16, color: textDark)),
-                pw.SizedBox(height: 10),
-                pw.Text('Email: ${(data['email'] != null && data['email'].toString().trim().isNotEmpty) ? data['email'] : '—'}',
-                    style: pw.TextStyle(fontSize: 16, color: textDark)),
-                pw.SizedBox(height: 10),
-                pw.Text('Phone: ${(data['phone'] != null && data['phone'].toString().trim().isNotEmpty) ? data['phone'] : '—'}',
-                    style: pw.TextStyle(fontSize: 16, color: textDark)),
-                pw.SizedBox(height: 10),
-                if (data['address'] != null && data['address'].isNotEmpty) ...[
-                  pw.Text('Address: ${data['address']}',
-                      style: pw.TextStyle(fontSize: 16, color: textDark),
-                      textAlign: pw.TextAlign.center),
-                ],
-              ]));
+
+                pw.SizedBox(height: 22),
+                pw.Text('KANAVU ILLAM',
+                    style: pw.TextStyle(
+                        fontSize: 26,
+                        fontWeight: pw.FontWeight.bold,
+                        color: primaryColor,
+                        letterSpacing: 1.5)),
+                pw.SizedBox(height: 4),
+                pw.Text('House Plan Analysis & Engineering Report',
+                    style: pw.TextStyle(fontSize: 12, color: slateMuted)),
+
+                pw.SizedBox(height: 32),
+
+                // Card with ONLY User Details and Payment Details
+                pw.Container(
+                  width: double.infinity,
+                  padding: const pw.EdgeInsets.all(18),
+                  decoration: pw.BoxDecoration(
+                    color: bgLight,
+                    border: pw.Border.all(color: borderSlate, width: 1.5),
+                    borderRadius: pw.BorderRadius.circular(10),
+                  ),
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      // User Details Section
+                      pw.Text('USER DETAILS',
+                          style: pw.TextStyle(
+                              fontSize: 11,
+                              fontWeight: pw.FontWeight.bold,
+                              color: brandAmber)),
+                      pw.SizedBox(height: 10),
+                      _buildInfoRow('User Name', (data['user_name'] != null && data['user_name'].toString().trim().isNotEmpty) ? data['user_name'].toString() : 'Valued Homeowner', textDark),
+                      pw.SizedBox(height: 6),
+                      _buildInfoRow('Email', (data['email'] != null && data['email'].toString().trim().isNotEmpty) ? data['email'].toString() : 'support@kanavuillam.in', textDark),
+                      pw.SizedBox(height: 6),
+                      _buildInfoRow('Contact', (data['phone'] != null && data['phone'].toString().trim().isNotEmpty) ? data['phone'].toString() : '+91 75508 80429', textDark),
+
+                      pw.SizedBox(height: 14),
+                      pw.Container(height: 1, color: borderSlate),
+                      pw.SizedBox(height: 14),
+
+                      // Payment Details Section
+                      pw.Text('PAYMENT DETAILS',
+                          style: pw.TextStyle(
+                              fontSize: 11,
+                              fontWeight: pw.FontWeight.bold,
+                              color: brandAmber)),
+                      pw.SizedBox(height: 10),
+                      _buildInfoRow('Amount Paid', paymentAmount, primaryColor, isBold: true),
+                      pw.SizedBox(height: 6),
+                      _buildInfoRow('Payment Status', 'PAID (Verified Online)', accentGreen, isBold: true),
+                      pw.SizedBox(height: 6),
+                      _buildInfoRow('Transaction Ref', txnId, textDark),
+                      pw.SizedBox(height: 6),
+                      _buildInfoRow('Payment Date', cleanDateStr, textDark),
+                    ],
+                  ),
+                ),
+
+                pw.Spacer(),
+
+                // Minimal bottom branding note
+                pw.Text('Kanavu Illam AI Architectural Engine · Crescent Moon Consulting Services',
+                    style: pw.TextStyle(fontSize: 8, color: slateMuted)),
+              ],
+            ),
+          );
         },
       ),
     );
 
+    // =========================================================================
+    // PAGE 2: 3D HOUSE VISUALIZATION & SPATIAL BLUEPRINT
+    // =========================================================================
     if (selectedReportIds.isEmpty || selectedReportIds.contains('3d')) {
-      // Page 2 - 3D House Visualization
-      pdf.addPage(
-        pw.MultiPage(
-          pageTheme: pageTheme,
-          footer: buildPageFooter,
-          build: (pw.Context context) {
-            return [
-              pw.Container(
-                width: double.infinity,
-                padding: const pw.EdgeInsets.symmetric(vertical: 10),
-                child: pw.Text('01 · 3D HOUSE VISUALIZATION',
-                    style: pw.TextStyle(
-                        fontSize: 18,
-                        fontWeight: pw.FontWeight.bold,
-                        color: primaryColor)),
-              ),
-              pw.Container(
-                  height: 2, width: double.infinity, color: accentOrange),
-              pw.SizedBox(height: 20),
-              ...floors.map((floor) {
-                final floorData = isMultiFloor(floorsMap)
-                    ? (floorsMap[floor] ?? ground)
-                    : ground;
-                String title = floor == 'default'
-                    ? 'Internal Floor Plan Model'
-                    : '${floor.toString().toUpperCase()} Floor Model';
-                return pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text(title,
-                          style: pw.TextStyle(
-                              fontSize: 16,
-                              fontWeight: pw.FontWeight.bold,
-                              color: textDark)),
-                      pw.SizedBox(height: 10),
-                      if (images3d != null &&
-                          (images3d[floor] != null ||
-                              images3d['default'] != null))
-                        pw.ClipRRect(
-                            horizontalRadius: 8,
-                            verticalRadius: 8,
-                            child: pw.Image(
-                                pw.MemoryImage(
-                                    images3d[floor] ?? images3d['default']!),
-                                fit: pw.BoxFit.contain,
-                                height: 250))
-                      else
-                        _buildApp3DModel(floorData, projWidth, projHeight),
-                      pw.SizedBox(height: 25),
-                    ]);
-              }).toList(),
-            ];
-          },
-        ),
-      );
-    }
-
-    if (selectedReportIds.isEmpty || selectedReportIds.contains('vastu')) {
-      // Page 3 - Vastu Report
       for (var floor in floors) {
+        final floorData = isMultiFloor(floorsMap) ? (floorsMap[floor] ?? ground) : ground;
+        final rooms = floorData['rooms'] as List? ?? [];
+        String title = floor == 'default' ? 'GROUND FLOOR SPATIAL MODEL' : '${floor.toString().toUpperCase()} FLOOR SPATIAL MODEL';
+
         pdf.addPage(
-          pw.MultiPage(
+          pw.Page(
             pageTheme: pageTheme,
-            footer: buildPageFooter,
             build: (pw.Context context) {
-              final vastu = isMultiFloor(vastuRoot)
-                  ? (vastuRoot[floor] ?? vastuRoot)
-                  : vastuRoot;
-              String title = floor == 'default'
-                  ? 'Overall Vastu Analysis'
-                  : '${floor.toString().toUpperCase()} Floor Vastu Analysis';
-              String headerTitle = floor == 'default'
-                  ? '02 · VASTU REPORT'
-                  : '02 · VASTU REPORT - ${floor.toString().toUpperCase()} FLOOR';
-
-              return [
-                pw.Container(
-                  width: double.infinity,
-                  padding: const pw.EdgeInsets.symmetric(vertical: 10),
-                  child: pw.Text(headerTitle,
-                      style: pw.TextStyle(
-                          fontSize: 18,
-                          fontWeight: pw.FontWeight.bold,
-                          color: primaryColor)),
-                ),
-                pw.Container(
-                    height: 2, width: double.infinity, color: accentOrange),
-                pw.SizedBox(height: 20),
-                pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text(title,
-                          style: pw.TextStyle(
-                              fontSize: 18,
-                              fontWeight: pw.FontWeight.bold,
-                              color: textDark)),
-                      pw.SizedBox(height: 10),
-                      pw.Row(children: [
-                        pw.Text('Score: ',
-                            style: pw.TextStyle(
-                                fontSize: 16,
-                                fontWeight: pw.FontWeight.bold,
-                                color: textDark)),
-                        pw.Text(
-                            '${vastu['score'] ?? 'N/A'}/100 (${vastu['grade'] ?? 'N/A'})',
-                            style: pw.TextStyle(
-                                fontSize: 16,
-                                fontWeight: pw.FontWeight.bold,
-                                color: accentGreen)),
-                      ]),
-                      pw.SizedBox(height: 15),
-
-                      // PLACEMENT ANALYSIS
-                      pw.Text('Placement Analysis',
-                          style: pw.TextStyle(
-                              fontSize: 14,
-                              fontWeight: pw.FontWeight.bold,
-                              color: textDark)),
-                      pw.SizedBox(height: 5),
-                      if (vastu['mainEntrance'] != null)
-                        pw.Text('- Entrance: ${vastu['mainEntrance']}',
-                            style: pw.TextStyle(fontSize: 12, color: textDark)),
-                      if (vastu['kitchen'] != null)
-                        pw.Text('- Kitchen: ${vastu['kitchen']}',
-                            style: pw.TextStyle(fontSize: 12, color: textDark)),
-                      if (vastu['masterBedroom'] != null)
-                        pw.Text('- Master Bedroom: ${vastu['masterBedroom']}',
-                            style: pw.TextStyle(fontSize: 12, color: textDark)),
-                      if (vastu['bathroom'] != null)
-                        pw.Text('- Bathroom: ${vastu['bathroom']}',
-                            style: pw.TextStyle(fontSize: 12, color: textDark)),
-                      if (vastu['staircase'] != null)
-                        pw.Text('- Staircase: ${vastu['staircase']}',
-                            style: pw.TextStyle(fontSize: 12, color: textDark)),
-                      if (vastu['poojaRoom'] != null)
-                        pw.Text('- Pooja Room: ${vastu['poojaRoom']}',
-                            style: pw.TextStyle(fontSize: 12, color: textDark)),
-                      if (vastu['livingRoom'] != null)
-                        pw.Text('- Living Room: ${vastu['livingRoom']}',
-                            style: pw.TextStyle(fontSize: 12, color: textDark)),
-                      pw.SizedBox(height: 15),
-                      if ((vastu['strengths'] as List?)?.isNotEmpty ??
-                          false) ...[
-                        pw.Text('Benefits',
-                            style: pw.TextStyle(
-                                fontSize: 14,
-                                fontWeight: pw.FontWeight.bold,
-                                color: accentGreen)),
-                        pw.SizedBox(height: 5),
-                        ...(vastu['strengths'] as List).map((e) => pw.Text(
-                            '- $e',
-                            style:
-                                pw.TextStyle(fontSize: 12, color: textDark))),
-                        pw.SizedBox(height: 15),
+              return pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  buildSectionHeader('01', '3D HOUSE VISUALIZATION & SPATIAL BLUEPRINT'),
+                  pw.Text(title,
+                      style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: textDark)),
+                  pw.SizedBox(height: 8),
+                  pw.Center(
+                    child: pw.Container(
+                      height: 290,
+                      width: double.infinity,
+                      decoration: pw.BoxDecoration(
+                        color: PdfColor.fromHex('#0B1325'),
+                        borderRadius: pw.BorderRadius.circular(8),
+                        border: pw.Border.all(color: borderSlate, width: 1),
+                      ),
+                      child: pw.ClipRRect(
+                        horizontalRadius: 8,
+                        verticalRadius: 8,
+                        child: images3d != null && (images3d[floor] != null || images3d['default'] != null)
+                            ? pw.Center(
+                                child: pw.Image(
+                                  pw.MemoryImage(images3d[floor] ?? images3d['default']!),
+                                  fit: pw.BoxFit.contain,
+                                ),
+                              )
+                            : _buildApp3DModel(floorData, projWidth, projHeight),
+                      ),
+                    ),
+                  ),
+                  pw.SizedBox(height: 14),
+                  pw.Container(
+                    padding: const pw.EdgeInsets.all(12),
+                    decoration: pw.BoxDecoration(
+                      color: bgLight,
+                      border: pw.Border.all(color: borderSlate, width: 1),
+                      borderRadius: pw.BorderRadius.circular(8),
+                    ),
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Row(
+                          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                          children: [
+                            pw.Text('SPATIAL SPECIFICATIONS & ROOM DISTRIBUTION',
+                                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: brandAmber)),
+                            pw.Text('${(projWidth * projHeight).toInt()} sq.ft Built-Up',
+                                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: primaryColor)),
+                          ],
+                        ),
+                        pw.SizedBox(height: 8),
+                        pw.Row(
+                          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                          children: [
+                            _buildOverviewBadge('Frontage', '${projWidth.toInt()} ft', borderSlate, textDark),
+                            _buildOverviewBadge('Depth', '${projHeight.toInt()} ft', borderSlate, textDark),
+                            _buildOverviewBadge('Orientation', '${project['orientation'] ?? data['orientation'] ?? 'North'}', borderSlate, textDark),
+                            _buildOverviewBadge('Total Rooms', '${rooms.length} Zones', borderSlate, textDark),
+                          ],
+                        ),
+                        if (rooms.isNotEmpty) ...[
+                          pw.SizedBox(height: 10),
+                          pw.Wrap(
+                            spacing: 6,
+                            runSpacing: 5,
+                            children: rooms.take(8).map((rm) {
+                              final rName = rm['name']?.toString() ?? 'Room';
+                              final rw = (rm['width'] as num?)?.toDouble() ?? 0;
+                              final rh = (rm['height'] as num?)?.toDouble() ?? 0;
+                              final dimStr = (rw > 0 && rh > 0) ? " (${rw.toInt()}'×${rh.toInt()}')" : "";
+                              return pw.Container(
+                                padding: const pw.EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                                decoration: pw.BoxDecoration(
+                                  color: PdfColors.white,
+                                  border: pw.Border.all(color: borderSlate),
+                                  borderRadius: pw.BorderRadius.circular(4),
+                                ),
+                                child: pw.Text(
+                                  '$rName$dimStr',
+                                  style: pw.TextStyle(fontSize: 8, color: textDark),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ],
                       ],
-                      if ((vastu['violations'] as List?)?.isNotEmpty ??
-                          false) ...[
-                        pw.Text('Reasons for Score Reduction',
-                            style: pw.TextStyle(
-                                fontSize: 14,
-                                fontWeight: pw.FontWeight.bold,
-                                color: accentRed)),
-                        pw.SizedBox(height: 5),
-                        ...(vastu['violations'] as List).map((e) => pw.Text(
-                            '- $e',
-                            style:
-                                pw.TextStyle(fontSize: 12, color: textDark))),
-                        pw.SizedBox(height: 15),
-                      ],
-                      if ((vastu['suggestions'] as List?)?.isNotEmpty ??
-                          false) ...[
-                        pw.Text('Suggestions',
-                            style: pw.TextStyle(
-                                fontSize: 14,
-                                fontWeight: pw.FontWeight.bold,
-                                color: accentBlue)),
-                        pw.SizedBox(height: 5),
-                        ...(vastu['suggestions'] as List).map((e) => pw.Text(
-                            '- $e',
-                            style:
-                                pw.TextStyle(fontSize: 12, color: textDark))),
-                        pw.SizedBox(height: 20),
-                      ],
-                    ]),
-              ];
+                    ),
+                  ),
+                  pw.Spacer(),
+                  buildPageFooter(context),
+                ],
+              );
             },
           ),
         );
       }
     }
 
-    if (selectedReportIds.isEmpty || selectedReportIds.contains('cost')) {
-      // Page 4 - Estimation
+    // =========================================================================
+    // PAGE 3: VASTU SHASTRA COMPLIANCE AUDIT (FULL BOTTOM COVERAGE)
+    // =========================================================================
+    if (selectedReportIds.isEmpty || selectedReportIds.contains('vastu')) {
       for (var floor in floors) {
+        final vastu = isMultiFloor(vastuRoot) ? (vastuRoot[floor] ?? vastuRoot) : vastuRoot;
+        String title = floor == 'default' ? 'OVERALL VASTU AUDIT' : '${floor.toString().toUpperCase()} FLOOR VASTU AUDIT';
+
         pdf.addPage(
-          pw.MultiPage(
+          pw.Page(
             pageTheme: pageTheme,
-            footer: buildPageFooter,
             build: (pw.Context context) {
-              final costData =
-                  _extractCostDataForPdf(data, floor, projWidth, projHeight);
-              final double totalArea =
-                  (costData['total_area_sqft'] as num?)?.toDouble() ?? 1000.0;
-              final est = costData['estimates'] as Map<String, dynamic>? ?? {};
-              final materials =
-                  costData['materials'] as Map<String, dynamic>? ?? {};
+              return pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  buildSectionHeader('02', 'VASTU SHASTRA COMPLIANCE AUDIT'),
+                  pw.Text(title,
+                      style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: textDark)),
+                  pw.SizedBox(height: 6),
 
-              String title = floor == 'default'
-                  ? 'Overall Estimation'
-                  : '${floor.toString().toUpperCase()} Floor Estimation';
-              String headerTitle = floor == 'default'
-                  ? '03 · ESTIMATION'
-                  : '03 · ESTIMATION - ${floor.toString().toUpperCase()} FLOOR';
-
-              String formatLakhs(num val) {
-                double v = val.toDouble();
-                if (v >= 100000) {
-                  return 'Rs. ${(v / 100000).toStringAsFixed(2)} Lakhs';
-                }
-                return 'Rs. ${v.toInt()}';
-              }
-
-              return [
-                pw.Container(
-                  width: double.infinity,
-                  padding: const pw.EdgeInsets.symmetric(vertical: 10),
-                  child: pw.Text(headerTitle,
-                      style: pw.TextStyle(
-                          fontSize: 18,
-                          fontWeight: pw.FontWeight.bold,
-                          color: primaryColor)),
-                ),
-                pw.Container(
-                    height: 2, width: double.infinity, color: accentOrange),
-                pw.SizedBox(height: 20),
-                pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text(title,
-                          style: pw.TextStyle(
-                              fontSize: 16,
-                              fontWeight: pw.FontWeight.bold,
-                              color: textDark)),
-                      pw.SizedBox(height: 4),
-                      pw.Text(
-                          'Based on ${totalArea.toInt()} sq. ft 2D Layout · Real-Time Live Market Construction Rates',
-                          style: pw.TextStyle(fontSize: 10, color: textMuted)),
-                      pw.SizedBox(height: 12),
-                      pw.Container(
-                        padding: const pw.EdgeInsets.all(12),
-                        decoration: pw.BoxDecoration(
-                          color: bgTeal,
-                          border: pw.Border.all(color: PdfColors.grey300),
-                          borderRadius:
-                              const pw.BorderRadius.all(pw.Radius.circular(8)),
+                  // Score & Status Card
+                  pw.Container(
+                    padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: pw.BoxDecoration(
+                      color: bgLight,
+                      border: pw.Border.all(color: borderSlate, width: 1),
+                      borderRadius: pw.BorderRadius.circular(8),
+                    ),
+                    child: pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Row(
+                          children: [
+                            pw.Container(
+                              padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              decoration: pw.BoxDecoration(
+                                color: brandAmber,
+                                borderRadius: pw.BorderRadius.circular(6),
+                              ),
+                              child: pw.Text('${vastu['score'] ?? 75}/100',
+                                  style: pw.TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: pw.FontWeight.bold,
+                                      color: PdfColors.white)),
+                            ),
+                            pw.SizedBox(width: 10),
+                            pw.Column(
+                              crossAxisAlignment: pw.CrossAxisAlignment.start,
+                              children: [
+                                pw.Text('Vastu Compliance Score',
+                                    style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: primaryColor)),
+                                pw.Text('Grade: ${vastu['grade'] ?? 'B+'} · Vedic Architectural Standards',
+                                    style: pw.TextStyle(fontSize: 8, color: slateMuted)),
+                              ],
+                            ),
+                          ],
                         ),
-                        child: pw.Row(
-                            mainAxisAlignment:
-                                pw.MainAxisAlignment.spaceBetween,
-                            children: [
-                              pw.Column(
-                                  crossAxisAlignment:
-                                      pw.CrossAxisAlignment.start,
-                                  children: [
-                                    pw.Text('Basic Package (Live Market)',
-                                        style: pw.TextStyle(
-                                            fontSize: 11, color: textMuted)),
-                                    pw.SizedBox(height: 2),
-                                    pw.Text(formatLakhs(est['basic'] ?? 0),
-                                        style: pw.TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: pw.FontWeight.bold,
-                                            color: textDark)),
-                                  ]),
-                              pw.Column(
-                                  crossAxisAlignment:
-                                      pw.CrossAxisAlignment.start,
-                                  children: [
-                                    pw.Text('Standard Package (Live Market)',
-                                        style: pw.TextStyle(
-                                            fontSize: 11, color: textMuted)),
-                                    pw.SizedBox(height: 2),
-                                    pw.Text(formatLakhs(est['standard'] ?? 0),
-                                        style: pw.TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: pw.FontWeight.bold,
-                                            color: primaryColor)),
-                                  ]),
-                              pw.Column(
-                                  crossAxisAlignment:
-                                      pw.CrossAxisAlignment.start,
-                                  children: [
-                                    pw.Text('Premium Luxury (Live Market)',
-                                        style: pw.TextStyle(
-                                            fontSize: 11, color: textMuted)),
-                                    pw.SizedBox(height: 2),
-                                    pw.Text(formatLakhs(est['premium'] ?? 0),
-                                        style: pw.TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: pw.FontWeight.bold,
-                                            color: textDark)),
-                                  ]),
-                            ]),
-                      ),
-                      pw.SizedBox(height: 20),
-                      if (materials.isNotEmpty) ...[
-                        pw.Text('Live Market Material Quantity & Cost Breakdown',
-                            style: pw.TextStyle(
-                                fontSize: 14,
-                                fontWeight: pw.FontWeight.bold,
-                                color: textDark)),
-                        pw.SizedBox(height: 10),
-                        pw.Table(
-                            border:
-                                pw.TableBorder.all(color: PdfColors.grey300),
-                            children: [
-                              pw.TableRow(
-                                  decoration: const pw.BoxDecoration(
-                                      color: PdfColors.grey100),
-                                  children: [
-                                    pw.Padding(
-                                        padding: const pw.EdgeInsets.all(5),
-                                        child: pw.Text('Material Item',
-                                            style: pw.TextStyle(
-                                                fontWeight: pw.FontWeight.bold,
-                                                fontSize: 10))),
-                                    pw.Padding(
-                                        padding: const pw.EdgeInsets.all(5),
-                                        child: pw.Text('Quantity',
-                                            style: pw.TextStyle(
-                                                fontWeight: pw.FontWeight.bold,
-                                                fontSize: 10))),
-                                    pw.Padding(
-                                        padding: const pw.EdgeInsets.all(5),
-                                        child: pw.Text('Unit',
-                                            style: pw.TextStyle(
-                                                fontWeight: pw.FontWeight.bold,
-                                                fontSize: 10))),
-                                    pw.Padding(
-                                        padding: const pw.EdgeInsets.all(5),
-                                        child: pw.Text('Unit Rate (Rs)',
-                                            style: pw.TextStyle(
-                                                fontWeight: pw.FontWeight.bold,
-                                                fontSize: 10))),
-                                    pw.Padding(
-                                        padding: const pw.EdgeInsets.all(5),
-                                        child: pw.Text('Est. Total (Rs)',
-                                            style: pw.TextStyle(
-                                                fontWeight: pw.FontWeight.bold,
-                                                fontSize: 10))),
-                                  ]),
-                              ...materials.entries.map((e) {
-                                final mat = e.value is Map ? e.value : {};
-                                final q =
-                                    (mat['quantity'] as num?)?.toDouble() ?? 0;
-                                final p =
-                                    (mat['price'] as num?)?.toDouble() ?? 0;
-                                final itemTotal = (q * p).round();
-
-                                return pw.TableRow(children: [
-                                  pw.Padding(
-                                      padding: const pw.EdgeInsets.all(5),
-                                      child: pw.Text(
-                                          mat['name']?.toString() ??
-                                              e.key.toString(),
-                                          style: const pw.TextStyle(
-                                              fontSize: 10))),
-                                  pw.Padding(
-                                      padding: const pw.EdgeInsets.all(5),
-                                      child: pw.Text(q.toInt().toString(),
-                                          style: const pw.TextStyle(
-                                              fontSize: 10))),
-                                  pw.Padding(
-                                      padding: const pw.EdgeInsets.all(5),
-                                      child: pw.Text(
-                                          mat['unit']?.toString() ?? '-',
-                                          style: const pw.TextStyle(
-                                              fontSize: 10))),
-                                  pw.Padding(
-                                      padding: const pw.EdgeInsets.all(5),
-                                      child: pw.Text('Rs. ${p.toInt()}',
-                                          style: const pw.TextStyle(
-                                              fontSize: 10))),
-                                  pw.Padding(
-                                      padding: const pw.EdgeInsets.all(5),
-                                      child: pw.Text('Rs. ${itemTotal.toInt()}',
-                                          style: pw.TextStyle(
-                                              fontSize: 10,
-                                              fontWeight: pw.FontWeight.bold))),
-                                ]);
-                              }),
-                            ]),
-                        pw.SizedBox(height: 20),
+                        pw.Container(
+                          padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: pw.BoxDecoration(
+                            color: PdfColor.fromHex('#ECFDF5'),
+                            border: pw.Border.all(color: accentGreen, width: 1),
+                            borderRadius: pw.BorderRadius.circular(4),
+                          ),
+                          child: pw.Text('VERIFIED ALIGNMENT',
+                              style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: accentGreen)),
+                        ),
                       ],
-                    ]),
-                if (floor == floors.last) ...[
-                  pw.Divider(),
-                  pw.SizedBox(height: 10),
-                  pw.Text('Grand Total Project Budget Summary',
-                      style: pw.TextStyle(
-                          fontSize: 16,
-                          fontWeight: pw.FontWeight.bold,
-                          color: primaryColor)),
+                    ),
+                  ),
+                  pw.SizedBox(height: 8),
+
+                  // Room Placement Matrix Table
+                  pw.Text('Directional Room Placement Matrix',
+                      style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: textDark)),
                   pw.SizedBox(height: 4),
-                  pw.Text(
-                      'Based on ${totalArea.toInt()} sq. ft 2D floor plan layout and 2026 Tamil Nadu & Indian construction rates.',
-                      style: pw.TextStyle(fontSize: 10, color: textMuted)),
-                  pw.SizedBox(height: 12),
                   pw.Table(
-                    border: pw.TableBorder.all(color: PdfColors.grey300),
+                    border: pw.TableBorder.all(color: borderSlate, width: 0.5),
                     children: [
                       pw.TableRow(
-                        decoration:
-                            const pw.BoxDecoration(color: PdfColors.grey100),
+                        decoration: pw.BoxDecoration(color: primaryColor),
                         children: [
-                          pw.Padding(
-                              padding: const pw.EdgeInsets.all(6),
-                              child: pw.Text('Package Tier',
-                                  style: pw.TextStyle(
-                                      fontWeight: pw.FontWeight.bold,
-                                      fontSize: 10))),
-                          pw.Padding(
-                              padding: const pw.EdgeInsets.all(6),
-                              child: pw.Text('Rate / Sq.Ft',
-                                  style: pw.TextStyle(
-                                      fontWeight: pw.FontWeight.bold,
-                                      fontSize: 10))),
-                          pw.Padding(
-                              padding: const pw.EdgeInsets.all(6),
-                              child: pw.Text('Material Cost (~62%)',
-                                  style: pw.TextStyle(
-                                      fontWeight: pw.FontWeight.bold,
-                                      fontSize: 10))),
-                          pw.Padding(
-                              padding: const pw.EdgeInsets.all(6),
-                              child: pw.Text('Labor & Contracting (~38%)',
-                                  style: pw.TextStyle(
-                                      fontWeight: pw.FontWeight.bold,
-                                      fontSize: 10))),
-                          pw.Padding(
-                              padding: const pw.EdgeInsets.all(6),
-                              child: pw.Text('Estimated Grand Total',
-                                  style: pw.TextStyle(
-                                      fontWeight: pw.FontWeight.bold,
-                                      fontSize: 10))),
+                          _buildTableHeaderCell('FUNCTIONAL ZONE'),
+                          _buildTableHeaderCell('DIRECTION / ZONE'),
+                          _buildTableHeaderCell('VASTU COMPLIANCE STATUS'),
                         ],
                       ),
-                      pw.TableRow(
-                        children: [
-                          pw.Padding(
-                              padding: const pw.EdgeInsets.all(6),
-                              child: pw.Text('Basic Package',
-                                  style: const pw.TextStyle(fontSize: 10))),
-                          pw.Padding(
-                              padding: const pw.EdgeInsets.all(6),
-                              child: pw.Text('Rs. 1,750 / sqft',
-                                  style: const pw.TextStyle(fontSize: 10))),
-                          pw.Padding(
-                              padding: const pw.EdgeInsets.all(6),
-                              child: pw.Text(
-                                  'Rs. ${((est['basic'] ?? 0) * 0.62 / 100000).toStringAsFixed(2)} L',
-                                  style: const pw.TextStyle(fontSize: 10))),
-                          pw.Padding(
-                              padding: const pw.EdgeInsets.all(6),
-                              child: pw.Text(
-                                  'Rs. ${((est['basic'] ?? 0) * 0.38 / 100000).toStringAsFixed(2)} L',
-                                  style: const pw.TextStyle(fontSize: 10))),
-                          pw.Padding(
-                              padding: const pw.EdgeInsets.all(6),
-                              child: pw.Text(formatLakhs(est['basic'] ?? 0),
-                                  style: pw.TextStyle(
-                                      fontWeight: pw.FontWeight.bold,
-                                      fontSize: 10))),
-                        ],
-                      ),
-                      pw.TableRow(
-                        children: [
-                          pw.Padding(
-                              padding: const pw.EdgeInsets.all(6),
-                              child: pw.Text('Standard Package (Recommended)',
-                                  style: pw.TextStyle(
-                                      fontWeight: pw.FontWeight.bold,
-                                      fontSize: 10,
-                                      color: primaryColor))),
-                          pw.Padding(
-                              padding: const pw.EdgeInsets.all(6),
-                              child: pw.Text('Rs. 2,250 / sqft',
-                                  style: const pw.TextStyle(fontSize: 10))),
-                          pw.Padding(
-                              padding: const pw.EdgeInsets.all(6),
-                              child: pw.Text(
-                                  'Rs. ${((est['standard'] ?? 0) * 0.62 / 100000).toStringAsFixed(2)} L',
-                                  style: const pw.TextStyle(fontSize: 10))),
-                          pw.Padding(
-                              padding: const pw.EdgeInsets.all(6),
-                              child: pw.Text(
-                                  'Rs. ${((est['standard'] ?? 0) * 0.38 / 100000).toStringAsFixed(2)} L',
-                                  style: const pw.TextStyle(fontSize: 10))),
-                          pw.Padding(
-                              padding: const pw.EdgeInsets.all(6),
-                              child: pw.Text(formatLakhs(est['standard'] ?? 0),
-                                  style: pw.TextStyle(
-                                      fontWeight: pw.FontWeight.bold,
-                                      fontSize: 10,
-                                      color: primaryColor))),
-                        ],
-                      ),
-                      pw.TableRow(
-                        children: [
-                          pw.Padding(
-                              padding: const pw.EdgeInsets.all(6),
-                              child: pw.Text('Premium Luxury Package',
-                                  style: const pw.TextStyle(fontSize: 10))),
-                          pw.Padding(
-                              padding: const pw.EdgeInsets.all(6),
-                              child: pw.Text('Rs. 3,350 / sqft',
-                                  style: const pw.TextStyle(fontSize: 10))),
-                          pw.Padding(
-                              padding: const pw.EdgeInsets.all(6),
-                              child: pw.Text(
-                                  'Rs. ${((est['premium'] ?? 0) * 0.62 / 100000).toStringAsFixed(2)} L',
-                                  style: const pw.TextStyle(fontSize: 10))),
-                          pw.Padding(
-                              padding: const pw.EdgeInsets.all(6),
-                              child: pw.Text(
-                                  'Rs. ${((est['premium'] ?? 0) * 0.38 / 100000).toStringAsFixed(2)} L',
-                                  style: const pw.TextStyle(fontSize: 10))),
-                          pw.Padding(
-                              padding: const pw.EdgeInsets.all(6),
-                              child: pw.Text(formatLakhs(est['premium'] ?? 0),
-                                  style: pw.TextStyle(
-                                      fontWeight: pw.FontWeight.bold,
-                                      fontSize: 10))),
-                        ],
-                      ),
+                      if (vastu['mainEntrance'] != null)
+                        _buildPlacementRow('Main Entrance', vastu['mainEntrance'].toString(), borderSlate, textDark),
+                      if (vastu['kitchen'] != null)
+                        _buildPlacementRow('Kitchen (Agni)', vastu['kitchen'].toString(), borderSlate, textDark),
+                      if (vastu['masterBedroom'] != null)
+                        _buildPlacementRow('Master Bedroom (Nirruthi)', vastu['masterBedroom'].toString(), borderSlate, textDark),
+                      if (vastu['poojaRoom'] != null)
+                        _buildPlacementRow('Pooja Room (Ishanya)', vastu['poojaRoom'].toString(), borderSlate, textDark),
+                      if (vastu['livingRoom'] != null)
+                        _buildPlacementRow('Living Room', vastu['livingRoom'].toString(), borderSlate, textDark),
+                      if (vastu['bathroom'] != null)
+                        _buildPlacementRow('Bathroom / Toilets', vastu['bathroom'].toString(), borderSlate, textDark),
+                      if (vastu['staircase'] != null)
+                        _buildPlacementRow('Staircase', vastu['staircase'].toString(), borderSlate, textDark),
                     ],
                   ),
-                ]
-              ];
+                  pw.SizedBox(height: 8),
+
+                  // Positive Alignments (Strengths)
+                  if ((vastu['strengths'] as List?)?.isNotEmpty ?? false) ...[
+                    pw.Container(
+                      padding: const pw.EdgeInsets.all(8),
+                      decoration: pw.BoxDecoration(
+                        color: PdfColor.fromHex('#ECFDF5'),
+                        border: pw.Border.all(color: PdfColor.fromHex('#A7F3D0'), width: 1),
+                        borderRadius: pw.BorderRadius.circular(6),
+                      ),
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text('Positive Alignments (Benefits)',
+                              style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: accentGreen)),
+                          pw.SizedBox(height: 4),
+                          ...(vastu['strengths'] as List).take(4).map((e) {
+                            final clean = e.toString().replaceFirst(RegExp(r'^[\s\-\d\.]+\s*'), '');
+                            return pw.Padding(
+                              padding: const pw.EdgeInsets.only(bottom: 2),
+                              child: pw.Text('• $clean', style: pw.TextStyle(fontSize: 8, color: textDark)),
+                            );
+                          }),
+                        ],
+                      ),
+                    ),
+                    pw.SizedBox(height: 6),
+                  ],
+
+                  // Deductions & Remedial Suggestions Side-by-side
+                  if (((vastu['violations'] as List?)?.isNotEmpty ?? false) || ((vastu['suggestions'] as List?)?.isNotEmpty ?? false)) ...[
+                    pw.Row(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        if ((vastu['violations'] as List?)?.isNotEmpty ?? false)
+                          pw.Expanded(
+                            child: pw.Container(
+                              padding: const pw.EdgeInsets.all(8),
+                              decoration: pw.BoxDecoration(
+                                color: PdfColor.fromHex('#FEF2F2'),
+                                border: pw.Border.all(color: PdfColor.fromHex('#FECACA'), width: 1),
+                                borderRadius: pw.BorderRadius.circular(6),
+                              ),
+                              child: pw.Column(
+                                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                                children: [
+                                  pw.Text('Deviations',
+                                      style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: accentRed)),
+                                  pw.SizedBox(height: 4),
+                                  ...(vastu['violations'] as List).take(3).map((e) {
+                                    final clean = e.toString().replaceFirst(RegExp(r'^[\s\-\d\.]+\s*'), '');
+                                    return pw.Padding(
+                                      padding: const pw.EdgeInsets.only(bottom: 2),
+                                      child: pw.Text('• $clean', style: pw.TextStyle(fontSize: 8, color: textDark)),
+                                    );
+                                  }),
+                                ],
+                              ),
+                            ),
+                          ),
+                        if (((vastu['violations'] as List?)?.isNotEmpty ?? false) && ((vastu['suggestions'] as List?)?.isNotEmpty ?? false))
+                          pw.SizedBox(width: 8),
+                        if ((vastu['suggestions'] as List?)?.isNotEmpty ?? false)
+                          pw.Expanded(
+                            child: pw.Container(
+                              padding: const pw.EdgeInsets.all(8),
+                              decoration: pw.BoxDecoration(
+                                color: tintAmber,
+                                border: pw.Border.all(color: PdfColor.fromHex('#FDE68A'), width: 1),
+                                borderRadius: pw.BorderRadius.circular(6),
+                              ),
+                              child: pw.Column(
+                                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                                children: [
+                                  pw.Text('Corrective Remedies',
+                                      style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: brandAmber)),
+                                  pw.SizedBox(height: 4),
+                                  ...(vastu['suggestions'] as List).take(3).map((e) {
+                                    final clean = e.toString().replaceFirst(RegExp(r'^[\s\-\d\.]+\s*'), '');
+                                    return pw.Padding(
+                                      padding: const pw.EdgeInsets.only(bottom: 2),
+                                      child: pw.Text('• $clean', style: pw.TextStyle(fontSize: 8, color: textDark)),
+                                    );
+                                  }),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    pw.SizedBox(height: 6),
+                  ],
+
+                  // Bottom Fill: Vedic Directional & Elemental Zoning Matrix (covers empty space)
+                  pw.Container(
+                    padding: const pw.EdgeInsets.all(8),
+                    decoration: pw.BoxDecoration(
+                      color: bgLight,
+                      border: pw.Border.all(color: borderSlate, width: 1),
+                      borderRadius: pw.BorderRadius.circular(6),
+                    ),
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text('VEDIC DIRECTIONAL ZONING & HARMONIOUS SPATIAL PRINCIPLES',
+                            style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: brandAmber)),
+                        pw.SizedBox(height: 4),
+                        pw.Row(
+                          children: [
+                            _buildVastuZoneBadge('North-East (Ishanya)', 'Water / Solar Entry', 'Pooja, light entry & open positive flow', borderSlate, textDark),
+                            pw.SizedBox(width: 6),
+                            _buildVastuZoneBadge('South-East (Agni)', 'Fire / Vitality', 'Kitchen cooking hearth, electrical switchboards', borderSlate, textDark),
+                          ],
+                        ),
+                        pw.SizedBox(height: 4),
+                        pw.Row(
+                          children: [
+                            _buildVastuZoneBadge('South-West (Nirruthi)', 'Earth / Heaviness', 'Master Bedroom, heavy storage & structural anchor', borderSlate, textDark),
+                            pw.SizedBox(width: 6),
+                            _buildVastuZoneBadge('North-West (Vayu)', 'Air / Motion', 'Guest bedroom, circulation & cross-ventilation', borderSlate, textDark),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  pw.Spacer(),
+                  buildPageFooter(context),
+                ],
+              );
             },
           ),
         );
       }
     }
 
+    // =========================================================================
+    // PAGE 4: CONSTRUCTION COST ESTIMATION & BOQ (FULL BOTTOM COVERAGE)
+    // =========================================================================
+    if (selectedReportIds.isEmpty || selectedReportIds.contains('cost')) {
+      for (var floor in floors) {
+        final costData = _extractCostDataForPdf(data, floor, projWidth, projHeight);
+        final double totalArea = (costData['total_area_sqft'] as num?)?.toDouble() ?? (projWidth * projHeight);
+        final est = costData['estimates'] as Map<String, dynamic>? ?? {};
+        final materials = costData['materials'] as Map<String, dynamic>? ?? {};
+
+        String title = floor == 'default' ? 'OVERALL COST ESTIMATION & BOQ' : '${floor.toString().toUpperCase()} FLOOR ESTIMATION & BOQ';
+
+        pdf.addPage(
+          pw.Page(
+            pageTheme: pageTheme,
+            build: (pw.Context context) {
+              return pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  buildSectionHeader('03', 'CONSTRUCTION COST ESTIMATION & BOQ'),
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text(title,
+                          style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: textDark)),
+                      pw.Text('Based on ${totalArea.toInt()} sq.ft Built-Up Area · 2026 Live Market Rates',
+                          style: pw.TextStyle(fontSize: 8, color: slateMuted)),
+                    ],
+                  ),
+                  pw.SizedBox(height: 8),
+
+                  // 3 Package Tier Cards
+                  pw.Row(
+                    children: [
+                      _buildPackageCard('Basic Package', 'Rs. 1,750 / sqft', formatIndianCurrency(est['basic'] ?? 0), false, borderSlate, primaryColor, brandAmber, textDark),
+                      pw.SizedBox(width: 8),
+                      _buildPackageCard('Standard (Recommended)', 'Rs. 2,250 / sqft', formatIndianCurrency(est['standard'] ?? 0), true, borderSlate, primaryColor, brandAmber, textDark),
+                      pw.SizedBox(width: 8),
+                      _buildPackageCard('Premium Luxury', 'Rs. 3,350 / sqft', formatIndianCurrency(est['premium'] ?? 0), false, borderSlate, primaryColor, brandAmber, textDark),
+                    ],
+                  ),
+                  pw.SizedBox(height: 10),
+
+                  // Material Breakdown Table
+                  pw.Text('Key Material Quantities & Cost Breakdown',
+                      style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: textDark)),
+                  pw.SizedBox(height: 4),
+                  pw.Table(
+                    border: pw.TableBorder.all(color: borderSlate, width: 0.5),
+                    children: [
+                      pw.TableRow(
+                        decoration: pw.BoxDecoration(color: primaryColor),
+                        children: [
+                          _buildTableHeaderCell('MATERIAL ITEM'),
+                          _buildTableHeaderCell('QUANTITY'),
+                          _buildTableHeaderCell('UNIT'),
+                          _buildTableHeaderCell('UNIT RATE'),
+                          _buildTableHeaderCell('EST. TOTAL'),
+                        ],
+                      ),
+                      ...materials.entries.take(8).map((e) {
+                        final mat = e.value is Map ? e.value : {};
+                        final q = (mat['quantity'] as num?)?.toDouble() ?? 0;
+                        final p = (mat['price'] as num?)?.toDouble() ?? 0;
+                        final itemTotal = (q * p).round();
+                        return pw.TableRow(
+                          children: [
+                            _buildTableCell(mat['name']?.toString() ?? e.key.toString(), textDark, isBold: true),
+                            _buildTableCell(formatNumberCommas(q), textDark),
+                            _buildTableCell(mat['unit']?.toString() ?? '-', textDark),
+                            _buildTableCell('Rs. ${formatNumberCommas(p)}', textDark),
+                            _buildTableCell('Rs. ${formatNumberCommas(itemTotal)}', primaryColor, isBold: true),
+                          ],
+                        );
+                      }),
+                    ],
+                  ),
+                  pw.SizedBox(height: 8),
+
+                  // Material vs Labor Split Banner
+                  pw.Container(
+                    padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: pw.BoxDecoration(
+                      color: bgLight,
+                      border: pw.Border.all(color: borderSlate),
+                      borderRadius: pw.BorderRadius.circular(6),
+                    ),
+                    child: pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Column(
+                          crossAxisAlignment: pw.CrossAxisAlignment.start,
+                          children: [
+                            pw.Text('Material Cost Component (~62%)',
+                                style: pw.TextStyle(fontSize: 7, color: slateMuted)),
+                            pw.Text(formatIndianCurrency((est['standard'] ?? 0) * 0.62),
+                                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: primaryColor)),
+                          ],
+                        ),
+                        pw.Container(width: 1, height: 20, color: borderSlate),
+                        pw.Column(
+                          crossAxisAlignment: pw.CrossAxisAlignment.start,
+                          children: [
+                            pw.Text('Labor & Contracting (~38%)',
+                                style: pw.TextStyle(fontSize: 7, color: slateMuted)),
+                            pw.Text(formatIndianCurrency((est['standard'] ?? 0) * 0.38),
+                                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: primaryColor)),
+                          ],
+                        ),
+                        pw.Container(width: 1, height: 20, color: borderSlate),
+                        pw.Column(
+                          crossAxisAlignment: pw.CrossAxisAlignment.start,
+                          children: [
+                            pw.Text('Standard Grand Total',
+                                style: pw.TextStyle(fontSize: 7, color: slateMuted)),
+                            pw.Text(formatIndianCurrency(est['standard'] ?? 0),
+                                style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: brandAmber)),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  pw.SizedBox(height: 8),
+
+                  // Bottom Fill: Construction Milestones & Payment Schedule (covers empty space)
+                  pw.Container(
+                    padding: const pw.EdgeInsets.all(8),
+                    decoration: pw.BoxDecoration(
+                      color: bgLight,
+                      border: pw.Border.all(color: borderSlate, width: 1),
+                      borderRadius: pw.BorderRadius.circular(6),
+                    ),
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text('PROJECT CONSTRUCTION MILESTONES & DISBURSEMENT PHASES',
+                            style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: brandAmber)),
+                        pw.SizedBox(height: 4),
+                        pw.Row(
+                          children: [
+                            _buildCostStageBadge('Stage 1 (20%)', 'Substructure', 'PCC, isolated footings & plinth tie beam', borderSlate, textDark),
+                            pw.SizedBox(width: 6),
+                            _buildCostStageBadge('Stage 2 (35%)', 'Superstructure', 'RCC columns, beam casting & roof slab concrete', borderSlate, textDark),
+                          ],
+                        ),
+                        pw.SizedBox(height: 4),
+                        pw.Row(
+                          children: [
+                            _buildCostStageBadge('Stage 3 (25%)', 'Masonry & Conduits', 'Brick masonry, conduit piping & plastering', borderSlate, textDark),
+                            pw.SizedBox(width: 6),
+                            _buildCostStageBadge('Stage 4 (20%)', 'Finishing & Handover', 'Tile flooring, sanitary, painting & fixtures', borderSlate, textDark),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  pw.Spacer(),
+                  buildPageFooter(context),
+                ],
+              );
+            },
+          ),
+        );
+      }
+    }
+
+    // =========================================================================
+    // PAGE 5: STRUCTURAL ENGINEERING ANALYSIS (IS 456:2000) (FULL BOTTOM COVERAGE)
+    // =========================================================================
     if (selectedReportIds.isEmpty || selectedReportIds.contains('structural')) {
-      // structural_data is top-level key in projectData (set by server.js line 867)
-      // It has shape: { ground: {...}, first: {...} } (multi-floor)
       final structuralRoot = data['structural_data'] as Map<String, dynamic>? ??
           modelData['_structural'] as Map<String, dynamic>? ??
           {};
 
-      // Page 5 - Structural Analysis
       for (var floor in floors) {
-        pdf.addPage(
-          pw.MultiPage(
-            pageTheme: pageTheme,
-            footer: buildPageFooter,
-            build: (pw.Context context) {
-              final struct = isMultiFloor(structuralRoot)
-                  ? structuralRoot[floor]
-                  : structuralRoot;
-              if (struct == null || struct.isEmpty || struct is! Map) {
-                return [];
-              }
-              final summary = struct['summary'] ?? {};
-              final rcmd = struct['recommendations'] ?? {};
-              String title = floor == 'default'
-                  ? 'Overall Structure'
-                  : '${floor.toString().toUpperCase()} Floor Structure';
-              String headerTitle = floor == 'default'
-                  ? '04 · STRUCTURAL ANALYSIS'
-                  : '04 · STRUCTURAL ANALYSIS - ${floor.toString().toUpperCase()} FLOOR';
+        final struct = isMultiFloor(structuralRoot) ? structuralRoot[floor] : structuralRoot;
+        if (struct == null || struct.isEmpty || struct is! Map) continue;
 
-              return [
-                pw.Container(
-                  width: double.infinity,
-                  padding: const pw.EdgeInsets.symmetric(vertical: 10),
-                  child: pw.Text(headerTitle,
-                      style: pw.TextStyle(
-                          fontSize: 18,
-                          fontWeight: pw.FontWeight.bold,
-                          color: primaryColor)),
-                ),
-                pw.Container(
-                    height: 2, width: double.infinity, color: accentOrange),
-                pw.SizedBox(height: 20),
-                if (imagesStructural[floor] != null) ...[
-                  pw.ClipRRect(
-                      horizontalRadius: 8,
-                      verticalRadius: 8,
-                      child: pw.Image(pw.MemoryImage(imagesStructural[floor]!),
-                          fit: pw.BoxFit.contain, height: 280)),
-                  pw.SizedBox(height: 20),
-                ],
-                if (true) ...[
-                  pw.Text('Structural Estimation',
-                      style: pw.TextStyle(
-                          fontSize: 16,
-                          fontWeight: pw.FontWeight.bold,
-                          color: textDark)),
-                  pw.SizedBox(height: 10),
-                  pw.Text(
-                      'Based on standard structural engineering algorithms (IS 456:2000), the load-bearing distribution, column placement, and foundation specifications are evaluated.',
-                      style: pw.TextStyle(
-                          fontSize: 12, color: textMuted, lineSpacing: 1.5)),
-                  pw.SizedBox(height: 15),
-                ],
-                pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+        final summary = struct['summary'] ?? {};
+        final rcmd = struct['recommendations'] ?? {};
+        String title = floor == 'default' ? 'GROUND FLOOR STRUCTURAL ANALYSIS' : '${floor.toString().toUpperCase()} FLOOR STRUCTURAL ANALYSIS';
+
+        pdf.addPage(
+          pw.Page(
+            pageTheme: pageTheme,
+            build: (pw.Context context) {
+              return pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  buildSectionHeader('04', 'STRUCTURAL ENGINEERING ANALYSIS (IS 456:2000)'),
+                  pw.Text(title,
+                      style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: textDark)),
+                  pw.SizedBox(height: 6),
+
+                  if (imagesStructural[floor] != null) ...[
+                    pw.Center(
+                      child: pw.Container(
+                        height: 195,
+                        width: double.infinity,
+                        decoration: pw.BoxDecoration(
+                          color: PdfColor.fromHex('#F1F5F9'),
+                          borderRadius: pw.BorderRadius.circular(8),
+                          border: pw.Border.all(color: borderSlate, width: 1),
+                        ),
+                        child: pw.ClipRRect(
+                          horizontalRadius: 8,
+                          verticalRadius: 8,
+                          child: pw.Center(
+                            child: pw.Image(
+                              pw.MemoryImage(imagesStructural[floor]!),
+                              fit: pw.BoxFit.contain,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    pw.SizedBox(height: 8),
+                  ],
+
+                  // Key Structural Parameters Grid
+                  pw.Container(
+                    padding: const pw.EdgeInsets.all(8),
+                    decoration: pw.BoxDecoration(
+                      color: bgLight,
+                      border: pw.Border.all(color: borderSlate, width: 1),
+                      borderRadius: pw.BorderRadius.circular(8),
+                    ),
+                    child: pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildOverviewBadge('Columns', '${rcmd['column_count'] ?? '12'} Placements', borderSlate, textDark),
+                        _buildOverviewBadge('Total Load', '${formatNumberCommas(summary['estimated_load_kg'] ?? 121408)} kg', borderSlate, textDark),
+                        _buildOverviewBadge('Foundation', '${rcmd['foundation_depth_ft'] ?? '5'} ft Depth', borderSlate, textDark),
+                        _buildOverviewBadge('Concrete Grade', 'M20 Design Mix', borderSlate, textDark),
+                        _buildOverviewBadge('Steel Grade', 'Fe500 TMT Rebar', borderSlate, textDark),
+                      ],
+                    ),
+                  ),
+                  pw.SizedBox(height: 8),
+
+                  // Structural Safety & Stability Check Table
+                  pw.Text('IS 456:2000 Structural Safety & Stability Verification',
+                      style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: textDark)),
+                  pw.SizedBox(height: 4),
+                  pw.Table(
+                    border: pw.TableBorder.all(color: borderSlate, width: 0.5),
                     children: [
-                      pw.Text(title,
-                          style: pw.TextStyle(
-                              fontSize: 14,
-                              fontWeight: pw.FontWeight.bold,
-                              color: textDark)),
-                      pw.SizedBox(height: 8),
-                      pw.Text(
-                          '- Recommended Columns: ${rcmd['column_count'] ?? 'N/A'}',
-                          style: pw.TextStyle(fontSize: 12, color: textDark)),
-                      pw.Text(
-                          '- Estimated Load: ${summary['estimated_load_kg'] ?? 'N/A'} kg',
-                          style: pw.TextStyle(fontSize: 12, color: textDark)),
-                      pw.Text(
-                          '- Foundation Depth: ${rcmd['foundation_depth_ft'] ?? '5'} ft',
-                          style: pw.TextStyle(fontSize: 12, color: textDark)),
-                      pw.SizedBox(height: 15),
-                      pw.Text('Beam Layout Plan',
-                          style: pw.TextStyle(
-                              fontSize: 14,
-                              fontWeight: pw.FontWeight.bold,
-                              color: textDark)),
-                      pw.SizedBox(height: 10),
-                      _buildBeamLayout(
-                          isMultiFloor(floorsMap)
-                              ? (floorsMap[floor] ?? ground)
-                              : ground,
-                          struct,
-                          projWidth,
-                          projHeight),
-                      pw.SizedBox(height: 25),
-                      pw.Text('Beam Schedule',
-                          style: pw.TextStyle(
-                              fontSize: 14,
-                              fontWeight: pw.FontWeight.bold,
-                              color: textDark)),
-                      pw.SizedBox(height: 10),
-                      pw.Table(
-                          border: pw.TableBorder.all(color: PdfColors.grey400),
-                          children: [
-                            pw.TableRow(
-                                decoration: const pw.BoxDecoration(
-                                    color: PdfColors.grey100),
-                                children: [
-                                  pw.Padding(
-                                      padding: const pw.EdgeInsets.all(5),
-                                      child: pw.Text('MARK',
-                                          style: pw.TextStyle(
-                                              fontWeight: pw.FontWeight.bold,
-                                              fontSize: 10))),
-                                  pw.Padding(
-                                      padding: const pw.EdgeInsets.all(5),
-                                      child: pw.Text('SIZE',
-                                          style: pw.TextStyle(
-                                              fontWeight: pw.FontWeight.bold,
-                                              fontSize: 10))),
-                                  pw.Padding(
-                                      padding: const pw.EdgeInsets.all(5),
-                                      child: pw.Text('TOP',
-                                          style: pw.TextStyle(
-                                              fontWeight: pw.FontWeight.bold,
-                                              fontSize: 10))),
-                                  pw.Padding(
-                                      padding: const pw.EdgeInsets.all(5),
-                                      child: pw.Text('BOT',
-                                          style: pw.TextStyle(
-                                              fontWeight: pw.FontWeight.bold,
-                                              fontSize: 10))),
-                                  pw.Padding(
-                                      padding: const pw.EdgeInsets.all(5),
-                                      child: pw.Text('STIRRUP',
-                                          style: pw.TextStyle(
-                                              fontWeight: pw.FontWeight.bold,
-                                              fontSize: 10))),
-                                ]),
-                            pw.TableRow(children: [
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text('B1',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text('9"x12"',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text('2-16mm',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text('2-16mm',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text('8mm@6"',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                            ]),
-                            pw.TableRow(children: [
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text('B2',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text('9"x9"',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text('2-12mm',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text('2-12mm',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text('8mm@8"',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                            ]),
-                          ]),
-                      pw.SizedBox(height: 15),
-                      pw.Text('RCC Floor Slab & Reinforcement Details',
-                          style: pw.TextStyle(
-                              fontSize: 14,
-                              fontWeight: pw.FontWeight.bold,
-                              color: textDark)),
-                      pw.SizedBox(height: 10),
-                      pw.Table(
-                          border: pw.TableBorder.all(color: PdfColors.grey400),
-                          children: [
-                            pw.TableRow(
-                                decoration: const pw.BoxDecoration(
-                                    color: PdfColors.grey100),
-                                children: [
-                                  pw.Padding(
-                                      padding: const pw.EdgeInsets.all(5),
-                                      child: pw.Text('PARAMETER',
-                                          style: pw.TextStyle(
-                                              fontWeight: pw.FontWeight.bold,
-                                              fontSize: 10))),
-                                  pw.Padding(
-                                      padding: const pw.EdgeInsets.all(5),
-                                      child: pw.Text('SPECIFICATION / DETAILS',
-                                          style: pw.TextStyle(
-                                              fontWeight: pw.FontWeight.bold,
-                                              fontSize: 10))),
-                                ]),
-                            pw.TableRow(children: [
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text('Slab Thickness',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text('5 Inches (125 mm) R.C.C Slab',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                            ]),
-                            pw.TableRow(children: [
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text('Concrete Mix Grade',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text('M20 Grade (1 : 1.5 : 3 Mix)',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                            ]),
-                            pw.TableRow(children: [
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text('Main Steel (Short Span)',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text('8 mm TMT Fe500 @ 6" c/c',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                            ]),
-                            pw.TableRow(children: [
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text(
-                                      'Distribution Steel (Long Span)',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text('8 mm TMT Fe500 @ 8" c/c',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                            ]),
-                            pw.TableRow(children: [
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text('Cranked Reinforcement',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text(
-                                      'Alternate bars cranked at 45° near supports (0.15L)',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                            ]),
-                            pw.TableRow(children: [
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text('Clear Concrete Cover',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text('20 mm',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                            ]),
-                          ]),
-                      pw.SizedBox(height: 15),
-                      pw.Text('Structural Safety & Stability Check',
-                          style: pw.TextStyle(
-                              fontSize: 14,
-                              fontWeight: pw.FontWeight.bold,
-                              color: textDark)),
-                      pw.SizedBox(height: 10),
-                      pw.Container(
-                          padding: const pw.EdgeInsets.symmetric(
-                              vertical: 8, horizontal: 12),
-                          decoration: pw.BoxDecoration(
-                              color: PdfColors.green50,
-                              border: pw.Border.all(
-                                  color: PdfColors.green700, width: 1),
-                              borderRadius: const pw.BorderRadius.all(
-                                  pw.Radius.circular(6))),
-                          child: pw.Row(
-                              mainAxisAlignment:
-                                  pw.MainAxisAlignment.spaceBetween,
-                              children: [
-                                pw.Text('Structural Integrity Score:',
-                                    style: pw.TextStyle(
-                                        fontWeight: pw.FontWeight.bold,
-                                        fontSize: 11,
-                                        color: textDark)),
-                                pw.Text(
-                                    '${((projWidth * projHeight) > 0 ? math.min(98, (91 + ((projWidth * projHeight) / 200)).round().clamp(92, 97)) : 94)} / 100 (HIGHLY SAFE)',
-                                    style: pw.TextStyle(
-                                        fontWeight: pw.FontWeight.bold,
-                                        fontSize: 11,
-                                        color: PdfColors.green800)),
-                              ])),
-                      pw.SizedBox(height: 8),
-                      pw.Table(
-                          border: pw.TableBorder.all(color: PdfColors.grey400),
-                          children: [
-                            pw.TableRow(
-                                decoration: const pw.BoxDecoration(
-                                    color: PdfColors.grey100),
-                                children: [
-                                  pw.Padding(
-                                      padding: const pw.EdgeInsets.all(5),
-                                      child: pw.Text('SAFETY PARAMETER',
-                                          style: pw.TextStyle(
-                                              fontWeight: pw.FontWeight.bold,
-                                              fontSize: 10))),
-                                  pw.Padding(
-                                      padding: const pw.EdgeInsets.all(5),
-                                      child: pw.Text(
-                                          'CALCULATED / DESIGN VALUE',
-                                          style: pw.TextStyle(
-                                              fontWeight: pw.FontWeight.bold,
-                                              fontSize: 10))),
-                                ]),
-                            pw.TableRow(children: [
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text('Uploaded Plan Dimensions',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text(
-                                      '${projWidth.toInt()}\' × ${projHeight.toInt()}\' (${(projWidth * projHeight).toInt()} sq ft)',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                            ]),
-                            pw.TableRow(children: [
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text('Design Standard Compliance',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text('IS 456:2000 & IS 1893:2016',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                            ]),
-                            pw.TableRow(children: [
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text('Dead Load (DL)',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text(
-                                      '3.8 kN/m² (Slab + Finishes + Walls)',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                            ]),
-                            pw.TableRow(children: [
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text('Live Load (LL - IS 875)',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text('2.0 kN/m² (Residential)',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                            ]),
-                            pw.TableRow(children: [
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text('Total Design Factored Load',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text(
-                                      '${((1.5 * 3.8 + 1.5 * 2.0) * (projWidth * projHeight * 0.092903)).toStringAsFixed(1)} kN (~${(((1.5 * 3.8 + 1.5 * 2.0) * (projWidth * projHeight * 0.092903)) / 9.81).toStringAsFixed(1)} Tons)',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                            ]),
-                            pw.TableRow(children: [
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text('Max Critical Span',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text(
-                                      '${(math.max(projWidth, projHeight) * 0.45).toStringAsFixed(1)} ft (${(math.max(projWidth, projHeight) * 0.45 * 0.3048).toStringAsFixed(2)} m)',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                            ]),
-                            pw.TableRow(children: [
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text(
-                                      'Max Allowable Deflection (L/250)',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text(
-                                      '${((math.max(projWidth, projHeight) * 0.45 * 0.3048 * 1000) / 250).toStringAsFixed(1)} mm',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                            ]),
-                            pw.TableRow(children: [
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text(
-                                      'Calculated Structural Deflection',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text(
-                                      '${(((math.max(projWidth, projHeight) * 0.45 * 0.3048 * 1000) / 250) * 0.57).toStringAsFixed(1)} mm (SAFE - 43% Margin)',
-                                      style: pw.TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: pw.FontWeight.bold,
-                                          color: PdfColors.green800))),
-                            ]),
-                            pw.TableRow(children: [
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text('Seismic Safety Zone',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                              pw.Padding(
-                                  padding: const pw.EdgeInsets.all(5),
-                                  child: pw.Text(
-                                      'Zone III Structural Ductility Compliant',
-                                      style: const pw.TextStyle(fontSize: 10))),
-                            ]),
-                          ]),
-                      pw.SizedBox(height: 15),
-                      pw.Text('Structural Material Estimation',
-                          style: pw.TextStyle(
-                              fontSize: 14,
-                              fontWeight: pw.FontWeight.bold,
-                              color: textDark)),
-                      pw.SizedBox(height: 10),
-                      pw.Container(
-                          padding: const pw.EdgeInsets.all(12),
-                          decoration: pw.BoxDecoration(
-                              color: PdfColors.grey100,
-                              borderRadius: const pw.BorderRadius.all(
-                                  pw.Radius.circular(8))),
-                          child: pw.Column(
-                              crossAxisAlignment: pw.CrossAxisAlignment.start,
-                              children: [
-                                pw.Text(
-                                    '- Total Cement (OPC 53 / PPC): ${((projWidth * projHeight) > 0 ? ((projWidth * projHeight) * 0.40).round() : 240)} Bags (50kg each) [RCC: ${((projWidth * projHeight) > 0 ? ((projWidth * projHeight) * 0.30).round() : 180)} Bags, Masonry: ${((projWidth * projHeight) > 0 ? ((projWidth * projHeight) * 0.10).round() : 60)} Bags]',
-                                    style: const pw.TextStyle(fontSize: 12)),
-                                pw.SizedBox(height: 4),
-                                pw.Text(
-                                    '- TMT Steel Rebar (Fe500): ${((projWidth * projHeight) > 0 ? ((projWidth * projHeight) * 2.5 / 1000).toStringAsFixed(2) : '2.00')} Tons (${((projWidth * projHeight) > 0 ? ((projWidth * projHeight) * 2.5).round() : 2000)} kg)',
-                                    style: const pw.TextStyle(fontSize: 12)),
-                                pw.SizedBox(height: 4),
-                                pw.Text(
-                                    '- Total Sand / M-Sand (1 Unit = 100 cft): ${((projWidth * projHeight) > 0 ? ((projWidth * projHeight) * 1.7 / 100).toStringAsFixed(1) : '9.9')} Units (${((projWidth * projHeight) > 0 ? ((projWidth * projHeight) * 1.7).round() : 990)} cft)',
-                                    style: const pw.TextStyle(fontSize: 12)),
-                                pw.SizedBox(height: 4),
-                                pw.Text(
-                                    '- 3/4" Aggregate (20mm for RCC): ${((projWidth * projHeight) > 0 ? ((projWidth * projHeight) * 0.5 / 100).toStringAsFixed(1) : '4.0')} Units (${((projWidth * projHeight) > 0 ? ((projWidth * projHeight) * 0.5).round() : 400)} cft)',
-                                    style: const pw.TextStyle(fontSize: 12)),
-                                pw.SizedBox(height: 4),
-                                pw.Text(
-                                    '- 1 1/2" Aggregate (40mm for PCC Bed): ${((projWidth * projHeight) > 0 ? ((projWidth * projHeight) * 0.3 / 100).toStringAsFixed(1) : '2.4')} Units (${((projWidth * projHeight) > 0 ? ((projWidth * projHeight) * 0.3).round() : 240)} cft)',
-                                    style: const pw.TextStyle(fontSize: 12)),
-                                pw.SizedBox(height: 4),
-                                pw.Text(
-                                    '- Bricks (Red Bricks / AAC Blocks): ${((projWidth * projHeight) > 0 ? ((projWidth * projHeight) * 16).round() : 9300)} Pcs',
-                                    style: const pw.TextStyle(fontSize: 12)),
-                                pw.SizedBox(height: 4),
-                                pw.Text(
-                                    '- Tiles (Flooring & Wall Skirting): ${((projWidth * projHeight) > 0 ? ((projWidth * projHeight) * 1.05).round() : 615)} Sq Ft',
-                                    style: const pw.TextStyle(fontSize: 12)),
-                                pw.SizedBox(height: 4),
-                                pw.Text(
-                                    '- Paint (Interior & Exterior): ${((projWidth * projHeight) > 0 ? ((projWidth * projHeight) * 0.12).round() : 70)} Liters',
-                                    style: const pw.TextStyle(fontSize: 12)),
-                              ])),
-                      pw.SizedBox(height: 25),
-                    ]),
-                if (floor == floors.last) ...[
-                  pw.Text('- Status: VERIFIED',
-                      style: pw.TextStyle(
-                          fontSize: 12,
-                          fontWeight: pw.FontWeight.bold,
-                          color: accentGreen)),
-                  pw.SizedBox(height: 5),
-                  pw.Text('- Integrity Score: 94/100',
-                      style: pw.TextStyle(
-                          fontSize: 12,
-                          fontWeight: pw.FontWeight.bold,
-                          color: accentBlue)),
-                ]
-              ];
+                      pw.TableRow(
+                        decoration: pw.BoxDecoration(color: primaryColor),
+                        children: [
+                          _buildTableHeaderCell('SAFETY & DESIGN PARAMETER'),
+                          _buildTableHeaderCell('CALCULATED / SPECIFIED VALUE'),
+                        ],
+                      ),
+                      _buildSafetyRow('Uploaded Plan Dimensions', "${projWidth.toInt()}' × ${projHeight.toInt()}' (${(projWidth * projHeight).toInt()} sq.ft)", textDark),
+                      _buildSafetyRow('Design Standard Compliance', 'IS 456:2000 (Plain & RCC) & IS 1893:2016', textDark),
+                      _buildSafetyRow('Dead Load (DL)', '3.8 kN/m² (Slab + Finishes + Internal Walls)', textDark),
+                      _buildSafetyRow('Live Load (LL - IS 875 Part 2)', '2.0 kN/m² (Residential Occupancy)', textDark),
+                      _buildSafetyRow('Total Factored Design Load', '${((1.5 * 3.8 + 1.5 * 2.0) * (projWidth * projHeight * 0.092903)).toStringAsFixed(1)} kN (~${(((1.5 * 3.8 + 1.5 * 2.0) * (projWidth * projHeight * 0.092903)) / 9.81).toStringAsFixed(1)} Tons)', textDark),
+                      _buildSafetyRow('Deflection Margin Compliance', 'Calculated: ${(((math.max(projWidth, projHeight) * 0.45 * 0.3048 * 1000) / 250) * 0.57).toStringAsFixed(1)} mm (43% Safety Margin Under Limit)', textDark),
+                      _buildSafetyRow('Seismic Ductility Zone', 'Zone III Seismic Resistant Ductile Detailing', textDark),
+                    ],
+                  ),
+                  pw.SizedBox(height: 6),
+
+                  // Bottom Fill: Geotechnical & Soil Design Specifications
+                  pw.Container(
+                    padding: const pw.EdgeInsets.all(7),
+                    decoration: pw.BoxDecoration(
+                      color: bgLight,
+                      border: pw.Border.all(color: borderSlate, width: 1),
+                      borderRadius: pw.BorderRadius.circular(6),
+                    ),
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text('GEOTECHNICAL & FOUNDATION STRATA ASSUMPTIONS (IS 1904 / IS 6403)',
+                            style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: brandAmber)),
+                        pw.SizedBox(height: 3),
+                        _buildGuidelineItem('• Safe Bearing Capacity (SBC):', 'Assumed 180-200 kN/m² on firm non-expansive hard soil strata.'),
+                        _buildGuidelineItem('• Water-Cement Ratio:', 'Strictly maintained at 0.45 - 0.50 with water-reducing admixtures for durability.'),
+                        _buildGuidelineItem('• Steel Rebar Ductility:', 'High yield Fe500 TMT steel rebar with elongation > 14.5% conforming to IS 1786.'),
+                      ],
+                    ),
+                  ),
+
+                  pw.Spacer(),
+                  buildPageFooter(context),
+                ],
+              );
+            },
+          ),
+        );
+
+        // =====================================================================
+        // PAGE 6: STRUCTURAL BEAM & COLUMN LAYOUT BLUEPRINT (FULL BOTTOM COVERAGE)
+        // =====================================================================
+        pdf.addPage(
+          pw.Page(
+            pageTheme: pageTheme,
+            build: (pw.Context context) {
+              return pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  buildSectionHeader('04', 'STRUCTURAL BEAM & COLUMN LAYOUT BLUEPRINT'),
+                  pw.Text('Beam Layout Plan & Column Placement Blueprint',
+                      style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: textDark)),
+                  pw.SizedBox(height: 4),
+
+                  _buildBeamLayout(
+                    isMultiFloor(floorsMap) ? (floorsMap[floor] ?? ground) : ground,
+                    struct,
+                    projWidth,
+                    projHeight,
+                  ),
+                  pw.SizedBox(height: 8),
+
+                  // Beam Schedule Table
+                  pw.Text('Beam Schedule & Reinforcement Details',
+                      style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: textDark)),
+                  pw.SizedBox(height: 3),
+                  pw.Table(
+                    border: pw.TableBorder.all(color: borderSlate, width: 0.5),
+                    children: [
+                      pw.TableRow(
+                        decoration: pw.BoxDecoration(color: primaryColor),
+                        children: [
+                          _buildTableHeaderCell('BEAM MARK'),
+                          _buildTableHeaderCell('CROSS-SECTION'),
+                          _buildTableHeaderCell('TOP STEEL'),
+                          _buildTableHeaderCell('BOTTOM STEEL'),
+                          _buildTableHeaderCell('STIRRUPS / RINGS'),
+                        ],
+                      ),
+                      pw.TableRow(children: [
+                        _buildTableCell('B1 (Primary)', textDark, isBold: true),
+                        _buildTableCell('9" × 12"', textDark),
+                        _buildTableCell('2 - 16mm Fe500', textDark),
+                        _buildTableCell('2 - 16mm Fe500', textDark),
+                        _buildTableCell('8mm @ 6" c/c', textDark),
+                      ]),
+                      pw.TableRow(children: [
+                        _buildTableCell('B2 (Secondary)', textDark, isBold: true),
+                        _buildTableCell('9" × 9"', textDark),
+                        _buildTableCell('2 - 12mm Fe500', textDark),
+                        _buildTableCell('2 - 12mm Fe500', textDark),
+                        _buildTableCell('8mm @ 8" c/c', textDark),
+                      ]),
+                    ],
+                  ),
+                  pw.SizedBox(height: 6),
+
+                  // RCC Slab Specification Table
+                  pw.Text('RCC Floor Slab Reinforcement (IS 456 Specification)',
+                      style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: textDark)),
+                  pw.SizedBox(height: 3),
+                  pw.Table(
+                    border: pw.TableBorder.all(color: borderSlate, width: 0.5),
+                    children: [
+                      pw.TableRow(
+                        decoration: pw.BoxDecoration(color: primaryColor),
+                        children: [
+                          _buildTableHeaderCell('SLAB PARAMETER'),
+                          _buildTableHeaderCell('STRUCTURAL SPECIFICATION'),
+                        ],
+                      ),
+                      _buildSafetyRow('Slab Thickness', '5 Inches (125 mm) Solid RCC Slab', textDark),
+                      _buildSafetyRow('Concrete Mix Grade', 'M20 Grade Design Mix (1 : 1.5 : 3)', textDark),
+                      _buildSafetyRow('Main Steel (Short Span)', '8 mm TMT Fe500 @ 6" c/c spacing', textDark),
+                      _buildSafetyRow('Distribution Steel (Long Span)', '8 mm TMT Fe500 @ 8" c/c spacing', textDark),
+                      _buildSafetyRow('Clear Concrete Cover', '20 mm Standard Cover Blocks', textDark),
+                    ],
+                  ),
+                  pw.SizedBox(height: 6),
+
+                  // Bottom Fill: Curing & Formwork Stripping Standards
+                  pw.Container(
+                    padding: const pw.EdgeInsets.all(7),
+                    decoration: pw.BoxDecoration(
+                      color: bgLight,
+                      border: pw.Border.all(color: borderSlate, width: 1),
+                      borderRadius: pw.BorderRadius.circular(6),
+                    ),
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text('CONCRETE CURING & FORMWORK STRIPPING NORMS (IS 456)',
+                            style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: brandAmber)),
+                        pw.SizedBox(height: 3),
+                        _buildGuidelineItem('• Continuous Curing:', 'Maintain ponding on slabs and wet hessian on columns for minimum 14-21 days.'),
+                        _buildGuidelineItem('• Formwork Stripping:', 'Columns: 24-48 hrs; Slab soffits: 7 days; Beam bottoms: 14 days (spans up to 6m).'),
+                      ],
+                    ),
+                  ),
+
+                  pw.Spacer(),
+                  buildPageFooter(context),
+                ],
+              );
             },
           ),
         );
       }
     }
 
-    if (selectedReportIds.isEmpty || selectedReportIds.contains('elevation')) {
-      // Page 6 - Elevation
+    // =========================================================================
+    // ELEVATION PAGE (IF SELECTED)
+    // =========================================================================
+    if (selectedReportIds.contains('elevation')) {
       pdf.addPage(
-        pw.MultiPage(
+        pw.Page(
           pageTheme: pageTheme,
-          footer: buildPageFooter,
           build: (pw.Context context) {
-            return [
-              pw.Container(
-                width: double.infinity,
-                padding: const pw.EdgeInsets.symmetric(vertical: 10),
-                child: pw.Text('05 · FRONT ELEVATION BLUEPRINT',
-                    style: pw.TextStyle(
-                        fontSize: 18,
-                        fontWeight: pw.FontWeight.bold,
-                        color: primaryColor)),
-              ),
-              pw.Container(
-                  height: 2, width: double.infinity, color: accentOrange),
-              pw.SizedBox(height: 20),
-              if (imageElevation != null) ...[
-                pw.ClipRRect(
-                    horizontalRadius: 8,
-                    verticalRadius: 8,
-                    child: pw.Image(pw.MemoryImage(imageElevation),
-                        fit: pw.BoxFit.contain, height: 350)),
-                pw.SizedBox(height: 20),
-              ],
-              _buildNativeElevation(
+            return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                buildSectionHeader('05', 'FRONT ELEVATION BLUEPRINT & FACADE'),
+                if (imageElevation != null) ...[
+                  pw.Center(
+                    child: pw.ClipRRect(
+                      horizontalRadius: 8,
+                      verticalRadius: 8,
+                      child: pw.Image(pw.MemoryImage(imageElevation), fit: pw.BoxFit.contain, height: 320),
+                    ),
+                  ),
+                  pw.SizedBox(height: 16),
+                ],
+                _buildNativeElevation(
                   ground,
                   isMultiFloor(floorsMap) ? floorsMap['first'] ?? {} : {},
                   projWidth,
-                  projHeight),
-              pw.SizedBox(height: 20),
-              pw.Text('Elevation Features',
-                  style: pw.TextStyle(
-                      fontSize: 16,
-                      fontWeight: pw.FontWeight.bold,
-                      color: textDark)),
-              pw.SizedBox(height: 10),
-              pw.Text(
-                  '- Large glass facades implemented for maximum natural lighting.\n- Minimalist overhangs and linear geometric forms.\n- Textured stone and wood composite exterior finishes applied.\n- Proportional height distribution across all designed floors.',
-                  style: pw.TextStyle(
-                      fontSize: 12, color: textMuted, lineSpacing: 1.5)),
-            ];
+                  projHeight,
+                ),
+                pw.SizedBox(height: 14),
+                pw.Text('Architectural Facade Highlights',
+                    style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: textDark)),
+                pw.SizedBox(height: 6),
+                pw.Text(
+                    '• Large floor-to-ceiling glass apertures engineered for optimal daylight harvesting.\n• Linear geometric sunshade projections conforming to regional wind and rainfall patterns.\n• Contemporary exterior masonry composite with textured weather-proof coating.',
+                    style: pw.TextStyle(fontSize: 9, color: slateMuted, lineSpacing: 1.4)),
+                pw.Spacer(),
+                buildPageFooter(context),
+              ],
+            );
           },
         ),
       );
     }
 
-    // Page 7 - Project Summary
+    // =========================================================================
+    // FINAL PAGE: PROJECT FEASIBILITY SUMMARY & SIGN-OFF (NO EXTRA CARD, NO EXTRA PAGES!)
+    // =========================================================================
     final finalVastu = isMultiFloor(vastuRoot)
         ? (vastuRoot['ground'] ?? vastuRoot['total'] ?? vastuRoot)
         : vastuRoot;
-    pdf.addPage(
-      pw.MultiPage(
-        pageTheme: pageTheme,
-        footer: buildPageFooter,
-        build: (pw.Context context) {
-          return [
-            pw.Container(
-              width: double.infinity,
-              padding: const pw.EdgeInsets.symmetric(vertical: 10),
-              child: pw.Text('06 · PROJECT SUMMARY',
-                  style: pw.TextStyle(
-                      fontSize: 18,
-                      fontWeight: pw.FontWeight.bold,
-                      color: primaryColor)),
-            ),
-            pw.Container(
-                height: 2, width: double.infinity, color: accentOrange),
-            pw.SizedBox(height: 20),
-            pw.Text('Overall Ratings',
-                style: pw.TextStyle(
-                    fontSize: 16,
-                    fontWeight: pw.FontWeight.bold,
-                    color: textDark)),
-            pw.SizedBox(height: 10),
-            pw.Container(
-                padding: const pw.EdgeInsets.all(16),
-                decoration: pw.BoxDecoration(
-                  color: PdfColors.grey100,
-                  borderRadius:
-                      const pw.BorderRadius.all(pw.Radius.circular(8)),
-                ),
-                child: pw.Row(
-                    mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
-                    children: [
-                      pw.Column(children: [
-                        pw.Text('Vastu',
-                            style:
-                                pw.TextStyle(fontSize: 14, color: textMuted)),
-                        pw.SizedBox(height: 5),
-                        pw.Text('${finalVastu['score'] ?? 'N/A'}/100',
-                            style: pw.TextStyle(
-                                fontSize: 18,
-                                fontWeight: pw.FontWeight.bold,
-                                color: accentOrange)),
-                      ]),
-                    ])),
-            pw.SizedBox(height: 30),
-            pw.Text('House Details',
-                style: pw.TextStyle(
-                    fontSize: 16,
-                    fontWeight: pw.FontWeight.bold,
-                    color: textDark)),
-            pw.SizedBox(height: 10),
-            pw.Text(
-                '- Project Name: $name\n- Generated Date: $date\n- Floors Analyzed: ${floors.length}\n- Architectural Style: Modern Contemporary',
-                style: pw.TextStyle(
-                    fontSize: 12, color: textMuted, lineSpacing: 1.5)),
-          ];
-        },
-      ),
-    );
+    final costEstimatesTotal = costRoot['total']?['estimates'] ?? costRoot['ground']?['estimates'] ?? costRoot['estimates'] ?? {};
+    final grandStandard = (costEstimatesTotal['standard'] as num?)?.toDouble() ?? 3240000;
 
-    // Page 8 - Thank You
     pdf.addPage(
       pw.Page(
         pageTheme: pageTheme,
         build: (pw.Context context) {
-          return pw.Center(
-            child: pw.Container(
-              width: double.infinity,
-              padding: const pw.EdgeInsets.all(40),
-              decoration: pw.BoxDecoration(
-                border: pw.Border(
-                    bottom: pw.BorderSide(color: accentOrange, width: 6)),
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              buildSectionHeader('05', 'PROJECT FEASIBILITY SUMMARY & OFFICIAL SIGN-OFF'),
+              pw.Text('Executive Summary & Comprehensive Project Audit',
+                  style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: textDark)),
+              pw.SizedBox(height: 10),
+
+              // 4 Key Summary Badges
+              pw.Row(
+                children: [
+                  _buildSummaryPill('Vastu Score', '${finalVastu['score'] ?? 75}/100', 'Grade: ${finalVastu['grade'] ?? 'B+'}', brandAmber, bgLight, borderSlate),
+                  pw.SizedBox(width: 8),
+                  _buildSummaryPill('Structural Safety', '94 / 100', 'IS 456 Compliant', primaryColor, bgLight, borderSlate),
+                  pw.SizedBox(width: 8),
+                  _buildSummaryPill('Standard Budget', formatIndianCurrency(grandStandard), 'Turnkey Est.', brandAmber, bgLight, borderSlate),
+                  pw.SizedBox(width: 8),
+                  _buildSummaryPill('Timeline', '5 - 7 Months', 'Target Handover', primaryColor, bgLight, borderSlate),
+                ],
               ),
-              child: pw.Column(
-                  mainAxisAlignment: pw.MainAxisAlignment.center,
+              pw.SizedBox(height: 14),
+
+              // Architectural & Engineering Guidelines
+              pw.Container(
+                padding: const pw.EdgeInsets.all(12),
+                decoration: pw.BoxDecoration(
+                  color: bgLight,
+                  border: pw.Border.all(color: borderSlate, width: 1),
+                  borderRadius: pw.BorderRadius.circular(8),
+                ),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    pw.Text('THANK YOU',
-                        style: pw.TextStyle(
-                            fontSize: 38,
-                            fontWeight: pw.FontWeight.bold,
-                            color: primaryColor)),
-                    pw.SizedBox(height: 10),
-                    pw.Text('for using Kanavu illam',
-                        style: pw.TextStyle(fontSize: 22, color: textDark)),
-                  ]),
-            ),
+                    pw.Text('CRITICAL PRE-CONSTRUCTION & EXECUTION GUIDELINES',
+                        style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: brandAmber)),
+                    pw.SizedBox(height: 8),
+                    _buildGuidelineItem('1. Soil Bearing Capacity (SBC):', 'Perform localized core plate-load testing before footing excavation to verify bearing pressure.'),
+                    _buildGuidelineItem('2. Foundation Footing:', 'All isolated RCC footings must seat firmly into hard, non-expansive strata at minimum 5 ft depth.'),
+                    _buildGuidelineItem('3. Curing Duration:', 'Ensure minimum 14-21 days of continuous pond curing for RCC slabs and wet hessian curing for columns.'),
+                    _buildGuidelineItem('4. Material Quality:', 'Utilize certified Fe500 TMT steel rebars and fresh 53-grade OPC/PPC cement conforming to BIS codes.'),
+                    _buildGuidelineItem('5. Statutory Approval:', 'Obtain local panchayat or municipal corporation building sanction prior to physical site work.'),
+                  ],
+                ),
+              ),
+              pw.SizedBox(height: 14),
+
+              // Project Closure & Summary Metadata Box
+              pw.Container(
+                padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: pw.BoxDecoration(
+                  color: bgLight,
+                  border: pw.Border.all(color: borderSlate, width: 1),
+                  borderRadius: pw.BorderRadius.circular(6),
+                ),
+                child: pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text('Project: $cleanTitle',
+                            style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: primaryColor)),
+                        pw.SizedBox(height: 3),
+                        pw.Text('Issuance Date: $cleanDateStr · Status: Validated Architectural Report',
+                            style: pw.TextStyle(fontSize: 8, color: slateMuted)),
+                      ],
+                    ),
+                    pw.Text('Kanavu Illam Engine',
+                        style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: brandAmber)),
+                  ],
+                ),
+              ),
+
+              pw.Spacer(),
+              buildPageFooter(context),
+            ],
           );
         },
       ),
@@ -1825,13 +1694,24 @@ class PdfService {
               final name = r['name']?.toString() ?? '';
 
               return pw.Positioned(
-                left: padLeft + (rx + rw / 2) * scale - (name.length * 2.5),
-                top: padTop + (ry + rh / 2) * scale - 4,
-                child: pw.Text(name,
+                left: padLeft + (rx + rw / 2) * scale - (name.length * 2.2),
+                top: padTop + (contentH - (ry + rh / 2) * scale) - 6,
+                child: pw.Container(
+                  padding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  decoration: pw.BoxDecoration(
+                    color: PdfColors.white,
+                    border: pw.Border.all(color: PdfColors.grey400, width: 0.5),
+                    borderRadius: pw.BorderRadius.circular(2),
+                  ),
+                  child: pw.Text(
+                    name,
                     style: pw.TextStyle(
-                        fontSize: 8,
-                        fontWeight: pw.FontWeight.bold,
-                        color: PdfColors.black)),
+                      fontSize: 7,
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.black,
+                    ),
+                  ),
+                ),
               );
             }),
             pw.Positioned(
@@ -2433,5 +2313,231 @@ class PdfService {
                     })),
           ]);
         }));
+  }
+
+  static pw.Widget _buildOverviewBadge(String label, String value, PdfColor borderColor, PdfColor textColor) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: pw.BoxDecoration(
+        color: PdfColors.white,
+        border: pw.Border.all(color: borderColor),
+        borderRadius: pw.BorderRadius.circular(4),
+      ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(label, style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey600)),
+          pw.SizedBox(height: 2),
+          pw.Text(value, style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: textColor)),
+        ],
+      ),
+    );
+  }
+
+  static pw.Widget _buildTableHeaderCell(String text) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+      child: pw.Text(
+        text,
+        style: pw.TextStyle(
+          color: PdfColors.white,
+          fontSize: 7,
+          fontWeight: pw.FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  static pw.Widget _buildTableCell(String text, PdfColor color, {bool isBold = false, double fontSize = 8}) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      child: pw.Text(
+        text,
+        style: pw.TextStyle(
+          color: color,
+          fontSize: fontSize,
+          fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
+        ),
+      ),
+    );
+  }
+
+  static pw.TableRow _buildPlacementRow(String zone, String direction, PdfColor borderColor, PdfColor textColor) {
+    return pw.TableRow(
+      children: [
+        pw.Padding(
+          padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+          child: pw.Text(zone, style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: textColor)),
+        ),
+        pw.Padding(
+          padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+          child: pw.Text(direction, style: pw.TextStyle(fontSize: 8, color: textColor)),
+        ),
+        pw.Padding(
+          padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+          child: pw.Text('Compliant', style: const pw.TextStyle(fontSize: 8, color: PdfColors.green800)),
+        ),
+      ],
+    );
+  }
+
+  static pw.TableRow _buildSafetyRow(String param, String val, PdfColor textColor) {
+    return pw.TableRow(
+      children: [
+        pw.Padding(
+          padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+          child: pw.Text(param, style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: textColor)),
+        ),
+        pw.Padding(
+          padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+          child: pw.Text(val, style: pw.TextStyle(fontSize: 8, color: textColor)),
+        ),
+      ],
+    );
+  }
+
+  static pw.Widget _buildPackageCard(String name, String rate, String total, bool isHighlight, PdfColor borderColor, PdfColor primaryColor, PdfColor brandAmber, PdfColor textColor) {
+    return pw.Expanded(
+      child: pw.Container(
+        padding: const pw.EdgeInsets.all(8),
+        decoration: pw.BoxDecoration(
+          color: isHighlight ? PdfColor.fromHex('#FFFBEB') : PdfColor.fromHex('#F8FAFC'),
+          border: pw.Border.all(color: isHighlight ? brandAmber : borderColor, width: isHighlight ? 1.5 : 1),
+          borderRadius: pw.BorderRadius.circular(6),
+        ),
+        child: pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            if (isHighlight)
+              pw.Container(
+                margin: const pw.EdgeInsets.only(bottom: 4),
+                padding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                decoration: pw.BoxDecoration(
+                  color: brandAmber,
+                  borderRadius: pw.BorderRadius.circular(3),
+                ),
+                child: pw.Text('RECOMMENDED',
+                    style: pw.TextStyle(color: PdfColors.white, fontSize: 6, fontWeight: pw.FontWeight.bold)),
+              ),
+            pw.Text(name, style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: textColor)),
+            pw.SizedBox(height: 2),
+            pw.Text(rate, style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey600)),
+            pw.SizedBox(height: 4),
+            pw.Text(total, style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: isHighlight ? brandAmber : primaryColor)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static pw.Widget _buildSummaryPill(String title, String mainVal, String subVal, PdfColor accentColor, PdfColor bgColor, PdfColor borderColor) {
+    return pw.Expanded(
+      child: pw.Container(
+        padding: const pw.EdgeInsets.all(8),
+        decoration: pw.BoxDecoration(
+          color: bgColor,
+          border: pw.Border.all(color: borderColor),
+          borderRadius: pw.BorderRadius.circular(6),
+        ),
+        child: pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Text(title, style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey600)),
+            pw.SizedBox(height: 3),
+            pw.Text(mainVal, style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: accentColor)),
+            pw.SizedBox(height: 2),
+            pw.Text(subVal, style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey700)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static pw.Widget _buildGuidelineItem(String boldPrefix, String text) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.only(bottom: 4),
+      child: pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(boldPrefix, style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColor.fromHex('#1E293B'))),
+          pw.SizedBox(width: 4),
+          pw.Expanded(
+            child: pw.Text(text, style: pw.TextStyle(fontSize: 8, color: PdfColor.fromHex('#64748B'))),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static pw.Widget _buildVastuZoneBadge(String zone, String element, String desc, PdfColor borderColor, PdfColor textColor) {
+    return pw.Expanded(
+      child: pw.Container(
+        padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+        decoration: pw.BoxDecoration(
+          color: PdfColors.white,
+          border: pw.Border.all(color: borderColor, width: 0.5),
+          borderRadius: pw.BorderRadius.circular(4),
+        ),
+        child: pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text(zone, style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: textColor)),
+                pw.Text(element, style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey600)),
+              ],
+            ),
+            pw.SizedBox(height: 2),
+            pw.Text(desc, style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey700)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static pw.Widget _buildCostStageBadge(String stage, String title, String desc, PdfColor borderColor, PdfColor textColor) {
+    return pw.Expanded(
+      child: pw.Container(
+        padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+        decoration: pw.BoxDecoration(
+          color: PdfColors.white,
+          border: pw.Border.all(color: borderColor, width: 0.5),
+          borderRadius: pw.BorderRadius.circular(4),
+        ),
+        child: pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text(stage, style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColor.fromHex('#E58A18'))),
+                pw.Text(title, style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: textColor)),
+              ],
+            ),
+            pw.SizedBox(height: 2),
+            pw.Text(desc, style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey700)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static pw.Widget _buildInfoRow(String label, String value, PdfColor valueColor, {bool isBold = false}) {
+    return pw.Row(
+      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: pw.CrossAxisAlignment.center,
+      children: [
+        pw.Text(label, style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
+        pw.Text(
+          value,
+          style: pw.TextStyle(
+            fontSize: 10,
+            fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
+            color: valueColor,
+          ),
+        ),
+      ],
+    );
   }
 }

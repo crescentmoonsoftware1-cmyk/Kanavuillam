@@ -92,9 +92,9 @@ class _DirectionScreenState extends State<DirectionScreen>
     try {
       final img = await ImagePicker().pickImage(
         source: source,
-        maxWidth: 4096,
-        maxHeight: 4096,
-        imageQuality: 100,
+        maxWidth: 2048,
+        maxHeight: 2048,
+        imageQuality: 85,
       );
       if (img != null) {
         final bytes = await img.readAsBytes();
