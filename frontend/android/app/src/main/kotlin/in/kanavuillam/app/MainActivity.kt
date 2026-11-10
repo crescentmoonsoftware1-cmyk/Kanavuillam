@@ -1,6 +1,5 @@
-package in.kanavuillam.app
+package `in`.kanavuillam.app
 
 import io.flutter.embedding.android.FlutterActivity
 
 class MainActivity : FlutterActivity()
-
