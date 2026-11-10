@@ -14,11 +14,88 @@ require('dotenv').config();
 const app = express();
 const port = process.env.PORT || 3000;
 
+// ─── Discord Alert Hub Dispatcher ──────────────────────────────────────────
+const https = require('https');
+
+const DISCORD_WEBHOOKS = {
+  error: process.env.DISCORD_ERROR_WEBHOOK_URL || 'https://discord.com/api/webhooks/1569606089861767272/LJcrIYQbbX_AOg1Sc2vXETtgF6ZSiz8dikY7yVCs8oLZWB-hvvGbgv0HfMOXfmdEv0L8',
+  payment: process.env.DISCORD_PAYMENT_WEBHOOK_URL || 'https://discord.com/api/webhooks/1569606460848083025/1IjZ0SYrCrx34CB0Em6iWx3HzY6tyiUKfUCaH1EqBpCgKzzORA3kNfYE3I478sFeqaYj',
+};
+
+// Rate limiter / de-duplication cache (max 1 identical alert per 30 seconds)
+const _recentAlerts = new Map();
+
+function sendDiscordAlert({ type = 'error', title, description, fields = [], color = null }) {
+  const webhookUrl = DISCORD_WEBHOOKS[type] || DISCORD_WEBHOOKS.error;
+  if (!webhookUrl) return;
+
+  const dedupKey = `${type}:${title}:${description}`.slice(0, 100);
+  const now = Date.now();
+  if (_recentAlerts.has(dedupKey) && (now - _recentAlerts.get(dedupKey)) < 30000) {
+    return;
+  }
+  _recentAlerts.set(dedupKey, now);
+
+  const embedColor = color || (type === 'payment' ? 0xE58A18 : 0xED4245);
+
+  const payload = JSON.stringify({
+    username: type === 'payment' ? 'Payment Alert Bot' : 'Backend Error Bot',
+    embeds: [
+      {
+        title: title ? String(title).slice(0, 256) : 'System Alert',
+        description: description ? String(description).slice(0, 2048) : '',
+        color: embedColor,
+        fields: (fields || []).slice(0, 25).map(f => ({
+          name: String(f.name || 'Detail').slice(0, 256),
+          value: String(f.value || 'N/A').slice(0, 1024),
+          inline: Boolean(f.inline)
+        })),
+        timestamp: new Date().toISOString(),
+        footer: { text: `Environment: ${process.env.NODE_ENV || 'production'} • Kanavu Illam` }
+      }
+    ]
+  });
+
+  try {
+    const urlObj = new URL(webhookUrl);
+    const req = https.request(urlObj, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(payload)
+      },
+      timeout: 5000
+    });
+    req.on('error', (err) => console.warn('[Discord Alert] Dispatch error:', err.message));
+    req.write(payload);
+    req.end();
+  } catch (err) {
+    console.warn('[Discord Alert] Setup error:', err.message);
+  }
+}
+
 process.on('unhandledRejection', (reason, promise) => {
   console.error('[Global] Unhandled Rejection at:', promise, 'reason:', reason);
+  sendDiscordAlert({
+    type: 'error',
+    title: 'Unhandled Promise Rejection',
+    description: String(reason?.message || reason || 'Unknown Rejection'),
+    fields: [
+      { name: 'Stack', value: String(reason?.stack || 'No stack trace available').slice(0, 1000) }
+    ]
+  });
 });
+
 process.on('uncaughtException', (error) => {
   console.error('[Global Fatal] Uncaught Exception:', error);
+  sendDiscordAlert({
+    type: 'error',
+    title: 'Fatal Uncaught Exception',
+    description: String(error?.message || error || 'Fatal Error'),
+    fields: [
+      { name: 'Stack', value: String(error?.stack || 'No stack trace available').slice(0, 1000) }
+    ]
+  });
   if (process.env.NODE_ENV === 'production') {
     setTimeout(() => process.exit(1), 1000);
   }
@@ -166,15 +243,36 @@ const refreshLimiter = rateLimit({
 });
 
 // ─── Health Check Endpoints (For Railway, Docker & Uptime monitoring) ───────
-app.get('/api/health', (req, res) => {
-  res.status(200).json({
-    status: 'ok',
+app.get('/api/health', async (req, res) => {
+  let dbStatus = 'ok';
+  try {
+    const { error } = await supabase.from('projects').select('id', { head: true, count: 'exact' }).limit(1);
+    if (error && error.code !== 'PGRST116') {
+      dbStatus = error.message;
+    }
+  } catch (dbErr) {
+    dbStatus = dbErr.message;
+  }
+
+  const isHealthy = dbStatus === 'ok' || dbStatus.includes('permission denied');
+  res.status(isHealthy ? 200 : 503).json({
+    status: isHealthy ? 'ok' : 'degraded',
+    database: dbStatus,
     port: port,
     uptime_seconds: Math.floor(process.uptime()),
     timestamp: new Date().toISOString()
   });
 });
-app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
+
+app.get('/health', async (req, res) => {
+  try {
+    const { error } = await supabase.from('projects').select('id', { head: true, count: 'exact' }).limit(1);
+    if (error && error.code !== 'PGRST116' && !error.message.includes('permission denied')) {
+      return res.status(503).json({ status: 'database_unavailable', error: error.message });
+    }
+  } catch (_) {}
+  res.status(200).json({ status: 'ok' });
+});
 
 // ─── Private IP Validator (SSRF Protection) ──────────────────────────────────
 function isPrivateIpAddress(ip) {
@@ -1853,14 +1951,15 @@ function runStructuralReport(modelData) {
 
 // ─── Main Upload Endpoint ─────────────────────────────────────────────────────
 
-app.post('/api/upload', uploadLimiter, authenticateToken, (req, res, next) => {
+app.post('/api/upload', uploadLimiter, (req, res, next) => {
   multiUpload(req, res, err => {
     if (err) {
       console.error('[Upload] Multer error:', err.message);
       return res.status(400).json({ error: 'Upload error: ' + err.message });
     }
     console.log('[Upload] Files received:', Object.keys(req.files || {}).map(k => `${k}: ${req.files[k][0].path}`));
-    next();
+    // Validate authentication token after multipart stream is safely received
+    authenticateToken(req, res, next);
   });
 }, async (req, res) => {
   if (!req.files || !req.files['ground_plan']) {
@@ -2353,13 +2452,33 @@ app.post('/api/payment/webhook', async (req, res) => {
 
     if (signature !== expectedSignature) {
       console.error('[Razorpay Webhook] Signature mismatch.');
+      sendDiscordAlert({
+        type: 'payment',
+        title: '⚠️ Razorpay Webhook Signature Mismatch',
+        description: 'Received webhook with an invalid cryptographic signature.',
+        fields: [
+          { name: 'IP', value: String(req.ip || 'Unknown'), inline: true }
+        ]
+      });
       return res.status(400).json({ error: 'Invalid webhook signature.' });
     }
 
     const event = req.body.event;
     const payload = req.body.payload;
 
-    if (event === 'payment.captured' || event === 'order.paid') {
+    if (event === 'payment.failed') {
+      const paymentEntity = payload?.payment?.entity;
+      sendDiscordAlert({
+        type: 'payment',
+        title: '❌ Razorpay Payment Failed',
+        description: `Order ${paymentEntity?.order_id || 'N/A'} failed processing.`,
+        fields: [
+          { name: 'Order ID', value: String(paymentEntity?.order_id || 'N/A'), inline: true },
+          { name: 'Payment ID', value: String(paymentEntity?.id || 'N/A'), inline: true },
+          { name: 'Reason', value: String(paymentEntity?.error_description || paymentEntity?.error_reason || 'Unknown'), inline: false }
+        ]
+      });
+    } else if (event === 'payment.captured' || event === 'order.paid') {
       const paymentEntity = payload?.payment?.entity;
       const orderId = paymentEntity?.order_id || payload?.order?.entity?.id;
       const paymentId = paymentEntity?.id;
@@ -2383,6 +2502,14 @@ app.post('/api/payment/webhook', async (req, res) => {
     res.json({ status: 'ok' });
   } catch (err) {
     console.error('[Razorpay Webhook Error]:', err);
+    sendDiscordAlert({
+      type: 'payment',
+      title: '❌ Razorpay Webhook Exception',
+      description: String(err?.message || 'Processing Error'),
+      fields: [
+        { name: 'Stack', value: String(err?.stack || 'No stack trace').slice(0, 1000) }
+      ]
+    });
     res.status(500).json({ error: 'Webhook processing failure.' });
   }
 });
@@ -3163,6 +3290,23 @@ app.get(['/terms', '/terms-and-conditions'], (req, res) => {
   </div>
 </body>
 </html>`);
+});
+
+// ─── Global Express Error Handling Middleware ────────────────────────────────
+app.use((err, req, res, next) => {
+  console.error('[Global Express Error]:', err);
+  sendDiscordAlert({
+    type: 'error',
+    title: `HTTP 500: ${req.method} ${req.path}`,
+    description: String(err?.message || 'Internal Server Error'),
+    fields: [
+      { name: 'Path', value: String(req.originalUrl || req.path || 'Unknown'), inline: true },
+      { name: 'Method', value: String(req.method || 'GET'), inline: true },
+      { name: 'Stack', value: String(err?.stack || 'No stack trace available').slice(0, 1000) }
+    ]
+  });
+  if (res.headersSent) return next(err);
+  res.status(err.status || 500).json({ error: 'Internal Server Error' });
 });
 
 if (require.main === module) {

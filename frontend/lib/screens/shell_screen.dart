@@ -254,9 +254,22 @@ class _ShellScreenState extends State<ShellScreen> {
       debugPrint('SHELL: Upload error: $e');
       if (mounted) {
         setState(() => _isGenerating = false);
+        String userFriendlyError =
+            e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '');
+        final lower = userFriendlyError.toLowerCase();
+        if (lower.contains('broken pipe') ||
+            lower.contains('socketexception') ||
+            lower.contains('clientexception') ||
+            lower.contains('connection closed') ||
+            lower.contains('connection reset') ||
+            lower.contains('network connection interrupted')) {
+          userFriendlyError =
+              'Network connection interrupted during upload. Please check your connection and try again.';
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Plan Analysis Error: $e'),
+            content: Text(userFriendlyError),
             backgroundColor: AppColors.error,
             duration: const Duration(seconds: 8),
             action: SnackBarAction(

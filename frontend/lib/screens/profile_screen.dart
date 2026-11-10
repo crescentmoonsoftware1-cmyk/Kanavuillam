@@ -45,7 +45,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // Stats
   int _totalProjects = 0;
   int _totalSpent = 0;
-  bool _isLoadingStats = false;
 
   @override
   void initState() {
@@ -112,14 +111,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         setState(() {
           _totalProjects = 0;
           _totalSpent = 0;
-          _isLoadingStats = false;
         });
       }
       return;
-    }
-
-    if (mounted) {
-      setState(() => _isLoadingStats = true);
     }
 
     try {
@@ -150,14 +144,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         setState(() {
           _totalProjects = count;
           _totalSpent = spend;
-          _isLoadingStats = false;
         });
       }
-    } catch (_) {
-      if (mounted) {
-        setState(() => _isLoadingStats = false);
-      }
-    }
+    } catch (_) {}
   }
 
   String _formatCurrency(int val) {
@@ -333,7 +322,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                       if (ctx.mounted) Navigator.pop(ctx);
 
-                      if (mounted) {
+                      if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
@@ -906,10 +895,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           setDialogState(() => isDeleting = true);
                           try {
                             try {
-                              await ApiService.post('/auth/delete-account', {
-                                'email': userEmail,
-                                if (userId != null) 'userId': userId,
-                              }).timeout(const Duration(seconds: 8));
+                              await ApiService.deleteAccount(
+                                userEmail,
+                                userId: userId,
+                              ).timeout(const Duration(seconds: 8));
                             } catch (netErr) {
                               debugPrint(
                                   '[Account Deletion] Network notice: $netErr');

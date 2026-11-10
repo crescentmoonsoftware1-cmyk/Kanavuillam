@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -6,7 +5,6 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/providers/app_config_provider.dart';
-import '../core/theme/app_colors.dart';
 import '../services/api_service.dart';
 
 /// Production History Screen for Kanavu Illam
@@ -433,6 +431,51 @@ class _HistoryScreenState extends State<HistoryScreen>
               }).toList(),
             ),
             const SizedBox(height: 24),
+            if (item.raw != null) ...[
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    if (widget.onSelectProject != null) {
+                      widget.onSelectProject!(item.raw!);
+                    } else if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            config.tr(
+                              'Opening ${item.title}...',
+                              '${item.title} திறக்கப்படுகிறது...',
+                            ),
+                            style: GoogleFonts.plusJakartaSans(),
+                          ),
+                          behavior: SnackBarBehavior.floating,
+                          backgroundColor: const Color(0xFF1E252D),
+                        ),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFE58A18),
+                    foregroundColor: const Color(0xFF1E252D),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                  ),
+                  icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                  label: Text(
+                    config.tr('Open Plan & Reports', 'திட்டத்தைத் திற'),
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
             SizedBox(
               width: double.infinity,
               height: 48,
@@ -484,14 +527,8 @@ class _HistoryScreenState extends State<HistoryScreen>
     return Scaffold(
       backgroundColor:
           isDark ? const Color(0xFF14171F) : const Color(0xFFE2E8F0),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final double screenWidth = math.min(constraints.maxWidth, 420.0);
-          final double cardLeft =
-              math.max(16.0, (constraints.maxWidth - 350.0) / 2.0);
-
-          return Center(
-            child: SingleChildScrollView(
+      body: Center(
+        child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 20),
@@ -738,10 +775,8 @@ class _HistoryScreenState extends State<HistoryScreen>
                 ),
               ),
             ),
-          );
-        },
-      ),
-    );
+          ),
+        );
   }
 
   // ─── EMPTY STATE (When user has 0 floor plans) ─────────────────────────

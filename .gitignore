@@ -45,3 +45,5 @@ backend/cv_debug_output/
 backend/new_run.json
 backend/user_run_test.json
 frontend/assets/images/3d_base64.txt
+stitch/
+

@@ -100,8 +100,8 @@ class ApiService {
     }
   }
 
-  /// Backward-compatible alias for existing callers
-  static Future<void> _refreshTokenIfNeeded() async {
+  /// Backward-compatible alias for callers
+  static Future<void> refreshTokenIfNeeded() async {
     await ensureFreshToken();
   }
 
@@ -171,7 +171,32 @@ class ApiService {
       });
     }
 
-    var response = await doSend();
+    http.StreamedResponse response;
+    try {
+      response = await doSend();
+    } catch (e) {
+      final errStr = e.toString().toLowerCase();
+      final isSocketDrop = errStr.contains('socketexception') ||
+          errStr.contains('broken pipe') ||
+          errStr.contains('clientexception') ||
+          errStr.contains('connection closed') ||
+          errStr.contains('connection reset');
+
+      if (isSocketDrop) {
+        debugPrint('[ApiService] Connection dropped during upload ($e). Refreshing token and retrying once...');
+        await ensureFreshToken(force: true);
+        await Future.delayed(const Duration(milliseconds: 1500));
+        try {
+          response = await doSend();
+        } catch (retryErr) {
+          throw Exception(
+              "Network connection interrupted during floor plan upload. Please check your internet connection and try again.");
+        }
+      } else {
+        rethrow;
+      }
+    }
+
     var responseData = await response.stream.bytesToString();
 
     // 401 Interceptor: If token expired, auto-refresh and retry once transparently
@@ -180,8 +205,10 @@ class ApiService {
       final refreshed = await ensureFreshToken(force: true);
       if (refreshed) {
         debugPrint('[ApiService] Token refreshed! Retrying upload...');
-        response = await doSend();
-        responseData = await response.stream.bytesToString();
+        try {
+          response = await doSend();
+          responseData = await response.stream.bytesToString();
+        } catch (_) {}
       }
     }
 
@@ -420,6 +447,14 @@ class ApiService {
       } catch (_) {}
       throw Exception(errorMsg);
     }
+  }
+
+  /// Permanently deletes user account, authentication credentials, and project history
+  static Future<Map<String, dynamic>?> deleteAccount(String email, {String? userId}) async {
+    return await post('/auth/delete-account', {
+      'email': email,
+      if (userId != null) 'userId': userId,
+    });
   }
 
   static Future<Map<String, dynamic>?> post(

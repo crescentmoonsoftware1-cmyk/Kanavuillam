@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -5,9 +6,23 @@ import 'package:responsive_framework/responsive_framework.dart';
 import 'core/providers/app_config_provider.dart';
 import 'core/theme/app_colors.dart';
 import 'screens/welcome_screen.dart';
+import 'services/alert_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Route uncaught Flutter framework/widget exceptions to Discord #errors
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+    AlertService.reportFlutterError(details);
+  };
+
+  // Route uncaught asynchronous Dart engine exceptions to Discord #errors
+  PlatformDispatcher.instance.onError = (error, stack) {
+    AlertService.reportCrash(error, stack);
+    return false;
+  };
+
   runApp(
     MultiProvider(
       providers: [
