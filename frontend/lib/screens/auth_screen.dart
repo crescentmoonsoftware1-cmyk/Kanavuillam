@@ -190,7 +190,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
       await googleSignIn.initialize(
         serverClientId:
-            '665187508900-rrg56qkkn3jqa6cjj0s8401qkk5b6vfo.apps.googleusercontent.com',
+            '723007380953-4bl2rk9mmervcchn2i7037fe2bm2sp54.apps.googleusercontent.com',
       );
 
       final googleUser = await googleSignIn.authenticate();
