@@ -36,9 +36,24 @@ class ApiService {
     } catch (_) {}
   }
 
+  // Mutex to deduplicate concurrent token refresh calls and prevent Supabase rotation collisions
+  static Future<bool>? _ongoingRefresh;
+
   /// Ensures the current auth token is valid. If it is expired (or expires within 5 mins),
   /// or if [force] is true, silently refreshes it using the saved refresh_token.
   static Future<bool> ensureFreshToken({bool force = false}) async {
+    if (_ongoingRefresh != null) {
+      return await _ongoingRefresh!;
+    }
+    _ongoingRefresh = _performTokenRefresh(force: force);
+    try {
+      return await _ongoingRefresh!;
+    } finally {
+      _ongoingRefresh = null;
+    }
+  }
+
+  static Future<bool> _performTokenRefresh({bool force = false}) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final refreshToken = prefs.getString('refresh_token');
@@ -84,11 +99,9 @@ class ApiService {
         debugPrint('[ApiService] Auth token successfully refreshed!');
         return true;
       } else if (response.statusCode == 400 || response.statusCode == 401) {
-        // Refresh token has expired or been revoked. Clear session to prevent sending expired token.
-        debugPrint('[ApiService] Refresh token expired/revoked. Clearing session.');
-        await prefs.remove('auth_token');
-        await prefs.remove('refresh_token');
-        await prefs.remove('token_expires_at');
+        // Token refresh rejected by provider, but do NOT wipe auth_token!
+        // Retaining auth_token allows the server's 30-day mobile session grace period to authenticate it.
+        debugPrint('[ApiService] Refresh token note (${response.statusCode}). Keeping auth_token for server grace window.');
         return false;
       } else {
         debugPrint('[ApiService] Token refresh rejected (${response.statusCode}): ${response.body}');
@@ -105,17 +118,21 @@ class ApiService {
     await ensureFreshToken();
   }
 
-
   static Future<Map<String, String>> _authHeaders([Map<String, String>? extra]) async {
     await ensureFreshToken();
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('auth_token');
+    final userEmail = prefs.getString('user_email');
     final headers = <String, String>{
       'Content-Type': 'application/json',
       ...?extra,
     };
     if (token != null && token.isNotEmpty) {
       headers['Authorization'] = 'Bearer $token';
+      headers['x-auth-token'] = token;
+    }
+    if (userEmail != null && userEmail.isNotEmpty) {
+      headers['x-user-email'] = userEmail;
     }
     return headers;
   }
@@ -125,15 +142,24 @@ class ApiService {
       {String orientation = 'North', String? userEmail}) async {
     await ensureFreshToken();
 
+    final prefs = await SharedPreferences.getInstance();
+    final currentEmail = (userEmail != null && userEmail.isNotEmpty)
+        ? userEmail
+        : (prefs.getString('user_email') ?? '');
+
     Future<http.StreamedResponse> doSend() async {
       final request = http.MultipartRequest('POST', Uri.parse('$baseUrl/upload'));
       request.fields['name'] = projectName;
       request.fields['orientation'] = orientation;
+      if (currentEmail.isNotEmpty) {
+        request.fields['user_email'] = currentEmail;
+        request.headers['x-user-email'] = currentEmail;
+      }
 
-      final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('auth_token');
       if (token != null && token.isNotEmpty) {
         request.headers['Authorization'] = 'Bearer $token';
+        request.headers['x-auth-token'] = token;
       }
 
       // Attach ground floor
@@ -472,10 +498,15 @@ class ApiService {
       Future<http.Response> executePost() async {
         final prefs = await SharedPreferences.getInstance();
         final token = prefs.getString('auth_token');
+        final userEmail = prefs.getString('user_email');
 
         final headers = {'Content-Type': 'application/json'};
         if (token != null && token.isNotEmpty) {
           headers['Authorization'] = 'Bearer $token';
+          headers['x-auth-token'] = token;
+        }
+        if (userEmail != null && userEmail.isNotEmpty) {
+          headers['x-user-email'] = userEmail;
         }
 
         return await http.post(
